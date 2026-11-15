@@ -13,12 +13,12 @@ Destaques:
 
 ## Instalação
 
-Testado em Linux e Windows. macOS não foi testado ainda — se algo falhar, [abra uma issue](https://github.com/DiegoZaluski/co-sh/issues) com o máximo de detalhes.
+Testado em Linux e Windows. macOS não foi testado ainda — se algo falhar, [abra uma issue](https://github.com/aidreamy/co-sh/issues) com o máximo de detalhes.
 
 **Linux, macOS, Windows (Git Bash / WSL):**
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/DiegoZaluski/co-sh/main/download.sh | bash
+curl -fsSL https://raw.githubusercontent.com/aidreamy/co-sh/main/download.sh | bash
 ```
 
 Variáveis opcionais: `COSH_BIN_DIR` (diretório de instalação), `COSH_VERSION` (versão específica) e `COSH_VARIANT` (`slim`, padrão, ou `slim-embed`, com RAG local via fastembed).

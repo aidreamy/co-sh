@@ -1,9 +1,9 @@
 # cosh-recall
 
 [![Crates.io](https://img.shields.io/crates/v/cosh-recall.svg)](https://crates.io/crates/cosh-recall)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/DiegoZaluski/cosh/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/aidreamy/co-sh/blob/main/LICENSE)
 
-Memory/recall crate for [cosh](https://github.com/DiegoZaluski/cosh) — a coding agent for the terminal.
+Memory/recall crate for [cosh](https://github.com/aidreamy/co-sh) — a coding agent for the terminal.
 
 `cosh-recall` is a small RAG (Retrieval-Augmented Generation) layer: embed text with a pluggable embedder — local ONNX via [fastembed](https://crates.io/crates/fastembed) or a cloud provider via [`cosh-sdk`](https://crates.io/crates/cosh-sdk) — and store/search the vectors in a [LanceDB](https://lancedb.github.io/lancedb/) table. The public surface is intentionally minimal: an `Embedder` enum, a high-level `Rag` index, and a lower-level `VecDb` wrapper.
 
@@ -49,7 +49,7 @@ for entry in &results {
 - `fastembed` feature: ONNX Runtime (via `ort`); models download on first use
 - `cloud` feature: API keys for the chosen embedding provider
 
-Note: this crate depends on its sibling `cosh-sdk` for the `cloud` feature via a path dependency, so that combination is not yet resolvable from crates.io — use it from the [repository](https://github.com/DiegoZaluski/cosh) directly.
+Note: this crate depends on its sibling `cosh-sdk` for the `cloud` feature via a path dependency, so that combination is not yet resolvable from crates.io — use it from the [repository](https://github.com/aidreamy/co-sh) directly.
 
 ## Related crates
 
@@ -59,4 +59,4 @@ Note: this crate depends on its sibling `cosh-sdk` for the `cloud` feature via a
 
 ## License
 
-Apache-2.0. See [LICENSE](https://github.com/DiegoZaluski/cosh/blob/main/LICENSE).
+Apache-2.0. See [LICENSE](https://github.com/aidreamy/co-sh/blob/main/LICENSE).

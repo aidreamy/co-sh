@@ -5,7 +5,7 @@ edition = "2024"
 description = "ONNX decision-engine crate for cosh - coding agent for the terminal"
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/DiegoZaluski/cosh"
+repository = "https://github.com/aidreamy/co-sh"
 keywords = ["ai", "coding", "terminal", "agent"]
 categories = ["development-tools"]
 

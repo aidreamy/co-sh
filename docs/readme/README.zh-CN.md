@@ -13,12 +13,12 @@ Cosh 是一个运行在终端中的通用编码智能体（coding agent），除
 
 ## 安装
 
-已在 Linux 和 Windows 上测试。macOS 尚未测试 — 如果遇到问题，请[提交 issue](https://github.com/DiegoZaluski/co-sh/issues)，并尽可能详细描述。
+已在 Linux 和 Windows 上测试。macOS 尚未测试 — 如果遇到问题，请[提交 issue](https://github.com/aidreamy/co-sh/issues)，并尽可能详细描述。
 
 **Linux、macOS、Windows（Git Bash / WSL）：**
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/DiegoZaluski/co-sh/main/download.sh | bash
+curl -fsSL https://raw.githubusercontent.com/aidreamy/co-sh/main/download.sh | bash
 ```
 
 可选变量：`COSH_BIN_DIR`（安装目录）、`COSH_VERSION`（指定版本）和 `COSH_VARIANT`（`slim` 为默认，或 `slim-embed`，含基于 fastembed 的本地 RAG）。

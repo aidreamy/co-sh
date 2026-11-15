@@ -553,7 +553,7 @@ mod tests {
         let mut state = ToastState::new();
         let mut cmd = toast(5_000);
         cmd.message =
-            "curl -fsSL https://raw.githubusercontent.com/DiegoZaluski/co-sh/v0.1.2/download.sh | COSH_VERSION=v0.1.2 bash"
+            "curl -fsSL https://raw.githubusercontent.com/aidreamy/co-sh/v0.1.2/download.sh | COSH_VERSION=v0.1.2 bash"
                 .into();
         state.show(cmd);
 
@@ -696,7 +696,7 @@ mod tests {
         let area = Rect::new(0, 0, 80, 12);
         let mut state = ToastState::new();
         let message =
-            "curl -fsSL https://raw.githubusercontent.com/DiegoZaluski/co-sh/v0.1.2/download.sh | COSH_VERSION=v0.1.2 bash"
+            "curl -fsSL https://raw.githubusercontent.com/aidreamy/co-sh/v0.1.2/download.sh | COSH_VERSION=v0.1.2 bash"
                 .to_string();
         let mut cmd = toast(5_000);
         cmd.message = message.clone();

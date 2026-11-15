@@ -683,10 +683,10 @@ The agent's building blocks are published as reusable libraries:
 - Linux and Windows are tested. macOS builds are published but untested —
   report any issues with details.
 
-[0.2.1]: https://github.com/DiegoZaluski/co-sh/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/DiegoZaluski/co-sh/compare/v0.1.4...v0.2.0
-[0.1.4]: https://github.com/DiegoZaluski/co-sh/compare/v0.1.3...v0.1.4
-[0.1.3]: https://github.com/DiegoZaluski/co-sh/compare/v0.1.2...v0.1.3
-[0.1.2]: https://github.com/DiegoZaluski/co-sh/compare/v0.1.1...v0.1.2
-[0.1.1]: https://github.com/DiegoZaluski/co-sh/releases/tag/v0.1.1
-[0.1.0]: https://github.com/DiegoZaluski/co-sh/releases/tag/v0.1.0
+[0.2.1]: https://github.com/aidreamy/co-sh/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/aidreamy/co-sh/compare/v0.1.4...v0.2.0
+[0.1.4]: https://github.com/aidreamy/co-sh/compare/v0.1.3...v0.1.4
+[0.1.3]: https://github.com/aidreamy/co-sh/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/aidreamy/co-sh/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/aidreamy/co-sh/releases/tag/v0.1.1
+[0.1.0]: https://github.com/aidreamy/co-sh/releases/tag/v0.1.0

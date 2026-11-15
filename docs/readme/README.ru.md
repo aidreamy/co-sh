@@ -13,12 +13,12 @@ Cosh — универсальный coding agent для терминала с и
 
 ## Установка
 
-Протестировано на Linux и Windows. macOS пока не тестировалась — если что-то не сработает, [создайте issue](https://github.com/DiegoZaluski/co-sh/issues) с максимально подробным описанием.
+Протестировано на Linux и Windows. macOS пока не тестировалась — если что-то не сработает, [создайте issue](https://github.com/aidreamy/co-sh/issues) с максимально подробным описанием.
 
 **Linux, macOS, Windows (Git Bash / WSL):**
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/DiegoZaluski/co-sh/main/download.sh | bash
+curl -fsSL https://raw.githubusercontent.com/aidreamy/co-sh/main/download.sh | bash
 ```
 
 Необязательные переменные: `COSH_BIN_DIR` (каталог установки), `COSH_VERSION` (конкретная версия) и `COSH_VARIANT` (`slim` — по умолчанию, или `slim-embed` — с локальным RAG через fastembed).

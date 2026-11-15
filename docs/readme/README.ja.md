@@ -13,12 +13,12 @@ Cosh はターミナル上で動作する汎用コーディングエージェン
 
 ## インストール
 
-Linux と Windows でテスト済み。macOS は未テストです — 問題が発生した場合は、できるだけ詳細を添えて [issue を作成](https://github.com/DiegoZaluski/co-sh/issues)してください。
+Linux と Windows でテスト済み。macOS は未テストです — 問題が発生した場合は、できるだけ詳細を添えて [issue を作成](https://github.com/aidreamy/co-sh/issues)してください。
 
 **Linux、macOS、Windows（Git Bash / WSL）:**
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/DiegoZaluski/co-sh/main/download.sh | bash
+curl -fsSL https://raw.githubusercontent.com/aidreamy/co-sh/main/download.sh | bash
 ```
 
 オプション変数: `COSH_BIN_DIR`（インストール先ディレクトリ）、`COSH_VERSION`（特定バージョン）、`COSH_VARIANT`（デフォルトは `slim`、fastembed によるローカル RAG 付きは `slim-embed`）。
