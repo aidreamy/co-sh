@@ -391,13 +391,14 @@ impl Harness {
             // `stop_agent_loop` goes too, and NOT only as tidiness: the
             // pane's whole report contract rests on "the loop cannot stop
             // itself", which is what makes a stop it did take the USER's
-            // stop (see `Harness::resume_pane_turn`). The TUI's
-            // `MANAGER_BLOCKED_TOOLS` enforced that by disabling the tool
-            // per coworker, but a coworker harness built anywhere else would inherit
-            // the model's ability to end its own turn with no report — and
-            // the resume logic would then read that self-stop as a user stop
-            // and correctly refuse, closing the turn with nothing. Stripping
-            // it HERE binds the invariant to the coworker ROLE, where it belongs.
+            // stop (see `Harness::resume_pane_turn`). A frontend-level
+            // tool list used to enforce that by disabling the tool per
+            // coworker, but a coworker harness assembled anywhere else
+            // would inherit the model's ability to end its own turn with no
+            // report — and the resume logic would then read that self-stop
+            // as a user stop and correctly refuse, closing the turn with
+            // nothing. Stripping it HERE binds the invariant to the coworker
+            // ROLE, where it belongs.
             self.harness_tools
                 .retain(|tool| tool.name != "stop_agent_loop");
         }

@@ -266,7 +266,7 @@ impl App {
             .as_ref()
             .and_then(|split| split.panes.get(pane))
             .and_then(|p| p.config_options.as_ref())
-            .and_then(|opts| super::super::agents_dispatch::model_option_id(opts))
+            .and_then(|opts| cosh::coordinator::turn::model_option_id(opts))
             .map(str::to_string);
         let mut model_pick = false;
         if let Some(p) = self

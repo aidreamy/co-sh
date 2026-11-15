@@ -1,5 +1,6 @@
 pub mod assembly;
 pub mod config;
+pub mod coordinator;
 pub mod daemon;
 pub mod fallback;
 pub mod git;

@@ -401,7 +401,7 @@ impl App {
                         // agent: there the pane's own confirm recorded a
                         // pane-local pick (`picked_config_ids`) that
                         // dispatch serves, so the seed must not stomp it
-                        // (the same precedence `pane_turn_picks` applies).
+                        // (the same precedence `turn_picks` applies).
                         if let Some(split) = target {
                             let mut options = options.clone();
                             // The model option's id, resolved the SAME
@@ -410,11 +410,11 @@ impl App {
                             // provider and a model option under category
                             // `model`, and a flat id-or-category scan would
                             // seed the provider option's badge.
-                            let model_id = super::agents_dispatch::model_option_id(&options)
+                            let model_id = cosh::coordinator::turn::model_option_id(&options)
                                 .map(str::to_string);
                             if let Some(p) = split.panes.get(pane) {
                                 // The seed value in precedence order — the
-                                // same order `pane_turn_picks` applies: the
+                                // same order `turn_picks` applies: the
                                 // pane's OWN pick (its cached current, when
                                 // it confirmed this very option) outranks
                                 // the global record. A sibling pane's
