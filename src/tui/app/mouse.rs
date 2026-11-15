@@ -1,4 +1,5 @@
 use std::io;
+use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
 use cosh_tui::core::types::MouseEvent;
@@ -1745,6 +1746,14 @@ impl App {
                     let _ = self.answer_tx.send(Ok(answers));
                     self.question_dialog.visible = false;
                     self.question_dialog.submitted = false;
+                    self.prompt_view.focus();
+                } else if consumed && !self.question_dialog.visible {
+                    // Dismissed via footer esc click — mirror the Esc-key path.
+                    self.stop_signal.store(true, Ordering::Relaxed);
+                    let _ = self
+                        .answer_tx
+                        .send(Err("User dismissed the question dialog".into()));
+                    self.prompt_view.focus();
                 }
                 return Ok(true);
             }
@@ -1799,6 +1808,7 @@ impl App {
                         self.commit_gateway_choice();
                     } else if !self.free_gateway_dialog.visible {
                         self.restore_pending_gateway_message();
+                        self.prompt_view.focus();
                     }
                     return Ok(true);
                 }

@@ -869,6 +869,9 @@ impl App {
             )),
         };
         cosh::harness::agent_coworkers::complete_worktree_op(&op, outcome);
+        if !self.permission_dialog.visible {
+            self.prompt_view.focus();
+        }
     }
 
     /// Test/inspection accessor for the session-wide worktree grant.

@@ -550,6 +550,7 @@ impl App {
                     } else if !self.free_gateway_dialog.visible {
                         // Dismissed via Esc: put the parked message back
                         self.restore_pending_gateway_message();
+                        self.prompt_view.focus();
                     }
                     return Ok(false);
                 }
@@ -706,11 +707,13 @@ impl App {
                             };
                             self.permission_dialog.visible = false;
                             let _ = self.perm_tx.send(action);
+                            self.prompt_view.focus();
                             return Ok(false);
                         }
                         KeyCode::Esc => {
                             self.permission_dialog.visible = false;
                             let _ = self.perm_tx.send(cosh::harness::PermissionAction::Deny);
+                            self.prompt_view.focus();
                             return Ok(false);
                         }
                         _ => {}

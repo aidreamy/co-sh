@@ -461,6 +461,7 @@ impl App {
                     // reply with the provider default model, and the user's
                     // pick landed too late to matter.
                     self.gateway_model_pick = show_models && self.pending_gateway_message.is_some();
+                    self.prompt_view.focus();
                     let title = format!("{} authorized", provider_display(&provider));
                     if show_models {
                         // Straight into model selection: the gateway just
@@ -529,6 +530,7 @@ impl App {
                     self.gateway_signing_in = false;
                     self.free_gateway_dialog.hide();
                     self.restore_pending_gateway_message();
+                    self.prompt_view.focus();
                     self.toast_state.show(ToastOptions {
                         title: Some(format!("{} sign-in failed", provider_display(&provider))),
                         message: error,

@@ -56,6 +56,7 @@ fn isolate_home() {
 mod agent_loop;
 mod commands;
 mod cost;
+mod ctrl_c_focus_desync;
 mod dialogs;
 mod gateway_offer;
 mod history_panic_probe;

@@ -193,6 +193,7 @@ impl App {
                     self.rag_view.fetch_rx = None;
                     self.rag_view.embed_rx = None;
                     self.show_rag = false;
+                    self.prompt_view.focus();
                 }
                 Some(RagAction::ClosePreview) => {}
                 Some(RagAction::FetchUrlOrPath(input)) => {
