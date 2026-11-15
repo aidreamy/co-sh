@@ -61,15 +61,33 @@ impl WhatsAppAgent {
         }
 
         let key = message.chat.storage_key();
-        let tx = self.channel_for(key);
+        let tx = self.channel_for(key.clone());
         let (reply_tx, reply_rx) = oneshot::channel();
         let request = TurnRequest {
             prompt: text.to_string(),
             reply: reply_tx,
         };
-        if tx.send(request).is_err() {
-            return Some("The agent session for this chat ended; send the message again.".into());
-        }
+        let reply_rx = if tx.send(request).is_err() {
+            // The worker for this chat died (most likely a panic); drop the
+            // stale entry so a fresh worker is spawned and retry once.
+            if let Ok(mut sessions) = self.sessions.lock() {
+                sessions.remove(&key);
+            }
+            let tx = self.channel_for(key);
+            let (reply_tx, reply_rx) = oneshot::channel();
+            let request = TurnRequest {
+                prompt: text.to_string(),
+                reply: reply_tx,
+            };
+            if tx.send(request).is_err() {
+                return Some(
+                    "The agent session for this chat ended; send the message again.".into(),
+                );
+            }
+            reply_rx
+        } else {
+            reply_rx
+        };
         match reply_rx.await {
             Ok(reply) => Some(reply),
             Err(_) => Some("The agent session for this chat ended unexpectedly.".into()),

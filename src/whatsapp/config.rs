@@ -49,7 +49,28 @@ impl RuntimeConfig {
     /// Reads `setup.json` (the same file the TUI writes) and the environment
     /// defaults, so a model/route chosen in the TUI is what WhatsApp uses.
     pub fn load(cwd: &str) -> Self {
-        Self::from_setup(&Setup::load(), cwd)
+        let setup = Setup::load();
+        // Process-wide registration, mirroring `App::new`: custom ACP agents
+        // and custom providers must be published before any harness is
+        // assembled, and the LSP switch is a process-wide flag. Doing this
+        // here (rather than in `from_setup`) keeps the pure resolver
+        // testable.
+        for error in
+            cosh_tools::subagent::acp::register_custom_agents_lossy(&setup.acp_agent_pairs())
+        {
+            log::warn!("user-registered ACP agent skipped: {error}");
+        }
+        if let Err(error) = aiface::connector::register_custom_providers(
+            setup
+                .custom_provider_triples()
+                .into_iter()
+                .map(|(name, base_url, family)| (name, base_url, family.sdk_family()))
+                .collect(),
+        ) {
+            log::warn!("user-registered providers not published: {error}");
+        }
+        crate::harness::lsp::set_lsp_enabled(setup.lsp);
+        Self::from_setup(&setup, cwd)
     }
 
     /// [`Self::load`] with the setup injected: the testable core.

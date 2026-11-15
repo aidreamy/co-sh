@@ -195,9 +195,19 @@ pub async fn run() -> i32 {
                     let Some(permit) = Arc::clone(&slots).try_acquire_owned().ok() else {
                         log::warn!(
                             "cosh whatsapp: all {MAX_IN_FLIGHT} conversation slots are busy; \
-                         dropped message {}",
+                         replying busy for message {}",
                             message.id
                         );
+                        let link = whatsapp.clone();
+                        let chat = message.chat.clone();
+                        tokio::spawn(async move {
+                            let _ = link
+                            .send_text(
+                                &chat,
+                                "I'm busy with other requests right now. Please resend your message in a moment.",
+                            )
+                            .await;
+                        });
                         continue;
                     };
 
@@ -350,19 +360,21 @@ async fn mark_stale_store(path: &Path) {
 mod tests {
     use super::*;
 
-    fn temp_store(name: &str) -> PathBuf {
+    fn temp_dir(name: &str) -> PathBuf {
         static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let serial = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        std::env::temp_dir().join(format!(
+        let dir = std::env::temp_dir().join(format!(
             "cosh-whatsapp-store-{name}-{}-{serial}",
             std::process::id()
-        ))
+        ));
+        std::fs::create_dir_all(&dir).expect("temp dir");
+        dir
     }
 
     #[tokio::test]
     async fn a_dead_store_is_removed_with_its_sidecars() {
-        let db = temp_store("clear");
-        std::fs::create_dir_all(db.parent().expect("parent")).expect("temp dir");
+        let dir = temp_dir("clear");
+        let db = dir.join("device.db");
         for path in [
             db.clone(),
             with_suffix(&db, "-wal"),
@@ -376,23 +388,26 @@ mod tests {
         assert!(!db.exists());
         assert!(!with_suffix(&db, "-wal").exists());
         assert!(!with_suffix(&db, "-shm").exists());
-        let _ = std::fs::remove_dir_all(db.parent().expect("parent"));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[tokio::test]
     async fn clearing_an_absent_store_is_not_an_error() {
-        let db = temp_store("absent");
+        let dir = temp_dir("absent");
+        let db = dir.join("device.db");
         clear_device_store(&db).await.expect("nothing to remove");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[tokio::test]
     async fn marking_a_stale_store_creates_the_marker_directory() {
-        let db = temp_store("mark").join("nested").join("device.db");
+        let dir = temp_dir("mark");
+        let db = dir.join("nested").join("device.db");
 
         mark_stale_store(&db).await;
 
         assert!(stale_marker(&db).exists());
-        let _ = std::fs::remove_dir_all(db.parent().expect("parent").parent().expect("root"));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
 

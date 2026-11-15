@@ -188,10 +188,9 @@ impl ChatSession {
                 let mut setup = Setup::load();
                 setup.set_mode_selection(mode);
                 if mode == Mode::Command {
-                    format!(
-                        "Mode set to *command*. Send a shell command as your next message; \
-                         no LLM call is made. Use `/mode build` to return to the agent."
-                    )
+                    "Mode set to *command*. Send a shell command as your next message; \
+                     no LLM call is made. Use `/mode build` to return to the agent."
+                        .to_string()
                 } else {
                     format!(
                         "Mode set to *{}*.\n{}",
@@ -210,7 +209,10 @@ impl ChatSession {
         let assembly = self.config.assembly(
             self.mode,
             self.context.clone(),
-            Some(format!("whatsapp:{}", self.chat_key)),
+            Some(crate::assembly::session_affinity_id(&format!(
+                "whatsapp:{}",
+                self.chat_key
+            ))),
         );
         let (event_tx, mut event_rx) = mpsc::unbounded_channel();
         let mut harness = match crate::assembly::assemble(assembly, &event_tx).await {
@@ -263,6 +265,12 @@ impl ChatSession {
 
         if command.trim().is_empty() {
             return "Send a shell command, or `/mode build` to return to the agent.".to_string();
+        }
+
+        if self.config.disabled_tools.contains("bash_run") {
+            return "Shell commands are disabled in your tool settings (`bash_run` is off). \
+                    Re-enable it in `.cosh-tools.json` or `setup.json` to use command mode."
+                .to_string();
         }
 
         let tools = crate::harness::CoshTools::new(&self.config.cwd);
