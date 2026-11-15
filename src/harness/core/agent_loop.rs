@@ -354,10 +354,9 @@ impl Harness {
         self.sync_todo_context();
 
         // Move any attached images onto the context manager so they ride on
-        // the user turn (transport-only).
-        if !self.user_images.is_empty() {
-            self.context_manager.user_images = std::mem::take(&mut self.user_images);
-        }
+        // the user turn (transport-only). Always reset so a previous run's
+        // images cannot leak onto this turn.
+        self.context_manager.user_images = std::mem::take(&mut self.user_images);
         // Add the initial user input to the context manager (the single owner
         // of the conversation) so the model sees it as a proper `user` message.
         // Skip when it is already the trailing protected user turn (e.g. it was

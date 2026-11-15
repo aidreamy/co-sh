@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Images pasted into the prompt (an absolute or relative path, `~/`,
+  `file://`, or an `http(s)` link) now attach to that turn. The prompt
+  shows a thumbnail band that can be pruned before sending, and the model
+  receives the image next to the text. The payload is transport-only -
+  never persisted or compacted - and a provider that rejects it makes the
+  turn retry once with the original locations as plain text.
+
 - A real command line in front of the TUI: `-c/--continue` reopens the
   session most recently worked in for this directory, `-s/--session <id>`
   opens a chosen one, `-v/--version` prints the version and `-h/--help`

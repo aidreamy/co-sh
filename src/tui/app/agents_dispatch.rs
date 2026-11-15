@@ -1348,6 +1348,9 @@ impl App {
             self.submit_prompt_message(msg);
             return;
         };
+        // A focused pane turn carries text only (no images); drop any
+        // pending images up front so a refused submission cannot leak them.
+        self.pending_user_images.clear();
         // A compaction in flight has the SAME exclusivity as a running
         // turn — worse: its persist would race the turn's persist over the
         // same session record. The user's prompt is refused with the same
