@@ -4,13 +4,21 @@
 //! `download.ps1`), exactly as a manual install would: it knows the archive
 //! layout, the DLLs and the uninstaller that ships next to the binary, and it
 //! is versioned WITH the release it installs. What this module adds is the
-//! standard command line around it — version resolution, confirmation,
-//! `COSH_VERSION`/`COSH_VARIANT` pinned to the running build, and the exit
-//! status.
+//! standard command line around it — version resolution, confirmation and
+//! `COSH_VERSION`/`COSH_VARIANT` pinned to the running build.
 //!
 //! The installer is downloaded into a private temp file and executed directly
 //! instead of being piped through a shell: no tag or path is ever
-//! interpolated into a command line.
+//! interpolated into a command line. The installer is started detached and
+//! this process exits right away: on Windows the running `cosh.exe` image is
+//! locked, so it could not be replaced while we were still alive. The user
+//! reopens cosh once the install finishes.
+//!
+//! Exit status therefore means "the installer was started", not "the update
+//! landed": the installer reports its own outcome on the inherited terminal
+//! after cosh has exited, and its exit code is not observable from here. Only
+//! a failure to fetch or start the installer is reported as an error (status
+//! 1); a rejected version is a usage error (status 2).
 
 use std::io::{IsTerminal, Write};
 use std::process::Command;
@@ -28,9 +36,6 @@ pub struct UpdateOptions {
     pub target: Option<String>,
     /// `--yes`: skip the confirmation prompt.
     pub assume_yes: bool,
-    /// Internal flag set by the in-app updater: start the TUI again once the
-    /// install lands. A user running `cosh update` from a shell stays in it.
-    pub relaunch: bool,
 }
 
 /// Run the command and return the process exit code.
@@ -69,37 +74,17 @@ pub async fn run(options: UpdateOptions) -> i32 {
         ))
     );
 
-    let code = match install(&target).await {
-        Ok(code) => code,
-        Err(error) => {
-            eprintln!("{}", palette.error(&error));
-            return 1;
-        }
-    };
-
-    if code != 0 {
-        eprintln!(
-            "{}",
-            palette.error(&format!(
-                "the installer exited with status {code} — cosh was left as it was"
-            ))
-        );
-        return code;
+    if let Err(error) = install(&target).await {
+        eprintln!("{}", palette.error(&error));
+        return 1;
     }
 
-    if options.relaunch {
-        if let Err(error) = relaunch() {
-            eprintln!("{}", palette.error(&error));
-            return 1;
-        }
-    } else {
-        println!(
-            "{}",
-            palette.success(&format!(
-                "cosh {target} installed — start it again to use the new version."
-            ))
-        );
-    }
+    println!(
+        "{}",
+        palette.success(&format!(
+            "Update started — cosh is exiting; reopen it to use {target}."
+        ))
+    );
     0
 }
 
@@ -179,9 +164,10 @@ fn confirm(palette: &Palette, target: &str, assume_yes: bool) -> Confirmation {
     }
 }
 
-/// Download the pinned installer and run it with inherited stdio, so its
-/// progress and errors land in the user's terminal.
-async fn install(target: &str) -> Result<i32, String> {
+/// Download the pinned installer, start it with inherited stdio (so its
+/// progress and errors land in the user's terminal) and return.
+///
+async fn install(target: &str) -> Result<(), String> {
     let script_name = if cfg!(windows) {
         "download.ps1"
     } else {
@@ -209,7 +195,17 @@ async fn install(target: &str) -> Result<i32, String> {
         "cosh-update-{}.{extension}",
         std::process::id()
     ));
-    std::fs::write(&script, &body)
+    // The copy cannot be deleted from here: the installer is still reading it
+    // while we exit. Ask the script to remove itself as its last statement
+    // (`$PSCommandPath`/`$0` are this same temp path), so repeated updates do
+    // not leave one file per run behind in the temp directory.
+    let mut script_body = body.to_vec();
+    script_body.extend_from_slice(if cfg!(windows) {
+        b"\r\nRemove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue\r\n"
+    } else {
+        b"\nrm -f -- \"$0\"\n"
+    });
+    std::fs::write(&script, &script_body)
         .map_err(|error| format!("could not write {}: {error}", script.display()))?;
 
     let mut command = if cfg!(windows) {
@@ -228,11 +224,27 @@ async fn install(target: &str) -> Result<i32, String> {
         .env("COSH_VERSION", target)
         .env("COSH_VARIANT", variant());
 
-    let status = command.status();
-    let _ = std::fs::remove_file(&script);
+    // An in-app update spawns `cosh update` without a console; a console
+    // program started from a console-less process (powershell) would get a
+    // fresh console window allocated for it, sitting empty on screen for the
+    // whole download. Suppress it when there is no terminal to report into.
+    #[cfg(windows)]
+    if !std::io::stdout().is_terminal() {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
 
-    match status {
-        Ok(status) => Ok(status.code().unwrap_or(1)),
+    // Spawn the installer and return immediately WITHOUT waiting for it.
+    //
+    // On Windows the running cosh.exe image is locked by the OS: if we
+    // stayed alive while the installer ran, it could not replace the binary
+    // (and would fail with an access-denied error). By exiting here first,
+    // the installer finds the image unlocked and can replace it freely, even
+    // with older installers that delete the file outright. The user reopens
+    // cosh once the update finishes.
+    match command.spawn() {
+        Ok(_) => Ok(()),
         Err(error) => Err(format!("could not run the installer: {error}")),
     }
 }
@@ -245,25 +257,6 @@ fn variant() -> &'static str {
     } else {
         "slim"
     }
-}
-
-/// Start cosh again on the freshly installed image (in-app update only).
-fn relaunch() -> Result<(), String> {
-    let executable = std::env::current_exe()
-        .map_err(|error| format!("could not resolve the running executable: {error}"))?;
-    let mut command = Command::new(&executable);
-    // The in-app updater runs without a console on Windows; the relaunched
-    // TUI needs one of its own to paint into.
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NEW_CONSOLE: u32 = 0x0000_0010;
-        command.creation_flags(CREATE_NEW_CONSOLE);
-    }
-    command
-        .spawn()
-        .map(|_| ())
-        .map_err(|error| format!("cosh was updated but could not be started again: {error}"))
 }
 
 #[cfg(test)]

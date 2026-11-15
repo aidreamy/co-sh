@@ -10,14 +10,52 @@ use serde::Deserialize;
 /// GitHub repo the releases are published under (matches `download.sh`).
 pub const REPO: &str = "DiegoZaluski/co-sh";
 
+/// Split a release tag into the shape the installers accept:
+/// `^v?X.Y.Z(-suffix)?$` (`download.ps1`/`download.sh` both check exactly
+/// that). The numeric core is validated here; the pre-release suffix is
+/// limited to characters that survive a URL path segment unchanged (the
+/// installers' `(-.*)?` would take anything, spaces included).
+///
+/// Returns the version with the optional `v` removed.
+fn release_tag_version(tag: &str) -> Option<&str> {
+    let version = tag.strip_prefix('v').unwrap_or(tag);
+    let (core, suffix) = match version.split_once('-') {
+        Some((core, suffix)) => (core, Some(suffix)),
+        None => (version, None),
+    };
+
+    let mut parts = core.split('.');
+    let numeric = [parts.next(), parts.next(), parts.next()];
+    if parts.next().is_some()
+        || numeric
+            .iter()
+            .any(|part| !part.is_some_and(|p| !p.is_empty() && p.chars().all(|c| c.is_ascii_digit())))
+    {
+        return None;
+    }
+
+    if let Some(suffix) = suffix {
+        // `v1.2.3+meta` and `v1.2.3_rc1` are refused by both installers: only
+        // the part after `-` may carry a non-numeric shape (`v1.2.3-rc1+meta`
+        // is fine — the installers' `(-.*)?` accepts it).
+        if suffix.is_empty()
+            || !suffix
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '+' | '_'))
+        {
+            return None;
+        }
+    }
+
+    Some(version)
+}
+
 /// Defense-in-depth for values that come from the GitHub API response and
-/// end up on a shell command line or in a URL: accept only plain release
-/// tags (`v0.1.1`, `1.2.3-rc1+meta`). Anything else aborts the pipeline.
+/// end up on a shell command line or in a URL: accept only the release tags
+/// the installers themselves accept, so anything this gate lets through can
+/// actually be installed. Anything else aborts the pipeline.
 fn is_valid_tag(tag: &str) -> bool {
-    !tag.is_empty()
-        && tag
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '+' | '_'))
+    release_tag_version(tag).is_some()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -150,23 +188,8 @@ pub async fn fetch_latest_release() -> Option<LatestRelease> {
 /// the tag is then pinned into the installer URL and `COSH_VERSION`.
 pub fn normalize_tag(input: &str) -> Option<String> {
     let trimmed = input.trim();
-    let version = trimmed.strip_prefix('v').unwrap_or(trimmed);
-    // The pre-release suffix is left to `is_valid_tag` below: only the
-    // numeric core is checked here.
-    let core = version.split('-').next().unwrap_or(version);
-    let mut parts = core.split('.');
-    let (major, minor, patch) = (parts.next()?, parts.next()?, parts.next()?);
-    if parts.next().is_some() {
-        return None;
-    }
-    if [major, minor, patch]
-        .iter()
-        .any(|part| part.is_empty() || !part.chars().all(|c| c.is_ascii_digit()))
-    {
-        return None;
-    }
-    let tag = format!("v{version}");
-    is_valid_tag(&tag).then_some(tag)
+    let version = release_tag_version(trimmed)?;
+    Some(format!("v{version}"))
 }
 
 /// The manual update command pinned to `latest_tag`, shown in the update
@@ -185,16 +208,16 @@ pub fn manual_update_command(latest_tag: &str) -> Option<String> {
 }
 
 /// Fire-and-forget the in-app update: start this same binary as
-/// `cosh update <tag> --yes --relaunch`.
+/// `cosh update <tag> --yes`.
 ///
 /// The command line is the single implementation of "install a release"
 /// (`crate::cli::update`): it downloads the pinned installer script, runs it
-/// with `COSH_VERSION`/`COSH_VARIANT` set, and — with `--relaunch` — starts
-/// cosh again on the new image. This function only starts that process
-/// detached (own process group on Unix, no console window on Windows) and
-/// returns so the caller can close the TUI: the terminal visibly closes and
-/// reopens when the update lands. Errors (failed spawn, invalid tag) are just
-/// logged; there is no in-app retry surface.
+/// with `COSH_VERSION`/`COSH_VARIANT` set, then installs the release. The
+/// installer runs after this process exits (so the running image is not locked
+/// on Windows) and the user reopens cosh themselves. This function only starts
+/// that process detached (own process group on Unix, no console window on
+/// Windows) and returns so the caller can close the TUI. Errors (failed spawn,
+/// invalid tag) are just logged; there is no in-app retry surface.
 pub fn spawn_update_pipeline(latest_tag: &str) {
     // The tag lands on a shell command line and inside download URLs:
     // validate before anything runs (defense-in-depth; the release check
@@ -214,7 +237,6 @@ pub fn spawn_update_pipeline(latest_tag: &str) {
         .arg("update")
         .arg(latest_tag)
         .arg("--yes")
-        .arg("--relaunch")
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null());
@@ -237,7 +259,7 @@ pub fn spawn_update_pipeline(latest_tag: &str) {
 
     match command.spawn() {
         Ok(child) => log::info!(
-            "update pipeline spawned (pid {}, target {latest_tag}); closing cosh — `cosh update` relaunches it when done",
+            "update pipeline spawned (pid {}, target {latest_tag}); closing cosh — reopen cosh once the update finishes",
             child.id()
         ),
         Err(err) => log::error!("failed to start update pipeline: {err}"),
@@ -294,5 +316,74 @@ mod tests {
         assert!(is_update_available("0.1.0", "v0.1.1"));
         assert!(!is_update_available("0.1.1", "v0.1.1"));
         assert!(!is_update_available("0.2.0", "v0.1.9"));
+    }
+
+    #[test]
+    fn is_newer_honours_prerelease_and_missing_components() {
+        // A pre-release suffix is stripped before comparing, so `0.1.9-rc1`
+        // loses to `0.2.0` and a shorter running version zero-fills.
+        assert!(is_newer("0.1.9-rc1", "0.2.0"));
+        assert!(!is_newer("0.2.0", "0.1.9-rc1"));
+        assert!(!is_newer("0.2.0", "0.2"));
+    }
+
+    #[test]
+    fn is_valid_tag_mirrors_the_installer_grammar() {
+        // Both installers check `^v?[0-9]+\.[0-9]+\.[0-9]+(-.*)?$`: a
+        // pre-release suffix is fine, build metadata or underscores in the
+        // numeric core are not (`v1.2.3+meta` has no `-`, so `(-.*)?` fails).
+        assert!(is_valid_tag("v1.2.3-rc1+meta"));
+        assert!(is_valid_tag("1.2.3-RC.1"));
+        assert!(!is_valid_tag("v1.2.3+build.5"));
+        assert!(!is_valid_tag("v1.2.3_rc1"));
+        assert!(!is_valid_tag("v1.2.3-"));
+    }
+
+    #[test]
+    fn is_valid_tag_agrees_with_normalize_tag() {
+        // The UI advertises on `is_valid_tag` but installs through
+        // `normalize_tag`: a tag one accepts and the other refuses would be
+        // shown to the user and then silently rejected by `cosh update`.
+        for tag in [
+            "v0.2.3",
+            "0.2.3",
+            "v0.2.3-rc1",
+            "v0.2.3-rc1+meta",
+            "v0.2.3+build.5",
+            "v0.2.3_rc1",
+            "v0.2",
+            "v0.2.3.4",
+            "v0.2.x",
+            "latest",
+            "v1; rm -rf /",
+            "",
+        ] {
+            assert_eq!(
+                is_valid_tag(tag),
+                normalize_tag(tag).is_some(),
+                "gates disagree on {tag:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn normalize_tag_keeps_a_pre_release_suffix_with_build_metadata() {
+        // `download.ps1`/`download.sh` accept it (`(-.*)?` swallows `+meta`).
+        assert_eq!(
+            normalize_tag("v1.2.3-rc1+meta"),
+            Some("v1.2.3-rc1+meta".into())
+        );
+        // Build metadata in the numeric core never reaches a download URL.
+        assert_eq!(normalize_tag("v1.2.3+meta"), None);
+        assert_eq!(normalize_tag("v1.2.3_rc1"), None);
+    }
+
+    #[test]
+    fn manual_update_command_pins_the_release_tag() {
+        assert_eq!(
+            manual_update_command("v0.2.3"),
+            Some("cosh update v0.2.3".into())
+        );
+        assert_eq!(manual_update_command("v1; rm -rf /"), None);
     }
 }

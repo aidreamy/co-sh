@@ -52,6 +52,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   variant, and the in-app update button and the copied manual command now
   point at it instead of the raw `curl … | bash` one-liners.
 
+- `cosh update` no longer relaunches cosh when it finishes: it starts the
+  installer and exits, so the running `cosh.exe` is not locked while the
+  installer replaces it (that used to fail on Windows with "access denied").
+  The user reopens cosh once the install completes, and the command's exit
+  status now means "installer started".
+
 ### Fixed
 
 - Inputs sent to `/agents` panes no longer vanish when cosh exits. They

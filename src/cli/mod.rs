@@ -187,11 +187,6 @@ fn parse_update(rest: &[String]) -> Result<Invocation, CliError> {
         match rest[index].as_str() {
             "-h" | "--help" => return Ok(Invocation::Help(Some("update".to_string()))),
             "-y" | "--yes" => options.assume_yes = true,
-            // Internal: the in-app updater re-runs this binary with it, so the
-            // app comes back on the new image. Documented in the code, kept
-            // out of the help page — a user running `cosh update` stays in
-            // their shell by design.
-            "--relaunch" => options.relaunch = true,
             other if other.starts_with('-') => {
                 return Err(CliError::unknown_flag(other).in_command("update"));
             }
@@ -328,7 +323,6 @@ mod tests {
         };
         assert_eq!(options.target.as_deref(), Some("v0.2.3"));
         assert!(options.assume_yes);
-        assert!(!options.relaunch);
     }
 
     #[test]

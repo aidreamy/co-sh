@@ -946,9 +946,11 @@ impl App {
             }
             BannerAction::StartUpdate => {
                 // Fire-and-forget: the pipeline runs `cosh update` detached
-                // and RELAUNCHES cosh when it finishes, so the very next step
-                // is to close this TUI. No toast, no spinner, no in-app state —
-                // the terminal closing and reopening IS the feedback.
+                // and installs the release; this process exits first so the
+                // running image is not locked on Windows. The user reopens
+                // cosh once the install finishes, so the very next step is to
+                // close this TUI. No toast, no spinner, no in-app state —
+                // closing is the whole feedback.
                 crate::update::spawn_update_pipeline(&tag);
                 self.should_quit = true;
             }
@@ -958,8 +960,8 @@ impl App {
     /// Click on the session footer's update button (`v0.1.2` in
     /// `v0.1.1 → v0.1.2`): run the SAME install pipeline the Home banner's
     /// "Update version" button uses — `spawn_update_pipeline` hands the tag
-    /// to `cosh update`, which installs that exact release and relaunches
-    /// cosh; closing the TUI is the whole feedback.
+    /// to `cosh update`, which installs that exact release and exits; closing
+    /// the TUI is the whole feedback, and the user reopens cosh afterwards.
     pub(super) fn click_footer_update(&mut self) {
         // The RAW release tag (`v0.1.2`) straight from the GitHub check —
         // the same value the Home banner passes, never a reconstruction:
