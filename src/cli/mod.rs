@@ -16,6 +16,7 @@
 //! cosh -s <id> | --session <id> start in a specific session
 //! cosh update [version] [-y]    install the latest (or a pinned) release
 //! cosh paths                    print the storage directories
+//! cosh whatsapp                 answer WhatsApp messages with the agent
 //! cosh -h | --help [command]    show help
 //! cosh -v | --version           print the version
 //! ```
@@ -41,7 +42,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// This list is also what `cosh help <command>` validates against, so a
 /// command cannot ship without a help page (the guard test in [`help`] keeps
 /// the two in lockstep).
-pub const COMMANDS: &[&str] = &["update", "paths", "help"];
+pub const COMMANDS: &[&str] = &["update", "paths", "whatsapp", "help"];
 
 /// Options for the plain `cosh` (TUI) start.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -62,6 +63,8 @@ pub enum Invocation {
     Update(update::UpdateOptions),
     /// `cosh paths`
     Paths,
+    /// `cosh whatsapp` — the WhatsApp interface without the TUI.
+    WhatsApp,
     /// `cosh --check-keyring` — the keyring diagnostic, unchanged.
     CheckKeyring,
     /// Print help and exit 0. `None` = the top-level page.
@@ -171,6 +174,15 @@ fn parse_command(command: &str, rest: &[String]) -> Result<Invocation, CliError>
                 }
             }
             Ok(Invocation::Paths)
+        }
+        "whatsapp" => {
+            for arg in rest {
+                match arg.as_str() {
+                    "-h" | "--help" => return Ok(Invocation::Help(Some("whatsapp".to_string()))),
+                    other => return Err(CliError::unknown_flag(other).in_command("whatsapp")),
+                }
+            }
+            Ok(Invocation::WhatsApp)
         }
         "help" => Ok(Invocation::Help(help_subject(rest)?)),
         other => Err(CliError::new(format!(
@@ -307,6 +319,17 @@ mod tests {
         assert_eq!(parse_args(&["paths"]).unwrap(), Invocation::Paths);
         let error = parse_args(&["paths", "--fast"]).unwrap_err();
         assert!(error.to_string().contains("--fast"), "{error}");
+    }
+
+    #[test]
+    fn whatsapp_takes_no_arguments_and_has_help() {
+        assert_eq!(parse_args(&["whatsapp"]).unwrap(), Invocation::WhatsApp);
+        assert_eq!(
+            parse_args(&["whatsapp", "--help"]).unwrap(),
+            Invocation::Help(Some("whatsapp".into()))
+        );
+        let error = parse_args(&["whatsapp", "--pair"]).unwrap_err();
+        assert!(error.to_string().contains("--pair"), "{error}");
     }
 
     #[test]

@@ -50,6 +50,10 @@ async fn main() {
             prepare_plain_command("cli_paths");
             std::process::exit(cli::paths::run(&Palette::load()));
         }
+        cli::Invocation::WhatsApp => {
+            prepare_plain_command("cli_whatsapp");
+            std::process::exit(cosh::whatsapp::run().await);
+        }
         cli::Invocation::Update(options) => {
             prepare_plain_command("cli_update");
             std::process::exit(cli::update::run(options).await);

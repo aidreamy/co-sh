@@ -19,5 +19,6 @@ pub mod util;
 /// model cannot load, so the module compiles empty.
 #[cfg(feature = "onnx")]
 pub mod weights;
+pub mod whatsapp;
 pub use cosh_tools::{bash, fs, plan, skills, web};
 pub use harness::events::ModelEntry;

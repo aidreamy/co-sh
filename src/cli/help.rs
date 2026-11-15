@@ -27,6 +27,10 @@ const COMMAND_HELP: &[(&str, &str)] = &[
         "Install the latest release, or a pinned version",
     ),
     ("paths", "Print the data, config and log directories"),
+    (
+        "whatsapp",
+        "Answer WhatsApp messages with the agent, pairing by QR code",
+    ),
     ("help [command]", "Show this help, or one command's page"),
 ];
 
@@ -58,6 +62,7 @@ const COMMAND_ROWS: &[Row] = &[
     Row::Item(COMMAND_HELP[0].0, COMMAND_HELP[0].1),
     Row::Item(COMMAND_HELP[1].0, COMMAND_HELP[1].1),
     Row::Item(COMMAND_HELP[2].0, COMMAND_HELP[2].1),
+    Row::Item(COMMAND_HELP[3].0, COMMAND_HELP[3].1),
 ];
 
 const OVERVIEW: Page = Page {
@@ -101,6 +106,7 @@ const OVERVIEW: Page = Page {
                 Row::Example("cosh -c", "continue where you left off"),
                 Row::Example("cosh -s 1788063765396", "open a specific session"),
                 Row::Example("cosh update", "install the latest release"),
+                Row::Example("cosh whatsapp", "chat with the agent from WhatsApp"),
             ],
         },
         Section {
@@ -197,6 +203,46 @@ const PATHS_PAGE: Page = Page {
     ],
 };
 
+const WHATSAPP_PAGE: Page = Page {
+    title: "cosh whatsapp",
+    sections: &[
+        Section {
+            title: "Usage",
+            rows: &[Row::Prose("cosh whatsapp")],
+        },
+        Section {
+            title: "Description",
+            rows: &[Row::Prose(
+                "Links this machine to a personal WhatsApp account as a companion device and answers the linked chats with the cosh agent. No TUI is opened: the pairing QR code is printed, then the terminal only reports connection events while messages are handled in the background.",
+            )],
+        },
+        Section {
+            title: "Commands (in chat)",
+            rows: &[
+                Row::Item("/help", "List the commands available on WhatsApp"),
+                Row::Item(
+                    "/mode <mode>",
+                    "Switch between build, ask, yolo, command and manager",
+                ),
+            ],
+        },
+        Section {
+            title: "Notes",
+            rows: &[
+                Row::Note(
+                    "Commands are case-insensitive and must name a registered command; a path such as /usr/bin stays normal text.",
+                ),
+                Row::Note(
+                    "With no approval dialog, tools that need permission are denied in build/ask mode. Use `/mode yolo` to allow them.",
+                ),
+                Row::Note(
+                    "TUI-only commands (anim, theme, spinner) are not available over WhatsApp.",
+                ),
+            ],
+        },
+    ],
+};
+
 const HELP_PAGE: Page = Page {
     title: "cosh help",
     sections: &[
@@ -230,6 +276,7 @@ fn page_for(subject: Option<&str>) -> &'static Page {
     match subject {
         Some("update") => &UPDATE_PAGE,
         Some("paths") => &PATHS_PAGE,
+        Some("whatsapp") => &WHATSAPP_PAGE,
         Some("help") => &HELP_PAGE,
         _ => &OVERVIEW,
     }
@@ -474,6 +521,7 @@ mod tests {
         for needle in [
             "update [version]",
             "paths",
+            "whatsapp",
             "help [command]",
             "-c, --continue",
             "-s, --session <id>",

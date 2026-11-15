@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `cosh whatsapp`: a WhatsApp interface for the agent. It links a personal
+  account as a companion device (the pairing QR code is printed to the
+  terminal; no TUI is opened) and answers the linked chats through the same
+  harness assembly as the TUI, with per-chat context, configurable harness
+  modes (`/mode build|ask|yolo|command|manager`) and an extensible,
+  case-insensitive slash-command registry. Detection requires a registered
+  command name, so paths and ordinary prose are never mistaken for commands;
+  TUI-only commands (`anim`, `theme`, `spinner`) are not exposed. Without an
+  approval dialog, tools that need permission are denied and the reply says
+  so.
+
 - New `cosh-whatsapp` crate: links a personal WhatsApp account as a
   companion device (QR code or pairing code) over the WhatsApp Web
   multi-device protocol and exposes it to agents as typed events, typed

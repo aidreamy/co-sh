@@ -1577,6 +1577,7 @@ dependencies = [
  "cosh-sdk",
  "cosh-tools",
  "cosh-tui",
+ "cosh-whatsapp",
  "crossterm",
  "directories",
  "dotenvy",

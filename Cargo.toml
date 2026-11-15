@@ -52,6 +52,10 @@ optional = true
 path = "crates/cosh-tui"
 version = "0.1.6"
 
+[dependencies.cosh-whatsapp]
+path = "crates/cosh-whatsapp"
+version = "0.1.0"
+
 [dependencies.fastembed]
 # Pinned to 7: it selects `ort =2.0.0-rc.13` (ndarray, std, api-24), matching
 # cosh-onnx so the workspace builds a single ort.
