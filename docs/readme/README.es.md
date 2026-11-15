@@ -4,8 +4,6 @@
 
 Cosh es un coding agent de propósito general para la terminal, con herramientas de ingeniería de software y *computer tools* que le permiten interactuar con aplicaciones gráficas.
 
-<img width="720" height="406" alt="demo" src="https://github.com/user-attachments/assets/9a9161fa-f2ac-43f4-8623-8ae54d64c8bc" />
-
 Aspectos destacados:
 
 - **Modo multi-agente (`/agents`)** — ejecuta agentes externos (Gemini, Claude, Codex, Cline, …) junto con el agente principal en paneles divididos, todos alcanzables desde el mismo prompt. Cada agente mantiene su propia sesión, modelo y git worktree opcional, y el agente principal los coordina — despacha tareas y recopila informes como un equipo.

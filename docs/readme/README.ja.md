@@ -4,8 +4,6 @@
 
 Cosh はターミナル上で動作する汎用コーディングエージェントです。ソフトウェア開発ツールに加え、*computer tools* を備えており、グラフィカルアプリケーションとも対話できます。
 
-<img width="720" height="406" alt="demo" src="https://github.com/user-attachments/assets/9a9161fa-f2ac-43f4-8623-8ae54d64c8bc" />
-
 主な特徴:
 
 - **マルチエージェントモード（`/agents`）** — 外部エージェント（Gemini、Claude、Codex、Cline など）をメインエージェントと一緒に分割ペインで実行でき、すべて同じプロンプトから操作できます。各エージェントは自分のセッション・モデル・オプションの git worktree を持ち、メインエージェントがチームとしてタスクを振り分け、レポートを回収します。
