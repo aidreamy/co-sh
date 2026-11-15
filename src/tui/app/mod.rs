@@ -1202,6 +1202,9 @@ impl App {
             if self.agents_split.is_some() || self.parked_agents_split.is_some() {
                 self.serve_agents_pane_worktree_ops();
                 self.serve_agents_pane_compact_ops();
+                // The USER's per-pane queue is served BEFORE the agents' one:
+                // a human waiting on a pane outranks an `agents_call` ask.
+                self.serve_agents_pane_user_queues();
                 self.serve_agents_pane_queues();
             }
             // The gate-free session-binding facts drain here too (unconditionally:
@@ -1272,6 +1275,7 @@ impl App {
             // normal `handle_paste` path) instead of trickling char by char.
             self.paste_burst_flush_if_due();
             self.pump_queued_messages();
+            self.pump_agents_pane_queued_requests();
             self.pump_update_events();
             self.pump_gateway_events();
         }

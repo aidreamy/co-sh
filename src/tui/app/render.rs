@@ -1,7 +1,6 @@
 use crate::ui::dialogs::DialogType;
 use std::time::Instant;
 
-use cosh_tui::core::lib::rgba::RGBA;
 use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
@@ -20,38 +19,14 @@ use crate::routes::session::agents_split::{MANAGER_LABEL, brand_name_styles};
 use crate::routes::session::footer::FooterView;
 use crate::routes::session::right_panel::render_right_panel;
 use crate::state::PendingQueues;
-use crate::theme::{Theme, rgba_color};
+use crate::theme::rgba_color;
 use cosh_tools::subagent::palette::display_name;
-use cosh_tui::core::lib::unicode_util::graphemes_with_width;
 
-/// One visual row of the pending-queue strip. Every queued message owns
-/// its own internal padding: a `Pad` row directly above its first text
-/// line and directly below its last one, painted as part of the same
-/// queue-colored band (same chrome, no text). Two queued messages are
-/// therefore always separated by their respective padding rows, and the
-/// text never touches the prompt box, the spinner or a neighboring
-/// message.
-pub(super) enum PendingQueueRow {
-    /// Internal padding owned by one message: painted as part of that
-    /// message's band (same chrome, no text). Carries
-    /// `(queue_index, message_index)` so hover/click on the pad resolve
-    /// to the message it belongs to.
-    Pad(usize, usize),
-    /// A wrapped text line: `(queue_index, message_index, line)`.
-    Text(usize, usize, String),
-}
-
-impl PendingQueueRow {
-    /// `(queue_index, message_index)` the row belongs to (drives the band
-    /// color and the hit-testing target).
-    pub(super) fn owner(&self) -> (usize, usize) {
-        match self {
-            Self::Pad(queue_idx, msg_idx) | Self::Text(queue_idx, msg_idx, _) => {
-                (*queue_idx, *msg_idx)
-            }
-        }
-    }
-}
+/// Re-exported so the geometry, hit-testing and tests keep naming the row
+/// type through this module (the renderer itself lives in the shared
+/// [`crate::routes::session::pending_queue`] component, which the chat and
+/// every `/agents` pane paint through).
+pub(crate) use crate::routes::session::pending_queue::PendingQueueRow;
 
 impl App {
     pub(super) fn render(&mut self, frame: &mut Frame<'_>, delta_time: f64) {
@@ -945,7 +920,7 @@ impl App {
                         // The mode color was already resolved above with the
                         // same `agent_colors`/`unique_agents` the session view
                         // uses — no per-frame duplicate scan.
-                        Self::draw_pending_queue_rows(
+                        crate::routes::session::pending_queue::render_rows(
                             buf,
                             pending_area,
                             rows,
@@ -1216,83 +1191,21 @@ impl App {
         }
     }
 
-    /// Width of the mode-colored end cap: ~20% of the band width, never
-    /// narrower than the longest label ("CLOSURE") plus padding. `None` when
-    /// the band is too narrow to host a cap and still leave readable text.
-    /// Shared by the layout (which reserves the cap's columns when wrapping)
-    /// and the painter so text never runs under the cap.
-    fn pending_cap_width(width: u16) -> Option<u16> {
-        const MIN_CAP_W: u16 = 9; // "CLOSURE" (7) + side padding
-        if width < 20 {
-            return None;
-        }
-        Some(
-            (width * 20 / 100)
-                .max(MIN_CAP_W)
-                .min(width.saturating_sub(10)),
-        )
-    }
-
-    /// Visual rows of the pending queues, one layout entry per drawn row.
-    /// Each queued message yields exactly ONE `Text` row — visually truncated
-    /// to the columns available outside the mode-colored end cap, never
-    /// word-wrapped (the full text still goes to the model; only the strip's
-    /// preview is cut) — bracketed by its own `Pad` rows. Shared by the
-    /// renderer and the height/geometry helpers so mouse hit-testing always
-    /// matches what is drawn. Truncation is display-width aware
-    /// (`graphemes_with_width`), control characters stripped first.
+    /// Visual rows of the pending queues, one layout entry per drawn row —
+    /// the shared strip's layout ([`crate::routes::session::pending_queue`]),
+    /// re-exported here because the chat's geometry helpers and mouse
+    /// hit-testing read it through `App`.
     pub(super) fn pending_queue_layout(queues: &PendingQueues, width: u16) -> Vec<PendingQueueRow> {
-        let text_w = match Self::pending_cap_width(width) {
-            // │ + 2 pad + text + gap + cap + │
-            Some(cap_w) => width.saturating_sub(cap_w + 5),
-            None => width.saturating_sub(6), // │ + 2 pad left, 2 pad right + │
-        } as usize;
-        let one_line = |text: &str| -> String {
-            let clean: String = text.chars().filter(|c| !c.is_control()).collect();
-            let mut line = String::new();
-            let mut used = 0usize;
-            for (grapheme, w) in graphemes_with_width(&clean) {
-                let w = usize::from(w);
-                if used + w > text_w.max(1) {
-                    break; // visual cut: no ellipsis, the rest simply vanishes
-                }
-                line.push_str(grapheme);
-                used += w;
-            }
-            line
-        };
-        let mut rows = Vec::new();
-        for (qi, queue) in [&queues.next_loop, &queues.next_request]
-            .into_iter()
-            .enumerate()
-        {
-            for (mi, text) in queue.iter().enumerate() {
-                // Each message carries its own top and bottom padding, so
-                // neighboring messages are always separated and the strip's
-                // outer edges get one pad row too.
-                rows.push(PendingQueueRow::Pad(qi, mi));
-                rows.push(PendingQueueRow::Text(qi, mi, one_line(text)));
-                rows.push(PendingQueueRow::Pad(qi, mi));
-            }
-        }
-        rows
+        crate::routes::session::pending_queue::layout(queues, width)
     }
 
     /// Render the pending queued messages above the prompt, each preserving
-    /// FIFO order. Long messages are visually truncated to the band's
-    /// available width — outside the mode cap — instead of word-wrapping;
-    /// the full text is still queued for the model. Each
-    /// message's band is a lighter wash of the current mode's color, ending
-    /// in a full-strength mode-colored cap labeling its queue
-    /// (NEXT / CLOSURE).
+    /// FIFO order, in the current harness mode's hue (the same hue the
+    /// prompt's mode indicator paints).
     pub(super) fn render_pending_queues(&self, buf: &mut ratatui::buffer::Buffer, area: Rect) {
         let Some(queues) = self.state.current_pending_queues() else {
             return;
         };
-        let rows = Self::pending_queue_layout(queues, area.width);
-        if rows.is_empty() {
-            return;
-        }
         let unique_agents = self.state.unique_agents();
         let agent_colors = crate::agent_colors::AgentColors::from_theme(&self.theme);
         let cap_color = crate::component::prompt::agent_mode_color(
@@ -1301,232 +1214,13 @@ impl App {
             &unique_agents,
             self.state.mode,
         );
-        Self::draw_pending_queue_rows(
+        crate::routes::session::pending_queue::render(
             buf,
             area,
-            &rows,
+            queues,
             self.hovered_queue_row,
             &self.theme,
             cap_color,
         );
-    }
-
-    /// Band background for the ~80% of each message's band outside the mode
-    /// cap: the mode color lightened toward white (~15% blend). The full
-    /// mode color stays in the cap, so the cap reads as a slightly deeper
-    /// chip on a lighter band of the same hue. RGB channels only — alpha
-    /// comes back opaque, matching every other band fill.
-    fn lightened_mode_band(color: RGBA) -> RGBA {
-        const T: f32 = 0.15; // share of white mixed in
-        let (r, g, b, _) = color.to_ints();
-        let up = |c: u8| -> u8 { (f32::from(c) * (1.0 - T) + 255.0 * T).round() as u8 };
-        RGBA::from_ints(up(r), up(g), up(b), 255)
-    }
-
-    /// Queue label carried by a message's end cap: queue 1 ("next request",
-    /// injected into the very next request of the running loop) reads NEXT;
-    /// queue 0 ("next agent loop", sent only when a fresh loop starts) reads
-    /// CLOSURE — it closes out the current loop's run.
-    fn queue_cap_label(queue_idx: usize) -> &'static str {
-        if queue_idx == 0 { "CLOSURE" } else { "NEXT" }
-    }
-
-    /// Paint the pre-computed pending-queue layout (see
-    /// [`Self::pending_queue_layout`]).
-    ///
-    /// `cap_color` is the current harness mode's color (same hue the prompt's
-    /// mode indicator uses): it fills the ~20% end-cap of each message's band
-    /// and carries the queue label (NEXT / CLOSURE).
-    ///
-    /// Split from [`Self::render_pending_queues`] so the render path can wrap
-    /// the queued messages ONCE per frame (the height computation and the
-    /// painter share the same rows instead of re-wrapping them).
-    fn draw_pending_queue_rows(
-        buf: &mut ratatui::buffer::Buffer,
-        area: Rect,
-        rows: &[PendingQueueRow],
-        hover: Option<(usize, usize)>,
-        theme: &Theme,
-        cap_color: RGBA,
-    ) {
-        if rows.is_empty() {
-            return;
-        }
-        // The hovered row swaps its queue color for pure WHITE so the focus
-        // clearly stands out against every theme surface (and against the
-        // prompt box, which shares the element/panel colors). `contrast_color`
-        // flips the row text to black for readability.
-        let hover_bg = RGBA::from_hex("#FFFFFF");
-        // Both queue bands derive their background from the current mode's
-        // color, lightened toward white: the ~80% of the band outside the
-        // end cap reads as a lighter wash of the same hue, with the full
-        // mode color concentrated in the cap chip.
-        let queue_bg = Self::lightened_mode_band(cap_color);
-        // Band extents: contiguous layout rows sharing an owner form one
-        // message's band (its pads + text). The cap's label is written on
-        // the middle row of each band so it sits visually centered.
-        let mut bands: Vec<((usize, usize), usize, usize)> = Vec::new();
-        for (i, entry) in rows.iter().enumerate() {
-            let owner = entry.owner();
-            match bands.last_mut() {
-                Some((last_owner, _, len)) if *last_owner == owner => *len += 1,
-                _ => bands.push((owner, i, 1)),
-            }
-        }
-        let mut label_at = vec![false; rows.len()];
-        for (_, start, len) in &bands {
-            label_at[start + len / 2] = true;
-        }
-        let cap_w = Self::pending_cap_width(area.width);
-        for (y, (i, entry)) in (area.y..).zip(rows.iter().enumerate()) {
-            if y >= area.bottom() {
-                break;
-            }
-            let (queue_idx, msg_idx) = entry.owner();
-            // Hover targets a MESSAGE (text or its padding): highlight every
-            // row the message owns so the whole band lights up as one unit.
-            let bg = if hover == Some((queue_idx, msg_idx)) {
-                hover_bg
-            } else {
-                queue_bg
-            };
-            let line = match entry {
-                PendingQueueRow::Text(_, _, line) => line.as_str(),
-                // Padding: same band chrome, no message text.
-                PendingQueueRow::Pad(..) => "",
-            };
-            Self::draw_pending_row(
-                buf,
-                line,
-                area.x,
-                y,
-                area.width,
-                bg,
-                theme.background_panel,
-                cap_color,
-            );
-            // Mode-colored end cap (~20% of the band, right-aligned before
-            // the right `│`): fills every row of the message's band so it
-            // reads as one solid block, and carries the queue label
-            // (NEXT / CLOSURE) bold on the band's middle row. The cap keeps
-            // its mode color even while the band is hovered — it is the
-            // identity chip, not part of the highlight.
-            if let Some(cap_w) = cap_w {
-                let cap_right = area.x + area.width - 1;
-                let cap_x = cap_right - cap_w;
-                let cap_fg = crate::theme::contrast_color(cap_color);
-                let fill_style = Style::default().bg(rgba_color(cap_color));
-                for cx in cap_x..cap_right {
-                    if let Some(cell) = buf.cell_mut((cx, y)) {
-                        cell.set_char(' ');
-                        cell.set_style(fill_style);
-                    }
-                }
-                if label_at[i] {
-                    let label = Self::queue_cap_label(queue_idx);
-                    let label_style = fill_style
-                        .fg(cap_fg)
-                        .add_modifier(ratatui::style::Modifier::BOLD);
-                    let label_w = label.chars().count() as u16;
-                    let label_x = cap_x + cap_w.saturating_sub(label_w) / 2;
-                    for (lx, ch) in (label_x..).zip(label.chars()) {
-                        if let Some(cell) = buf.cell_mut((lx, y)) {
-                            cell.set_char(ch);
-                            cell.set_style(label_style);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /// Draw one pending-message line: the app's standard `│` left and right
-    /// borders in the current harness mode's color (the same hue the prompt's
-    /// mode indicator paints with, so the strip's side rails connect
-    /// visually with the prompt box) on the neutral panel background, the
-    /// queue color as the background of the rest of the
-    /// row (starting right after the border, at `x + 1`, so it never covers
-    /// the `│` glyph), and the (already wrapped) message text starting 3
-    /// columns in — like a normal user message, so queued rows stay visually
-    /// consistent with the chat. The queue identity is carried by the
-    /// background color only; no marker glyph is used on these rows.
-    #[allow(clippy::too_many_arguments)]
-    fn draw_pending_row(
-        buf: &mut ratatui::buffer::Buffer,
-        text: &str,
-        x: u16,
-        y: u16,
-        width: u16,
-        bg: RGBA,
-        panel: RGBA,
-        border: RGBA,
-    ) {
-        if width < 6 {
-            return;
-        }
-        let fg = crate::theme::contrast_color(bg);
-        let bg_color = rgba_color(bg);
-        // Side rails (│) in the mode color on the neutral panel background —
-        // the same hue the prompt box's own side borders use, so the queue
-        // strip's rails connect visually with the prompt above. The
-        // queue-colored band starts at `x + 1`, right after the left rail,
-        // so the background never covers the glyph.
-        if let Some(cell) = buf.cell_mut((x, y)) {
-            cell.set_char('│');
-            cell.set_style(
-                Style::default()
-                    .fg(rgba_color(border))
-                    .bg(rgba_color(panel)),
-            );
-        }
-        // Matching right border (│), mirroring the prompt box's symmetric
-        // chrome (left: true, right: true): it terminates the row on the
-        // terminal background.
-        if let Some(cell) = buf.cell_mut((x + width - 1, y)) {
-            cell.set_char('│');
-            cell.set_style(
-                Style::default()
-                    .fg(rgba_color(border))
-                    .bg(rgba_color(panel)),
-            );
-        }
-        // Queue-colored background for the rest of the row — the band stops
-        // one column short of the right edge so the right `│` sits on the
-        // terminal background (same trick as the prompt's `bg_area`).
-        let band_style = Style::default().bg(bg_color);
-        for cx in x + 1..x + width - 1 {
-            if let Some(cell) = buf.cell_mut((cx, y)) {
-                cell.set_char(' ');
-                cell.set_style(band_style);
-            }
-        }
-        // Message text starts 3 columns in (│ + 2 pad) and stops 3 short of
-        // the right edge (2 pad + │), symmetric like the prompt box;
-        // `text` is pre-truncated and pre-filtered by `pending_queue_layout`.
-        let text_x = x + 3;
-        let text_right = x + width - 3;
-        let text_style = Style::default().fg(fg).bg(bg_color);
-        let mut cx = text_x;
-        for (grapheme, w) in cosh_tui::core::lib::unicode_util::graphemes_with_width(text) {
-            if cx + w > text_right {
-                break;
-            }
-            if let Some(cell) = buf.cell_mut((cx, y)) {
-                if grapheme.len() == 1 {
-                    cell.set_char(grapheme.chars().next().unwrap());
-                } else {
-                    cell.set_symbol(grapheme);
-                }
-                cell.set_style(text_style);
-            }
-            if w > 1 {
-                for dx in 1..w {
-                    if let Some(cell) = buf.cell_mut((cx + dx, y)) {
-                        cell.set_diff_option(ratatui::buffer::CellDiffOption::Skip);
-                    }
-                }
-            }
-            cx += w;
-        }
     }
 }

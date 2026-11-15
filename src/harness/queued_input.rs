@@ -22,7 +22,7 @@ use std::collections::VecDeque;
 use std::sync::Mutex;
 
 /// Internal state: the pending messages plus the TUI-side hold flag.
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct Inner {
     queue: VecDeque<String>,
     /// True while the TUI holds the queue (Queue Actions box open, grace

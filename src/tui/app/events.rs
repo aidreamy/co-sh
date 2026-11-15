@@ -612,7 +612,7 @@ impl App {
                     // `set_coworkers` already).
                     let registry_id = either_split(&self.agents_split, &self.parked_agents_split)
                         .and_then(|split| split.pane_registry_id(pane));
-                    if let Some(id) = registry_id {
+                    let requester = registry_id.and_then(|id| {
                         // A failure's text IS the reason; a successful turn's
                         // text is the report. `end` rides along so the
                         // requester can qualify it (see `report_block`).
@@ -621,22 +621,31 @@ impl App {
                         } else {
                             Ok(output.clone())
                         };
-                        let requester = cosh::harness::agent_coworkers::complete_request(
+                        cosh::harness::agent_coworkers::complete_request(
                             &id,
                             cosh::harness::agent_coworkers::AgentCoworkerReport::new(report, end),
-                        );
-                        // The pane just freed: the queue service may
-                        // dispatch its NEXT queued agent message in this
-                        // same frame.
-                        self.serve_agents_pane_queues();
-                        // The wake promise (issue: the main agent must be
-                        // woken by the report of a pane turn IT initiated,
-                        // and never disturbed by a user-initiated pane
-                        // turn): a MAIN-requested pane turn that completed
-                        // while the main loop is idle starts a fresh
-                        // main-agent turn carrying the report.
-                        self.wake_main_agent_if_promised(requester);
-                    }
+                        )
+                    });
+                    // The pane just freed: the user's OWN queues are served
+                    // first (the human outranks an agent's queued
+                    // `agents_call`, and inside that pass "next request"
+                    // outranks "next loop" — it is the delivery an ACP pane's
+                    // turn could not take mid-prompt, so it goes out the
+                    // moment that prompt completes), then the queue service
+                    // may dispatch its next queued agent message in this same
+                    // frame — the user turn, when it started, leaves the pane
+                    // running so the agent request keeps waiting its turn.
+                    // Independent of the registry: a pane with no registry id
+                    // (a set rebuilt under the turn) still owns its queues.
+                    self.serve_agents_pane_user_queues();
+                    self.serve_agents_pane_queues();
+                    // The wake promise (issue: the main agent must be woken by
+                    // the report of a pane turn IT initiated, and never
+                    // disturbed by a user-initiated pane turn): a
+                    // MAIN-requested pane turn that completed while the main
+                    // loop is idle starts a fresh main-agent turn carrying the
+                    // report.
+                    self.wake_main_agent_if_promised(requester);
                     // The mirror finishes: it inherits the pane's ALREADY-CLOSED
                     // timeline (`close_turn` ran in `finish_turn` above — the
                     // report is its LAST chronological entry) and the list

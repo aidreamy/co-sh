@@ -1785,13 +1785,7 @@ impl App {
                     .queue_choice_dialog
                     .handle_mouse(&mouse, queue_choice_area);
                 if consumed && self.queue_choice_dialog.submitted {
-                    let text = self.prompt_view.send_message();
-                    let target = self.queue_choice_dialog.choice();
-                    self.queue_choice_dialog.hide();
-                    // Edited message returning to its queue → original
-                    // position; otherwise appended at the end (helper).
-                    self.enqueue_pending_message(target, text);
-                    self.prompt_view.focus();
+                    self.commit_queue_choice();
                 }
                 return Ok(true);
             }

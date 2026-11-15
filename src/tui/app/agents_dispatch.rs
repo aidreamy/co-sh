@@ -1181,6 +1181,9 @@ impl App {
             // queued message dispatches in this same frame — the same
             // follow-through as the normal `AgentsPaneDone` handler.
             let requester = cosh::harness::agent_coworkers::cancel_serving(&id, reason.to_string());
+            // The user's own queue first: a message the human sent while
+            // that pane was busy must not lose to an agent's `agents_call`.
+            self.serve_agents_pane_user_queues();
             self.serve_agents_pane_queues();
             // Absorb ONCE MORE after the dispatch: the first absorb above
             // ran before any queued message was served, but the winding-
@@ -1358,6 +1361,29 @@ impl App {
         }
         self.record_user_input(&msg);
         self.dispatch_to_pane(focused, msg, false);
+    }
+
+    /// The focused pane's stable id — plus whether it has a LIVE loop — WHEN
+    /// that pane cannot take a submission right now, or `None` when no pane is
+    /// focused or the focused pane is free.
+    ///
+    /// "Busy" is the union of the three states that refuse a turn: a live
+    /// turn, a compaction in flight (same session-record exclusivity — its
+    /// persist would race the turn's) and a cold-restore replay (the bound
+    /// history is still arriving). The submit paths QUEUE the message for all
+    /// three instead of refusing it.
+    ///
+    /// "Live loop" (the second field) is what makes the dialog offer the
+    /// "next request" row: a running pane has a loop that the message can
+    /// become the next request of, whatever kind of agent runs it. A pane
+    /// that is only compacting or replaying has none — its next turn is a
+    /// fresh loop, so only "next loop" applies there.
+    pub(super) fn focused_busy_pane(&self) -> Option<(u64, bool)> {
+        let pane = self.agents_split.as_ref()?.focused_pane()?;
+        let busy = pane.running
+            || pane.rehydrating
+            || cosh::harness::agent_coworkers::coworker_is_compacting(pane.id);
+        busy.then(|| (pane.id, pane.running))
     }
 
     /// Dispatch ONE message to pane `pane` as its next turn — the shared
@@ -1612,11 +1638,20 @@ impl App {
         // indicator keeps spinning while the turn streams. The signal lands
         // wherever the pane lives (a PARKED pane's turn must still be
         // stoppable when the user re-enters the mode).
+        // The steering handle: the SAME shared queue the main agent's
+        // "next request" pump feeds, cloned into this pane's loop. Only a
+        // cosh pane's turn has request boundaries to drain it at; an ACP
+        // agent takes one prompt per turn, so its pane keeps `None` and its
+        // queued "next request" goes out at the turn boundary instead, from
+        // `serve_agents_pane_user_queues` (no prompt in flight to inject
+        // into, but the message still becomes the pane's next request).
+        let steer = is_manager_pane.then(cosh::harness::queued_input::QueuedInput::default);
         let signal = Arc::new(AtomicBool::new(false));
         if let Some(split) = either_split_mut(&mut self.agents_split, &mut self.parked_agents_split)
         {
             split.set_running(pane, true);
             split.set_stop_signal(pane, Some(signal.clone()));
+            split.set_steer(pane, steer.clone());
         }
         // The pane's mirror in the shared subagent list starts spinning too
         // (same running flag, pane-index routed).
@@ -1650,10 +1685,12 @@ impl App {
             // The cosh pane: the MAIN agent itself, running delegated work
             // on its OWN cosh session — a real, persisted session (visible
             // in the history panel, openable like any other), not a
-            // throwaway nested harness. Its tool set keeps
-            // bash/inspection but drops the workspace-mutating tools.
-            // The session was bound by the pre-flight above (a second
-            // ensure would just re-read it), so this only unwraps.
+            // throwaway nested harness. Its tool set is the user's mode
+            // minus what a pane cannot do (see
+            // `cosh::coordinator::policy`): the workspace-mutating tools are
+            // NOT removed — only `Mode::Manager` owns that restriction. The
+            // session was bound by the pre-flight above (a second ensure
+            // would just re-read it), so this only unwraps.
             let Some(cosh_session) = manager_session else {
                 return;
             };
@@ -1707,10 +1744,10 @@ impl App {
                 // pane's declared deviations from the main loop — the
                 // mode's normal prompt minus the self-review loop, the
                 // MANAGER requester tag, the bound pane id (strips
-                // `agents_call`), NO queued input (one-input-per-turn:
-                // nobody pumps a pane queue), NO decision audit (not
-                // distributed) and the pane's OWN session id as the
-                // cache-affinity key.
+                // `agents_call`), the pane's OWN steering queue (the user's
+                // "next request" messages — see `pane_steer`), NO decision
+                // audit (not distributed) and the pane's OWN session id as
+                // the cache-affinity key.
                 let assembly = cosh::assembly::HarnessAssembly {
                     provider: manager_route
                         .as_ref()
@@ -1769,6 +1806,7 @@ impl App {
                     input,
                     permission_rx,
                     signal,
+                    steer.clone().unwrap_or_default(),
                     assembly,
                     cosh_session,
                     store,
@@ -2130,6 +2168,146 @@ impl App {
         if hidden_dirty {
             self.save_current_agents_metadata();
         }
+    }
+
+    /// Feed the RUNNING cosh panes' "next request" queues into their live
+    /// turns — the pane-level twin of [`App::pump_queued_messages`].
+    ///
+    /// A message goes to the pane's steering handle (the harness drains it
+    /// before the turn's next request) and echoes into the pane's timeline
+    /// with the user's rail at the same moment, so the pane shows who is
+    /// speaking. Only panes that hold a handle qualify: a cosh pane's turn
+    /// has request boundaries, an ACP agent takes one prompt per turn (so no
+    /// point to inject at) and a pane between turns has no loop at all. The
+    /// ACP case is not stranded by that: its "next request" message is
+    /// consumed at the turn boundary by
+    /// [`Self::serve_agents_pane_user_queues`], ahead of its "next loop"
+    /// queue and ahead of any queued `agents_call`.
+    ///
+    /// ONE message per pane per frame keeps the FIFO observable between
+    /// frames and mirrors the main pump's one-in-flight discipline.
+    pub(super) fn pump_agents_pane_queued_requests(&mut self) {
+        let Some(split) = either_split_mut(&mut self.agents_split, &mut self.parked_agents_split)
+        else {
+            return;
+        };
+        for pane in &mut split.panes {
+            if !pane.running || pane.queued.next_request.is_empty() {
+                continue;
+            }
+            let Some(steer) = pane.steer.clone() else {
+                continue;
+            };
+            let Some(text) = pane.queued.next_request.pop_front() else {
+                continue;
+            };
+            pane.activity.open_turn_input(&text, true);
+            steer.push(text);
+        }
+    }
+
+    /// Start the next queued USER message of every free `/agents` pane, FIFO.
+    ///
+    /// The two queues keep the main agent's meaning for EVERY pane kind:
+    /// `next request` is served FIRST (the message the user wanted as the
+    /// pane's very next request), then `next loop` (a fresh working stretch).
+    /// For a cosh pane the `next request` queue normally never reaches this
+    /// pass while the turn runs — [`Self::pump_agents_pane_queued_requests`]
+    /// already fed it into the harness, which drains it before its next
+    /// request. An ACP pane has no prompt in flight to inject into, so its
+    /// `next request` messages are consumed HERE, at the turn boundary: the
+    /// message goes out before the pane is ever seen idle (a `next loop`
+    /// message would otherwise have to wait a whole pass, and could lose its
+    /// place to other work).
+    ///
+    /// Called from the frame tick (a message queued while every pane idles —
+    /// or one whose pane went away mid-queue — must not wait for an event that
+    /// never comes) and right after a pane frees (the `AgentsPaneDone`
+    /// handler). The user's queue OUTRANKS any queued `agents_call` request:
+    /// starting a turn here leaves the pane running, so
+    /// [`Self::serve_agents_pane_queues`] skips it and the agent's request
+    /// waits its turn.
+    ///
+    /// Before starting anything this pass settles the leftovers: a message the
+    /// finished turn never drained out of its steering handle is put back by
+    /// the queue (nothing is stranded between turn end and the handle being
+    /// dropped — the drain is atomic under the handle's own lock). It keeps its
+    /// `next request` standing: the pane is free, so that message IS the next
+    /// request of the stretch that just closed.
+    pub(super) fn serve_agents_pane_user_queues(&mut self) -> bool {
+        {
+            let Some(split) =
+                either_split_mut(&mut self.agents_split, &mut self.parked_agents_split)
+            else {
+                return false;
+            };
+            for pane in &mut split.panes {
+                if pane.running {
+                    continue;
+                }
+                if let Some(steer) = pane.steer.take() {
+                    for text in steer.drain() {
+                        pane.queued.next_request.push_back(text);
+                    }
+                }
+            }
+        }
+        // One turn per pane per pass: dispatching marks the pane running, so
+        // the rest of its queue waits for the next free moment.
+        let targets: Vec<usize> = {
+            let Some(split) = either_split(&self.agents_split, &self.parked_agents_split) else {
+                return false;
+            };
+            split
+                .panes
+                .iter()
+                .enumerate()
+                .filter(|(_, p)| !p.running && !p.rehydrating)
+                .filter(|(_, p)| !cosh::harness::agent_coworkers::coworker_is_compacting(p.id))
+                .filter(|(_, p)| !p.queued.is_empty())
+                .map(|(i, _)| i)
+                .collect()
+        };
+        let mut started = false;
+        for pane in targets {
+            // `next request` first: it was picked as the pane's very next
+            // request, so it may never be starved by a `next loop` message.
+            // The flag remembers WHERE it came from for the requeue below.
+            let Some((text, as_request)) =
+                either_split_mut(&mut self.agents_split, &mut self.parked_agents_split)
+                    .and_then(|split| split.panes.get_mut(pane))
+                    .and_then(|p| {
+                        p.queued
+                            .next_request
+                            .pop_front()
+                            .map(|text| (text, true))
+                            .or_else(|| p.queued.next_loop.pop_front().map(|text| (text, false)))
+                    })
+            else {
+                continue;
+            };
+            self.dispatch_to_pane(pane, text.clone(), false);
+            // The dispatch can bail after the guards (a pane session that
+            // failed to mint, a pane that vanished): a message the user
+            // queued must not vanish with it — put it back at the head.
+            let running = either_split(&self.agents_split, &self.parked_agents_split)
+                .and_then(|split| split.panes.get(pane))
+                .is_some_and(|p| p.running);
+            if running {
+                started = true;
+                continue;
+            }
+            if let Some(p) = either_split_mut(&mut self.agents_split, &mut self.parked_agents_split)
+                .and_then(|split| split.panes.get_mut(pane))
+            {
+                if as_request {
+                    p.queued.next_request.push_front(text);
+                } else {
+                    p.queued.next_loop.push_front(text);
+                }
+            }
+        }
+        started
     }
 
     /// Dispatch every queued `agents_call` request whose target pane is
@@ -2921,6 +3099,10 @@ fn run_manager_turn(
         tokio::sync::mpsc::UnboundedReceiver<cosh_tools::subagent::events::PanePermissionAnswer>,
     >,
     stop_signal: Arc<AtomicBool>,
+    // The pane's steering queue: the user's "next request" messages, drained
+    // by the harness before each of this turn's requests (the same contract
+    // the main loop's queued input has).
+    steer: cosh::harness::queued_input::QueuedInput,
     assembly: cosh::assembly::HarnessAssembly,
     session_id: String,
     store: crate::session::store::SessionStore,
@@ -3164,11 +3346,13 @@ fn run_manager_turn(
                 answer_rx,
                 perm_rx,
                 stop_signal,
-                // NO queued input: the pane's input model is one-input-per-
-                // turn (the pane registry queues `agents_call` requests
-                // FIFO); nobody pumps a pane queue, so a shared queue here
-                // would only strand messages.
-                None,
+                // The pane's own "next request" queue: `pump_agents_pane_
+                // queued_requests` feeds it one message at a time while the
+                // user chose that target, and the harness drains it before
+                // each request. Leftovers at closure are recovered into the
+                // pane's "next loop" queue (`serve_agents_pane_user_queues`)
+                // instead of being stranded.
+                Some(steer),
             )
             .await;
 

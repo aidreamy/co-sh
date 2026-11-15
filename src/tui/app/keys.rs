@@ -520,13 +520,7 @@ impl App {
                 let consumed = self.queue_choice_dialog.handle_key_event(key);
                 if consumed {
                     if self.queue_choice_dialog.submitted {
-                        let text = self.prompt_view.send_message();
-                        let target = self.queue_choice_dialog.choice();
-                        self.queue_choice_dialog.hide();
-                        // Edited message returning to its queue → original
-                        // position; otherwise appended at the end (helper).
-                        self.enqueue_pending_message(target, text);
-                        self.prompt_view.focus();
+                        self.commit_queue_choice();
                     } else if !self.queue_choice_dialog.visible {
                         // Dismissed via Esc: re-focus the prompt (the
                         // message stays in the input, nothing was queued).
@@ -1573,6 +1567,21 @@ impl App {
                         // pre-issue-3 behavior for every Working Enter).
                         && !self.paste_burst_pending_flush_deadline();
                     if split_pane_focused {
+                        // The focused pane is BUSY (its own turn, a
+                        // compaction, or a replay still arriving): the
+                        // message queues for THAT pane through the same
+                        // two-queue dialog the main agent gets, instead of
+                        // being refused. The dialog reads the prompt and
+                        // only a confirm consumes it.
+                        if let Some((pane_id, live_loop)) = self.focused_busy_pane() {
+                            let preview = self.prompt_view.input.clone();
+                            if preview.trim().is_empty() {
+                                return Ok(false);
+                            }
+                            self.queue_choice_dialog
+                                .open_for_pane(preview, pane_id, live_loop);
+                            return Ok(false);
+                        }
                         let msg = self.prompt_view.send_message();
                         if msg.trim().is_empty() {
                             return Ok(false);
@@ -1611,6 +1620,24 @@ impl App {
                             return Ok(false);
                         }
                         self.queue_choice_dialog.open(preview);
+                        return Ok(false);
+                    }
+
+                    // A focused /agents pane that is still working (the
+                    // shared prompt keeps serving it while the MAIN loop
+                    // idles) QUEUES the message rather than refusing it —
+                    // the same dialog the Working branch above shows. An
+                    // outstanding edited-queue re-submit wins: it belongs
+                    // to its own slot, not to the pane.
+                    if self.edit_requeue_hint.is_none()
+                        && let Some((pane_id, live_loop)) = self.focused_busy_pane()
+                    {
+                        let preview = self.prompt_view.input.clone();
+                        if preview.trim().is_empty() {
+                            return Ok(false);
+                        }
+                        self.queue_choice_dialog
+                            .open_for_pane(preview, pane_id, live_loop);
                         return Ok(false);
                     }
 

@@ -4,9 +4,11 @@ use std::time::Instant;
 
 use super::super::EditRequeueHint;
 use super::super::agent_loop::QUEUE_ACTIONS_GRACE;
+use super::super::agents_dispatch::either_split_mut;
 use crate::routes::session::queue_choice::QueueTarget;
 use crate::types::SessionStatus;
 use crate::ui::dialogs::DialogType;
+use crate::ui::toast::{ToastOptions, ToastVariant};
 use crate::util::selection;
 
 impl App {
@@ -280,6 +282,88 @@ impl App {
                 deque.push_back(text);
             }
         }
+    }
+
+    /// Commit the queue-choice dialog's pick: consume the prompt text and
+    /// queue it on the pane the dialog was opened for, or on the main
+    /// agent's session queues when it named no pane.
+    ///
+    /// The prompt keeps the authoritative text until THIS call, so Esc (or
+    /// a click outside the dialog) still leaves the message unsent in the
+    /// input, exactly like the main-agent flow it was built for.
+    pub(in crate::app) fn commit_queue_choice(&mut self) {
+        let text = self.prompt_view.send_message();
+        let target = self.queue_choice_dialog.choice();
+        let pane = self.queue_choice_dialog.pane();
+        self.queue_choice_dialog.hide();
+        match pane {
+            // Edited message returning to its queue → original position;
+            // otherwise appended at the end (helper).
+            None => self.enqueue_pending_message(target, text),
+            Some(pane_id) => self.enqueue_pane_message(pane_id, target, text),
+        }
+        self.prompt_view.focus();
+    }
+
+    /// Queue ONE message for the `/agents` pane `pane_id` — the user's own
+    /// counterpart of the `agents_call` registry queue, with the same two
+    /// queues the main agent's session has.
+    ///
+    /// A "next request" message needs a LIVE loop to be the next request OF:
+    /// the pane must be running. How that delivery happens is the turn's own
+    /// business and is the ONE difference between pane kinds — a cosh pane's
+    /// harness drains its steering handle before the next request of the same
+    /// turn ([`super::super::agents_dispatch`], `pump_agents_pane_queued_requests`),
+    /// while an ACP pane's turn is one prompt, so the message goes out the
+    /// moment that prompt completes, before the pane ever reports idle
+    /// (`serve_agents_pane_user_queues`). Both read as "my message became the
+    /// pane's next request", which is why the dialog offers the row for both.
+    ///
+    /// A pane that is NOT running (its bound history is replaying, or its
+    /// session is being compacted) has no loop to be next from: the pick
+    /// degrades to "next agent loop", and the toast says which one it became
+    /// instead of leaving the message in a queue nothing would drain.
+    pub(in crate::app) fn enqueue_pane_message(
+        &mut self,
+        pane_id: u64,
+        target: QueueTarget,
+        text: String,
+    ) {
+        if text.trim().is_empty() {
+            return;
+        }
+        self.record_user_input(&text);
+        let Some(split) = either_split_mut(&mut self.agents_split, &mut self.parked_agents_split)
+        else {
+            return;
+        };
+        let Some(index) = split.pane_index_by_id(pane_id) else {
+            return;
+        };
+        let Some(pane) = split.panes.get_mut(index) else {
+            return;
+        };
+        let delivered_as_request = target == QueueTarget::NextRequest && pane.running;
+        if delivered_as_request {
+            pane.queued.next_request.push_back(text);
+        } else {
+            pane.queued.next_loop.push_back(text);
+        }
+        let agent = pane.agent.clone();
+        // The toast is the ONLY feedback a "next loop" message gets (it
+        // does not echo into the pane until its turn starts), so it names
+        // the pane and the delivery it actually got.
+        let what = if delivered_as_request {
+            "queued for its next request"
+        } else {
+            "queued for its next loop"
+        };
+        self.toast_state.show(ToastOptions {
+            title: Some("Queued".into()),
+            message: format!("{agent}: {what}"),
+            variant: ToastVariant::Info,
+            duration_ms: 3000,
+        });
     }
 
     /// Submit the prompt text as a user message.
