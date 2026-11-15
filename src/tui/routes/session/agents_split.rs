@@ -264,6 +264,16 @@ pub struct AgentPane {
     /// USER's queues outrank it (see `serve_agents_pane_user_queues`), and
     /// "next request" outranks "next loop".
     pub queued: crate::state::PendingQueues,
+    /// The generation of the turn this pane is running — bumped when a turn
+    /// is DISPATCHED and when one is force-closed (Ctrl+X), and stamped into
+    /// every event that turn emits (`HarnessEvent::AgentsPaneEvent::turn`).
+    /// A stopped turn keeps winding down after the pane was closed
+    /// synthetically, so the stamp is what tells its late events apart from
+    /// the live turn's: without it, a terminal Done landing after the pane's
+    /// next turn started closed that turn instead (clearing its stop signal
+    /// and running flag, so Esc/Ctrl+X could no longer stop the agent, which
+    /// kept working behind an idle-looking pane).
+    pub turn_id: u64,
     /// The steering handle into the pane's RUNNING turn — the same shared
     /// [`cosh::harness::queued_input::QueuedInput`] the main agent's queue
     /// uses, cloned into the pane's loop at dispatch. `Some` only while a
@@ -382,6 +392,7 @@ impl AgentPane {
             permission_tx: None,
             queued: crate::state::PendingQueues::default(),
             steer: None,
+            turn_id: 0,
             snapshot_loading: false,
             rehydrating: false,
             rehydrate_spinner: SpinnerState::new(),
@@ -1428,6 +1439,24 @@ impl AgentsSplitState {
         if let Some(p) = self.panes.get_mut(pane) {
             p.steer = steer;
         }
+    }
+
+    /// Start a new turn on pane `pane`, returning its generation — the stamp
+    /// its events carry from now on. Out-of-range panes get `0` (a stamp no
+    /// pane answers to, so such a dispatch's events land nowhere).
+    pub fn begin_turn(&mut self, pane: usize) -> u64 {
+        let Some(p) = self.panes.get_mut(pane) else {
+            return 0;
+        };
+        p.turn_id = p.turn_id.wrapping_add(1);
+        p.turn_id
+    }
+
+    /// The generation of pane `pane`'s CURRENT turn (`0` for an out-of-range
+    /// pane, which no event can match).
+    #[must_use]
+    pub fn turn_id(&self, pane: usize) -> u64 {
+        self.panes.get(pane).map_or(0, |p| p.turn_id)
     }
 
     /// Attach (or clear) the carried-context block of pane `pane`'s next
@@ -4730,7 +4759,7 @@ mod tests {
                             .chars()
                             .next()
                             .is_some_and(|c| !c.is_whitespace())
-                            && cell.style().fg != Some(base)
+                        && cell.style().fg != Some(base)
                     {
                         distinct = true;
                     }

@@ -171,6 +171,15 @@ pub enum HarnessEvent {
         pane_id: u64,
         /// Dispatch-time split-slot generation (see the variant doc).
         epoch: u64,
+        /// The pane's TURN this event belongs to (`AgentPane::turn_id` at
+        /// dispatch). The epoch guard only covers slot swaps: a turn the
+        /// user stopped (Ctrl+X) keeps winding down for a while, and if the
+        /// pane's next turn — a queued message, or a prompt sent right
+        /// after the stop — has already begun, its events would otherwise
+        /// paint the dead turn's output into the live one. `0` = unstamped
+        /// (chrome refreshes and replay, which belong to no turn); those
+        /// are always accepted.
+        turn: u64,
         /// The typed event, the same shape the right-panel sub-agent box
         /// renders.
         event: cosh_tools::subagent::events::SubagentEvent,
@@ -190,6 +199,15 @@ pub enum HarnessEvent {
         pane_id: u64,
         /// Dispatch-time split-slot generation (see the variant doc).
         epoch: u64,
+        /// The turn this Done CLOSES (`AgentPane::turn_id` at dispatch). The
+        /// handler applies a Done only to the turn it belongs to: a stopped
+        /// turn (Ctrl+X closes the pane SYNTETICALLY, then its thread keeps
+        /// winding down) whose terminal Done arrives AFTER the pane's next
+        /// turn began must not close that new turn — doing so cleared the
+        /// new turn's stop signal and running flag, which left the pane
+        /// looking idle while the agent kept working, and made every further
+        /// Ctrl+X a no-op. `0` = unstamped (tests); accepted as before.
+        turn: u64,
         /// The final report; an errored turn carries the error text instead.
         output: String,
         /// `end_turn`, `cancelled`, or a spawn-failure marker.

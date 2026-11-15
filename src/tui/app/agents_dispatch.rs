@@ -1000,18 +1000,22 @@ pub(super) fn ensure_pane_snapshot(app: &mut App, pane: usize) {
             pane,
             pane_id,
             epoch,
+            // Chrome, not timeline content: belongs to no turn.
+            turn: 0,
             event: SubagentEvent::Commands { commands },
         });
         let _ = event_tx.send(HarnessEvent::AgentsPaneEvent {
             pane,
             pane_id,
             epoch,
+            turn: 0,
             event: SubagentEvent::ConfigOptions { options },
         });
         let _ = event_tx.send(HarnessEvent::AgentsPaneEvent {
             pane,
             pane_id,
             epoch,
+            turn: 0,
             event: SubagentEvent::Modes {
                 modes,
                 current: mode_current,
@@ -1097,11 +1101,9 @@ impl App {
         // A legacy session (no history yet) records this input on top of the
         // transcript's messages, so the walk keeps the earlier prompts.
         let seed = match self.state.current_session() {
-            Some(session) if session.input_history.is_empty() => {
-                Some(crate::component::prompt::PromptView::user_message_texts(
-                    session,
-                ))
-            }
+            Some(session) if session.input_history.is_empty() => Some(
+                crate::component::prompt::PromptView::user_message_texts(session),
+            ),
             Some(_) => None,
             // No session yet (the very first prompt of a fresh app):
             // `start_agent_loop` creates the session and puts this message on
@@ -1150,6 +1152,25 @@ impl App {
         }
         p.running = false;
         p.stop_signal = None;
+        // The stopped turn's steering handle dies with it, and its terminal
+        // Done is refused (see the generation bump below), so nothing would
+        // ever recover what the handle still held. The messages the user
+        // chose "next request" for belong to the PANE: they go back to the
+        // head of its `next request` queue, exactly as a turn that ended on
+        // its own recovers them (`serve_agents_pane_user_queues`).
+        if let Some(steer) = p.steer.take() {
+            for text in steer.drain() {
+                p.queued.next_request.push_back(text);
+            }
+        }
+        // Retire the turn this pane was running: the stop is best-effort
+        // (the ACP call sends `session/cancel` and the manager loop breaks
+        // out of its next check), so the thread keeps winding down for a
+        // while. Bumping the generation HERE — before the queues below can
+        // dispatch the pane's next turn in this same frame — is what keeps
+        // that winding-down turn's late events and terminal Done from being
+        // applied to the turn that replaced it.
+        let _ = split.begin_turn(pane);
         // A force-closed turn drops its pending permission box and answer
         // channel: the ACP handler answers `Cancelled` on the closed
         // channel (the spec's contract for a cancelled turn's pending
@@ -1647,6 +1668,12 @@ impl App {
         // into, but the message still becomes the pane's next request).
         let steer = is_manager_pane.then(cosh::harness::queued_input::QueuedInput::default);
         let signal = Arc::new(AtomicBool::new(false));
+        // The TURN stamp: every event of this turn carries it, and a
+        // force-closed turn's generation is never reused — so its late
+        // events (a stop is best-effort; the thread keeps winding down) can
+        // never close the LIVE turn that started in the meantime.
+        let turn = either_split_mut(&mut self.agents_split, &mut self.parked_agents_split)
+            .map_or(0, |split| split.begin_turn(pane));
         if let Some(split) = either_split_mut(&mut self.agents_split, &mut self.parked_agents_split)
         {
             split.set_running(pane, true);
@@ -1803,6 +1830,7 @@ impl App {
                     index,
                     pane_id,
                     epoch,
+                    turn,
                     input,
                     permission_rx,
                     signal,
@@ -1908,6 +1936,7 @@ impl App {
                                         pane: index,
                                         pane_id,
                                         epoch,
+                                        turn,
                                         event,
                                     });
                                 }
@@ -1944,6 +1973,7 @@ impl App {
                     pane: index,
                     pane_id,
                     epoch,
+                    turn,
                     output,
                     stop_reason,
                     session,
@@ -2930,6 +2960,8 @@ impl App {
                     pane,
                     pane_id,
                     epoch,
+                    // A replay belongs to no turn: unstamped.
+                    turn: 0,
                     event,
                 });
             }
@@ -2980,6 +3012,8 @@ impl App {
                                     pane,
                                     pane_id,
                                     epoch,
+                                    // A replay belongs to no turn: unstamped.
+                                    turn: 0,
                                     event,
                                 });
                             }
@@ -3094,6 +3128,10 @@ fn run_manager_turn(
     pane: usize,
     pane_id: u64,
     epoch: u64,
+    // The turn's generation (see `AgentPane::turn_id`): stamped into every
+    // event this turn emits, so a stopped turn's late stream and terminal
+    // Done are recognizable as stale.
+    turn: u64,
     input: String,
     permission_rx: Option<
         tokio::sync::mpsc::UnboundedReceiver<cosh_tools::subagent::events::PanePermissionAnswer>,
@@ -3155,6 +3193,7 @@ fn run_manager_turn(
                         pane,
                         pane_id,
                         epoch,
+                        turn,
                         output: error,
                         stop_reason: "error".to_string(),
                         // The manager session was already minted and its
@@ -3333,6 +3372,7 @@ fn run_manager_turn(
                             pane,
                             pane_id,
                             epoch,
+                            turn,
                             event,
                         });
                     }
@@ -3393,6 +3433,7 @@ fn run_manager_turn(
                 pane,
                 pane_id,
                 epoch,
+                turn,
                 output,
                 stop_reason: end.as_str().to_string(),
                 // The cosh pane's session id IS the bound session: carried
@@ -3418,6 +3459,7 @@ fn run_manager_turn(
             pane,
             pane_id,
             epoch,
+            turn,
             output: "the manager turn panicked".to_string(),
             stop_reason: "error".to_string(),
             session: Some(panic_session),

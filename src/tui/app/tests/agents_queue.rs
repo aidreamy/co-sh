@@ -309,6 +309,46 @@ async fn a_next_loop_message_starts_the_pane_turn_when_it_frees() {
     assert!(pane.running, "the pane's next loop started");
 }
 
+/// A stop (Ctrl+X) ends the steering handle with the turn it fed: the
+/// messages still sitting in it are the user's — they go back to the pane's
+/// "next request" queue and start its next turn, instead of being dropped
+/// with the dead handle (the stopped turn's terminal Done is refused, so
+/// nothing else recovers them).
+#[tokio::test]
+async fn a_stop_recovers_the_messages_left_in_the_steering_handle() {
+    let _home = HOME_LOCK.lock();
+    isolate_home();
+    let mut app = app_with_panes(&["claude"]);
+    app.process_key_event(mod_key(KeyCode::Char('1'), KeyModifiers::ALT))
+        .unwrap();
+    let steer = cosh::harness::queued_input::QueuedInput::default();
+    steer.push("picked for the next request".into());
+    {
+        let split = app.agents_split.as_mut().unwrap();
+        split.set_running(0, true);
+        split.set_stop_signal(
+            0,
+            Some(std::sync::Arc::new(std::sync::atomic::AtomicBool::new(
+                false,
+            ))),
+        );
+        split.begin_turn(0);
+        split.set_steer(0, Some(steer.clone()));
+    }
+
+    app.process_key_event(mod_key(KeyCode::Char('x'), KeyModifiers::CONTROL))
+        .unwrap();
+
+    let pane = &app.agents_split.as_ref().unwrap().panes[0];
+    assert!(steer.is_empty(), "the dead handle was drained");
+    assert!(pane.steer.is_none(), "and dropped with the turn");
+    assert!(
+        pane.queued.is_empty(),
+        "nothing is stranded: the message became the pane's next turn"
+    );
+    assert!(pane.running, "the recovered message started that turn");
+}
+
 /// Esc leaves the draft unsent and queues nothing — the dialog contract the
 /// main agent's flow already had.
 #[tokio::test]

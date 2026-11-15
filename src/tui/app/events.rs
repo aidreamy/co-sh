@@ -318,6 +318,7 @@ impl App {
                     mut pane,
                     pane_id,
                     epoch,
+                    turn,
                     event,
                 } => {
                     // Route by the pane's stable identity FIRST: a pane set
@@ -343,6 +344,17 @@ impl App {
                         // was being cancelled.
                         None if epoch != self.agents_pane_epoch => continue,
                         None => {}
+                    }
+                    // The turn gate: an event of a turn this pane is no
+                    // longer running (a stop retired it, best-effort — the
+                    // thread keeps winding down) must never paint into the
+                    // turn that replaced it. Unstamped senders (chrome
+                    // refreshes, replay) always pass.
+                    if turn != 0
+                        && either_split(&self.agents_split, &self.parked_agents_split)
+                            .is_some_and(|split| split.turn_id(pane) != turn)
+                    {
+                        continue;
                     }
                     let target =
                         either_split_mut(&mut self.agents_split, &mut self.parked_agents_split);
@@ -531,6 +543,7 @@ impl App {
                     mut pane,
                     pane_id,
                     epoch,
+                    turn,
                     output,
                     stop_reason,
                     session,
@@ -552,6 +565,27 @@ impl App {
                         None if pane_id != 0 => continue,
                         None if epoch != self.agents_pane_epoch => continue,
                         None => {}
+                    }
+                    // The turn gate FIRST: a force-closed turn was closed
+                    // synthetically (Ctrl+X), and its thread keeps winding
+                    // down — if the pane's next turn (a queued message, or a
+                    // prompt sent right after the stop) already began, this
+                    // Done closes THAT turn. It used to: `running` went
+                    // false and the new turn's stop signal was dropped, so
+                    // the agent kept working behind an idle-looking pane and
+                    // every further Ctrl+X returned early on `!p.running` —
+                    // the "uninterruptible pane" bug. Unstamped (0) senders
+                    // keep the old behaviour.
+                    if turn != 0
+                        && either_split(&self.agents_split, &self.parked_agents_split)
+                            .is_some_and(|split| split.turn_id(pane) != turn)
+                    {
+                        log::info!(
+                            target: "laya",
+                            "a stale /agents pane Done (turn {turn}) is dropped: the pane already \
+                             began another turn"
+                        );
+                        continue;
                     }
                     // A pane whose turn was already force-closed (the
                     // Ctrl+X interrupt's synthetic Done) or reset
