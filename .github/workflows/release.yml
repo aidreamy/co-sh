@@ -256,7 +256,8 @@ jobs:
             crates/cosh-recall/README.md \
             crates/cosh-sdk/README.md \
             crates/cosh-tools/README.md \
-            crates/cosh-tui/README.md
+            crates/cosh-tui/README.md \
+            crates/cosh-whatsapp/README.md
           do
             if [ ! -f "$readme" ]; then
               echo "Creating placeholder $readme"
@@ -264,7 +265,7 @@ jobs:
             fi
           done
 
-      # Publish in dependency order: sdk -> recall -> tools -> tui.
+      # Publish in dependency order: sdk -> recall -> tools -> tui -> whatsapp.
       # Only the library crates are published; the root `cosh` app package
       # is distributed via the GitHub Release binaries instead.
       - name: Publish crates
@@ -277,6 +278,7 @@ jobs:
             cosh-recall
             cosh-tools
             cosh-tui
+            cosh-whatsapp
           "
           for crate in $crates; do
             crate_version="$(grep -m1 '^version = ' "crates/$crate/Cargo.toml" | cut -d'"' -f2)"

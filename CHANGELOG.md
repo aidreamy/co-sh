@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- New `cosh-whatsapp` crate: links a personal WhatsApp account as a
+  companion device (QR code or pairing code) over the WhatsApp Web
+  multi-device protocol and exposes it to agents as typed events, typed
+  inbound messages and text sends, with persisted sessions, automatic
+  reconnection and a batteries-included `Agent`/`serve` loop.
+
 - A real command line in front of the TUI: `-c/--continue` reopens the
   session most recently worked in for this directory, `-s/--session <id>`
   opens a chosen one, `-v/--version` prints the version and `-h/--help`

@@ -4,6 +4,7 @@ members = ["crates/cosh-onnx",
   "crates/cosh-sdk",
   "crates/cosh-tools",
   "crates/cosh-tui",
+  "crates/cosh-whatsapp",
 ]
 
 [features]

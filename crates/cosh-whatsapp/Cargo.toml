@@ -1,0 +1,65 @@
+[package]
+categories = ["api-bindings"]
+description = "WhatsApp Web (multi-device) integration for cosh — pair by QR code, send and receive messages"
+keywords = ["whatsapp", "agent", "messaging", "qr-code"]
+license = "Apache-2.0"
+name = "cosh-whatsapp"
+readme = "README.md"
+repository = "https://github.com/DiegoZaluski/co-sh"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# The WhatsApp Web multi-device protocol itself: Noise handshake, Signal
+# protocol, media encryption and the binary node codec. Unofficial client
+# library (the official Cloud API is out of scope by design), the same
+# generation of crates whatsmeow and Baileys implement in Go/TypeScript.
+# Default features pull the Tokio WebSocket transport, the ureq HTTP client,
+# the SQLite device store and the Tokio runtime.
+whatsapp-rust = { version = "0.6", default-features = false, features = [
+  "moka-cache",
+  "sqlite-storage",
+  "tokio-runtime",
+  "tokio-transport",
+  "tokio-native",
+] }
+
+# Rendering the pairing payload for the terminal (half-block Unicode, so it
+# scans from any 80-column terminal). `image` is not needed on this path.
+qrcode = { version = "0.14", default-features = false }
+
+thiserror = "2"
+log = "0.4"
+serde = { version = "1", features = ["derive"] }
+chrono = "0.4"
+# The engine's HTTP seam is an #[async_trait] trait; same crate/version the
+# engine itself uses.
+async-trait = "0.1"
+# Engine errors are boxed into our own error type, keeping the source chain
+# without leaking `anyhow` into the public API.
+anyhow = "1"
+
+# The HTTP client the protocol engine uses for media and version lookups.
+# whatsapp-rust's bundled client is ureq, whose current release requires
+# zeroize >= 1.8 — which the workspace cannot select while `aiface` pins
+# zeroize to 1.7. The engine exposes `HttpClient` as a seam exactly for
+# this, so cosh-whatsapp plugs in reqwest, already the project's HTTP client.
+reqwest = { version = "0.13", features = ["json", "stream"] }
+
+# Default device-state location (`Config::default()`), reusing the same crate
+# the cosh app uses for its own data directory.
+directories = "6"
+
+[dependencies.tokio]
+version = "1"
+# `sync` for the event channel, `rt` for the spawned agent tasks in `serve`,
+# `fs` for creating the device-store directory, `time` for the timeout that
+# keeps a stalled consumer from pinning lifecycle events forever. Tests and
+# examples use the `full` feature from dev-dependencies.
+features = ["sync", "rt", "fs", "time"]
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+
+[lints]
+workspace = true
