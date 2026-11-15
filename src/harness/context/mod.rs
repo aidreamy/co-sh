@@ -533,6 +533,11 @@ pub struct ContextManager {
     /// deduplicated names). Set by the harness at header build; read back on
     /// the next turn to detect tool-set drift. `None` on a brand-new session.
     last_tool_set: Option<Vec<String>>,
+    /// Images attached to the CURRENT user turn (transport-only, never
+    /// persisted or compacted). Attached to the trailing user message in
+    /// [`Self::build_messages`]. Cleared per run; a restored session starts
+    /// empty.
+    pub user_images: Vec<aiface::connector::ImageBlock>,
 }
 
 /// Build a plain assistant text message (no tool calls).
@@ -640,6 +645,7 @@ impl ContextManager {
             cached_items_tokens: 0,
             manual_compaction: false,
             last_tool_set: None,
+            user_images: Vec::new(),
         }
     }
 
@@ -789,6 +795,21 @@ impl ContextManager {
             original: text.to_string(),
             synthetic: false,
         });
+    }
+
+    /// Attach images to the CURRENT user turn (transport-only). They ride
+    /// on the trailing user message in [`Self::build_messages`] and are never
+    /// persisted or compacted.
+    pub fn set_user_images(&mut self, images: Vec<aiface::connector::ImageBlock>) {
+        self.user_images = images;
+    }
+
+    /// Convenience: add a user prompt and attach images to it.
+    pub fn add_user_with_images(&mut self, text: &str, images: Vec<aiface::connector::ImageBlock>) {
+        self.add_user(text);
+        if !images.is_empty() {
+            self.set_user_images(images);
+        }
     }
 
     /// Add a SYNTHETIC user prompt: a turn the harness injects on the user's
@@ -1980,6 +2001,14 @@ impl ContextManager {
                 }
                 _ => messages.push(user_message(&block)),
             }
+        }
+        // Attach any transport-only images of the current user turn to the
+        // trailing user message (the model-facing home of a prompt image).
+        if !self.user_images.is_empty()
+            && let Some(last) = messages.last_mut()
+            && last.role == "user"
+        {
+            last.images = Some(self.user_images.clone());
         }
         messages
     }

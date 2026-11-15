@@ -307,6 +307,9 @@ impl App {
                 return;
             }
         };
+        // An edited queued message carries text only; drop any pending
+        // images so they cannot leak onto an unrelated later turn.
+        self.pending_user_images.clear();
         self.enqueue_pending_message(target, text);
         // The edited message is back in its slot: the head-edit hold ends
         // here — the chain may consume it again.

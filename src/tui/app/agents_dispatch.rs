@@ -1797,6 +1797,7 @@ impl App {
                     ctx_state: context,
                     as_manager: true,
                     own_coworker_id: own_registry_id,
+                    user_images: Vec::new(),
                 };
                 run_manager_turn(
                     index,

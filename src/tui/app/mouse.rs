@@ -458,6 +458,11 @@ impl App {
                     // Clicking back into the prompt hands keyboard control
                     // over from the right panel.
                     self.state.right_panel.panel_focus = None;
+                    // Preview `✗`: remove the clicked image instead of starting
+                    // a text selection.
+                    if self.prompt_view.remove_image_at(x, y, prompt_area) {
+                        return Ok(true);
+                    }
                     if let Some(pos) = self.prompt_view.char_pos_at_mouse(x, y, prompt_area) {
                         self.prompt_view.begin_selection(pos, false);
                         // The anchor was really created: the drag belongs to

@@ -1614,8 +1614,32 @@ impl App {
                         return Ok(false);
                     }
 
+                    // Capture any images attached to the draft BEFORE send_message
+                    // clears them, so they ride along with this turn.
+                    let attached = self.prompt_view.take_images();
+                    let sources: Vec<String> = attached.iter().map(|img| img.source.clone()).collect();
+                    let image_blocks: Vec<aiface::connector::ImageBlock> = attached
+                        .into_iter()
+                        .filter_map(|img| {
+                            let decoded = image::load_from_memory(&img.bytes).ok()?;
+                            let mut buf = Vec::new();
+                            decoded
+                                .write_to(
+                                    &mut std::io::Cursor::new(&mut buf),
+                                    image::ImageFormat::Png,
+                                )
+                                .ok()?;
+                            Some(aiface::connector::ImageBlock::png(&buf))
+                        })
+                        .collect();
+                    self.pending_user_images = image_blocks.clone();
+                    self.last_image_sources = sources;
+                    self.turn_had_images = !image_blocks.is_empty();
+                    self.image_retry_done = false;
                     let msg = self.prompt_view.send_message();
-                    if msg.trim().is_empty() {
+                    self.last_submitted_msg = msg.clone();
+                    if msg.trim().is_empty() && self.pending_user_images.is_empty() {
+                        self.pending_user_images.clear();
                         return Ok(false);
                     }
                     // No pane focused: the MAIN agent itself (the
@@ -2544,3 +2568,4 @@ impl App {
         }
     }
 }
+

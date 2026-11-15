@@ -2235,6 +2235,26 @@ impl App {
                     // or auth rejection): offer the one-time free-gateway
                     // recommendation. Write-once — never offered again once answered.
                     self.maybe_offer_gateway_on_error(&message);
+
+                    // Image-failure retry: if this turn carried images and the
+                    // provider rejected the payload, retry once with the
+                    // original locations as plain text (no image attached).
+                    if self.turn_had_images
+                        && !self.image_retry_done
+                        && !self.last_image_sources.is_empty()
+                    {
+                        self.image_retry_done = true;
+                        self.turn_had_images = false;
+                        self.pending_user_images.clear();
+                        let sources = self.last_image_sources.join("\n");
+                        let retry_msg = if self.last_submitted_msg.trim().is_empty() {
+                            sources
+                        } else {
+                            format!("{}\n{}", self.last_submitted_msg, sources)
+                        };
+                        self.last_image_sources.clear();
+                        self.start_agent_loop(retry_msg);
+                    }
                 }
 
                 HarnessEvent::ModelsLoaded { models, current } => {

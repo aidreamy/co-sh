@@ -105,10 +105,12 @@ http = "1"
 url = "2"
 # GitHub release check for the home update banner (same crate/version the
 # cosh-sdk connector already uses for its catalog fetches).
-reqwest = { version = "0.13", features = ["json"] }
+reqwest = { version = "0.13", features = ["json", "blocking"] }
 crossterm = { version = "0.29", features = ["bracketed-paste"] }
 directories = "6.0.0"
 regex = "1"
+# Image decoding for prompt image previews (thumbnails).
+image = "0.25"
 tiktoken-rs = "0.12.0"
 keyring = { version = "4.1.6", features = [
     "v1",

@@ -360,6 +360,7 @@ impl App {
             .collect();
         let stop_signal = self.stop_signal.clone();
         let input = msg;
+        let user_images = std::mem::take(&mut self.pending_user_images);
         // The main agent's EFFECTIVE cwd: its `/worktree` binding when
         // pinned, the startup cwd otherwise. The harness assembly and the
         // sandbox root both derive from this, so pinning the main agent
@@ -506,6 +507,7 @@ impl App {
                         // (keeps `agents_call`).
                         as_manager: false,
                         own_coworker_id: None,
+                        user_images,
                     };
 
                     let mut harness = match assemble(assembly, &event_tx).await {

@@ -528,6 +528,18 @@ pub struct App {
     /// Message captured while the one-time free-gateway prompt was open;
     /// replayed through `start_agent_loop` when the user opts in.
     pending_gateway_message: Option<String>,
+    /// Images attached to the pending user prompt, to be sent with the next
+    /// agent loop (transport-only).
+    pub(crate) pending_user_images: Vec<aiface::connector::ImageBlock>,
+    /// Original pasted locations for the images of the last submitted turn,
+    /// used to retry as text-only if the provider rejects the image payload.
+    pub(crate) last_image_sources: Vec<String>,
+    /// Text of the last submitted prompt (for the image-failure retry path).
+    pub(crate) last_submitted_msg: String,
+    /// Whether the last submitted turn carried images.
+    pub(crate) turn_had_images: bool,
+    /// Whether an image-failure retry has already been attempted this turn.
+    pub(crate) image_retry_done: bool,
     /// Gateway device sign-in in flight (opt-in accepted, token not stored
     /// yet). While set, no new recommendation is offered and the prompt is
     /// busy. Provider-neutral: Charm, GitHub Copilot, any offered gateway.
@@ -931,6 +943,11 @@ impl App {
             session_store,
             pending_delete: None,
             pending_gateway_message: None,
+            pending_user_images: Vec::new(),
+            last_image_sources: Vec::new(),
+            last_submitted_msg: String::new(),
+            turn_had_images: false,
+            image_retry_done: false,
             gateway_signing_in: false,
             gateway_declined: false,
             gateway_model_pick: false,

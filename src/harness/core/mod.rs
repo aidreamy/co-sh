@@ -125,6 +125,9 @@ pub struct Harness {
     /// dropped on any other path (hook halt, stop, MCP fallback), so the
     /// bytes can never leak onto a later tool result.
     pending_images: Vec<aiface::connector::ImageBlock>,
+    /// Images attached to the CURRENT user turn (transport-only). Moved into
+    /// `context_manager.user_images` at loop start.
+    pub(crate) user_images: Vec<aiface::connector::ImageBlock>,
     mode: Mode,
     /// Override for the mode-based base instructions (see
     /// [`Self::with_instructions`]). The internal sub-agent uses its own

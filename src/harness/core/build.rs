@@ -35,6 +35,7 @@ impl Harness {
             harness_tools: default_harness_tools(),
             cosh_tools: Some(cosh_tools),
             pending_images: Vec::new(),
+            user_images: Vec::new(),
             attempt_reasoning: String::new(),
             #[cfg(test)]
             mock_reasoning_queue: VecDeque::new(),

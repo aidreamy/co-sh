@@ -59,6 +59,26 @@ pub struct PastedPart {
     pub actual_text: String,
 }
 
+/// An image attached to the prompt draft (pasted/dropped/detected link).
+/// `thumb` is a small grid of cell colors used for the on-prompt preview.
+#[derive(Clone, Debug)]
+pub struct AttachedImage {
+    /// Raw encoded bytes (PNG/JPEG/...) of the image.
+    pub bytes: Vec<u8>,
+    /// Display name (filename or URL tail).
+    pub name: String,
+    /// Original pasted location (path or URL) of this image.
+    pub source: String,
+    /// Thumbnail grid: `thumb[row][col]` -> cell background color.
+    pub thumb: Vec<Vec<Color>>,
+}
+
+/// Thumbnail cell grid size for the prompt image preview.
+const IMAGE_THUMB_W: u16 = 10;
+const IMAGE_THUMB_H: u16 = 5;
+/// Vertical rows reserved for the preview band below the prompt.
+const IMAGE_PREVIEW_H: u16 = IMAGE_THUMB_H + 1;
+
 const fn prompt_border_chars() -> BorderCharacters {
     BorderCharacters {
         top_left: ' ',
@@ -243,6 +263,9 @@ pub struct PromptView {
     /// Pasted text parts that were compressed into virtual-text placeholders.
     /// Each entry maps a placeholder like `[Pasted ~N lines]` to the original text.
     pub pasted_parts: Vec<PastedPart>,
+    /// Images attached to the current draft. Rendered as a preview band below
+    /// the prompt; sent to the model only when it supports vision.
+    pub attached_images: Vec<AttachedImage>,
     /// Edit history for the draft (Ctrl+Z / Ctrl+Y). Private on purpose:
     /// every draft mutation must go through the recording methods below so
     /// the mirror never diverges from `input` for longer than one operation.
@@ -274,6 +297,7 @@ impl PromptView {
             sel_end: None,
             correction_selection: false,
             pasted_parts: Vec::new(),
+            attached_images: Vec::new(),
             history: EditHistory::new(),
             logo: ChatLogo::new(),
             last_input_snapshot: None,
@@ -314,12 +338,14 @@ impl PromptView {
             self.cursor_pos = 0;
             self.history_index = -1;
             self.pasted_parts.clear();
+            self.attached_images.clear();
             msg
         } else {
             self.input.clear();
             self.cursor_pos = 0;
             self.history_index = -1;
             self.pasted_parts.clear();
+            self.attached_images.clear();
             String::new()
         }
     }
@@ -482,6 +508,7 @@ impl PromptView {
         self.cursor_pos = self.input.len();
         self.history_index = -1;
         self.pasted_parts.clear();
+        self.attached_images.clear();
         self.clear_selection();
         // One atomic, marked step: the first Ctrl+Z after a correction
         // restores the exact pre-correction draft (never a mid-state), and
@@ -523,6 +550,7 @@ impl PromptView {
         // placeholders. The pre-load snapshot keeps the old mappings, so a
         // Ctrl+Z across the load still restores them correctly.
         self.pasted_parts.clear();
+        self.attached_images.clear();
         self.record_edit(EditKind::Replace);
     }
 
@@ -536,6 +564,7 @@ impl PromptView {
         self.cursor_pos = 0;
         self.history_index = -1;
         self.pasted_parts.clear();
+        self.attached_images.clear();
         self.clear_selection();
         self.record_edit(EditKind::Replace);
     }
@@ -578,6 +607,7 @@ impl PromptView {
         self.cursor_pos = 0;
         self.history_index = -1;
         self.pasted_parts.clear();
+        self.attached_images.clear();
         self.history.clear();
     }
 
@@ -707,6 +737,15 @@ impl PromptView {
     /// Matches the behaviour of opencode's `pasteInputText` + `pasteText`.
     pub fn handle_paste(&mut self, text: &str) {
         self.reset_history_index();
+        // If the pasted text is an image location (local path or URL),
+        // download/read it, attach it as an image and show the preview
+        // instead of inserting the link into the prompt.
+        let candidate = text.trim();
+        if let Some((bytes, name)) = try_load_image(candidate) {
+            self.add_image(bytes, name, candidate.to_string());
+            self.note_activity();
+            return;
+        }
         // Normalize line endings (CRLF -> LF, CR -> LF), matching opencode
         let normalized = text.replace("\r\n", "\n").replace('\r', "\n");
         let trimmed = normalized.trim().to_string();
@@ -748,6 +787,62 @@ impl PromptView {
             result = result.replace(&part.virtual_text, &part.actual_text);
         }
         result
+    }
+
+    /// Add an image to the draft, decoding a small thumbnail for the preview.
+    pub fn add_image(&mut self, bytes: Vec<u8>, name: String, source: String) {
+        let thumb = decode_image_thumb(&bytes);
+        self.attached_images.push(AttachedImage {
+            bytes,
+            name,
+            source,
+            thumb,
+        });
+    }
+
+    /// Remove the image at `idx` (if in range).
+    pub fn remove_image(&mut self, idx: usize) {
+        if idx < self.attached_images.len() {
+            self.attached_images.remove(idx);
+        }
+    }
+
+    /// Consume all attached images (e.g. on submit).
+    pub fn take_images(&mut self) -> Vec<AttachedImage> {
+        std::mem::take(&mut self.attached_images)
+    }
+
+    /// Try to remove an image whose preview `✗` marker is clicked.
+    /// Returns `true` when an image was removed.
+    pub fn remove_image_at(&mut self, x: u16, y: u16, area: Rect) -> bool {
+        if self.attached_images.is_empty() {
+            return false;
+        }
+        let preview_y = area
+            .y
+            .saturating_add(area.height.saturating_sub(IMAGE_PREVIEW_H + FOOTER_H));
+        let gap: u16 = 2;
+        let step = IMAGE_THUMB_W + gap;
+        let cols = ((area.width as usize).saturating_sub(3)) / (step as usize);
+        let cols = cols.max(1);
+        let mut visible = self.attached_images.len().min(cols);
+        if self.attached_images.len() > visible && visible == cols && cols > 1 {
+            visible -= 1;
+        }
+        for i in 0..visible {
+            let x0 = area.x + 3 + (i as u16) * step;
+            // The `✗` sits on the top-right cell of the thumbnail.
+            if x == x0 + IMAGE_THUMB_W - 1 && y == preview_y {
+                self.attached_images.remove(i);
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Whether any image is attached.
+    pub fn has_images(&self) -> bool {
+        !self.attached_images.is_empty()
     }
 
     pub fn cursor_word_left(&mut self) {
@@ -964,7 +1059,12 @@ impl PromptView {
         } else {
             Self::wrapped_lines(&self.input, text_w).len()
         };
-        let overhead = BASE_H + AGENT_H + CAP_H + FOOTER_H;
+        let preview_h = if self.attached_images.is_empty() {
+            0
+        } else {
+            IMAGE_PREVIEW_H
+        };
+        let overhead = BASE_H + AGENT_H + CAP_H + FOOTER_H + preview_h;
         let budget_lines = max_height.saturating_sub(overhead).max(1);
         let lines = content_lines
             .min(MAX_PROMPT_LINES)
@@ -1042,9 +1142,14 @@ impl PromptView {
         // render does from the allocated `area.height`); clicks can only land on
         // the scrolled-in window, so remap the row to the content line using the
         // scroll offset from the last render.
+        let preview_h = if self.attached_images.is_empty() {
+            0
+        } else {
+            IMAGE_PREVIEW_H
+        };
         let eff_cap = area
             .height
-            .saturating_sub(BASE_H + AGENT_H + CAP_H + FOOTER_H)
+            .saturating_sub(BASE_H + AGENT_H + CAP_H + FOOTER_H + preview_h)
             .max(1);
         let bottom = text_start + n.min(eff_cap as usize) as u16;
 
@@ -1092,9 +1197,14 @@ impl PromptView {
             return None;
         }
         let text_start = area.y + 1; // first content line
+        let preview_h = if self.attached_images.is_empty() {
+            0
+        } else {
+            IMAGE_PREVIEW_H
+        };
         let eff_cap = area
             .height
-            .saturating_sub(BASE_H + AGENT_H + CAP_H + FOOTER_H)
+            .saturating_sub(BASE_H + AGENT_H + CAP_H + FOOTER_H + preview_h)
             .max(1);
         let n = Self::wrapped_lines(&self.input, area.width.saturating_sub(6) as usize).len();
         let bottom = text_start + n.min(eff_cap as usize) as u16;
@@ -1400,7 +1510,13 @@ impl PromptView {
         let has_conversation = state
             .current_session()
             .is_some_and(|s| !s.messages.is_empty());
-        let footer_text = if pane.is_some() {
+        // Hide the `esc interrupt` / LSP hints while an image preview is
+        // rendered below the prompt, to keep the footer from clashing with
+        // the preview band.
+        let has_images = !self.attached_images.is_empty();
+        let footer_text = if has_images {
+            ""
+        } else if pane.is_some() {
             "esc park  ctrl+x stop pane"
         } else if has_conversation {
             "esc interrupt"
@@ -1422,8 +1538,9 @@ impl PromptView {
         // Inline LSP status: ` LSP <tag> <tag>…`, label bold, tags in the
         // language's logo font color and italic (theme.primary fallback),
         // disabled when empty.
-        // Omitted entirely while the input box is still raised (no message yet).
-        if has_conversation {
+        // Omitted entirely while the input box is still raised (no message yet),
+        // and while an image preview is shown below the prompt.
+        if has_conversation && !has_images {
             footer_x = footer_x.saturating_add(3);
             let remaining = footer_max_w.saturating_sub(footer_x.saturating_sub(area.x));
             draw_lsp_segment(
@@ -1669,6 +1786,59 @@ impl PromptView {
                 );
             }
         }
+
+        // Preview band: attached images, drawn below the prompt (bottom-left,
+        // growing to the right). Each thumbnail carries a `✗` on its top-right
+        // cell that removes the image when clicked.
+        if !self.attached_images.is_empty() {
+            let preview_y = footer_y;
+            let gap: u16 = 2;
+            let step = IMAGE_THUMB_W + gap;
+            let cols = ((area.width as usize).saturating_sub(3)) / (step as usize);
+            let cols = cols.max(1);
+            // Keep one slot free for the overflow counter when needed.
+            let mut visible = self.attached_images.len().min(cols);
+            if self.attached_images.len() > visible && visible == cols && cols > 1 {
+                visible -= 1;
+            }
+            let err_style = Style::default()
+                .fg(Color::Rgb(220, 80, 80))
+                .add_modifier(Modifier::BOLD);
+            for i in 0..visible {
+                let x0 = area.x + 3 + (i as u16) * step;
+                // Thumbnail cells.
+                for (ry, row) in self.attached_images[i].thumb.iter().enumerate() {
+                    for (rx, color) in row.iter().enumerate() {
+                        let cx = x0 + rx as u16;
+                        let cy = preview_y + ry as u16;
+                        if cx < area.right() && cy < area.bottom() {
+                            if let Some(cell) = buf.cell_mut((cx, cy)) {
+                                cell.set_char(' ');
+                                cell.set_style(Style::default().bg(*color));
+                            }
+                        }
+                    }
+                }
+                // `✗` remove marker on the top-right cell.
+                let mx = x0 + IMAGE_THUMB_W - 1;
+                let my = preview_y;
+                if mx < area.right() && my < area.bottom() {
+                    if let Some(cell) = buf.cell_mut((mx, my)) {
+                        cell.set_char('✗');
+                        cell.set_style(err_style);
+                    }
+                }
+            }
+            // Overflow indicator.
+            if self.attached_images.len() > visible {
+                let overflow = self.attached_images.len() - visible;
+                let x0 = area.x + 3 + (visible as u16) * step;
+                let text = format!("+{overflow}");
+                if x0 < area.right() && preview_y < area.bottom() {
+                    draw_text_line(buf, &text, x0, preview_y, area.right().saturating_sub(x0), err_style);
+                }
+            }
+        }
     }
 }
 
@@ -1686,6 +1856,113 @@ fn prompt_scroll_top(cursor_line: usize, total_lines: usize, window: usize) -> u
     let cursor_line = cursor_line as isize;
     let desired = (cursor_line - window + 1).max(0);
     (desired.min(total_lines as isize - window)).max(0) as usize
+}
+
+/// Try to read image bytes from a pasted text that is either a local file
+/// path or an http(s) URL. Returns `None` when the text is not an image
+/// location or cannot be decoded. Caps the payload at ~5 MB.
+fn try_load_image(text: &str) -> Option<(Vec<u8>, String)> {
+    const MAX_BYTES: usize = 5 * 1024 * 1024;
+    let t = text.trim().trim_matches('"').trim_matches('\'').trim();
+    if t.is_empty() || t.contains('\n') {
+        return None;
+    }
+    // Normalize a few common location forms into a filesystem path:
+    // `file://` URLs, `~/` (and a bare `~`), and bare relative paths.
+    let mut loc = t.to_string();
+    if let Some(rest) = loc.strip_prefix("file://") {
+        // `file:///abs/path` -> `/abs/path`; `file://host/path` -> `/path`.
+        let rest = rest.trim_start_matches('/');
+        if rest.starts_with("localhost/") {
+            loc = format!("/{}", &rest["localhost/".len()..]);
+        } else {
+            // Re-add the leading slash for absolute paths.
+            loc = format!("/{}", rest);
+        }
+    }
+    if loc == "~" {
+        if let Ok(home) = std::env::var("HOME") {
+            loc = home;
+        }
+    } else if let Some(rest) = loc.strip_prefix("~/") {
+        if let Ok(home) = std::env::var("HOME") {
+            loc = format!("{}/{}", home, rest);
+        }
+    }
+    // Local file path.
+    let path = std::path::Path::new(&loc);
+    let path = if path.is_file() {
+        path.to_path_buf()
+    } else if let Ok(cwd) = std::env::current_dir() {
+        let joined = cwd.join(&loc);
+        if joined.is_file() {
+            joined
+        } else {
+            path.to_path_buf()
+        }
+    } else {
+        path.to_path_buf()
+    };
+    if path.is_file() {
+        let bytes = std::fs::read(&path).ok()?;
+        if bytes.len() > MAX_BYTES || image::load_from_memory(&bytes).is_err() {
+            return None;
+        }
+        let name = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("image")
+            .to_string();
+        return Some((bytes, name));
+    }
+    // Remote URL.
+    if t.starts_with("http://") || t.starts_with("https://") {
+        let resp = reqwest::blocking::get(t).ok()?;
+        if !resp.status().is_success() {
+            return None;
+        }
+        let bytes = resp.bytes().ok()?.to_vec();
+        if bytes.len() > MAX_BYTES || image::load_from_memory(&bytes).is_err() {
+            return None;
+        }
+        // Derive a display name from the URL tail.
+        let name = t
+            .rsplit('/')
+            .next()
+            .unwrap_or("image")
+            .split('?')
+            .next()
+            .unwrap_or("image")
+            .to_string();
+        let name = if name.is_empty() {
+            "image".to_string()
+        } else {
+            name
+        };
+        return Some((bytes, name));
+    }
+    None
+}
+
+fn decode_image_thumb(bytes: &[u8]) -> Vec<Vec<Color>> {
+    let w = IMAGE_THUMB_W as usize;
+    let h = IMAGE_THUMB_H as usize;
+    let mut grid = vec![vec![Color::Rgb(40, 40, 40); w]; h];
+    if let Ok(img) = image::load_from_memory(bytes) {
+        let resized = img.resize_exact(
+            IMAGE_THUMB_W as u32,
+            IMAGE_THUMB_H as u32,
+            image::imageops::FilterType::Triangle,
+        );
+        let rgba = resized.to_rgba8();
+        for y in 0..h {
+            for x in 0..w {
+                let p = rgba.get_pixel(x as u32, y as u32);
+                grid[y][x] = Color::Rgb(p[0], p[1], p[2]);
+            }
+        }
+    }
+    grid
 }
 
 fn capitalize(s: &str) -> String {
