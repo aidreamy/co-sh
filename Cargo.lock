@@ -95,9 +95,9 @@ dependencies = [
 
 [[package]]
 name = "aiface"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "545ed1b9267b62eae9a3a756fb86f990f4bc8cec49f1a1b4c8d8cfda0de330f0"
+checksum = "ebc3abf6035ae7078e903434486bdcc0e4506fac91ffedf6c2cd7b7a848d30bb"
 dependencies = [
  "async-stream",
  "base64 0.22.1",
