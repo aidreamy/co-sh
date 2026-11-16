@@ -136,6 +136,20 @@ impl Harness {
             harness
                 .harness_tools
                 .push(super::agent_coworkers::agents_compact_tool());
+            // Task board (F1): coordinator creates/lists; everyone (including
+            // panes) may claim and update.
+            harness
+                .harness_tools
+                .push(super::agent_coworkers::agents_task_create_tool());
+            harness
+                .harness_tools
+                .push(super::agent_coworkers::agents_task_claim_tool());
+            harness
+                .harness_tools
+                .push(super::agent_coworkers::agents_task_update_tool());
+            harness
+                .harness_tools
+                .push(super::agent_coworkers::agents_task_list_tool());
         }
         harness
     }
@@ -388,6 +402,11 @@ impl Harness {
             // one delegation would fan the compact out to every coworker).
             self.harness_tools
                 .retain(|tool| tool.name != "agents_compact");
+            // Panes never create or list the board — only claim and update.
+            self.harness_tools
+                .retain(|tool| tool.name != "agents_task_create");
+            self.harness_tools
+                .retain(|tool| tool.name != "agents_task_list");
             // `stop_agent_loop` goes too, and NOT only as tidiness: the
             // pane's whole report contract rests on "the loop cannot stop
             // itself", which is what makes a stop it did take the USER's

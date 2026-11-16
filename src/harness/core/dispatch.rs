@@ -434,6 +434,77 @@ impl Harness {
             }
         }
 
+        // Task board (F1): coordinator creates/lists; panes claim/update.
+        if tool_name == "agents_task_create" {
+            self.tool_issuer.pop_front();
+            if self.own_coworker_id.is_some() {
+                return Err("`agents_task_create` is not available to a pane.".to_string());
+            }
+            let title = args_map.get("title").and_then(|v| v.as_str()).unwrap_or("").trim().to_string();
+            if title.is_empty() {
+                return Err("`agents_task_create` requires a non-empty `title`.".to_string());
+            }
+            let description = args_map.get("description").and_then(|v| v.as_str()).map(str::to_string);
+            let deps: Vec<u64> = args_map
+                .get("deps")
+                .and_then(|v| v.as_array())
+                .map(|a| a.iter().filter_map(|x| x.as_u64()).collect())
+                .unwrap_or_default();
+            match super::agent_coworkers::task_create(&title, description, deps) {
+                Ok(id) => return Ok(format!("Created task #{}: {}", id, title)),
+                Err(e) => return Err(e),
+            }
+        }
+        if tool_name == "agents_task_claim" {
+            self.tool_issuer.pop_front();
+            let task_id = match args_map.get("task").and_then(|v| v.as_u64()) {
+                Some(id) => id,
+                None => return Err("`agents_task_claim` requires a `task` id.".to_string()),
+            };
+            let by = self.own_coworker_id.clone().unwrap_or_else(|| "main".to_string());
+            return match super::agent_coworkers::task_claim(task_id, &by) {
+                Ok(note) => Ok(note),
+                Err(e) => Err(e),
+            };
+        }
+        if tool_name == "agents_task_update" {
+            self.tool_issuer.pop_front();
+            let task_id = match args_map.get("task").and_then(|v| v.as_u64()) {
+                Some(id) => id,
+                None => return Err("`agents_task_update` requires a `task` id.".to_string()),
+            };
+            let status_raw = args_map.get("status").and_then(|v| v.as_str());
+            if let Some(s) = status_raw {
+                if !matches!(s, "pending" | "in_progress" | "completed" | "blocked") {
+                    return Err(format!("unknown task status '{s}'"));
+                }
+            }
+            let status = status_raw.map(super::agent_coworkers::TaskStatus::parse);
+            let artifacts = args_map.get("artifacts").and_then(|v| v.as_array()).map(|a| {
+                a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect()
+            });
+            let owner = args_map.get("owner").and_then(|v| v.as_str()).map(str::to_string);
+            let caller = self.own_coworker_id.as_deref();
+            return match super::agent_coworkers::task_update_for(task_id, caller, status, artifacts, owner) {
+                Ok(note) => Ok(note),
+                Err(e) => Err(e),
+            };
+        }
+        if tool_name == "agents_task_list" {
+            self.tool_issuer.pop_front();
+            if self.own_coworker_id.is_some() {
+                return Err("`agents_task_list` is not available to a pane.".to_string());
+            }
+            let tasks = super::agent_coworkers::task_list();
+            let mut out = String::new();
+            for t in tasks {
+                out.push_str(&format!("#{} [{}] {} (owner: {})
+", t.id, t.status.as_str(), t.title, t.owner.as_deref().unwrap_or("unclaimed")));
+            }
+            if out.is_empty() { out = "No tasks.".to_string(); }
+            return Ok(out);
+        }
+
         // Test-only tools have no real dispatch implementation; return a
         // canned, deterministic success so tests (e.g. loop detection) can
         // drive repeated identical (tool, args, result) interactions.

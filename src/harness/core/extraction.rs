@@ -144,6 +144,10 @@ impl Harness {
             // stop-interrupted ask is left parked for a later-turn Compact
             // delivery.
             "agents_compact" => None,
+            "agents_task_create" => None,
+            "agents_task_claim" => None,
+            "agents_task_update" => None,
+            "agents_task_list" => None,
             _ => Some(String::new()),
         }
     }
