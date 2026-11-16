@@ -2,6 +2,9 @@
 
 **English** | [Português](./docs/readme/README.pt-BR.md) | [Español](./docs/readme/README.es.md) | [Русский](./docs/readme/README.ru.md) | [中文](./docs/readme/README.zh-CN.md) | [日本語](./docs/readme/README.ja.md)
 
+> [!WARNING]
+> **WhatsApp is under development.** The WhatsApp feature (`cosh-whatsapp`) is still experimental and is **not recommended for use** yet.
+
 Cosh is a general-purpose coding agent for the terminal, with software engineering tools and *computer tools* that let it interact with graphical applications.
 
 ## Why co-sh?

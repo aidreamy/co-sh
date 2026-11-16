@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0]
 
 ### Added
 
@@ -18,13 +18,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   command name, so paths and ordinary prose are never mistaken for commands;
   TUI-only commands (`anim`, `theme`, `spinner`) are not exposed. Without an
   approval dialog, tools that need permission are denied and the reply says
-  so.
+  so. The feature is still experimental and is not recommended for use yet.
 
 - New `cosh-whatsapp` crate: links a personal WhatsApp account as a
   companion device (QR code or pairing code) over the WhatsApp Web
   multi-device protocol and exposes it to agents as typed events, typed
   inbound messages and text sends, with persisted sessions, automatic
   reconnection and a batteries-included `Agent`/`serve` loop.
+
+- A shared task board for `/agents` sessions: the coordinator creates tasks
+  with optional descriptions and dependencies, and panes claim them. A task
+  whose dependencies are not completed stays `blocked` and cannot be claimed;
+  panes can update the status and artifacts of tasks they own, while only the
+  coordinator can reassign owners or list the board. The coordinator's
+  context shows the five most relevant tasks, and the claim/update tools are
+  exposed to panes.
 
 - Images pasted into the prompt (an absolute or relative path, `~/`,
   `file://`, or an `http(s)` link) now attach to that turn. The prompt
@@ -63,7 +71,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   flow or transcript. The list belongs to the session, so it survives a
   restart and a session switch.
 
+- Each `/agents` pane now has its own user queue, with the same "next
+  request" and "next loop" choices as the main agent. The pane serves the
+  human queue before the agents' RPC queue; a cosh pane drains its steering
+  handle before the next request, while an ACP pane consumes the message as
+  soon as its current prompt completes. The pending strip is shared with the
+  chat, and the queue dialog offers both choices whenever the pane has a live
+  loop.
+
 ### Changed
+
+- A cosh pane now runs the user's own mode with its write tools restored, so
+  a worker pinned to a worktree can edit files instead of only reading them.
+  The manager-only write restriction stays at harness depth; a pane still
+  cannot ask the user, drive the computer or stop its own loop.
 
 - Updates use one command everywhere: `cosh update [version] [--yes]`
   installs a release through the official installer for this OS and
@@ -112,6 +133,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The manager loop is no longer stopped when Esc is pressed in overlay
   routers; gating the stop-signal branches to `AppMode::Session` keeps
   the loop running while overlay routers are active.
+
+- A late `Done` from a stopped `/agents` pane turn no longer closes the next
+  turn. Pane events carry the turn generation and stale ones are discarded,
+  including late stream chunks; force-closing a pane returns the dying turn's
+  steering message to the next-request queue.
+
+- Assistant, closure and tool-call context items now replay their captured
+  `reasoning_content` to OpenAI-compatible providers. DeepSeek and similar
+  models that require the field on every historical assistant message no
+  longer reject a resumed turn with HTTP 400; empty reasoning is omitted and
+  the token budget is unchanged.
+
+- Custom providers added through the Provider form are saved to `setup.json`
+  and survive a restart. Their API key env var is now derived as
+  `<NAME>_API_KEY` (uppercased, hyphens replaced by underscores), matching
+  aiface, so keys entered in the dialog resolve instead of being stored under
+  an empty name.
+
+- Closing permission and question dialogs, resolving a worktree, finishing
+  the free-gateway flow or leaving RAG mode now restores prompt focus, so
+  Ctrl+C keeps clearing the draft instead of being ignored.
 
 ## [0.2.2]
 
