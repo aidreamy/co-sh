@@ -947,6 +947,7 @@ fn manager_test_context() -> cosh::harness::context::ContextManagerState {
                 arguments: r#"{"path":"a.rs"}"#.into(),
                 thought_signature: String::new(),
                 thinking_blocks: Vec::new(),
+            reasoning: None,
             },
             ContextItem::ToolResult {
                 id: 4,
@@ -1255,6 +1256,7 @@ fn manager_context_display_keeps_one_message_per_context_group() {
                 arguments: r#"{"path":"a.rs"}"#.into(),
                 thought_signature: String::new(),
                 thinking_blocks: Vec::new(),
+            reasoning: None,
             },
             ContextItem::ToolResult {
                 id: 4,

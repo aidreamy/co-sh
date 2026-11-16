@@ -137,6 +137,12 @@ pub enum ContextItem {
         /// Defaults for contexts persisted before this field.
         #[serde(default)]
         thinking_blocks: Vec<ClaudeThinkingBlock>,
+        /// The model's reasoning that preceded this tool call — replayed as
+        /// `reasoning_content` for OpenAI-compatible reasoning models that
+        /// require it (e.g. DeepSeek). `None` for every other provider and
+        /// for contexts persisted before this field.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        reasoning: Option<String>,
     },
     /// A tool RESULT — structural, never prose-compressed. Renders as a
     /// `tool` message with the matching `tool_call_id`.
@@ -548,6 +554,7 @@ fn assistant_message(text: &str) -> ChatMessage {
         tool_calls: None,
         tool_call_id: None,
         thinking_blocks: None,
+        reasoning_content: None,
         images: None,
     }
 }
@@ -1003,6 +1010,7 @@ impl ContextManager {
             arguments: serde_json::json!({ "command": command }).to_string(),
             thought_signature: String::new(),
             thinking_blocks: Vec::new(),
+            reasoning: None,
         });
         let result_id = self.next_id();
         self.push_item(ContextItem::ToolResult {
@@ -1049,6 +1057,31 @@ impl ContextManager {
             arguments: arguments.to_string(),
             thought_signature: thought_signature.to_string(),
             thinking_blocks,
+            reasoning: None,
+        });
+    }
+
+    /// Add a tool CALL carrying both Claude extended-thinking blocks and a
+    /// reasoning string (replayed as `reasoning_content` for OpenAI-
+    /// compatible reasoning models). Structural, never prose-compressed.
+    pub fn add_tool_call_with_thinking_and_reasoning(
+        &mut self,
+        call_id: &str,
+        name: &str,
+        arguments: &str,
+        thought_signature: &str,
+        thinking_blocks: Vec<ClaudeThinkingBlock>,
+        reasoning: Option<String>,
+    ) {
+        let id = self.next_id();
+        self.push_item(ContextItem::ToolCall {
+            id,
+            call_id: call_id.to_string(),
+            name: name.to_string(),
+            arguments: arguments.to_string(),
+            thought_signature: thought_signature.to_string(),
+            thinking_blocks,
+            reasoning: reasoning.filter(|r| !r.trim().is_empty()),
         });
     }
 
@@ -1868,8 +1901,14 @@ impl ContextManager {
                     // User prompts are rendered verbatim.
                     messages.push(user_message(original));
                 }
-                ContextItem::Assistant { original, .. } => {
-                    messages.push(assistant_message(original));
+                ContextItem::Assistant { original, reasoning, .. } => {
+                    let mut msg = assistant_message(original);
+                    if let Some(r) = reasoning
+                        && !r.trim().is_empty()
+                    {
+                        msg.reasoning_content = Some(r.clone());
+                    }
+                    messages.push(msg);
                 }
                 ContextItem::ToolCall {
                     call_id,
@@ -1877,6 +1916,7 @@ impl ContextManager {
                     arguments,
                     thought_signature,
                     thinking_blocks,
+                    reasoning,
                     ..
                 } => {
                     let mut msg = assistant_tool_call_message(vec![ToolCallMsg {
@@ -1894,6 +1934,11 @@ impl ContextManager {
                     // verbatim at the start of the assistant message).
                     if !thinking_blocks.is_empty() {
                         msg.thinking_blocks = Some(thinking_blocks.clone());
+                    }
+                    if let Some(r) = reasoning
+                        && !r.trim().is_empty()
+                    {
+                        msg.reasoning_content = Some(r.clone());
                     }
                     messages.push(msg);
                 }
@@ -1925,8 +1970,14 @@ impl ContextManager {
                         ));
                     }
                 }
-                ContextItem::Closure { content, .. } => {
-                    messages.push(assistant_message(content));
+                ContextItem::Closure { content, reasoning, .. } => {
+                    let mut msg = assistant_message(content);
+                    if let Some(r) = reasoning
+                        && !r.trim().is_empty()
+                    {
+                        msg.reasoning_content = Some(r.clone());
+                    }
+                    messages.push(msg);
                 }
                 ContextItem::Compaction { summary, .. } => {
                     messages.push(assistant_message(summary));

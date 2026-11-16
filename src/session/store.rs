@@ -1836,6 +1836,7 @@ mod tests {
             arguments: "{}".into(),
             thought_signature: String::new(),
             thinking_blocks: Vec::new(),
+            reasoning: None,
         };
         let result = |id, name: &str| ContextItem::ToolResult {
             id,
@@ -3779,6 +3780,7 @@ mod tests {
                 arguments: r#"{"path":"large.rs"}"#.into(),
                 thought_signature: String::new(),
                 thinking_blocks: Vec::new(),
+            reasoning: None,
             },
             ContextItem::ToolResult {
                 id: 2,
@@ -4534,6 +4536,7 @@ mod tests {
                 arguments: r#"{"path":"a.rs"}"#.into(),
                 thought_signature: String::new(),
                 thinking_blocks: Vec::new(),
+            reasoning: None,
             },
             ContextItem::ToolResult {
                 id: 3,
@@ -4591,6 +4594,7 @@ mod tests {
                 arguments: r#"{"path":"a.rs"}"#.into(),
                 thought_signature: String::new(),
                 thinking_blocks: Vec::new(),
+            reasoning: None,
             },
             ContextItem::ToolCall {
                 id: 3,
@@ -4599,6 +4603,7 @@ mod tests {
                 arguments: r#"{"path":"b.rs"}"#.into(),
                 thought_signature: String::new(),
                 thinking_blocks: Vec::new(),
+            reasoning: None,
             },
             ContextItem::ToolResult {
                 id: 4,

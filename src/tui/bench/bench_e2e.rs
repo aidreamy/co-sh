@@ -127,6 +127,7 @@ pub(crate) fn realistic_context(rounds: usize) -> cosh::harness::context::Contex
             arguments: format!("{{\"file\":\"src/m{r}.rs\"}}"),
             thought_signature: String::new(),
             thinking_blocks: Vec::new(),
+            reasoning: None,
         });
         next_id += 1;
         items.push(ContextItem::ToolResult {

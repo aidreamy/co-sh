@@ -351,13 +351,24 @@ impl Harness {
         } else {
             std::mem::take(&mut self.pending_thinking_blocks)
         };
-        self.context_manager.add_tool_call_with_thinking(
-            &tool_id,
-            name,
-            &args_str,
-            signature,
-            thinking_blocks,
-        );
+        // DeepSeek-style reasoning models require the reasoning that preceded
+        // a tool call to be replayed as `reasoning_content` on the following
+        // request; capture it (without draining — the final text response may
+        // still need it) so the assistant tool-call message carries it.
+        let reasoning = if self.attempt_reasoning.trim().is_empty() {
+            None
+        } else {
+            Some(self.attempt_reasoning.clone())
+        };
+        self.context_manager
+            .add_tool_call_with_thinking_and_reasoning(
+                &tool_id,
+                name,
+                &args_str,
+                signature,
+                thinking_blocks,
+                reasoning,
+            );
         tool_id
     }
 
