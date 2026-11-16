@@ -1,4 +1,5 @@
 use std::io;
+use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
 use cosh_tui::core::types::MouseEvent;
@@ -457,6 +458,11 @@ impl App {
                     // Clicking back into the prompt hands keyboard control
                     // over from the right panel.
                     self.state.right_panel.panel_focus = None;
+                    // Preview `✗`: remove the clicked image instead of starting
+                    // a text selection.
+                    if self.prompt_view.remove_image_at(x, y, prompt_area) {
+                        return Ok(true);
+                    }
                     if let Some(pos) = self.prompt_view.char_pos_at_mouse(x, y, prompt_area) {
                         self.prompt_view.begin_selection(pos, false);
                         // The anchor was really created: the drag belongs to
@@ -1745,6 +1751,14 @@ impl App {
                     let _ = self.answer_tx.send(Ok(answers));
                     self.question_dialog.visible = false;
                     self.question_dialog.submitted = false;
+                    self.prompt_view.focus();
+                } else if consumed && !self.question_dialog.visible {
+                    // Dismissed via footer esc click — mirror the Esc-key path.
+                    self.stop_signal.store(true, Ordering::Relaxed);
+                    let _ = self
+                        .answer_tx
+                        .send(Err("User dismissed the question dialog".into()));
+                    self.prompt_view.focus();
                 }
                 return Ok(true);
             }
@@ -1771,13 +1785,7 @@ impl App {
                     .queue_choice_dialog
                     .handle_mouse(&mouse, queue_choice_area);
                 if consumed && self.queue_choice_dialog.submitted {
-                    let text = self.prompt_view.send_message();
-                    let target = self.queue_choice_dialog.choice();
-                    self.queue_choice_dialog.hide();
-                    // Edited message returning to its queue → original
-                    // position; otherwise appended at the end (helper).
-                    self.enqueue_pending_message(target, text);
-                    self.prompt_view.focus();
+                    self.commit_queue_choice();
                 }
                 return Ok(true);
             }
@@ -1799,6 +1807,7 @@ impl App {
                         self.commit_gateway_choice();
                     } else if !self.free_gateway_dialog.visible {
                         self.restore_pending_gateway_message();
+                        self.prompt_view.focus();
                     }
                     return Ok(true);
                 }

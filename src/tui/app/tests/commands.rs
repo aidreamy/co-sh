@@ -1068,6 +1068,7 @@ async fn agents_pane_done_promotes_the_pane_binding_for_the_next_open() {
                 .map(|p| p.id)
                 .unwrap_or(0),
             epoch: app.agents_pane_epoch,
+            turn: 0,
             output: "report one".into(),
             stop_reason: "end_turn".into(),
             session: Some("sess-A".into()),
@@ -1107,6 +1108,7 @@ async fn agents_pane_done_promotes_the_pane_binding_for_the_next_open() {
                 .map(|p| p.id)
                 .unwrap_or(0),
             epoch: app.agents_pane_epoch,
+            turn: 0,
             output: "report two".into(),
             stop_reason: "end_turn".into(),
             session: Some("sess-B".into()),
@@ -1124,6 +1126,7 @@ async fn agents_pane_done_promotes_the_pane_binding_for_the_next_open() {
                 .map(|p| p.id)
                 .unwrap_or(0),
             epoch: app.agents_pane_epoch,
+            turn: 0,
             output: "report three".into(),
             stop_reason: "end_turn".into(),
             session: Some("sess-C".into()),
@@ -1187,6 +1190,7 @@ async fn adding_panes_while_running_keeps_the_running_turns_and_chats() {
             pane: 0,
             pane_id,
             epoch,
+            turn: 0,
             event: cosh_tools::subagent::events::SubagentEvent::Message {
                 text: "turn in flight".into(),
             },
@@ -1233,6 +1237,7 @@ async fn adding_panes_while_running_keeps_the_running_turns_and_chats() {
             pane: 0,
             pane_id,
             epoch: app.agents_pane_epoch,
+            turn: 0,
             event: cosh_tools::subagent::events::SubagentEvent::Message {
                 text: "still streaming after the re-pick".into(),
             },
@@ -1266,6 +1271,7 @@ async fn adding_panes_while_running_keeps_the_running_turns_and_chats() {
             pane: 0,
             pane_id,
             epoch: app.agents_pane_epoch,
+            turn: 0,
             output: "report after re-pick".into(),
             stop_reason: "end_turn".into(),
             session: Some("sess-kept".into()),
@@ -1331,6 +1337,7 @@ async fn adding_panes_while_running_keeps_the_running_turns_and_chats() {
             pane: 1,
             pane_id: dropped_id,
             epoch: app.agents_pane_epoch,
+            turn: 0,
             event: cosh_tools::subagent::events::SubagentEvent::Message {
                 text: "dropped pane leak".into(),
             },
@@ -1385,6 +1392,7 @@ async fn parked_agents_split_survives_park_and_re_attach() {
                 .map(|p| p.id)
                 .unwrap_or(0),
             epoch: app.agents_pane_epoch,
+            turn: 0,
             event: cosh_tools::subagent::events::SubagentEvent::Message {
                 text: "still streaming".into(),
             },
@@ -1417,6 +1425,7 @@ async fn parked_agents_split_survives_park_and_re_attach() {
                 .map(|p| p.id)
                 .unwrap_or(0),
             epoch: app.agents_pane_epoch,
+            turn: 0,
             event: cosh_tools::subagent::events::SubagentEvent::Message {
                 text: "parked stream".into(),
             },
@@ -1737,6 +1746,7 @@ async fn stale_epoch_agents_pane_done_is_dropped() {
             pane: 0,
             pane_id: stale_pane_id,
             epoch: stale_epoch,
+            turn: 0,
             output: "stale report".into(),
             stop_reason: "end_turn".into(),
             session: Some("sess-old".into()),
@@ -1788,6 +1798,7 @@ async fn stale_epoch_agents_pane_done_is_dropped() {
                 .map(|p| p.id)
                 .unwrap_or(0),
             epoch: app.agents_pane_epoch,
+            turn: 0,
             output: "live report".into(),
             stop_reason: "end_turn".into(),
             session: Some("sess-new".into()),
@@ -1889,6 +1900,7 @@ async fn reopening_the_split_rehydrates_bound_panes_with_empty_timelines() {
                 .map(|p| p.id)
                 .unwrap_or(0),
             epoch,
+            turn: 0,
             event: cosh_tools::subagent::events::SubagentEvent::UserMessage {
                 text: "what changed today?".into(),
             },
@@ -1904,6 +1916,7 @@ async fn reopening_the_split_rehydrates_bound_panes_with_empty_timelines() {
                 .map(|p| p.id)
                 .unwrap_or(0),
             epoch,
+            turn: 0,
             event: cosh_tools::subagent::events::SubagentEvent::Message {
                 text: "the answer from yesterday".into(),
             },
@@ -2159,6 +2172,7 @@ async fn a_user_prompt_echoes_into_the_pane_timeline() {
                 .map(|p| p.id)
                 .unwrap_or(0),
             epoch,
+            turn: 0,
             output: "first answer".into(),
             stop_reason: "end_turn".into(),
             session: None,
@@ -2227,6 +2241,7 @@ async fn a_session_model_event_lands_on_the_pane() {
                 .map(|p| p.id)
                 .unwrap_or(0),
             epoch: app.agents_pane_epoch,
+            turn: 0,
             event: cosh_tools::subagent::events::SubagentEvent::SessionModel {
                 model: Some("kilo/nvidia/nemotron-3-ultra-550b-a55b:free".into()),
                 model_label: Some("Nemotron free".into()),
@@ -2299,6 +2314,7 @@ async fn a_usage_event_lands_on_the_pane() {
                 .map(|p| p.id)
                 .unwrap_or(0),
             epoch: app.agents_pane_epoch,
+            turn: 0,
             event: cosh_tools::subagent::events::SubagentEvent::Usage {
                 context_window: 100_000,
                 tokens_in_context: 9_612,
@@ -2514,6 +2530,7 @@ async fn a_rebooted_cosh_pane_replays_its_session_from_the_store() {
                 .map(|p| p.id)
                 .unwrap_or(0),
             epoch: app.agents_pane_epoch,
+            turn: 0,
             output: "the report".into(),
             stop_reason: "end_turn".into(),
             session: Some(manager_session_id.into()),
@@ -3562,6 +3579,7 @@ async fn slash_worktree_pane_promotes_to_bound_with_its_worktree() {
             pane: 0,
             pane_id: app.agents_split.as_ref().unwrap().panes[0].id,
             epoch: app.agents_pane_epoch,
+            turn: 0,
             output: "the worktree'd turn's report".into(),
             stop_reason: "end_turn".into(),
             session: Some("sess-wt".into()),
@@ -4671,6 +4689,7 @@ async fn variant_c_a_force_closed_turns_binding_fact_promotes_the_pane() {
             pane: 0,
             pane_id,
             epoch: app.agents_pane_epoch,
+            turn: 0,
             output: "late report".into(),
             stop_reason: "cancelled".into(),
             session: Some("s-1".into()),
@@ -4891,6 +4910,7 @@ async fn a_done_for_an_unknown_pane_id_still_delivers_nothing() {
             pane: 0,
             pane_id: 777_777,
             epoch: app.agents_pane_epoch,
+            turn: 0,
             output: "stray report".into(),
             stop_reason: "end_turn".into(),
             session: Some("s-stray".into()),

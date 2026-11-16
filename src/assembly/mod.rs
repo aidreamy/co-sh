@@ -100,6 +100,9 @@ pub struct HarnessAssembly {
     /// a background pane report drains ONLY there, never into the main
     /// chat loop. The main loop stays MAIN (`false`).
     pub as_manager: bool,
+    /// Images attached to the user prompt of THIS turn (transport-only).
+    /// Empty for loops that carry no image (the common case).
+    pub user_images: Vec<aiface::connector::ImageBlock>,
     /// Bind this loop to the `/agents` pane it runs in (its registry id):
     /// strips the `agents_call` tool and the panes context block — the
     /// mechanical anti-replication invariant (a pane never coordinates).
@@ -246,6 +249,7 @@ pub async fn assemble(
         .with_skills(a.skills_config.to_skills())
         .with_mcp_config(a.mcp_config)
         .with_effective_context(a.effective_context);
+    harness.user_images = std::mem::take(&mut a.user_images);
     if let Some(instructions) = a.instructions {
         harness = harness.with_instructions(instructions);
     }

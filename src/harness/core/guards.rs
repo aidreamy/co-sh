@@ -99,8 +99,8 @@ impl Harness {
     ///   final report text (`stop_agent_loop` is blocked for it, see
     ///   [`super::limits::SUBAGENT_BLOCKED_TOOLS`]);
     /// - the `/agents` cosh coworker (`with_own_coworker_id`): a requester is
-    ///   BLOCKED on its report, and `stop_agent_loop` is blocked there too
-    ///   (the TUI's `MANAGER_BLOCKED_TOOLS`).
+    ///   BLOCKED on its report, and the coworker ROLE has no `stop_agent_loop`
+    ///   (stripped by role in `core::build`).
     ///
     /// The main chat loop owes no report: its stop is final, the user reads
     /// the answer and asks again. It therefore never resumes — the reason

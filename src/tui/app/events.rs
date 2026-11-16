@@ -318,6 +318,7 @@ impl App {
                     mut pane,
                     pane_id,
                     epoch,
+                    turn,
                     event,
                 } => {
                     // Route by the pane's stable identity FIRST: a pane set
@@ -343,6 +344,17 @@ impl App {
                         // was being cancelled.
                         None if epoch != self.agents_pane_epoch => continue,
                         None => {}
+                    }
+                    // The turn gate: an event of a turn this pane is no
+                    // longer running (a stop retired it, best-effort — the
+                    // thread keeps winding down) must never paint into the
+                    // turn that replaced it. Unstamped senders (chrome
+                    // refreshes, replay) always pass.
+                    if turn != 0
+                        && either_split(&self.agents_split, &self.parked_agents_split)
+                            .is_some_and(|split| split.turn_id(pane) != turn)
+                    {
+                        continue;
                     }
                     let target =
                         either_split_mut(&mut self.agents_split, &mut self.parked_agents_split);
@@ -401,7 +413,7 @@ impl App {
                         // agent: there the pane's own confirm recorded a
                         // pane-local pick (`picked_config_ids`) that
                         // dispatch serves, so the seed must not stomp it
-                        // (the same precedence `pane_turn_picks` applies).
+                        // (the same precedence `turn_picks` applies).
                         if let Some(split) = target {
                             let mut options = options.clone();
                             // The model option's id, resolved the SAME
@@ -410,11 +422,11 @@ impl App {
                             // provider and a model option under category
                             // `model`, and a flat id-or-category scan would
                             // seed the provider option's badge.
-                            let model_id = super::agents_dispatch::model_option_id(&options)
+                            let model_id = cosh::coordinator::turn::model_option_id(&options)
                                 .map(str::to_string);
                             if let Some(p) = split.panes.get(pane) {
                                 // The seed value in precedence order — the
-                                // same order `pane_turn_picks` applies: the
+                                // same order `turn_picks` applies: the
                                 // pane's OWN pick (its cached current, when
                                 // it confirmed this very option) outranks
                                 // the global record. A sibling pane's
@@ -531,6 +543,7 @@ impl App {
                     mut pane,
                     pane_id,
                     epoch,
+                    turn,
                     output,
                     stop_reason,
                     session,
@@ -552,6 +565,27 @@ impl App {
                         None if pane_id != 0 => continue,
                         None if epoch != self.agents_pane_epoch => continue,
                         None => {}
+                    }
+                    // The turn gate FIRST: a force-closed turn was closed
+                    // synthetically (Ctrl+X), and its thread keeps winding
+                    // down — if the pane's next turn (a queued message, or a
+                    // prompt sent right after the stop) already began, this
+                    // Done closes THAT turn. It used to: `running` went
+                    // false and the new turn's stop signal was dropped, so
+                    // the agent kept working behind an idle-looking pane and
+                    // every further Ctrl+X returned early on `!p.running` —
+                    // the "uninterruptible pane" bug. Unstamped (0) senders
+                    // keep the old behaviour.
+                    if turn != 0
+                        && either_split(&self.agents_split, &self.parked_agents_split)
+                            .is_some_and(|split| split.turn_id(pane) != turn)
+                    {
+                        log::info!(
+                            target: "laya",
+                            "a stale /agents pane Done (turn {turn}) is dropped: the pane already \
+                             began another turn"
+                        );
+                        continue;
                     }
                     // A pane whose turn was already force-closed (the
                     // Ctrl+X interrupt's synthetic Done) or reset
@@ -612,7 +646,7 @@ impl App {
                     // `set_coworkers` already).
                     let registry_id = either_split(&self.agents_split, &self.parked_agents_split)
                         .and_then(|split| split.pane_registry_id(pane));
-                    if let Some(id) = registry_id {
+                    let requester = registry_id.and_then(|id| {
                         // A failure's text IS the reason; a successful turn's
                         // text is the report. `end` rides along so the
                         // requester can qualify it (see `report_block`).
@@ -621,22 +655,31 @@ impl App {
                         } else {
                             Ok(output.clone())
                         };
-                        let requester = cosh::harness::agent_coworkers::complete_request(
+                        cosh::harness::agent_coworkers::complete_request(
                             &id,
                             cosh::harness::agent_coworkers::AgentCoworkerReport::new(report, end),
-                        );
-                        // The pane just freed: the queue service may
-                        // dispatch its NEXT queued agent message in this
-                        // same frame.
-                        self.serve_agents_pane_queues();
-                        // The wake promise (issue: the main agent must be
-                        // woken by the report of a pane turn IT initiated,
-                        // and never disturbed by a user-initiated pane
-                        // turn): a MAIN-requested pane turn that completed
-                        // while the main loop is idle starts a fresh
-                        // main-agent turn carrying the report.
-                        self.wake_main_agent_if_promised(requester);
-                    }
+                        )
+                    });
+                    // The pane just freed: the user's OWN queues are served
+                    // first (the human outranks an agent's queued
+                    // `agents_call`, and inside that pass "next request"
+                    // outranks "next loop" — it is the delivery an ACP pane's
+                    // turn could not take mid-prompt, so it goes out the
+                    // moment that prompt completes), then the queue service
+                    // may dispatch its next queued agent message in this same
+                    // frame — the user turn, when it started, leaves the pane
+                    // running so the agent request keeps waiting its turn.
+                    // Independent of the registry: a pane with no registry id
+                    // (a set rebuilt under the turn) still owns its queues.
+                    self.serve_agents_pane_user_queues();
+                    self.serve_agents_pane_queues();
+                    // The wake promise (issue: the main agent must be woken by
+                    // the report of a pane turn IT initiated, and never
+                    // disturbed by a user-initiated pane turn): a
+                    // MAIN-requested pane turn that completed while the main
+                    // loop is idle starts a fresh main-agent turn carrying the
+                    // report.
+                    self.wake_main_agent_if_promised(requester);
                     // The mirror finishes: it inherits the pane's ALREADY-CLOSED
                     // timeline (`close_turn` ran in `finish_turn` above — the
                     // report is its LAST chronological entry) and the list
@@ -2235,6 +2278,26 @@ impl App {
                     // or auth rejection): offer the one-time free-gateway
                     // recommendation. Write-once — never offered again once answered.
                     self.maybe_offer_gateway_on_error(&message);
+
+                    // Image-failure retry: if this turn carried images and the
+                    // provider rejected the payload, retry once with the
+                    // original locations as plain text (no image attached).
+                    if self.turn_had_images
+                        && !self.image_retry_done
+                        && !self.last_image_sources.is_empty()
+                    {
+                        self.image_retry_done = true;
+                        self.turn_had_images = false;
+                        self.pending_user_images.clear();
+                        let sources = self.last_image_sources.join("\n");
+                        let retry_msg = if self.last_submitted_msg.trim().is_empty() {
+                            sources
+                        } else {
+                            format!("{}\n{}", self.last_submitted_msg, sources)
+                        };
+                        self.last_image_sources.clear();
+                        self.start_agent_loop(retry_msg);
+                    }
                 }
 
                 HarnessEvent::ModelsLoaded { models, current } => {

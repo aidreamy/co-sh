@@ -26,6 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   inbound messages and text sends, with persisted sessions, automatic
   reconnection and a batteries-included `Agent`/`serve` loop.
 
+- Images pasted into the prompt (an absolute or relative path, `~/`,
+  `file://`, or an `http(s)` link) now attach to that turn. The prompt
+  shows a thumbnail band that can be pruned before sending, and the model
+  receives the image next to the text. The payload is transport-only -
+  never persisted or compacted - and a provider that rejects it makes the
+  turn retry once with the original locations as plain text.
+
 - A real command line in front of the TUI: `-c/--continue` reopens the
   session most recently worked in for this directory, `-s/--session <id>`
   opens a chosen one, `-v/--version` prints the version and `-h/--help`
@@ -706,10 +713,10 @@ The agent's building blocks are published as reusable libraries:
 - Linux and Windows are tested. macOS builds are published but untested —
   report any issues with details.
 
-[0.2.1]: https://github.com/DiegoZaluski/co-sh/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/DiegoZaluski/co-sh/compare/v0.1.4...v0.2.0
-[0.1.4]: https://github.com/DiegoZaluski/co-sh/compare/v0.1.3...v0.1.4
-[0.1.3]: https://github.com/DiegoZaluski/co-sh/compare/v0.1.2...v0.1.3
-[0.1.2]: https://github.com/DiegoZaluski/co-sh/compare/v0.1.1...v0.1.2
-[0.1.1]: https://github.com/DiegoZaluski/co-sh/releases/tag/v0.1.1
-[0.1.0]: https://github.com/DiegoZaluski/co-sh/releases/tag/v0.1.0
+[0.2.1]: https://github.com/aidreamy/co-sh/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/aidreamy/co-sh/compare/v0.1.4...v0.2.0
+[0.1.4]: https://github.com/aidreamy/co-sh/compare/v0.1.3...v0.1.4
+[0.1.3]: https://github.com/aidreamy/co-sh/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/aidreamy/co-sh/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/aidreamy/co-sh/releases/tag/v0.1.1
+[0.1.0]: https://github.com/aidreamy/co-sh/releases/tag/v0.1.0

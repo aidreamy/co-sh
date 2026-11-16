@@ -247,6 +247,40 @@ pub struct AgentPane {
     /// interactive permissions; the answer send is `Ok` regardless of the
     /// receiver's state (the ACP handler has it until its turn ends).
     pub permission_tx: Option<tokio::sync::mpsc::UnboundedSender<PanePermissionAnswer>>,
+    /// The user's messages waiting for THIS pane, in the two flavors the
+    /// main agent's [`crate::state::PendingQueues`] offers, for EVERY pane
+    /// kind:
+    ///
+    /// - "next request" becomes the next request of the pane's CURRENT
+    ///   working stretch: a cosh pane's harness drains the steering handle
+    ///   before that request (`serve_agents_pane_queues`' user-queue twin,
+    ///   `pump_agents_pane_queued_requests`), an ACP pane — whose turn is one
+    ///   prompt — takes it at the prompt boundary, the moment its turn
+    ///   completes and before it can be seen idle;
+    /// - "next agent loop" starts a fresh turn once the pane is free.
+    ///
+    /// Distinct from the `agents_call` registry queue, which is an
+    /// agent-to-agent RPC queue served by `serve_agents_pane_queues`: the
+    /// USER's queues outrank it (see `serve_agents_pane_user_queues`), and
+    /// "next request" outranks "next loop".
+    pub queued: crate::state::PendingQueues,
+    /// The generation of the turn this pane is running — bumped when a turn
+    /// is DISPATCHED and when one is force-closed (Ctrl+X), and stamped into
+    /// every event that turn emits (`HarnessEvent::AgentsPaneEvent::turn`).
+    /// A stopped turn keeps winding down after the pane was closed
+    /// synthetically, so the stamp is what tells its late events apart from
+    /// the live turn's: without it, a terminal Done landing after the pane's
+    /// next turn started closed that turn instead (clearing its stop signal
+    /// and running flag, so Esc/Ctrl+X could no longer stop the agent, which
+    /// kept working behind an idle-looking pane).
+    pub turn_id: u64,
+    /// The steering handle into the pane's RUNNING turn — the same shared
+    /// [`cosh::harness::queued_input::QueuedInput`] the main agent's queue
+    /// uses, cloned into the pane's loop at dispatch. `Some` only while a
+    /// cosh pane turn is live, since only a real harness loop has request
+    /// boundaries to drain it at; an ACP pane keeps `None` and its "next
+    /// request" messages ride out at the turn boundary instead.
+    pub steer: Option<cosh::harness::queued_input::QueuedInput>,
     /// True while an on-demand snapshot probe for this pane is in flight
     /// (focus arrived with no cache): the slash menu shows its spinner row
     /// until the probe returns.
@@ -356,6 +390,9 @@ impl AgentPane {
             mode_current: String::new(),
             pending_permission: None,
             permission_tx: None,
+            queued: crate::state::PendingQueues::default(),
+            steer: None,
+            turn_id: 0,
             snapshot_loading: false,
             rehydrating: false,
             rehydrate_spinner: SpinnerState::new(),
@@ -1392,6 +1429,36 @@ impl AgentsSplitState {
         }
     }
 
+    /// Attach (or clear) the steering handle of pane `pane`'s live turn.
+    /// Out-of-range panes are ignored, like [`Self::set_running`].
+    pub fn set_steer(
+        &mut self,
+        pane: usize,
+        steer: Option<cosh::harness::queued_input::QueuedInput>,
+    ) {
+        if let Some(p) = self.panes.get_mut(pane) {
+            p.steer = steer;
+        }
+    }
+
+    /// Start a new turn on pane `pane`, returning its generation — the stamp
+    /// its events carry from now on. Out-of-range panes get `0` (a stamp no
+    /// pane answers to, so such a dispatch's events land nowhere).
+    pub fn begin_turn(&mut self, pane: usize) -> u64 {
+        let Some(p) = self.panes.get_mut(pane) else {
+            return 0;
+        };
+        p.turn_id = p.turn_id.wrapping_add(1);
+        p.turn_id
+    }
+
+    /// The generation of pane `pane`'s CURRENT turn (`0` for an out-of-range
+    /// pane, which no event can match).
+    #[must_use]
+    pub fn turn_id(&self, pane: usize) -> u64 {
+        self.panes.get(pane).map_or(0, |p| p.turn_id)
+    }
+
     /// Attach (or clear) the carried-context block of pane `pane`'s next
     /// turn — the pane Revert's rewind handoff (see
     /// [`AgentPane::rewind_context`]).
@@ -1884,7 +1951,17 @@ fn render_pane(
     // edge: the last body row stays empty (background fill only) so text
     // never glues to the border. All scroll/paint math below runs against
     // this shrunk window.
-    let view_h = body_h.saturating_sub(1);
+    //
+    // The pane's PENDING QUEUES ride that breathing room's place in the
+    // chat: a bottom-anchored strip, painted above the reserved row where
+    // the worktree badge sits — the exact spot the chat's strip occupies
+    // above its prompt. The flow window shrinks by the strip's rows so no
+    // activity line paints under a band, and the strip paints even when the
+    // pane has no activity at all (an empty pane that was queued a message
+    // while busy must show it).
+    let queue_h = crate::routes::session::pending_queue::height(&pane.queued, rect.width)
+        .min(body_h.saturating_sub(1));
+    let view_h = body_h.saturating_sub(1).saturating_sub(queue_h);
     // Same wrap rule as the right panel's subagent section: width minus the
     // left+right padding, so `estimate_height` agrees with the drawn rows.
     let wrap_w = rect.width.saturating_sub(2);
@@ -1915,6 +1992,23 @@ fn render_pane(
                 cell.set_style(badge_style);
             }
         }
+    }
+    // ── Pending queues (the pane's own two queues) ──
+    // Same component the chat paints its strip with: the bands are a lighter
+    // wash of the pane's AGENT BRAND hue (the pane's identity color, the same
+    // one its user-message rail carries), each ending in a full-strength cap
+    // labeled NEXT / CLOSURE. No pointer routing here — a pane's strip is
+    // read-only for now (the chat's strip owns the click-to-edit surface).
+    if queue_h > 0 {
+        let queue_area = Rect::new(rect.x, body_y + view_h, rect.width, queue_h);
+        crate::routes::session::pending_queue::render(
+            buf,
+            queue_area,
+            &pane.queued,
+            None,
+            theme,
+            brand_rgba(&pane.agent, 0.0, theme, focused),
+        );
     }
     let lines = activity_lines(&pane.activity, wrap_w);
     if lines.is_empty() {
@@ -4327,6 +4421,87 @@ mod tests {
         assert_eq!(fgs[0], Some(rgba_color(expected)), "first glyph = primary");
     }
 
+    /// The text drawn on row `y` of `buf` across `w` columns.
+    fn row_string(buf: &Buffer, y: u16, w: u16) -> String {
+        (0..w)
+            .map(|x| {
+                buf.cell((x, y))
+                    .map(|c| c.symbol().to_string())
+                    .unwrap_or_default()
+            })
+            .collect()
+    }
+
+    /// The pane's own pending queues paint the SAME strip the chat does,
+    /// bottom-anchored above the pane's reserved edge — a message queued for a
+    /// busy pane is visible in that pane, with its queue's cap label, for BOTH
+    /// pane kinds (nothing here depends on cosh). The strip keeps its rows out
+    /// of the activity window, so no line ever paints under a band.
+    #[test]
+    fn render_paints_the_pending_queue_strip_above_the_pane_edge() {
+        let theme = test_theme();
+        let mut state = AgentsSplitState::new(vec!["claude".into()]);
+        state.set_running(0, true);
+        {
+            let pane = &mut state.panes[0];
+            pane.queued.next_loop.push_back("stand by".into());
+            pane.queued.next_request.push_back("next one".into());
+        }
+        let area = Rect::new(0, 0, 80, 24);
+        let mut buf = Buffer::empty(area);
+        render(&mut buf, area, &mut state, &theme, 0.0);
+
+        let pane = &state.panes[0];
+        // Two messages → two bands of three rows, reserved at the BOTTOM of
+        // the body, above the pane's reserved breathing row.
+        assert_eq!(
+            pane.body_height,
+            23 - 1 - 6,
+            "the flow window shrinks by the strip's rows"
+        );
+        let rows: String = (0..24)
+            .map(|y| format!("{y:02} {}\n", row_string(&buf, y, 80)))
+            .collect();
+        let loop_row = rows
+            .lines()
+            .find(|line| line.contains("stand by"))
+            .unwrap_or_else(|| panic!("no next-loop band painted:\n{rows}"));
+        assert!(
+            loop_row.contains("CLOSURE"),
+            "the next-loop band carries its cap label: {loop_row}"
+        );
+        let request_row = rows
+            .lines()
+            .find(|line| line.contains("next one"))
+            .unwrap_or_else(|| panic!("no next-request band painted:\n{rows}"));
+        assert!(
+            request_row.contains("NEXT"),
+            "the next-request band carries its cap label: {request_row}"
+        );
+        // Bottom-anchored: the last band's text row is the third row above
+        // the bottom edge (pad below it, then the reserved breathing row).
+        assert!(
+            request_row.starts_with(&format!("{:02}", area.height - 3)),
+            "the strip hugs the pane's bottom edge: {request_row}"
+        );
+    }
+
+    /// An empty pane that was queued a message must still show the strip: the
+    /// bands paint before the activity flow short-circuits.
+    #[test]
+    fn an_empty_pane_still_shows_its_queue() {
+        let theme = test_theme();
+        let mut state = AgentsSplitState::new(vec!["claude".into()]);
+        state.panes[0].queued.next_loop.push_back("later".into());
+        let area = Rect::new(0, 0, 60, 20);
+        let mut buf = Buffer::empty(area);
+        render(&mut buf, area, &mut state, &theme, 0.0);
+        let rows: String = (0..20)
+            .map(|y| format!("{y:02} {}\n", row_string(&buf, y, 60)))
+            .collect();
+        assert!(rows.contains("later"), "the queue is visible:\n{rows}");
+    }
+
     #[test]
     fn render_running_pane_shows_the_activity_tail() {
         let theme = test_theme();
@@ -4584,7 +4759,7 @@ mod tests {
                             .chars()
                             .next()
                             .is_some_and(|c| !c.is_whitespace())
-                            && cell.style().fg != Some(base)
+                        && cell.style().fg != Some(base)
                     {
                         distinct = true;
                     }

@@ -45,6 +45,7 @@ fn split_app_with_model_option(current: &str) -> App {
             pane: 0,
             pane_id: app.agents_split.as_ref().unwrap().panes[0].id,
             epoch: app.agents_pane_epoch,
+            turn: 0,
             event: SubagentEvent::ConfigOptions {
                 options: vec![model_option(current)],
             },
@@ -133,6 +134,7 @@ async fn non_model_picks_and_defaults_never_persist() {
             pane: 0,
             pane_id: app.agents_split.as_ref().unwrap().panes[0].id,
             epoch: app.agents_pane_epoch,
+            turn: 0,
             event: SubagentEvent::ToolCall {
                 id: "c1".into(),
                 title: "find_grep".into(),
@@ -153,6 +155,7 @@ async fn non_model_picks_and_defaults_never_persist() {
             pane: 0,
             pane_id: app.agents_split.as_ref().unwrap().panes[0].id,
             epoch: app.agents_pane_epoch,
+            turn: 0,
             event: SubagentEvent::ConfigOptions {
                 options: vec![
                     model_option("model-a"),
@@ -208,6 +211,7 @@ async fn config_options_report_seeds_the_persisted_dot() {
             pane: 0,
             pane_id: app.agents_split.as_ref().unwrap().panes[0].id,
             epoch: app.agents_pane_epoch,
+            turn: 0,
             event: SubagentEvent::ConfigOptions {
                 options: vec![model_option("model-a")],
             },
@@ -231,6 +235,7 @@ async fn config_options_report_seeds_the_persisted_dot() {
             pane: 0,
             pane_id: app.agents_split.as_ref().unwrap().panes[0].id,
             epoch: app.agents_pane_epoch,
+            turn: 0,
             event: SubagentEvent::ConfigOptions {
                 options: vec![model_option("model-a")],
             },
@@ -257,6 +262,7 @@ async fn config_options_report_seeds_the_persisted_dot() {
             pane: 0,
             pane_id: app.agents_split.as_ref().unwrap().panes[0].id,
             epoch: app.agents_pane_epoch,
+            turn: 0,
             event: SubagentEvent::ConfigOptions {
                 options: vec![model_option("model-a")],
             },
@@ -293,6 +299,7 @@ async fn config_options_report_seeds_the_persisted_dot() {
             pane: 0,
             pane_id: app.agents_split.as_ref().unwrap().panes[0].id,
             epoch: app.agents_pane_epoch,
+            turn: 0,
             event: SubagentEvent::ConfigOptions {
                 options: vec![model_option("model-a")],
             },

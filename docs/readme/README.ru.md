@@ -4,8 +4,6 @@
 
 Cosh — универсальный coding agent для терминала с инструментами разработки ПО и *computer tools*, позволяющими взаимодействовать с графическими приложениями.
 
-<img width="720" height="406" alt="demo" src="https://github.com/user-attachments/assets/9a9161fa-f2ac-43f4-8623-8ae54d64c8bc" />
-
 Основные возможности:
 
 - **Мультиагентный режим (`/agents`)** — запускайте внешних агентов (Gemini, Claude, Codex, Cline, …) вместе с основным агентом в разделённых панелях, все доступны из одного промпта. У каждого агента своя сессия, модель и опциональный git worktree, а основной агент координирует их — раздаёт задачи и собирает отчёты как одна команда.
@@ -15,12 +13,12 @@ Cosh — универсальный coding agent для терминала с и
 
 ## Установка
 
-Протестировано на Linux и Windows. macOS пока не тестировалась — если что-то не сработает, [создайте issue](https://github.com/DiegoZaluski/co-sh/issues) с максимально подробным описанием.
+Протестировано на Linux и Windows. macOS пока не тестировалась — если что-то не сработает, [создайте issue](https://github.com/aidreamy/co-sh/issues) с максимально подробным описанием.
 
 **Linux, macOS, Windows (Git Bash / WSL):**
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/DiegoZaluski/co-sh/main/download.sh | bash
+curl -fsSL https://raw.githubusercontent.com/aidreamy/co-sh/main/download.sh | bash
 ```
 
 Необязательные переменные: `COSH_BIN_DIR` (каталог установки), `COSH_VERSION` (конкретная версия) и `COSH_VARIANT` (`slim` — по умолчанию, или `slim-embed` — с локальным RAG через fastembed).

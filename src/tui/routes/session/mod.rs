@@ -7,6 +7,7 @@ pub mod agent_command_map;
 pub mod agents_split;
 
 pub mod delete;
+pub mod pending_queue;
 pub mod permission;
 pub mod question;
 pub mod queue_choice;

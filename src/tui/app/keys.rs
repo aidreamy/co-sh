@@ -520,13 +520,7 @@ impl App {
                 let consumed = self.queue_choice_dialog.handle_key_event(key);
                 if consumed {
                     if self.queue_choice_dialog.submitted {
-                        let text = self.prompt_view.send_message();
-                        let target = self.queue_choice_dialog.choice();
-                        self.queue_choice_dialog.hide();
-                        // Edited message returning to its queue → original
-                        // position; otherwise appended at the end (helper).
-                        self.enqueue_pending_message(target, text);
-                        self.prompt_view.focus();
+                        self.commit_queue_choice();
                     } else if !self.queue_choice_dialog.visible {
                         // Dismissed via Esc: re-focus the prompt (the
                         // message stays in the input, nothing was queued).
@@ -550,6 +544,7 @@ impl App {
                     } else if !self.free_gateway_dialog.visible {
                         // Dismissed via Esc: put the parked message back
                         self.restore_pending_gateway_message();
+                        self.prompt_view.focus();
                     }
                     return Ok(false);
                 }
@@ -706,11 +701,13 @@ impl App {
                             };
                             self.permission_dialog.visible = false;
                             let _ = self.perm_tx.send(action);
+                            self.prompt_view.focus();
                             return Ok(false);
                         }
                         KeyCode::Esc => {
                             self.permission_dialog.visible = false;
                             let _ = self.perm_tx.send(cosh::harness::PermissionAction::Deny);
+                            self.prompt_view.focus();
                             return Ok(false);
                         }
                         _ => {}
@@ -1570,6 +1567,21 @@ impl App {
                         // pre-issue-3 behavior for every Working Enter).
                         && !self.paste_burst_pending_flush_deadline();
                     if split_pane_focused {
+                        // The focused pane is BUSY (its own turn, a
+                        // compaction, or a replay still arriving): the
+                        // message queues for THAT pane through the same
+                        // two-queue dialog the main agent gets, instead of
+                        // being refused. The dialog reads the prompt and
+                        // only a confirm consumes it.
+                        if let Some((pane_id, live_loop)) = self.focused_busy_pane() {
+                            let preview = self.prompt_view.input.clone();
+                            if preview.trim().is_empty() {
+                                return Ok(false);
+                            }
+                            self.queue_choice_dialog
+                                .open_for_pane(preview, pane_id, live_loop);
+                            return Ok(false);
+                        }
                         let msg = self.prompt_view.send_message();
                         if msg.trim().is_empty() {
                             return Ok(false);
@@ -1611,8 +1623,50 @@ impl App {
                         return Ok(false);
                     }
 
+                    // A focused /agents pane that is still working (the
+                    // shared prompt keeps serving it while the MAIN loop
+                    // idles) QUEUES the message rather than refusing it —
+                    // the same dialog the Working branch above shows. An
+                    // outstanding edited-queue re-submit wins: it belongs
+                    // to its own slot, not to the pane.
+                    if self.edit_requeue_hint.is_none()
+                        && let Some((pane_id, live_loop)) = self.focused_busy_pane()
+                    {
+                        let preview = self.prompt_view.input.clone();
+                        if preview.trim().is_empty() {
+                            return Ok(false);
+                        }
+                        self.queue_choice_dialog
+                            .open_for_pane(preview, pane_id, live_loop);
+                        return Ok(false);
+                    }
+
+                    // Capture any images attached to the draft BEFORE send_message
+                    // clears them, so they ride along with this turn.
+                    let attached = self.prompt_view.take_images();
+                    let sources: Vec<String> = attached.iter().map(|img| img.source.clone()).collect();
+                    let image_blocks: Vec<aiface::connector::ImageBlock> = attached
+                        .into_iter()
+                        .filter_map(|img| {
+                            let decoded = image::load_from_memory(&img.bytes).ok()?;
+                            let mut buf = Vec::new();
+                            decoded
+                                .write_to(
+                                    &mut std::io::Cursor::new(&mut buf),
+                                    image::ImageFormat::Png,
+                                )
+                                .ok()?;
+                            Some(aiface::connector::ImageBlock::png(&buf))
+                        })
+                        .collect();
+                    self.pending_user_images = image_blocks.clone();
+                    self.last_image_sources = sources;
+                    self.turn_had_images = !image_blocks.is_empty();
+                    self.image_retry_done = false;
                     let msg = self.prompt_view.send_message();
-                    if msg.trim().is_empty() {
+                    self.last_submitted_msg = msg.clone();
+                    if msg.trim().is_empty() && self.pending_user_images.is_empty() {
+                        self.pending_user_images.clear();
                         return Ok(false);
                     }
                     // No pane focused: the MAIN agent itself (the
@@ -2541,3 +2595,4 @@ impl App {
         }
     }
 }
+

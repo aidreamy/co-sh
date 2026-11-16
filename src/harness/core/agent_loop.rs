@@ -353,12 +353,20 @@ impl Harness {
         // model sees it from the very first iteration.
         self.sync_todo_context();
 
+        // Move any attached images onto the context manager so they ride on
+        // the user turn (transport-only). Always reset so a previous run's
+        // images cannot leak onto this turn.
+        self.context_manager.user_images = std::mem::take(&mut self.user_images);
         // Add the initial user input to the context manager (the single owner
         // of the conversation) so the model sees it as a proper `user` message.
         // Skip when it is already the trailing protected user turn (e.g. it was
         // loaded via with_history) — otherwise the same message is duplicated.
         if !self.context_manager.last_user_equals(input) {
-            self.context_manager.add_user(input);
+            if input.trim().is_empty() && !self.context_manager.user_images.is_empty() {
+                self.context_manager.add_user("[image]");
+            } else {
+                self.context_manager.add_user(input);
+            }
         }
 
         // A fresh input landing directly on top of a previous user turn with
@@ -454,6 +462,9 @@ impl Harness {
             for text in queued_input.drain() {
                 injected_any = true;
                 let _ = tx.send(HarnessEvent::UserMessageInjected { text: text.clone() });
+                // A queued injection is a fresh user turn with no attached
+                // images: drop any lingering ones so they cannot leak onto it.
+                self.context_manager.user_images.clear();
                 self.context_manager.add_user(&text);
             }
             if injected_any {

@@ -54,8 +54,10 @@ fn isolate_home() {
 // (`E0583: file not found for module`), so it was removed. Re-add it together
 // with its file when the probe lands.
 mod agent_loop;
+mod agents_queue;
 mod commands;
 mod cost;
+mod ctrl_c_focus_desync;
 mod dialogs;
 mod gateway_offer;
 mod history_panic_probe;

@@ -4,8 +4,6 @@
 
 Cosh is a general-purpose coding agent for the terminal, with software engineering tools and *computer tools* that let it interact with graphical applications.
 
-<img width="720" height="406" alt="demo" src="https://github.com/user-attachments/assets/9a9161fa-f2ac-43f4-8623-8ae54d64c8bc" />
-
 ## Why co-sh?
 
 co-sh isn't meant to replace established coding agents — it's designed to work alongside them as an orchestration layer. Here's why you might want to use it:
@@ -38,18 +36,18 @@ Highlights:
 
 ## Installation
 
-Tested on Linux and Windows. macOS hasn't been tested yet — if anything fails, [open an issue](https://github.com/DiegoZaluski/co-sh/issues) with as much detail as possible.
+Tested on Linux and Windows. macOS hasn't been tested yet — if anything fails, [open an issue](https://github.com/aidreamy/co-sh/issues) with as much detail as possible.
 
 **Linux & macOS** (also works on Windows via Git Bash / WSL):
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/DiegoZaluski/co-sh/main/download.sh | bash
+curl -fsSL https://raw.githubusercontent.com/aidreamy/co-sh/main/download.sh | bash
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
-irm https://raw.githubusercontent.com/DiegoZaluski/co-sh/main/download.ps1 | iex
+irm https://raw.githubusercontent.com/aidreamy/co-sh/main/download.ps1 | iex
 ```
 
 > Note: the `curl | bash` command does **not** work in PowerShell or CMD — Windows has no native `bash`. Use the PowerShell script above instead (Git Bash and WSL also work).

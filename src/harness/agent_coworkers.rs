@@ -451,6 +451,11 @@ struct RegistryState {
     /// STALE summary), and a coworker turn must not dispatch over a context
     /// that is being replaced under it.
     compacting: HashSet<u64>,
+    /// Shared task board (F1): tasks the coordinator publishes and panes
+    /// claim/update themselves. In-memory for now; persisted later.
+    tasks: Vec<Task>,
+    /// Monotonic task-id counter.
+    next_task: u64,
     /// Per PANE, how many times a requester was invited to `continue` it
     /// (see [`report_block`]). The ping-pong bound: the harness cannot stop
     /// a requester from re-sending "continue" forever (each follow-up is a
@@ -1670,6 +1675,376 @@ pub fn ambient_context_suffix() -> &'static str {
      request."
 }
 
+/// A task on the shared board (F1). The coordinator creates; panes claim and
+/// update. Dependencies gate claimability: a task with unmet deps is `Blocked`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Task {
+    pub id: u64,
+    pub title: String,
+    pub description: Option<String>,
+    pub status: TaskStatus,
+    pub deps: Vec<u64>,
+    pub owner: Option<String>,
+    /// Stable identity of the owner (coworker_id), used for authorization.
+    /// `None` for the coordinator ("main") or unowned tasks.
+    pub owner_id: Option<u64>,
+    pub owner_is_coordinator: bool,
+    pub artifacts: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TaskStatus {
+    #[default]
+    Pending,
+    InProgress,
+    Completed,
+    Blocked,
+}
+
+impl TaskStatus {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Pending => "pending",
+            Self::InProgress => "in_progress",
+            Self::Completed => "completed",
+            Self::Blocked => "blocked",
+        }
+    }
+    pub fn parse(s: &str) -> Self {
+        match s {
+            "in_progress" => Self::InProgress,
+            "completed" => Self::Completed,
+            "blocked" => Self::Blocked,
+            _ => Self::Pending,
+        }
+    }
+}
+
+/// Recompute `Blocked`/`Pending` for every task based on its deps. A task is
+/// blocked iff at least one dep is not `Completed`. `InProgress`/`Completed`
+/// tasks are left untouched.
+fn recompute_blocked(state: &mut RegistryState) {
+    let statuses: Vec<(u64, TaskStatus)> = state.tasks.iter().map(|t| (t.id, t.status)).collect();
+    for t in state.tasks.iter_mut() {
+        if matches!(t.status, TaskStatus::Pending | TaskStatus::Blocked) {
+            let blocked = t.deps.iter().any(|d| {
+                statuses
+                    .iter()
+                    .find(|(id, _)| *id == *d)
+                    .map(|(_, st)| *st != TaskStatus::Completed)
+                    .unwrap_or(true)
+            });
+            t.status = if blocked {
+                TaskStatus::Blocked
+            } else {
+                TaskStatus::Pending
+            };
+        }
+    }
+}
+
+
+/// Defensive cycle check: returns true if adding a task with `deps` would
+/// introduce a cycle in the task graph. A new task has no incoming edges, so
+/// a cycle is only possible via a self-loop (dep == the new task's id) or a
+/// pre-existing cycle; both are rejected.
+fn would_create_cycle(tasks: &[Task], deps: &[u64]) -> bool {
+    // Build adjacency: task -> its deps.
+    // Check each dep can reach... the new task has no id yet, so only reject
+    // if deps contain duplicates of an existing id that already depends back.
+    // Generic DFS over existing graph to ensure it is acyclic (it should be).
+    use std::collections::HashSet;
+    fn dfs(tasks: &[Task], node: u64, visiting: &mut HashSet<u64>, visited: &mut HashSet<u64>) -> bool {
+        if visited.contains(&node) { return false; }
+        if !visiting.insert(node) { return true; } // cycle
+        if let Some(t) = tasks.iter().find(|t| t.id == node) {
+            for d in &t.deps {
+                if dfs(tasks, *d, visiting, visited) { return true; }
+            }
+        }
+        visiting.remove(&node);
+        visited.insert(node);
+        false
+    }
+    let mut visiting = HashSet::new();
+    let mut visited = HashSet::new();
+    for t in tasks {
+        if dfs(tasks, t.id, &mut visiting, &mut visited) {
+            return true;
+        }
+    }
+    // Self-loop guard for the candidate: a dep equal to a not-yet-assigned id
+    // cannot happen, but reject duplicate deps defensively.
+    let mut seen = HashSet::new();
+    for d in deps {
+        if !seen.insert(*d) { return true; }
+    }
+    false
+}
+
+pub fn task_create(title: &str, description: Option<String>, deps: Vec<u64>) -> Result<u64, String> {
+    if title.trim().is_empty() {
+        return Err("task title must not be empty".to_string());
+    }
+    let mut state = registry().lock().unwrap_or_else(|p| p.into_inner());
+    let mut deps = deps;
+    deps.sort_unstable();
+    deps.dedup();
+    for d in &deps {
+        if !state.tasks.iter().any(|t| t.id == *d) {
+            return Err(format!("unknown dependency task #{d}"));
+        }
+    }
+    if would_create_cycle(&state.tasks, &deps) {
+        return Err("dependency cycle detected".to_string());
+    }
+    // so only self-dependency on an existing id is possible when caller passes an existing id.
+    // Guard direct self-reference anyway (harmless).
+
+    state.next_task += 1;
+    let id = state.next_task;
+    let mut task = Task {
+        id,
+        title: title.trim().to_string(),
+        description,
+        status: TaskStatus::Pending,
+        deps,
+        owner: None,
+        owner_id: None,
+        owner_is_coordinator: false,
+        artifacts: Vec::new(),
+    };
+    let blocked = task.deps.iter().any(|d| {
+        state
+            .tasks
+            .iter()
+            .find(|x| x.id == *d)
+            .map(|x| x.status != TaskStatus::Completed)
+            .unwrap_or(true)
+    });
+    if blocked {
+        task.status = TaskStatus::Blocked;
+    }
+    state.tasks.push(task);
+    recompute_blocked(&mut state);
+    Ok(id)
+}
+
+
+/// Atomic update with caller authorization (used by panes). `caller` is
+/// `Some(coworker id)` for a pane; `None` for the coordinator (unrestricted).
+pub fn task_update_for(
+    task_id: u64,
+    caller: Option<&str>,
+    status: Option<TaskStatus>,
+    artifacts: Option<Vec<String>>,
+    owner: Option<String>,
+) -> Result<String, String> {
+    let mut state = registry().lock().unwrap_or_else(|p| p.into_inner());
+    let idx = state
+        .tasks
+        .iter()
+        .position(|t| t.id == task_id)
+        .ok_or_else(|| format!("unknown task #{task_id}"))?;
+    // Authorization: a pane may only update tasks it owns. Coordinator (None)
+    // bypasses. An unowned task is claimable by anyone but only the one who
+    // claims (sets owner) becomes owner; updates before claim are allowed only
+    // to the coordinator.
+    if let Some(c) = caller {
+        if *c == *"main" {
+            return Err("reserved caller label 'main'".to_string());
+        }
+        if !state.coworkers.iter().any(|p| p.id == *c) {
+            return Err(format!("unknown caller '{}'", c));
+        }
+        let caller_id = state.coworkers.iter().find(|x| x.id == *c).map(|x| x.coworker_id);
+        if let Some(owner_id) = state.tasks[idx].owner_id {
+            if let Some(cid) = caller_id {
+                if owner_id != cid {
+                    return Err(format!("task #{task_id} is owned by another pane"));
+                }
+            } else {
+                return Err(format!("task #{task_id} is owned by another pane"));
+            }
+        } else {
+            return Err(format!("task #{task_id} is unowned; claim it first"));
+        }
+        // Panes may only mark an owned, in-progress task as completed (or update
+        // artifacts without changing status). Any other transition is coordinator-only.
+        if let Some(s) = status {
+            if s != TaskStatus::Completed {
+                return Err("panes may only mark a task completed".to_string());
+            }
+            if state.tasks[idx].status != TaskStatus::InProgress {
+                return Err(format!("task #{task_id} must be in_progress before completion"));
+            }
+        }
+    }
+    if let Some(s) = status {
+        if s != TaskStatus::Pending && s != TaskStatus::Blocked {
+            let deps_done = state.tasks[idx].deps.iter().all(|d| {
+                state.tasks.iter().find(|x| x.id == *d).map(|x| x.status == TaskStatus::Completed).unwrap_or(false)
+            });
+            if !deps_done {
+                return Err(format!("task #{task_id} has unmet dependencies"));
+            }
+        }
+        // Panes cannot complete unless currently in progress.
+        if caller.is_some() && s == TaskStatus::Completed && state.tasks[idx].status != TaskStatus::InProgress {
+            return Err(format!("task #{task_id} must be in_progress before completion"));
+        }
+        state.tasks[idx].status = s;
+        if matches!(s, TaskStatus::Pending | TaskStatus::Blocked) {
+            state.tasks[idx].owner = None;
+            state.tasks[idx].owner_id = None;
+            state.tasks[idx].owner_is_coordinator = false;
+        }
+    }
+    if let Some(a) = artifacts {
+        let mut a = a;
+        a.sort();
+        a.dedup();
+        for item in a {
+            if !state.tasks[idx].artifacts.contains(&item) {
+                state.tasks[idx].artifacts.push(item);
+            }
+        }
+    }
+    if let Some(o) = owner {
+        if caller.is_some() {
+            return Err("panes cannot reassign task owner".to_string());
+        }
+        if o != "main" && !state.coworkers.iter().any(|p| p.id == o) {
+            return Err(format!("unknown owner '{}'", o));
+        }
+        state.tasks[idx].owner = Some(o.clone());
+        if o == "main" {
+            state.tasks[idx].owner_id = None;
+            state.tasks[idx].owner_is_coordinator = true;
+        } else {
+            state.tasks[idx].owner_id = state.coworkers.iter().find(|c| c.id == o).map(|c| c.coworker_id);
+            state.tasks[idx].owner_is_coordinator = false;
+        }
+    }
+    recompute_blocked(&mut state);
+    let new_status = state.tasks[idx].status;
+    Ok(format!("Updated task #{} -> {}", task_id, new_status.as_str()))
+}
+
+
+
+
+pub fn task_list() -> Vec<Task> {
+    registry()
+        .lock()
+        .unwrap_or_else(|p| p.into_inner())
+        .tasks
+        .clone()
+}
+
+pub fn task_claim(task_id: u64, by: &str) -> Result<String, String> {
+    // Resolve identity before locking.
+    let by_id = if by == "main" {
+        None
+    } else {
+        let coworkers = list_coworkers();
+        if !coworkers.iter().any(|c| c.id == by) {
+            return Err(format!("unknown caller '{}'", by));
+        }
+        coworkers.iter().find(|c| c.id == by).map(|c| c.coworker_id)
+    };
+    let mut state = registry().lock().unwrap_or_else(|p| p.into_inner());
+    recompute_blocked(&mut state);
+    let idx = state
+        .tasks
+        .iter()
+        .position(|t| t.id == task_id)
+        .ok_or_else(|| format!("unknown task #{task_id}"))?;
+    if state.tasks[idx].status == TaskStatus::Completed {
+        return Err(format!("task #{task_id} is already completed"));
+    }
+    if state.tasks[idx].status == TaskStatus::InProgress {
+        return Err(format!("task #{task_id} is already in progress"));
+    }
+    if state.tasks[idx].status == TaskStatus::Blocked {
+        return Err(format!("task #{task_id} is blocked by unmet dependencies"));
+    }
+    if state.tasks[idx].owner_is_coordinator {
+        return Err(format!("task #{task_id} is owned by the coordinator"));
+    }
+    if let Some(owner_id) = state.tasks[idx].owner_id {
+        if let Some(bid) = by_id {
+            if owner_id != bid {
+                return Err(format!("task #{task_id} is owned by another pane"));
+            }
+        } else {
+            return Err(format!("task #{task_id} is owned by another pane"));
+        }
+    }
+    let t = &mut state.tasks[idx];
+    t.status = TaskStatus::InProgress;
+    t.owner = Some(by.to_string());
+    t.owner_id = by_id;
+    t.owner_is_coordinator = by == "main";
+    Ok(format!("Claimed task #{} ({})", task_id, t.title))
+}
+
+pub(crate) fn task_update(
+    task_id: u64,
+    status: Option<TaskStatus>,
+    artifacts: Option<Vec<String>>,
+    owner: Option<String>,
+) -> Result<String, String> {
+    let mut state = registry().lock().unwrap_or_else(|p| p.into_inner());
+    let idx = state
+        .tasks
+        .iter()
+        .position(|t| t.id == task_id)
+        .ok_or_else(|| format!("unknown task #{task_id}"))?;
+    if let Some(s) = status {
+        if s == TaskStatus::Completed {
+            let deps_done = state.tasks[idx].deps.iter().all(|d| {
+                state.tasks.iter().find(|x| x.id == *d).map(|x| x.status == TaskStatus::Completed).unwrap_or(false)
+            });
+            if !deps_done {
+                return Err(format!("task #{task_id} has unmet dependencies"));
+            }
+        }
+        state.tasks[idx].status = s;
+        if matches!(s, TaskStatus::Pending | TaskStatus::Blocked) {
+            state.tasks[idx].owner = None;
+            state.tasks[idx].owner_id = None;
+            state.tasks[idx].owner_is_coordinator = false;
+        }
+    }
+    if let Some(a) = artifacts {
+        let mut a = a;
+        a.sort();
+        a.dedup();
+        for item in a {
+            if !state.tasks[idx].artifacts.contains(&item) {
+                state.tasks[idx].artifacts.push(item);
+            }
+        }
+    }
+    if let Some(o) = owner {
+        if o != "main" && !state.coworkers.iter().any(|p| p.id == o) {
+            return Err(format!("unknown owner '{}'", o));
+        }
+        state.tasks[idx].owner = Some(o.clone());
+        if o == "main" {
+            state.tasks[idx].owner_id = None;
+            state.tasks[idx].owner_is_coordinator = true;
+        } else {
+            state.tasks[idx].owner_id = state.coworkers.iter().find(|c| c.id == o).map(|c| c.coworker_id);
+            state.tasks[idx].owner_is_coordinator = false;
+        }
+    }
+    recompute_blocked(&mut state);
+    let new_status = state.tasks[idx].status;
+    Ok(format!("Updated task #{} -> {}", task_id, new_status.as_str()))
+}
+
 /// The context block appended at the END of the system header (an
 /// appendix — never a prefix insertion, so the providers' exact-prefix
 /// caches stay valid). `None` when no coworkers exist: the header stays
@@ -1709,6 +2084,21 @@ pub fn context_block() -> Option<String> {
             "- {} — {} ({session}{worktree}{model})",
             coworker.id, coworker.agent
         );
+    }
+    // Task board (F1): surface the 5 most relevant tasks to the coordinator.
+    let tasks = task_list();
+    if !tasks.is_empty() {
+        block.push_str("\n## Task Board\n");
+        let mut shown = 0;
+        for t in tasks.iter().filter(|t| {
+            !matches!(t.status, TaskStatus::Completed)
+        }).chain(tasks.iter().filter(|t| matches!(t.status, TaskStatus::Completed))) {
+            if shown >= 5 { break; }
+            let owner = t.owner.as_deref().unwrap_or("unclaimed");
+            let _ = writeln!(block, "- #{} — {} — {} — owner: {}", t.id, t.status.as_str(), t.title, owner);
+            shown += 1;
+        }
+        block.push('\n');
     }
     block.push('\n');
     block.push_str(ambient_context_suffix());
@@ -1752,6 +2142,21 @@ pub fn peer_block(own_id: &str) -> Option<String> {
             "- {} — {}{}{model}",
             coworker.agent, coworker.id, worktree
         );
+    }
+    let tasks = task_list();
+    let mut open: Vec<&Task> = tasks
+        .iter()
+        .filter(|t| !matches!(t.status, TaskStatus::Completed))
+        .collect();
+    open.sort_by_key(|t| t.id);
+    let open: Vec<&Task> = open.into_iter().take(5).collect();
+    if !open.is_empty() {
+        block.push_str("\n## Task Board (claim with agents_task_claim)\n");
+        for t in open {
+            let owner = t.owner.as_deref().unwrap_or("unclaimed");
+            let _ = writeln!(block, "- #{} — {} — {} — owner: {}", t.id, t.status.as_str(), t.title, owner);
+        }
+        block.push('\n');
     }
     block.push_str(
         "You do NOT coordinate them (no `agents_call` for you): do your own \
@@ -1970,6 +2375,67 @@ pub fn agents_compact_tool() -> super::core::HarnessTool {
             },
             "required": ["pane"],
         }),
+    }
+}
+
+
+
+#[must_use]
+pub fn agents_task_create_tool() -> super::core::HarnessTool {
+    super::core::HarnessTool {
+        name: "agents_task_create".into(),
+        description: "Create a task on the shared task board (coordinator only). Panes claim and update tasks themselves.".into(),
+        input_schema: serde_json::json!({
+            "type": "object",
+            "properties": {
+                "title": {"type":"string","description":"Short task title."},
+                "description": {"type":"string","description":"Optional details."},
+                "deps": {"type":"array","items":{"type":"integer"},"description":"Task ids this task depends on."},
+            },
+            "required": ["title"],
+        }),
+    }
+}
+
+#[must_use]
+pub fn agents_task_claim_tool() -> super::core::HarnessTool {
+    super::core::HarnessTool {
+        name: "agents_task_claim".into(),
+        description: "Claim a pending (unblocked) task on the shared board; marks it in_progress for the caller.".into(),
+        input_schema: serde_json::json!({
+            "type": "object",
+            "properties": {
+                "task": {"type":"integer","description":"Task id to claim."},
+            },
+            "required": ["task"],
+        }),
+    }
+}
+
+#[must_use]
+pub fn agents_task_update_tool() -> super::core::HarnessTool {
+    super::core::HarnessTool {
+        name: "agents_task_update".into(),
+        description: "Update a task's status, artifacts, or owner.".into(),
+        input_schema: serde_json::json!({
+            "type": "object",
+            "properties": {
+                "task": {"type":"integer","description":"Task id."},
+                "status": {"type":"string","enum":["pending","in_progress","completed","blocked"]},
+                "artifacts": {"type":"array","items":{"type":"string"}},
+                "owner": {"type":"string"},
+            },
+            "required": ["task"],
+        }),
+    }
+}
+
+#[must_use]
+pub fn agents_task_list_tool() -> super::core::HarnessTool {
+    super::core::HarnessTool {
+        name: "agents_task_list".into(),
+        description: "List tasks on the shared board with status, owner and deps.".into(),
+        input_schema: serde_json::json!({"type":"object","properties":{}}),
     }
 }
 

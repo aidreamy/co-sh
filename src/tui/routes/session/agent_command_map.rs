@@ -25,16 +25,10 @@
 //!    harness interprets it. No per-agent maintenance: an unmapped command
 //!    still appears and still works.
 
-/// Which ACP session config option a standardized box binds to.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ConfigTarget {
-    /// Match an option by its exact id (e.g. `provider` — no category
-    /// exists for it in the spec).
-    ById(&'static str),
-    /// Match an option by its semantic category (e.g. `model` — harnesses
-    /// predate the category system, so the id alone is not stable).
-    ByCategory(&'static str),
-}
+// The matching vocabulary lives in the coordinator (the layer that decides
+// which model a turn runs with); re-exported here so the menu maps and the
+// turn's pick resolution share ONE rule.
+pub use cosh::coordinator::turn::{ConfigTarget, match_option};
 
 /// One mapped command group: every harness spelling that means the same
 /// thing, plus the standardized box it opens.
@@ -272,31 +266,6 @@ pub fn resolve(name: &str) -> Option<&'static CommandGroup> {
     COMMAND_GROUPS
         .iter()
         .find(|group| group.names.contains(&normalized.as_str()))
-}
-
-/// Match one session config option against a [`ConfigTarget`].
-///
-/// `ByCategory` is a TWO-PASS match: an option whose `id` equals the
-/// category name wins first — cline categorizes BOTH its `provider` and
-/// `model` options as `Model`, so a single-pass category scan in list
-/// order would hand the model box the provider option. Only when no such
-/// id exists does the category field decide (harnesses that predate ids —
-/// the reason the category fallback exists at all).
-#[must_use]
-pub fn match_option(
-    options: &[cosh_tools::subagent::events::AgentConfigOption],
-    target: ConfigTarget,
-) -> Option<&cosh_tools::subagent::events::AgentConfigOption> {
-    match target {
-        ConfigTarget::ById(id) => options.iter().find(|o| o.id == id),
-        ConfigTarget::ByCategory(category) => {
-            options.iter().find(|o| o.id == category).or_else(|| {
-                options
-                    .iter()
-                    .find(|o| o.category.as_deref() == Some(category))
-            })
-        }
-    }
 }
 
 /// The menu entries SYNTHESIZED from the session's own ACP config options.

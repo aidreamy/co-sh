@@ -222,7 +222,7 @@ jobs:
           VERSION="${GITHUB_REF_NAME}"
           gh release create "${VERSION}" \
             --title "${VERSION}" \
-            --notes "See the [changelog](https://github.com/DiegoZaluski/co-sh/blob/main/CHANGELOG.md) for details." \
+            --notes "See the [changelog](https://github.com/aidreamy/co-sh/blob/main/CHANGELOG.md) for details." \
             --verify-tag
 
       - name: Upload assets
@@ -291,7 +291,7 @@ jobs:
             # "unknown" and falls through to cargo publish, where the
             # "already exists" fallback below still resolves it safely.
             code="$(curl -sS -o /dev/null -w '%{http_code}' \
-              -H 'User-Agent: cosh-release (github.com/DiegoZaluski/co-sh)' \
+              -H 'User-Agent: cosh-release (github.com/aidreamy/co-sh)' \
               "https://crates.io/api/v1/crates/$crate/$crate_version" || true)"
             if [ "$code" = "200" ]; then
               echo "$crate $crate_version already published, skipping"

@@ -4,8 +4,6 @@
 
 Cosh はターミナル上で動作する汎用コーディングエージェントです。ソフトウェア開発ツールに加え、*computer tools* を備えており、グラフィカルアプリケーションとも対話できます。
 
-<img width="720" height="406" alt="demo" src="https://github.com/user-attachments/assets/9a9161fa-f2ac-43f4-8623-8ae54d64c8bc" />
-
 主な特徴:
 
 - **マルチエージェントモード（`/agents`）** — 外部エージェント（Gemini、Claude、Codex、Cline など）をメインエージェントと一緒に分割ペインで実行でき、すべて同じプロンプトから操作できます。各エージェントは自分のセッション・モデル・オプションの git worktree を持ち、メインエージェントがチームとしてタスクを振り分け、レポートを回収します。
@@ -15,12 +13,12 @@ Cosh はターミナル上で動作する汎用コーディングエージェン
 
 ## インストール
 
-Linux と Windows でテスト済み。macOS は未テストです — 問題が発生した場合は、できるだけ詳細を添えて [issue を作成](https://github.com/DiegoZaluski/co-sh/issues)してください。
+Linux と Windows でテスト済み。macOS は未テストです — 問題が発生した場合は、できるだけ詳細を添えて [issue を作成](https://github.com/aidreamy/co-sh/issues)してください。
 
 **Linux、macOS、Windows（Git Bash / WSL）:**
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/DiegoZaluski/co-sh/main/download.sh | bash
+curl -fsSL https://raw.githubusercontent.com/aidreamy/co-sh/main/download.sh | bash
 ```
 
 オプション変数: `COSH_BIN_DIR`（インストール先ディレクトリ）、`COSH_VERSION`（特定バージョン）、`COSH_VARIANT`（デフォルトは `slim`、fastembed によるローカル RAG 付きは `slim-embed`）。

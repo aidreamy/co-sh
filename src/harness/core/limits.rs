@@ -52,10 +52,11 @@ pub(crate) const CHECKUP_VETO_BUDGET: u32 = 3;
 ///
 /// Why a pane needs this and a chat turn does not: a chat turn's stop is
 /// final (the user reads the answer, or asks again), while a pane turn owes a
-/// DELIVERABLE — the report its `agents_call` requester is blocked on — and
-/// `stop_agent_loop` is blocked for panes ([`SUBAGENT_BLOCKED_TOOLS`] here,
-/// the TUI's `MANAGER_BLOCKED_TOOLS` for the cosh pane), so the loop cannot
-/// end early on purpose. The only legitimate early end is the USER's stop,
+/// DELIVERABLE — the report its `agents_call` requester is blocked on — and the
+/// coworker ROLE has no `stop_agent_loop` ([`SUBAGENT_BLOCKED_TOOLS`] here,
+/// stripped by role in `core::build` for every `/agents` coworker), so the loop
+/// cannot end early on purpose. The only legitimate early end is the USER's
+/// stop,
 /// which is exactly observable (`self.stop` / the shared `stop_signal` — the
 /// same flags `check_stop!` reads). Any other stop is an IMPROPER stop: the
 /// pane hands its requester `incomplete` while the model may have been cut one

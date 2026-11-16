@@ -5,7 +5,7 @@ keywords = ["ai", "coding", "terminal", "agent"]
 license = "Apache-2.0"
 readme = "README.md"
 name = "cosh-recall"
-repository = "https://github.com/DiegoZaluski/co-sh"
+repository = "https://github.com/aidreamy/co-sh"
 version = "0.1.5"
 edition = "2024"
 
@@ -32,7 +32,7 @@ arrow-schema = { version = "58", optional = true }
 futures = { version = "0.3", optional = true }
 
 # Cloud embedding via the aiface connector
-aiface = { version = "0.2.1", optional = true }
+aiface = { path = "../../../aiface", version = "0.2.3", optional = true }
 
 [dev-dependencies]
 tempfile = "3"

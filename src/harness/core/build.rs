@@ -35,6 +35,7 @@ impl Harness {
             harness_tools: default_harness_tools(),
             cosh_tools: Some(cosh_tools),
             pending_images: Vec::new(),
+            user_images: Vec::new(),
             attempt_reasoning: String::new(),
             #[cfg(test)]
             mock_reasoning_queue: VecDeque::new(),
@@ -135,6 +136,20 @@ impl Harness {
             harness
                 .harness_tools
                 .push(super::agent_coworkers::agents_compact_tool());
+            // Task board (F1): coordinator creates/lists; everyone (including
+            // panes) may claim and update.
+            harness
+                .harness_tools
+                .push(super::agent_coworkers::agents_task_create_tool());
+            harness
+                .harness_tools
+                .push(super::agent_coworkers::agents_task_claim_tool());
+            harness
+                .harness_tools
+                .push(super::agent_coworkers::agents_task_update_tool());
+            harness
+                .harness_tools
+                .push(super::agent_coworkers::agents_task_list_tool());
         }
         harness
     }
@@ -387,16 +402,22 @@ impl Harness {
             // one delegation would fan the compact out to every coworker).
             self.harness_tools
                 .retain(|tool| tool.name != "agents_compact");
+            // Panes never create or list the board — only claim and update.
+            self.harness_tools
+                .retain(|tool| tool.name != "agents_task_create");
+            self.harness_tools
+                .retain(|tool| tool.name != "agents_task_list");
             // `stop_agent_loop` goes too, and NOT only as tidiness: the
             // pane's whole report contract rests on "the loop cannot stop
             // itself", which is what makes a stop it did take the USER's
-            // stop (see `Harness::resume_pane_turn`). The TUI's
-            // `MANAGER_BLOCKED_TOOLS` enforced that by disabling the tool
-            // per coworker, but a coworker harness built anywhere else would inherit
-            // the model's ability to end its own turn with no report — and
-            // the resume logic would then read that self-stop as a user stop
-            // and correctly refuse, closing the turn with nothing. Stripping
-            // it HERE binds the invariant to the coworker ROLE, where it belongs.
+            // stop (see `Harness::resume_pane_turn`). A frontend-level
+            // tool list used to enforce that by disabling the tool per
+            // coworker, but a coworker harness assembled anywhere else
+            // would inherit the model's ability to end its own turn with no
+            // report — and the resume logic would then read that self-stop
+            // as a user stop and correctly refuse, closing the turn with
+            // nothing. Stripping it HERE binds the invariant to the coworker
+            // ROLE, where it belongs.
             self.harness_tools
                 .retain(|tool| tool.name != "stop_agent_loop");
         }

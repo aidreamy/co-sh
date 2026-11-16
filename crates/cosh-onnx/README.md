@@ -1,9 +1,9 @@
 # cosh-onnx
 
 [![Crates.io](https://img.shields.io/crates/v/cosh-onnx.svg)](https://crates.io/crates/cosh-onnx)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/DiegoZaluski/cosh/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/aidreamy/co-sh/blob/main/LICENSE)
 
-ONNX decision-engine crate for [cosh](https://github.com/DiegoZaluski/cosh) — a coding agent for the terminal. A Rust port of the laya "System 1" decision engine core.
+ONNX decision-engine crate for [cosh](https://github.com/aidreamy/co-sh) — a coding agent for the terminal. A Rust port of the laya "System 1" decision engine core.
 
 `cosh-onnx` runs small ONNX decision models on CPU (`ort` + HuggingFace `tokenizers` — no torch, no CUDA) and answers structured questions (`choice` / `score` / `noul`) against a JSON state, with calibrated confidence numbers. In the cosh workspace it is gated behind the `onnx` feature so the main binary never links ONNX Runtime unless you opt in.
 
@@ -55,4 +55,4 @@ Standalone use is supported: the hub installer is repo-agnostic and `ModelKind::
 
 ## License
 
-Apache-2.0. See [LICENSE](https://github.com/DiegoZaluski/cosh/blob/main/LICENSE).
+Apache-2.0. See [LICENSE](https://github.com/aidreamy/co-sh/blob/main/LICENSE).

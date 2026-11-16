@@ -33,6 +33,13 @@ impl PendingQueues {
         self.next_request.len() + self.next_loop.len()
     }
 
+    /// Whether both queues are empty (a target with nothing waiting needs no
+    /// strip and no queue service).
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.next_request.is_empty() && self.next_loop.is_empty()
+    }
+
     /// Clear all queued messages from both queues.
     pub fn clear(&mut self) {
         self.next_request.clear();

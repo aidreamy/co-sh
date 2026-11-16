@@ -8,7 +8,7 @@
 use serde::Deserialize;
 
 /// GitHub repo the releases are published under (matches `download.sh`).
-pub const REPO: &str = "DiegoZaluski/co-sh";
+pub const REPO: &str = "aidreamy/co-sh";
 
 /// Split a release tag into the shape the installers accept:
 /// `^v?X.Y.Z(-suffix)?$` (`download.ps1`/`download.sh` both check exactly

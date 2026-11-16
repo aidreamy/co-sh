@@ -1,9 +1,9 @@
 # cosh-sdk
 
 [![Crates.io](https://img.shields.io/crates/v/cosh-sdk.svg)](https://crates.io/crates/cosh-sdk)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/DiegoZaluski/co-sh/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/aidreamy/co-sh/blob/main/LICENSE)
 
-SDK crate for [cosh](https://github.com/DiegoZaluski/co-sh) — a coding agent for the terminal.
+SDK crate for [cosh](https://github.com/aidreamy/co-sh) — a coding agent for the terminal.
 
 `cosh-sdk` consolidates the building blocks of a coding agent into a single library: a unified LLM provider client, tolerant tool-call extraction, a content-hash file patch format with session rollback, an embedded LSP client stack, and AST/code intelligence over 60+ languages. It is a plain library with no dependency on the cosh app — you can build your own agent on it alone.
 
@@ -33,7 +33,7 @@ let reply = Connector::new("openai")?
 
 Modules: `connector` (LLM clients), `extract_action` (tool-call parsing), `hashline` (patch engine), `rollback` (file versioning), `lsp` (language servers), `ast` / `tree_sitter` / `find` (code search and parsing).
 
-More runnable examples in [`examples/`](https://github.com/DiegoZaluski/co-sh/tree/main/crates/cosh-sdk/examples) — run with `cargo run -p cosh-sdk --example connector` (also `hashline-patcher`, `rollback`, `find`, `ast-ops`, `tree-sitter`, `extract-action`).
+More runnable examples in [`examples/`](https://github.com/aidreamy/co-sh/tree/main/crates/cosh-sdk/examples) — run with `cargo run -p cosh-sdk --example connector` (also `hashline-patcher`, `rollback`, `find`, `ast-ops`, `tree-sitter`, `extract-action`).
 
 ## Requirements
 
@@ -51,4 +51,4 @@ Note: the tree-sitter grammar dependencies (~50 crates) are the most significant
 
 ## License
 
-Apache-2.0. See [LICENSE](https://github.com/DiegoZaluski/co-sh/blob/main/LICENSE).
+Apache-2.0. See [LICENSE](https://github.com/aidreamy/co-sh/blob/main/LICENSE).

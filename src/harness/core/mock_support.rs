@@ -23,6 +23,7 @@ impl Harness {
             harness_tools: default_harness_tools(),
             cosh_tools: None,
             pending_images: Vec::new(),
+            user_images: Vec::new(),
             attempt_reasoning: String::new(),
             mode: Mode::Build,
             instructions: None,

@@ -95,9 +95,7 @@ dependencies = [
 
 [[package]]
 name = "aiface"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "545ed1b9267b62eae9a3a756fb86f990f4bc8cec49f1a1b4c8d8cfda0de330f0"
+version = "0.2.3"
 dependencies = [
  "async-stream",
  "base64 0.22.1",
@@ -1584,6 +1582,7 @@ dependencies = [
  "fastembed",
  "getrandom 0.3.4",
  "http",
+ "image",
  "keyring",
  "libc",
  "log",
@@ -7787,6 +7786,7 @@ dependencies = [
  "base64 0.23.1",
  "bytes",
  "encoding_rs",
+ "futures-channel",
  "futures-core",
  "futures-util",
  "h2",

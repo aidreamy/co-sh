@@ -1424,6 +1424,111 @@ async fn ctrl_x_is_inert_without_a_running_focused_pane() {
     );
 }
 
+/// Regression (user-reported, pre-existing): a stopped turn's terminal Done
+/// used to close the turn that REPLACED it. Ctrl+X closes the pane
+/// synthetically and only ASKS the turn to stop, so its thread keeps winding
+/// down — and when a queued message (or a prompt sent right after the stop)
+/// began the pane's next turn before that Done arrived, the Done cleared the
+/// NEW turn's stop signal and running flag. From then on the agent kept
+/// working behind an idle-looking pane and every further Ctrl+X returned
+/// early on `!running`: the pane was uninterruptible.
+#[tokio::test]
+async fn a_stopped_turns_late_done_never_closes_the_pane_s_new_turn() {
+    use cosh::harness::HarnessEvent;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    let _home = HOME_LOCK.lock();
+    isolate_home();
+    let mut app = App::new("/tmp".to_string());
+    app.state.add_empty_session("t".into(), "t".into(), 0);
+    app.state.current_session_id = Some("t".into());
+    app.agents_split = Some(crate::routes::session::agents_split::AgentsSplitState::new(
+        vec!["claude".into()],
+    ));
+    app.process_key_event(mod_key(KeyCode::Char('1'), KeyModifiers::ALT))
+        .unwrap();
+    let pane_id = app.agents_split.as_ref().unwrap().panes[0].id;
+
+    // The pane is running turn 1, then the user stops it with Ctrl+X.
+    app.agents_split.as_mut().unwrap().set_running(0, true);
+    app.agents_split
+        .as_mut()
+        .unwrap()
+        .set_stop_signal(0, Some(Arc::new(AtomicBool::new(false))));
+    let stopped = app.agents_split.as_mut().unwrap().begin_turn(0);
+    app.process_key_event(mod_key(KeyCode::Char('x'), KeyModifiers::CONTROL))
+        .unwrap();
+    assert!(!app.agents_split.as_ref().unwrap().panes[0].running);
+
+    // The pane's next turn (a queued message) starts before turn 1's thread
+    // had a chance to report — dispatch bookkeeping, without spawning.
+    let signal = Arc::new(AtomicBool::new(false));
+    {
+        let split = app.agents_split.as_mut().unwrap();
+        split.set_running(0, true);
+        split.set_stop_signal(0, Some(signal.clone()));
+        split.begin_turn(0);
+    }
+
+    // The stopped turn's real Done arrives LATE: it belongs to a generation
+    // the pane retired, so it changes nothing.
+    app.event_tx
+        .send(HarnessEvent::AgentsPaneDone {
+            pane: 0,
+            pane_id,
+            epoch: app.agents_pane_epoch,
+            turn: stopped,
+            output: "the cancelled turn's late report".into(),
+            stop_reason: "cancelled".into(),
+            session: None,
+        })
+        .ok();
+    app.poll_events();
+
+    let pane = &app.agents_split.as_ref().unwrap().panes[0];
+    assert!(
+        pane.running,
+        "the live turn survives the stopped turn's late Done"
+    );
+    assert!(
+        pane.stop_signal.is_some(),
+        "the live turn keeps the stop signal Ctrl+X/Esc needs"
+    );
+
+    // And Ctrl+X can still stop it — the reported bug was that it could not.
+    app.process_key_event(mod_key(KeyCode::Char('x'), KeyModifiers::CONTROL))
+        .unwrap();
+    assert!(
+        !app.agents_split.as_ref().unwrap().panes[0].running,
+        "the replacement turn is interruptible"
+    );
+    assert!(
+        signal.load(Ordering::Relaxed),
+        "the stop was asked on the turn's OWN signal"
+    );
+
+    // Positive control: the CURRENT generation's Done does close the turn.
+    app.agents_split.as_mut().unwrap().set_running(0, true);
+    let live = app.agents_split.as_mut().unwrap().begin_turn(0);
+    app.event_tx
+        .send(HarnessEvent::AgentsPaneDone {
+            pane: 0,
+            pane_id,
+            epoch: app.agents_pane_epoch,
+            turn: live,
+            output: "done".into(),
+            stop_reason: "end_turn".into(),
+            session: None,
+        })
+        .ok();
+    app.poll_events();
+    assert!(
+        !app.agents_split.as_ref().unwrap().panes[0].running,
+        "a Done of the pane's live turn still closes it"
+    );
+}
+
 /// Backspace on a focused pane (prompt blurred, the click contract) HIDES
 /// it — the pane leaves the visible set but is NOT deleted; Ctrl+Z restores
 /// the most recently hidden pane at its old slot and takes the focus. The
