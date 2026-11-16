@@ -935,6 +935,7 @@ impl App {
                 self.setup.set_custom_providers(providers);
             }
         }
+        self.setup.save();
         self.toast_form_success(
             "Provider saved",
             "The endpoint is offered in the model picker on the next agent loop.".to_string(),

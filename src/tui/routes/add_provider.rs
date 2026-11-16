@@ -38,6 +38,17 @@ impl ProviderEntry {
     }
 }
 
+/// Resolve the API-key env var name for a (cloud) provider: built-ins
+/// carry a documented one; user-registered custom providers derive
+/// `<NAME>_API_KEY`, matching `aiface`'s own derivation so a key saved
+/// under that name is actually found later.
+#[must_use]
+pub fn provider_env_var_name(name: &str) -> String {
+    get_provider_env_var(name)
+        .map(str::to_string)
+        .unwrap_or_else(|| format!("{}_API_KEY", name.to_ascii_uppercase().replace('-', "_")))
+}
+
 fn all_providers() -> Vec<ProviderEntry> {
     let mut providers: Vec<ProviderEntry> = known_providers()
         .map(|name| {
@@ -47,7 +58,10 @@ fn all_providers() -> Vec<ProviderEntry> {
                     .map(|cfg| cfg.base_url.to_string())
                     .unwrap_or_default()
             } else {
-                get_provider_env_var(name).unwrap_or("").to_string()
+                // Built-in providers carry a documented env var; custom ones
+                // derive theirs from the name (`<NAME>_API_KEY`), matching
+                // the resolver's own derivation so the saved key is found.
+                provider_env_var_name(name)
             };
             ProviderEntry { name, local, hint }
         })

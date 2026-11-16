@@ -6,6 +6,8 @@ use crate::routes::session::free_gateway_recommendation::{GatewayOffer, OFFERS};
 use crate::ui::dialogs::{DeviceLoginPhase, DialogType};
 use crate::ui::toast::{ToastOptions, ToastVariant};
 
+use crate::routes::add_provider::provider_env_var_name;
+
 use aiface::connector::copilot_oauth;
 use aiface::connector::openai_compatible::charm_oauth::{self, CharmOAuthConfig};
 use aiface::connector::{get_provider_env_var, has_api_key, invalidate_api_key, is_local_provider};
@@ -699,7 +701,7 @@ async fn device_sign_in_inner(
     // `get_api_key(provider)` picks the access token up with no other wiring.
     let env_var = match get_provider_env_var(provider) {
         Some(env_var) => env_var.to_string(),
-        None => format!("{}_API_KEY", provider.to_uppercase()),
+        None => provider_env_var_name(provider),
     };
     if let Err(error) =
         super::providers::save_provider_api_key(&env_var, tokens.access_token().expose())
