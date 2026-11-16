@@ -1743,7 +1743,6 @@ fn recompute_blocked(state: &mut RegistryState) {
     }
 }
 
-
 /// Defensive cycle check: returns true if adding a task with `deps` would
 /// introduce a cycle in the task graph. A new task has no incoming edges, so
 /// a cycle is only possible via a self-loop (dep == the new task's id) or a
@@ -1989,62 +1988,6 @@ pub fn task_claim(task_id: u64, by: &str) -> Result<String, String> {
     Ok(format!("Claimed task #{} ({})", task_id, t.title))
 }
 
-pub(crate) fn task_update(
-    task_id: u64,
-    status: Option<TaskStatus>,
-    artifacts: Option<Vec<String>>,
-    owner: Option<String>,
-) -> Result<String, String> {
-    let mut state = registry().lock().unwrap_or_else(|p| p.into_inner());
-    let idx = state
-        .tasks
-        .iter()
-        .position(|t| t.id == task_id)
-        .ok_or_else(|| format!("unknown task #{task_id}"))?;
-    if let Some(s) = status {
-        if s == TaskStatus::Completed {
-            let deps_done = state.tasks[idx].deps.iter().all(|d| {
-                state.tasks.iter().find(|x| x.id == *d).map(|x| x.status == TaskStatus::Completed).unwrap_or(false)
-            });
-            if !deps_done {
-                return Err(format!("task #{task_id} has unmet dependencies"));
-            }
-        }
-        state.tasks[idx].status = s;
-        if matches!(s, TaskStatus::Pending | TaskStatus::Blocked) {
-            state.tasks[idx].owner = None;
-            state.tasks[idx].owner_id = None;
-            state.tasks[idx].owner_is_coordinator = false;
-        }
-    }
-    if let Some(a) = artifacts {
-        let mut a = a;
-        a.sort();
-        a.dedup();
-        for item in a {
-            if !state.tasks[idx].artifacts.contains(&item) {
-                state.tasks[idx].artifacts.push(item);
-            }
-        }
-    }
-    if let Some(o) = owner {
-        if o != "main" && !state.coworkers.iter().any(|p| p.id == o) {
-            return Err(format!("unknown owner '{}'", o));
-        }
-        state.tasks[idx].owner = Some(o.clone());
-        if o == "main" {
-            state.tasks[idx].owner_id = None;
-            state.tasks[idx].owner_is_coordinator = true;
-        } else {
-            state.tasks[idx].owner_id = state.coworkers.iter().find(|c| c.id == o).map(|c| c.coworker_id);
-            state.tasks[idx].owner_is_coordinator = false;
-        }
-    }
-    recompute_blocked(&mut state);
-    let new_status = state.tasks[idx].status;
-    Ok(format!("Updated task #{} -> {}", task_id, new_status.as_str()))
-}
-
 /// The context block appended at the END of the system header (an
 /// appendix — never a prefix insertion, so the providers' exact-prefix
 /// caches stay valid). `None` when no coworkers exist: the header stays
@@ -2089,14 +2032,14 @@ pub fn context_block() -> Option<String> {
     let tasks = task_list();
     if !tasks.is_empty() {
         block.push_str("\n## Task Board\n");
-        let mut shown = 0;
-        for t in tasks.iter().filter(|t| {
-            !matches!(t.status, TaskStatus::Completed)
-        }).chain(tasks.iter().filter(|t| matches!(t.status, TaskStatus::Completed))) {
-            if shown >= 5 { break; }
+        for t in tasks
+            .iter()
+            .filter(|t| !matches!(t.status, TaskStatus::Completed))
+            .chain(tasks.iter().filter(|t| matches!(t.status, TaskStatus::Completed)))
+            .take(5)
+        {
             let owner = t.owner.as_deref().unwrap_or("unclaimed");
             let _ = writeln!(block, "- #{} — {} — {} — owner: {}", t.id, t.status.as_str(), t.title, owner);
-            shown += 1;
         }
         block.push('\n');
     }

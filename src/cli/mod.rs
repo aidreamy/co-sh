@@ -93,7 +93,7 @@ impl CliError {
 
     /// The same error plus the command it belongs to, for its help hint.
     fn in_command(mut self, command: &str) -> Self {
-        self.message = format!("{} {}", self.message, format!("(in '{command}')"));
+        self.message = format!("{} (in '{command}')", self.message);
         self
     }
 }
@@ -167,7 +167,7 @@ fn parse_command(command: &str, rest: &[String]) -> Result<Invocation, CliError>
     match command {
         "update" => parse_update(rest),
         "paths" => {
-            for arg in rest {
+            if let Some(arg) = rest.first() {
                 match arg.as_str() {
                     "-h" | "--help" => return Ok(Invocation::Help(Some("paths".to_string()))),
                     other => return Err(CliError::unknown_flag(other).in_command("paths")),
@@ -176,7 +176,7 @@ fn parse_command(command: &str, rest: &[String]) -> Result<Invocation, CliError>
             Ok(Invocation::Paths)
         }
         "whatsapp" => {
-            for arg in rest {
+            if let Some(arg) = rest.first() {
                 match arg.as_str() {
                     "-h" | "--help" => return Ok(Invocation::Help(Some("whatsapp".to_string()))),
                     other => return Err(CliError::unknown_flag(other).in_command("whatsapp")),

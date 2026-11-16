@@ -1811,22 +1811,24 @@ impl PromptView {
                     for (rx, color) in row.iter().enumerate() {
                         let cx = x0 + rx as u16;
                         let cy = preview_y + ry as u16;
-                        if cx < area.right() && cy < area.bottom() {
-                            if let Some(cell) = buf.cell_mut((cx, cy)) {
-                                cell.set_char(' ');
-                                cell.set_style(Style::default().bg(*color));
-                            }
+                        if cx < area.right()
+                            && cy < area.bottom()
+                            && let Some(cell) = buf.cell_mut((cx, cy))
+                        {
+                            cell.set_char(' ');
+                            cell.set_style(Style::default().bg(*color));
                         }
                     }
                 }
                 // `✗` remove marker on the top-right cell.
                 let mx = x0 + IMAGE_THUMB_W - 1;
                 let my = preview_y;
-                if mx < area.right() && my < area.bottom() {
-                    if let Some(cell) = buf.cell_mut((mx, my)) {
-                        cell.set_char('✗');
-                        cell.set_style(err_style);
-                    }
+                if mx < area.right()
+                    && my < area.bottom()
+                    && let Some(cell) = buf.cell_mut((mx, my))
+                {
+                    cell.set_char('✗');
+                    cell.set_style(err_style);
                 }
             }
             // Overflow indicator.
@@ -1873,21 +1875,21 @@ fn try_load_image(text: &str) -> Option<(Vec<u8>, String)> {
     if let Some(rest) = loc.strip_prefix("file://") {
         // `file:///abs/path` -> `/abs/path`; `file://host/path` -> `/path`.
         let rest = rest.trim_start_matches('/');
-        if rest.starts_with("localhost/") {
-            loc = format!("/{}", &rest["localhost/".len()..]);
+        if let Some(stripped) = rest.strip_prefix("localhost/") {
+            loc = format!("/{stripped}");
         } else {
             // Re-add the leading slash for absolute paths.
-            loc = format!("/{}", rest);
+            loc = format!("/{rest}");
         }
     }
     if loc == "~" {
         if let Ok(home) = std::env::var("HOME") {
             loc = home;
         }
-    } else if let Some(rest) = loc.strip_prefix("~/") {
-        if let Ok(home) = std::env::var("HOME") {
-            loc = format!("{}/{}", home, rest);
-        }
+    } else if let Some(rest) = loc.strip_prefix("~/")
+        && let Ok(home) = std::env::var("HOME")
+    {
+        loc = format!("{home}/{rest}");
     }
     // Local file path.
     let path = std::path::Path::new(&loc);
@@ -1955,10 +1957,10 @@ fn decode_image_thumb(bytes: &[u8]) -> Vec<Vec<Color>> {
             image::imageops::FilterType::Triangle,
         );
         let rgba = resized.to_rgba8();
-        for y in 0..h {
-            for x in 0..w {
+        for (y, row) in grid.iter_mut().enumerate() {
+            for (x, cell) in row.iter_mut().enumerate() {
                 let p = rgba.get_pixel(x as u32, y as u32);
-                grid[y][x] = Color::Rgb(p[0], p[1], p[2]);
+                *cell = Color::Rgb(p[0], p[1], p[2]);
             }
         }
     }

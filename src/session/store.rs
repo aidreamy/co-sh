@@ -920,7 +920,7 @@ impl SessionStore {
             .collect();
         // Newest activity first: the first file that still owns a resumable
         // branch answers the question, without replaying every history here.
-        histories.sort_by(|a, b| b.0.cmp(&a.0));
+        histories.sort_by_key(|(modified, _)| std::cmp::Reverse(*modified));
         for (_, path) in histories {
             let Some((_, projection)) = self.load_history_path(&path) else {
                 continue;

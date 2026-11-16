@@ -2,6 +2,8 @@
 //!
 //! All drawing code extracted from the original monolithic view.rs.
 
+#![allow(clippy::too_many_arguments)]
+
 use std::time::SystemTime;
 
 use cosh_tui::core::lib::rgba::RGBA;
@@ -38,7 +40,7 @@ const MODEL_COLLAPSED_PAD: u16 = 20;
 pub(crate) const FIELD_LABEL_W: u16 = 7;
 
 /// Rows reserved above the create-db form inside box 1: section title (1)
-/// + gap (1) + URL input minimum (3). The form may grow up to `box1_h`
+/// plus gap (1) and URL input minimum (3). The form may grow up to `box1_h`
 /// minus this. The extra row of slack keeps the form's bottom border from
 /// touching box 1's bottom edge when it expands all the way to the limit.
 pub(crate) const CREATE_DB_FORM_BOTTOM_RESERVE: u16 = 2 + 3 + 1;
@@ -1000,7 +1002,7 @@ impl RagView {
         let content_w = overlay_w.saturating_sub(4) as usize;
         let content_h = (overlay_h.saturating_sub(2)) as usize;
         let total_lines = description.lines().count();
-        let max_scroll = total_lines.saturating_sub(content_h).max(0);
+        let max_scroll = total_lines.saturating_sub(content_h);
         let scroll = self.desc_scroll.min(max_scroll);
         let lines: Vec<&str> = description.lines().collect();
 
@@ -1078,7 +1080,7 @@ impl RagView {
         // Scrollable content (no border, no footer)
         let max_content_h = (overlay_y + overlay_h - 1).saturating_sub(content_y);
         let total_lines = self.content_preview.lines().count();
-        let max_scroll = total_lines.saturating_sub(max_content_h as usize).max(0);
+        let max_scroll = total_lines.saturating_sub(max_content_h as usize);
         let scroll = self.preview_scroll.min(max_scroll);
         let lines: Vec<&str> = self.content_preview.lines().collect();
 
@@ -1164,8 +1166,7 @@ impl RagView {
         }
 
         let visible_end = (scroll + max_vis).min(total);
-        for i in scroll..visible_end {
-            let db = filtered[i];
+        for db in filtered.iter().take(visible_end).skip(scroll) {
             let is_sel = self.selected_db_for_embed.as_deref() == Some(&db.name);
             let prefix = if is_sel { "\u{25cf} " } else { "  " };
             let line = format!("{prefix}{} \u{2014} {}", db.name, db.description);

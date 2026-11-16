@@ -31,12 +31,12 @@ pub struct IpcCheckup {
     kind: Kind,
 }
 
-/// The whole-review budget (M3): one review = activation (≤2s) + handshake
-/// + decide. The first decide of a daemon also loads the model (a multi-GB
-/// mmap + ORT session build takes seconds; the daemon's own retry window
-/// prevents repeat attempts). 45s bounds the WORST case — a wedged daemon
-/// fails the review well under a minute instead of composing per-read
-/// timeouts into minutes.
+/// The whole-review budget (M3): one review = activation (≤2s) plus
+/// handshake and decide. The first decide of a daemon also loads the model
+/// (a multi-GB mmap + ORT session build takes seconds; the daemon's own
+/// retry window prevents repeat attempts). 45s bounds the WORST case — a
+/// wedged daemon fails the review well under a minute instead of composing
+/// per-read timeouts into minutes.
 const DECIDE_BUDGET: std::time::Duration = std::time::Duration::from_secs(45);
 
 impl IpcCheckup {

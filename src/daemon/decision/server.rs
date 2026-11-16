@@ -357,10 +357,7 @@ fn acquire_slot(slot: &Mutex<()>, window: Duration) -> Result<std::sync::MutexGu
                 std::thread::sleep(Duration::from_millis(25));
             }
             Err(std::sync::TryLockError::Poisoned(_)) => {
-                return Err(Ipc::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "inference slot poisoned",
-                )));
+                return Err(Ipc::Io(std::io::Error::other("inference slot poisoned")));
             }
         }
     }

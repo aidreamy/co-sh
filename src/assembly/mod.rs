@@ -306,17 +306,15 @@ pub async fn assemble(
         };
         match crate::weights::resolve_target(&checkup_config.model, &checkup_config.hub) {
             Some(target) => {
-                match crate::weights::ensure_installed(target.clone(), event_tx.clone()).await {
-                    // Installed (or already cached): the daemon loads the
-                    // mirror snapshot the installer filled.
-                    Ok(explanation) => {
-                        weights_explanation = explanation;
-                        harness = attach_kind(target.to_kind(), harness);
-                    }
-                    // Download failed: fail-open — toast (the Failed
-                    // event already toasted) and assemble WITHOUT the
-                    // audit.
-                    Err(_) => {}
+                // Installed (or already cached): the daemon loads the
+                // mirror snapshot the installer filled. A download failure
+                // stays fail-open — toast (the Failed event already toasted)
+                // and assemble WITHOUT the audit.
+                if let Ok(explanation) =
+                    crate::weights::ensure_installed(target.clone(), event_tx.clone()).await
+                {
+                    weights_explanation = explanation;
+                    harness = attach_kind(target.to_kind(), harness);
                 }
             }
             // No mirror target (a local checkpoint, or a config the

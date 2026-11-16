@@ -236,11 +236,7 @@ pub async fn ensure_installed(
                 };
                 // Throttle: emit at most every 0.2% of progress or 250 ms,
                 // so a 1 GB graph does not flood the event channel.
-                let permille = if total == 0 {
-                    0
-                } else {
-                    ((done * 1000) / total) as u32
-                };
+                let permille = (done * 1000).checked_div(total).unwrap_or(0) as u32;
                 if let Ok(mut last) = throttle.lock()
                     && (permille.saturating_sub(last.permille) >= 2
                         || last.at.elapsed() >= std::time::Duration::from_millis(250))

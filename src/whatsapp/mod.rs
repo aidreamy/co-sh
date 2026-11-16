@@ -356,6 +356,38 @@ async fn mark_stale_store(path: &Path) {
     }
 }
 
+/// Print a fresh pairing QR code, with the instructions that make it
+/// scannable. A new payload arrives periodically until the phone scans one.
+fn print_qr(payload: &str) {
+    match qr::render(payload) {
+        Ok(code) => {
+            println!("Scan from WhatsApp → Linked devices → Link a device:");
+            println!("{code}");
+            flush_stdout();
+        }
+        Err(error) => {
+            // Rendering only fails on an oversized payload, which the
+            // server never issues; keep the link alive and report it.
+            eprintln!("cosh whatsapp: could not render the pairing QR code: {error}");
+        }
+    }
+}
+
+fn flush_stdout() {
+    let _ = std::io::stdout().flush();
+}
+
+/// Reap finished conversation tasks, logging panics instead of losing them.
+fn reap(tasks: &mut JoinSet<()>) {
+    while let Some(finished) = tasks.try_join_next() {
+        if let Err(error) = finished
+            && error.is_panic()
+        {
+            log::error!("cosh whatsapp: a conversation task panicked: {error}");
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -408,37 +440,5 @@ mod tests {
 
         assert!(stale_marker(&db).exists());
         let _ = std::fs::remove_dir_all(&dir);
-    }
-}
-
-/// Print a fresh pairing QR code, with the instructions that make it
-/// scannable. A new payload arrives periodically until the phone scans one.
-fn print_qr(payload: &str) {
-    match qr::render(payload) {
-        Ok(code) => {
-            println!("Scan from WhatsApp → Linked devices → Link a device:");
-            println!("{code}");
-            flush_stdout();
-        }
-        Err(error) => {
-            // Rendering only fails on an oversized payload, which the
-            // server never issues; keep the link alive and report it.
-            eprintln!("cosh whatsapp: could not render the pairing QR code: {error}");
-        }
-    }
-}
-
-fn flush_stdout() {
-    let _ = std::io::stdout().flush();
-}
-
-/// Reap finished conversation tasks, logging panics instead of losing them.
-fn reap(tasks: &mut JoinSet<()>) {
-    while let Some(finished) = tasks.try_join_next() {
-        if let Err(error) = finished
-            && error.is_panic()
-        {
-            log::error!("cosh whatsapp: a conversation task panicked: {error}");
-        }
     }
 }

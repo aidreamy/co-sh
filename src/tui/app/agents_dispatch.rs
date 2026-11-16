@@ -1404,7 +1404,7 @@ impl App {
         let busy = pane.running
             || pane.rehydrating
             || cosh::harness::agent_coworkers::coworker_is_compacting(pane.id);
-        busy.then(|| (pane.id, pane.running))
+        busy.then_some((pane.id, pane.running))
     }
 
     /// Dispatch ONE message to pane `pane` as its next turn — the shared

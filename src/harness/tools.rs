@@ -716,7 +716,7 @@ fn config_to_embedder(
     match config {
         #[cfg(feature = "fastembed")]
         RecallEmbedderConfig::Local { model_name } => {
-            let fb_model = cosh_recall::embed::fastembed_model_from_str(&model_name)?;
+            let fb_model = cosh_recall::embed::fastembed_model_from_str(model_name)?;
             cosh_recall::embed::Embedder::try_new_local(fb_model)
                 .map_err(|e| format!("failed to create local embedder: {e}"))
         }

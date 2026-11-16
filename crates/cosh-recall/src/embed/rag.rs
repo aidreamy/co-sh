@@ -91,7 +91,7 @@ pub enum Embedder {
     #[cfg(feature = "cloud")]
     Cloud {
         /// A configured SDK connector pointing at the embedding provider.
-        connector: aiface::connector::Connector,
+        connector: Box<aiface::connector::Connector>,
         /// Output dimension of the chosen model.
         dim: usize,
     },
@@ -115,7 +115,7 @@ impl Embedder {
             .map_err(|e| RagError::Embedding(e.to_string()))?
             .dim;
         // Suppress fastembed's download progress bar to avoid breaking the TUI.
-        let mut options = fastembed::InitOptions::new(model);
+        let mut options = fastembed::TextInitOptions::new(model);
         options.show_download_progress = false;
         let text_embedding = fastembed::TextEmbedding::try_new(options)?;
         Ok(Self::Local {
@@ -138,8 +138,11 @@ impl Embedder {
     /// [`aiface`]: https://docs.rs/aiface
     #[cfg(feature = "cloud")]
     #[must_use]
-    pub const fn new_cloud(connector: aiface::connector::Connector, dim: usize) -> Self {
-        Self::Cloud { connector, dim }
+    pub fn new_cloud(connector: aiface::connector::Connector, dim: usize) -> Self {
+        Self::Cloud {
+            connector: Box::new(connector),
+            dim,
+        }
     }
 
     /// Embed a batch of texts, returning one vector per input.

@@ -55,7 +55,7 @@ impl RagView {
                         .get(self.show_desc_for_db.unwrap_or(usize::MAX))
                         .map(|db| db.description.lines().count())
                         .unwrap_or(0);
-                    if (self.desc_scroll as usize) < total_lines.saturating_sub(1) {
+                    if self.desc_scroll < total_lines.saturating_sub(1) {
                         self.desc_scroll = self.desc_scroll.saturating_add(1);
                     }
                 } else if self.mode == RagMode::Previewing
@@ -85,7 +85,7 @@ impl RagView {
                         ));
                     }
                     self.url_input.clear();
-                    return Some(RagAction::FetchUrlOrPath(input));
+                    Some(RagAction::FetchUrlOrPath(input))
                 }
                 RagMode::Previewing => {
                     if !self.content_preview.is_empty() {
@@ -1228,7 +1228,7 @@ mod tests {
         let input_h = view.url_input.height(92);
         let form_y = 2 + input_h;
         let name_y = form_y + 1 + 2;
-        let value_x = 0 + 4 + 2 + 7; // pad (cx + 2) + label width
+        let value_x = 4 + 2 + 7; // pad (cx + 2) + label width
         let click = |x: u16, y: u16| {
             MouseEvent::new(
                 MouseEventType::Up,
@@ -1270,7 +1270,7 @@ mod tests {
         let input_h = view.url_input.height(92);
         let form_y = 2 + input_h;
         let name_y = form_y + 1 + 2;
-        let value_x = 0 + 4 + 2 + 7; // pad (cx + 2) + label width
+        let value_x = 4 + 2 + 7; // pad (cx + 2) + label width
         let mouse = |x: u16, y: u16| {
             MouseEvent::new(
                 MouseEventType::Drag,
@@ -1333,7 +1333,7 @@ mod tests {
 
         // No active selection → drag is a no-op.
         view.clear_field_selection();
-        let value_x = 0 + 4 + 2 + 7;
+        let value_x = 4 + 2 + 7;
         assert!(!view.extend_field_selection_at(&mouse(value_x + 1, name_y), area));
     }
 
@@ -1346,7 +1346,7 @@ mod tests {
         let area = ratatui::layout::Rect::new(0, 0, 100, 40);
         let input_h = view.url_input.height(92);
         let name_y = 2 + input_h + 1 + 2;
-        let value_x = 0 + 4 + 2 + 7;
+        let value_x = 4 + 2 + 7;
         let click = MouseEvent::new(
             MouseEventType::Up,
             MouseButton::Left,

@@ -1738,6 +1738,7 @@ impl App {
 /// (`agents_dispatch`) reuses it too, and it touches no `App` state —
 /// it only builds the harness the caller drives `compact_on_demand`
 /// with.
+#[allow(clippy::too_many_arguments)]
 pub(super) fn build_manual_compaction_harness(
     provider: &str,
     model: Option<&str>,

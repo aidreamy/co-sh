@@ -474,10 +474,10 @@ impl Harness {
                 None => return Err("`agents_task_update` requires a `task` id.".to_string()),
             };
             let status_raw = args_map.get("status").and_then(|v| v.as_str());
-            if let Some(s) = status_raw {
-                if !matches!(s, "pending" | "in_progress" | "completed" | "blocked") {
-                    return Err(format!("unknown task status '{s}'"));
-                }
+            if let Some(s) = status_raw
+                && !matches!(s, "pending" | "in_progress" | "completed" | "blocked")
+            {
+                return Err(format!("unknown task status '{s}'"));
             }
             let status = status_raw.map(super::agent_coworkers::TaskStatus::parse);
             let artifacts = args_map.get("artifacts").and_then(|v| v.as_array()).map(|a| {

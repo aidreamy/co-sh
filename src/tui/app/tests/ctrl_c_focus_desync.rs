@@ -130,7 +130,7 @@ async fn question_dialog_mouse_esc_close_restores_prompt_focus() {
     let mut closed = false;
     for x in 0..area.width {
         app.question_dialog.visible = true;
-        let r = app.handle_mouse_event(mouse(CKind::Up(CBtn::Left), area.x + x, footer_y));
+        let _ = app.handle_mouse_event(mouse(CKind::Up(CBtn::Left), area.x + x, footer_y));
         if !app.question_dialog.visible {
             closed = true;
             break;

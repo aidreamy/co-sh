@@ -327,34 +327,34 @@ impl RagView {
     pub fn advance_spinner(&mut self) {
         self.spinner.advance();
         // Check if async URL fetch completed
-        if let Some(rx) = &self.fetch_rx {
-            if let Ok(result) = rx.try_recv() {
-                self.fetch_rx = None;
-                match result {
-                    Ok(content) => {
-                        self.mode = RagMode::Previewing;
-                        self.content_preview = content;
-                        self.preview_scroll = 0;
-                    }
-                    Err(_e) => {
-                        self.mode = RagMode::Idle;
-                    }
+        if let Some(rx) = &self.fetch_rx
+            && let Ok(result) = rx.try_recv()
+        {
+            self.fetch_rx = None;
+            match result {
+                Ok(content) => {
+                    self.mode = RagMode::Previewing;
+                    self.content_preview = content;
+                    self.preview_scroll = 0;
+                }
+                Err(_e) => {
+                    self.mode = RagMode::Idle;
                 }
             }
         }
         // Check if async embed completed
-        if let Some(rx) = &self.embed_rx {
-            if let Ok(result) = rx.try_recv() {
-                self.embed_rx = None;
-                match result {
-                    Ok(()) => {
-                        self.embedding_done();
-                        self.embed_success = true;
-                    }
-                    Err(e) => {
-                        self.set_error();
-                        self.embed_error = Some(e);
-                    }
+        if let Some(rx) = &self.embed_rx
+            && let Ok(result) = rx.try_recv()
+        {
+            self.embed_rx = None;
+            match result {
+                Ok(()) => {
+                    self.embedding_done();
+                    self.embed_success = true;
+                }
+                Err(e) => {
+                    self.set_error();
+                    self.embed_error = Some(e);
                 }
             }
         }
@@ -520,11 +520,7 @@ impl RagView {
     // Internal helpers
 
     pub(crate) fn max_preview_scroll(&self) -> usize {
-        self.content_preview
-            .lines()
-            .count()
-            .saturating_sub(1)
-            .max(0)
+        self.content_preview.lines().count().saturating_sub(1)
     }
 
     pub(crate) fn clamp_db_scroll(&mut self) {

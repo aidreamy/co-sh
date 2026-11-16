@@ -27,7 +27,7 @@ async fn rag_field_drag_selection_through_app_mouse_events() {
     // value starts after the label.
     let input_h = app.rag_view.url_input.height(72);
     let name_y = 1 + 2 + input_h + 1 + 2;
-    let value_x = 0 + 4 + 2 + 7; // pad (cx + 2) + label width
+    let value_x = 4 + 2 + 7; // pad (cx + 2) + label width
 
     let mouse = |kind: CKind, x: u16, y: u16| CMouse {
         kind,
