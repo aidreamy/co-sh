@@ -33,6 +33,12 @@ A `ComputerAct` is ONE step of a pipeline. A semantic step carries:
 Steps chain via `then` with shell `&&` semantics: each next step runs only
 if the previous succeeded, and the output joins the per-step reports with
 ` → ` (`set_value \`entry\` (app) → waited 400 ms → pressed \`button\``).
+Each report that changed state also carries an `after:` block — the target's
+fresh state (`is gone`, `visible`, `disabled`, value), the foreground app and
+the element now holding keyboard focus — so a no-op step is visible without
+another snapshot. A selector that matched several elements without `nth` says
+so, and keys a `hold` left down are reported until released
+(`release: ["all"]`).
 
 ## Keyboard steps inside an act chain
 

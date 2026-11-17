@@ -22,9 +22,10 @@ Pick exactly ONE mode — they are mutually exclusive and validated up front:
    [`snapshot`](snapshot.md) renders as flags): `attached`, `detached`,
    `visible` (default), `hidden`, `enabled`, `disabled`, `focused`,
    `unfocused`.
-2. **Value holds** — `selector` + `value` ("equals") or `value_contains`
-   ("substring"): the answer to "wait until the export progress bar says
-   100%" — as a `state` this is undecidable, as a VALUE it is one call.
+2. **Value holds** — `selector` + `value` ("equals"), `value_contains`
+   ("substring") or `numeric_value_gte` (numeric threshold): the answer to
+   "wait until the export progress bar says 100%" — as a `state` this is
+   undecidable, as a VALUE it is one call.
 3. **Graphical event** — `event` + app scope (exactly one of `name`/`pid`,
    NO selector): subscribe to the platform's event stream and wake on the
    first matching event — `window_opened`, `window_closed`, `focus_changed`,
@@ -84,11 +85,11 @@ The model re-plans from that difference instead of retrying blind — see
 
 ## Edges
 
-- **Validated up front**: scope-less calls, double scopes, state+value
-  pairings (`state` excludes `value`/`value_contains`, and the two value
-  fields exclude each other) and over-cap timeouts fail before any
-  platform call. Event mode is app-scoped ONLY — it takes no
-  `selector`/`nth`/`state`/`value`.
+- **Validated up front**: scope-less calls, double scopes, `state` + value
+  pairings (`state` excludes the value conditions, and the value fields
+  exclude each other) and over-cap timeouts fail before any platform call.
+  Event mode is app-scoped ONLY — it takes no `selector`/`nth`/`state`/
+  `value`/`numeric_value_gte`/`surface`.
 - **Waits are pauses, not sleeps**: there is no bare `wait_ms` tool call —
   inside a pipeline, [`control`](control.md) and [`act`](act.md) accept
   inline `wait` steps for settle-pauses between actions.

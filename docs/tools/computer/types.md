@@ -130,9 +130,10 @@ desktop = desktop_origin + image_coord × desktop_scale
 | `state` | `Option<WaitState>` | Element condition (default `visible`). |
 | `value` | `Option<String>` | VALUE mode: wait until the element's value EQUALS this (requires `selector`; excludes `state`). |
 | `value_contains` | `Option<String>` | VALUE mode: wait until the value CONTAINS this substring (requires `selector`; excludes `state`; and excludes `value`). |
-| `event` | `Option<WaitEvent>` | EVENT mode: subscribe to a graphical event, app-scoped — excludes `selector`/`nth`/`state`/`value`/`value_contains`. |
+| `numeric_value_gte` | `Option<f64>` | VALUE mode: wait until the NUMERIC value (slider, spinner, progress bar) reaches at least this number (requires `selector`; excludes `state`/`value`/`value_contains`). |
+| `event` | `Option<WaitEvent>` | EVENT mode: subscribe to a graphical event, app-scoped — excludes `selector`/`nth`/`state`/`value`/`value_contains`/`numeric_value_gte`/`surface`. |
 | `timeout_ms` | `Option<u64>` | Default 10 000, hard cap 60 000; the app lookup shares the budget. |
-| `surface` — NOT supported here | — | `wait` is app-scoped only. |
+| `surface` | `Option<SurfaceKind>` | Element modes may watch a SHELL SURFACE instead of an app (exactly one of `name`/`pid`/`surface`). |
 
 `WaitState` — the eight conditions: `Attached`, `Detached`, `Visible`,
 `Hidden`, `Enabled`, `Disabled`, `Focused`, `Unfocused` (same tokens as the
@@ -213,7 +214,7 @@ at resolution time). On timeout the error carries the platform's
 | `key` | `Option<String>` | Keyboard step — no pointer fields. |
 | `text` | `Option<String>` | Literal typing — rejects `held`. |
 | `hold` | `Option<Vec<String>>` | Press these keys and KEEP them down (standalone step; re-pressing a down key is harmless). |
-| `release` | `Option<Vec<String>>` | Lift keys again (release of a key nothing held is harmless). |
+| `release` | `Option<Vec<String>>` | Lift keys again (release of a key nothing held is harmless); `["all"]` releases every key a `hold` left down. |
 | `wait` | `Option<u64>` | Inline pause, ms (cap 10 000). |
 | `then` | `Option<Box<ComputerControl>>` | Next step (shell `&&` semantics). |
 

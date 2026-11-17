@@ -398,6 +398,11 @@ pub struct SnapshotOutput {
     pub elements: usize,
 }
 
+/// Serde predicate: omit a `false` flag from the JSON snapshot.
+fn is_false(flag: &bool) -> bool {
+    !*flag
+}
+
 /// Tri-state toggle value for a checkable control (`checked` in
 /// [`ElementStates`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -427,8 +432,10 @@ impl From<xa11y::Toggled> for ToggleState {
 /// The subset is chosen for action planning: these are the flags that change
 /// whether an interaction will succeed (a `disabled` button fails
 /// `computer_act`'s press; a `hidden` row needs `scroll_into_view` first).
-/// Static attributes (focusable, modal, required) and window-level `active`
-/// are left out to keep per-node cost low.
+/// `modal`, `required` and `active` are included because each one explains a
+/// failure the model would otherwise misread: a modal dialog silently
+/// swallows clicks outside it, a `required` field left empty blocks submit,
+/// and `active` names the window that actually receives input.
 ///
 /// Default (`enabled` + `visible`, everything else off/absent) matches
 /// [`xa11y::StateSet`]'s default, so "all defaults" renders as nothing in the
@@ -452,6 +459,12 @@ pub struct ElementStates {
     pub editable: bool,
     /// Whether an async operation is in progress on the element.
     pub busy: bool,
+    /// Whether the element is a modal dialog (input outside it is ignored).
+    pub modal: bool,
+    /// Whether a form field is required and still empty.
+    pub required: bool,
+    /// Whether this window is the active (foreground) one of its app.
+    pub active: bool,
 }
 
 impl Default for ElementStates {
@@ -465,6 +478,9 @@ impl Default for ElementStates {
             expanded: None,
             editable: false,
             busy: false,
+            modal: false,
+            required: false,
+            active: false,
         }
     }
 }
@@ -482,6 +498,9 @@ impl ElementStates {
             expanded: states.expanded,
             editable: states.editable,
             busy: states.busy,
+            modal: states.modal,
+            required: states.required,
+            active: states.active,
         }
     }
 
@@ -494,8 +513,9 @@ impl ElementStates {
 
     /// aria-vocabulary tokens for the non-default flags, in fixed order:
     /// `disabled`, `hidden`, `focused`, `checked`/`unchecked`/`mixed`,
-    /// `selected`, `expanded`/`collapsed`, `editable`, `busy`. Fixed order
-    /// keeps the outline predictable to parse.
+    /// `selected`, `expanded`/`collapsed`, `editable`, `busy`, `modal`,
+    /// `required`, `active`. Fixed order keeps the outline predictable to
+    /// parse.
     #[must_use]
     pub fn outline_tokens(&self) -> Vec<&'static str> {
         let mut tokens = Vec::new();
@@ -528,6 +548,15 @@ impl ElementStates {
         if self.busy {
             tokens.push("busy");
         }
+        if self.modal {
+            tokens.push("modal");
+        }
+        if self.required {
+            tokens.push("required");
+        }
+        if self.active {
+            tokens.push("active");
+        }
         tokens
     }
 }
@@ -539,7 +568,7 @@ impl ElementStates {
 /// the builder below reads them from the same `ElementData` the node's
 /// identity comes from, so building here adds zero extra provider round
 /// trips per node.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 pub struct StateNode {
     /// Element role, snake_case (same vocabulary as selectors).
     pub role: String,
@@ -547,8 +576,24 @@ pub struct StateNode {
     pub name: Option<String>,
     /// Current value, when the element has one.
     pub value: Option<String>,
+    /// Supplementary description (tooltip, help text), when present — often
+    /// the only text that distinguishes two same-named controls.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Platform-assigned stable identifier (`stable_id` selector attribute),
+    /// when present — resolves the same element across snapshots.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stable_id: Option<String>,
+    /// Actions the platform says the element supports — the exact verb
+    /// names `perform_action` accepts.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub actions: Vec<String>,
     /// Current element states.
     pub states: ElementStates,
+    /// Children were NOT read because `max_depth` was reached: the subtree is
+    /// unknown, not empty.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub children_not_read: bool,
     /// Child elements.
     pub children: Vec<StateNode>,
 }
@@ -707,10 +752,15 @@ pub enum WaitState {
 #[derive(Debug, Clone, Default, Deserialize, JsonSchema)]
 pub struct ComputerWait {
     /// Application name (exact match, e.g. `"Safari"`). Provide `name` or
-    /// `pid` — exactly one.
+    /// `pid` — exactly one, unless `surface` is used.
     pub name: Option<String>,
-    /// Application process ID. Provide `name` or `pid` — exactly one.
+    /// Application process ID. Provide `name` or `pid` — exactly one, unless
+    /// `surface` is used.
     pub pid: Option<u32>,
+    /// Target an OS SHELL SURFACE instead of an application (mutually
+    /// exclusive with `name`/`pid`, element modes only): menu bar, taskbar,
+    /// panel, dock, status items, desktop, or a flyout open right now.
+    pub surface: Option<SurfaceKind>,
     /// CSS-like selector for the element to watch, e.g.
     /// `progress_bar[name='Exporting…']`. Element-state and value modes.
     pub selector: Option<String>,
@@ -725,6 +775,10 @@ pub struct ComputerWait {
     /// Wait until the element's value CONTAINS this substring. Requires
     /// `selector`; mutually exclusive with `state`.
     pub value_contains: Option<String>,
+    /// Wait until the element's NUMERIC value (slider, spinner, progress bar)
+    /// reaches at least this number. Requires `selector`; mutually exclusive
+    /// with `state`/`value`/`value_contains`.
+    pub numeric_value_gte: Option<f64>,
     /// Wait for a GRAPHICAL EVENT in the application INSTEAD of an element
     /// condition — app-scoped: needs exactly one of `name`/`pid`, takes no
     /// `selector`/`nth`/`state`/`value`. The platform's event stream

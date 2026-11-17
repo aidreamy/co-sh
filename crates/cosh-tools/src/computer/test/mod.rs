@@ -6,6 +6,7 @@ mod apps;
 mod errors;
 mod input;
 mod pipelines;
+mod reporting;
 mod screenshot;
 mod snapshot_surface;
 mod windows;

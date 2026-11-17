@@ -655,6 +655,76 @@ mod tests {
         assert!(err.contains("not both"), "err: {err}");
     }
 
+    /// The NUMERIC mode follows the value rules: selector required, `state`
+    /// and the textual value conditions excluded.
+    #[test]
+    fn numeric_mode_rules() {
+        let no_selector = ComputerWait {
+            name: Some("Safari".into()),
+            numeric_value_gte: Some(80.0),
+            ..Default::default()
+        };
+        let err = validate(&no_selector).unwrap_err();
+        assert!(err.contains("requires `selector`"), "err: {err}");
+
+        let with_value = ComputerWait {
+            name: Some("Safari".into()),
+            selector: Some("progress_bar".into()),
+            value: Some("80%".into()),
+            numeric_value_gte: Some(80.0),
+            ..Default::default()
+        };
+        let err = validate(&with_value).unwrap_err();
+        assert!(err.contains("not both"), "err: {err}");
+
+        let with_state = ComputerWait {
+            name: Some("Safari".into()),
+            selector: Some("progress_bar".into()),
+            numeric_value_gte: Some(80.0),
+            state: Some(WaitState::Visible),
+            ..Default::default()
+        };
+        let err = validate(&with_state).unwrap_err();
+        assert!(err.contains("OR the state"), "err: {err}");
+
+        let ok = ComputerWait {
+            name: Some("Safari".into()),
+            selector: Some("progress_bar".into()),
+            numeric_value_gte: Some(80.0),
+            ..Default::default()
+        };
+        assert!(validate(&ok).is_ok());
+    }
+
+    /// A shell surface is a third root: it replaces `name`/`pid` and reuses
+    /// the same selector flow, while an EVENT wait stays app-scoped.
+    #[test]
+    fn surface_root_rules() {
+        let surface_only = ComputerWait {
+            surface: Some(crate::computer::types::SurfaceKind::MenuBar),
+            selector: Some("menuitem".into()),
+            ..Default::default()
+        };
+        assert!(validate(&surface_only).is_ok());
+
+        let mixed = ComputerWait {
+            name: Some("Safari".into()),
+            surface: Some(crate::computer::types::SurfaceKind::MenuBar),
+            selector: Some("menuitem".into()),
+            ..Default::default()
+        };
+        let err = validate(&mixed).unwrap_err();
+        assert!(err.contains("cannot share"), "err: {err}");
+
+        let event_with_surface = ComputerWait {
+            surface: Some(crate::computer::types::SurfaceKind::MenuBar),
+            event: Some(crate::computer::types::WaitEvent::MenuOpened),
+            ..Default::default()
+        };
+        let err = validate(&event_with_surface).unwrap_err();
+        assert!(err.contains("no `surface`"), "err: {err}");
+    }
+
     /// The VALUE mode: requires a selector, mutually exclusive with `state`
     /// and with its sibling (`value` vs `value_contains`).
     #[test]
@@ -666,7 +736,7 @@ mod tests {
         };
         let err = validate(&no_selector).unwrap_err();
         assert!(
-            err.contains("`value`/`value_contains` requires `selector`"),
+            err.contains("`value`/`value_contains`") && err.contains("requires `selector`"),
             "err: {err}"
         );
 
@@ -747,6 +817,13 @@ mod tests {
                 event: Some(WaitEvent::FocusChanged),
                 ..Default::default()
             },
+            // Numeric mode is element-scoped too: without this rejection the
+            // event branch would run and silently drop the threshold.
+            ComputerWait {
+                numeric_value_gte: Some(100.0),
+                event: Some(WaitEvent::FocusChanged),
+                ..Default::default()
+            },
         ] {
             let err = validate(&extra).unwrap_err();
             assert!(
@@ -754,6 +831,17 @@ mod tests {
                 "event excludes element fields: {err}"
             );
         }
+
+        let numeric_event = ComputerWait {
+            numeric_value_gte: Some(100.0),
+            event: Some(WaitEvent::FocusChanged),
+            ..Default::default()
+        };
+        let err = validate(&numeric_event).unwrap_err();
+        assert!(
+            err.contains("`numeric_value_gte`"),
+            "the rejection must name the offending field: {err}"
+        );
 
         // No event, no selector: the plain-selector requirement still holds.
         let bare_event_less = ComputerWait {

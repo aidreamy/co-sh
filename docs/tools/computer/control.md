@@ -41,7 +41,11 @@ computer.control(&pipeline).await?;
 
 Each step runs only if the previous succeeded; the first failure aborts the
 chain and reports the point of failure. Targeting is **per step** — one step
-may click in one app and the next type into another.
+may click in one app and the next type into another. Every report that changed
+state ends with an `after:` block (target's fresh state, foreground app,
+focused element); a click whose selector matched several elements without
+`nth` says how many matched, and keys a `hold` left down are reported until
+released (`release: ["all"]`).
 
 ## The two target forms (per step)
 

@@ -20,33 +20,41 @@ snapshot(metadata, ComputerSnapshot) -> Result<SnapshotOutput, String>
    subtree — a single dialog, a window's group — instead of the whole app.
 3. **Traverse with a budget.** `max_depth` (default 12, hard cap 40) stops
    runaway trees (web-embedded UIs can be enormous); the output reports
-   `elements`, the count it rendered, so you can tell "small app" from
-   "truncated".
+   `elements`, the count it rendered. A branch the budget cut is marked
+   `… children not read (depth limit — raise max_depth)` — the subtree is
+   unknown, not empty.
 4. **Render.** `format` picks the shape:
    - `tree` (default) — a compact indented outline, one line per element;
    - `json` — structured nodes (`role`/`name`/`value`/`children`).
 
 ## Reading the outline
 
-A line carries more than the name — **state flags** ride along in brackets:
+A line is `role name="…" value="…" description="…" stable_id="…" <tokens>
+ actions=[…]`, and every quoted value can be copied straight into a selector:
 
 ```
-window 'Export…'
-  text_field 'Filename' [focused]
-  button 'Export' [enabled=false]
-  checkbox 'Open folder after' [checked]
+window name="Export…" active
+  text_field name="Filename" focused editable
+  button name="Export" disabled actions=[press]
+  button name="Export" description="Save as PDF" stable_id="pdf-btn" actions=[press,show_menu]
 ```
 
-Those flags are the vocabulary of [`wait`](wait.md): a button that renders
-`[enabled=false]` is a `WaitState::Enabled` wait, not a blind retry. The
-line itself hands you the selector — `button[name='Export']` — that
-[`act`](act.md), [`control`](control.md) and [`screenshot`](screenshot.md)
-accept directly.
+- **Tokens** are the vocabulary of [`wait`](wait.md): `disabled` is a
+  `WaitState::Enabled` wait, not a blind retry. `modal` and `required`
+  explain a swallowed click and a blocked submit; `active` marks the window
+  that receives input.
+- **`description`** is the tooltip/help text — often the only way to tell
+  two same-named controls apart; **`stable_id`** is usable as the selector
+  attribute `[stable_id='…']` and survives UI changes.
+- **`actions`** lists the verbs the element declares: pass one of them to
+  `computer_act`'s `perform_action` instead of guessing by role.
 
 ## Edges
 
 - **A snapshot is a moment.** UI changes; re-read before acting on stale
-  lines. For "wait until it EXISTS", use [`wait`](wait.md), not snapshot
+  lines. With a `selector`, the match auto-waits up to `timeout_ms` for the
+  element to exist (a hidden or minimized subtree is still snapshottable);
+  for "wait until it reaches a STATE", use [`wait`](wait.md), not snapshot
   loops.
 - **Empty tree, real app?** Some apps ship accessibility bridges that are
   off by default (Chromium/Electron need `--force-renderer-accessibility`).

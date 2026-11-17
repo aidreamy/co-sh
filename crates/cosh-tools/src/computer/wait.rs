@@ -21,7 +21,7 @@
 //! tool in this module.
 use std::time::{Duration, Instant};
 
-use xa11y::{App, AppExt, ElementState, EventKind, Locator, StateFlag};
+use xa11y::{App, ElementState, EventKind, Locator, StateFlag};
 
 use super::types::{
     ComputerWait, WaitEvent, WaitObservation, WaitOutput, WaitResult, WaitState, WaitedEvent,
@@ -69,6 +69,11 @@ pub fn validate(input: &ComputerWait) -> Result<(), String> {
     };
 
     if input.event.is_some() {
+        if input.surface.is_some() {
+            return Err(format!(
+                "{TOOL}: an `event` wait is app-scoped — it takes no `surface`"
+            ));
+        }
         // Event mode: app-scoped only — every element field is at best
         // ambiguous, at worst silently meaningless.
         let extra: Vec<&str> = [
@@ -77,6 +82,7 @@ pub fn validate(input: &ComputerWait) -> Result<(), String> {
             (input.state.is_some(), "`state`"),
             (input.value.is_some(), "`value`"),
             (input.value_contains.is_some(), "`value_contains`"),
+            (input.numeric_value_gte.is_some(), "`numeric_value_gte`"),
         ]
         .iter()
         .filter(|(present, _)| *present)
@@ -95,12 +101,17 @@ pub fn validate(input: &ComputerWait) -> Result<(), String> {
             ));
         }
         let value_condition = input.value.is_some() || input.value_contains.is_some();
-        if value_condition {
-            require_selector("`value`/`value_contains`")?;
+        if value_condition && input.numeric_value_gte.is_some() {
+            return Err(format!(
+                "{TOOL}: provide `value`/`value_contains` or `numeric_value_gte`, not both"
+            ));
+        }
+        if value_condition || input.numeric_value_gte.is_some() {
+            require_selector("`value`/`value_contains`/`numeric_value_gte`")?;
             if input.state.is_some() {
                 return Err(format!(
-                    "{TOOL}: `value`/`value_contains` and `state` cannot share a call — \
-                     wait for the value OR the state (call twice if you need both)"
+                    "{TOOL}: `value`/`value_contains`/`numeric_value_gte` and `state` cannot \
+                     share a call — wait for the value OR the state (call twice if you need both)"
                 ));
             }
         } else {
@@ -114,11 +125,19 @@ pub fn validate(input: &ComputerWait) -> Result<(), String> {
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .is_some();
-    if has_name && input.pid.is_some() {
-        return Err(format!("{TOOL}: provide `name` or `pid`, not both"));
-    }
-    if !has_name && input.pid.is_none() {
-        return Err(format!("{TOOL}: provide `name` or `pid`"));
+    if input.surface.is_some() {
+        if has_name || input.pid.is_some() {
+            return Err(format!(
+                "{TOOL}: target ONE of `name`/`pid`/`surface` — they cannot share a call"
+            ));
+        }
+    } else {
+        if has_name && input.pid.is_some() {
+            return Err(format!("{TOOL}: provide `name` or `pid`, not both"));
+        }
+        if !has_name && input.pid.is_none() {
+            return Err(format!("{TOOL}: provide `name` or `pid` (or `surface`)"));
+        }
     }
     if input.nth == Some(0) {
         return Err(format!(
@@ -159,27 +178,16 @@ fn wait_blocking(input: &ComputerWait) -> Result<WaitResult, String> {
     // must reflect the whole call, app resolution included.
     let started = Instant::now();
 
-    let name = input
-        .name
-        .as_deref()
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(str::to_string);
     // The app lookup SHARES the call's budget instead of getting a fresh
     // one: bounded to the same 3 s slice snapshot uses for "app surfaces",
     // it can never eat the budget the condition needs.
     let app_timeout = timeout.min(Duration::from_millis(super::snapshot::DEFAULT_TIMEOUT_MS));
-    let app = match (name, input.pid) {
-        (Some(name), None) => App::by_name(&name, app_timeout),
-        (None, Some(pid)) => App::by_pid(pid, app_timeout),
-        _ => unreachable!("validated: computer_wait carries exactly one app scope"),
-    }
-    .map_err(|e| super::errors::render_app_miss(TOOL, &e))?;
 
     // Event mode: subscribe BEFORE the element machinery — the
     // subscription only carries events RECEIVED from now on, so it must
     // be up while the budget runs.
     if let Some(event) = input.event {
+        let app = super::resolve_app(input.name.as_deref(), input.pid, app_timeout, TOOL)?;
         return wait_for_event(app, event, timeout, started);
     }
 
@@ -187,7 +195,16 @@ fn wait_blocking(input: &ComputerWait) -> Result<WaitResult, String> {
         .selector
         .as_deref()
         .expect("validated: computer_wait carries a selector");
-    let locator = app.locator(selector.trim()).nth(input.nth.unwrap_or(1));
+    let locator = if let Some(kind) = input.surface {
+        super::surface::resolve(kind, app_timeout)
+            .map_err(|e| format!("{TOOL}: {e}"))?
+            .locator(selector.trim())
+            .nth(input.nth.unwrap_or(1))
+    } else {
+        super::resolve_app(input.name.as_deref(), input.pid, app_timeout, TOOL)?
+            .locator(selector.trim())
+            .nth(input.nth.unwrap_or(1))
+    };
     // Value mode: a predicate over the element's value — exact or
     // substring. xa11y's WAIT semantics handle the matching polling; the
     // success payload carries the fresh element the condition was met on.
@@ -204,6 +221,10 @@ fn wait_blocking(input: &ComputerWait) -> Result<WaitResult, String> {
             value.contains(needle.as_str())
         })
         .map(WaitResult::State);
+    }
+    if let Some(threshold) = input.numeric_value_gte {
+        let remaining = timeout.saturating_sub(started.elapsed());
+        return wait_numeric(locator, threshold, remaining, started).map(WaitResult::State);
     }
 
     let state = wait_state(input.state.unwrap_or_default());
@@ -323,23 +344,45 @@ fn wait_value(
             .is_some_and(&predicate)
     };
     match locator.wait_until(wrapped, timeout) {
-        Ok(maybe) => {
-            let observed = match maybe.as_ref().map(|e| e.data()) {
-                Some(data) => observation(&data.states, true),
-                None => WaitObservation {
-                    attached: false,
-                    visible: None,
-                    enabled: None,
-                    focused: None,
-                },
-            };
-            Ok(WaitOutput {
-                met: true,
-                elapsed_ms: u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
-                observed,
-            })
-        }
+        Ok(maybe) => Ok(met_output(maybe.as_ref(), started)),
         Err(e) => Err(super::errors::render(TOOL, "wait for element value", &e)),
+    }
+}
+
+/// Block until the locator's element reports a NUMERIC value at or above
+/// `threshold` — the slider/progress-bar counterpart of a text value wait.
+fn wait_numeric(
+    locator: Locator,
+    threshold: f64,
+    timeout: Duration,
+    started: Instant,
+) -> Result<WaitOutput, String> {
+    const TOOL: &str = "computer_wait";
+    let wrapped = move |data: Option<&xa11y::ElementData>| {
+        data.and_then(|d| d.numeric_value)
+            .is_some_and(|value| value >= threshold)
+    };
+    match locator.wait_until(wrapped, timeout) {
+        Ok(maybe) => Ok(met_output(maybe.as_ref(), started)),
+        Err(e) => Err(super::errors::render(TOOL, "wait for numeric value", &e)),
+    }
+}
+
+/// Success payload shared by both value waits.
+fn met_output(element: Option<&xa11y::Element>, started: Instant) -> WaitOutput {
+    let observed = match element.map(|e| e.data()) {
+        Some(data) => observation(&data.states, true),
+        None => WaitObservation {
+            attached: false,
+            visible: None,
+            enabled: None,
+            focused: None,
+        },
+    };
+    WaitOutput {
+        met: true,
+        elapsed_ms: u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
+        observed,
     }
 }
 

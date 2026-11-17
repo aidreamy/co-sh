@@ -14,8 +14,6 @@
 //! not-yet-visible element into view, so visibility would deadlock it.
 use std::time::Duration;
 
-use xa11y::{App, AppExt};
-
 use super::snapshot::DEFAULT_TIMEOUT_MS;
 use super::types::{ActAction, ComputerAct};
 
@@ -117,17 +115,7 @@ pub fn run_step(step: &ComputerAct, tool: &str) -> Result<String, String> {
             super::surface::resolve(surface_kind, timeout).map_err(|e| format!("{tool}: {e}"))?;
         return run_step_on_surface(step, surface, timeout, tool);
     }
-    let name = step
-        .name
-        .as_deref()
-        .map(str::trim)
-        .filter(|s| !s.is_empty());
-    let app = match (name, step.pid) {
-        (Some(name), None) => App::by_name(name, timeout),
-        (None, Some(pid)) => App::by_pid(pid, timeout),
-        _ => unreachable!("validated: semantic step carries exactly one app scope"),
-    }
-    .map_err(|e| super::errors::render_app_miss(tool, &e))?;
+    let app = super::resolve_app(step.name.as_deref(), step.pid, timeout, tool)?;
     let locator = app.locator(selector.trim()).nth(nth).with_timeout(timeout);
     dispatch_action(&locator, action, step, app.name.clone(), tool)
 }
@@ -203,18 +191,46 @@ fn dispatch_action(
                 range.get(1).copied().unwrap_or(0),
             )
         }
-        ActAction::TypeText => locator.type_text(step.value.as_deref().unwrap_or_default()),
+        ActAction::TypeText => {
+            let value = step.value.as_deref().unwrap_or_default();
+            // Insertion happens at the caret of the FOCUSED element: focusing
+            // the target first keeps a successful call from typing into
+            // whatever happened to hold focus. A platform that cannot focus
+            // still gets its chance — the insertion error says what to do.
+            let _ = locator.focus();
+            locator.type_text(value)
+        }
         ActAction::PerformAction => {
             locator.perform_action(step.value.as_deref().unwrap_or_default())
         }
     };
-    result.map_err(|e| super::errors::render(tool, &action_name(action).to_lowercase(), &e))?;
+    result.map_err(|e| {
+        let mut message = super::errors::render(tool, &action_name(action).to_lowercase(), &e);
+        // The element usually knows which actions it does accept; say so
+        // instead of only suggesting verbs from its role.
+        if matches!(e, xa11y::Error::ActionNotSupported { .. })
+            && let Ok(element) = locator.element()
+        {
+            let data = element.data();
+            if !data.actions.is_empty() {
+                message.push_str(&format!(
+                    " — declared actions: [{}]",
+                    data.actions.join(", ")
+                ));
+            }
+            if let Some(description) = data.description.as_deref() {
+                message.push_str(&format!(" — description: {description:?}"));
+            }
+        }
+        message
+    })?;
 
     Ok(format!(
-        "{} `{}` ({})",
+        "{} `{}` ({}){}",
         action_name(action),
         selector,
-        target_name
+        target_name,
+        super::ambiguity_note(locator, step.nth)
     ))
 }
 

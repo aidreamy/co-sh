@@ -65,6 +65,8 @@ mod snapshot_surface_tests {
     fn surface_selector_miss_is_honest_error() {
         let input = ComputerSnapshot {
             selector: Some("text_field[name='definitely-not-here']".into()),
+            // Short budget: the miss is the point, not the wait.
+            timeout_ms: Some(10),
             ..ComputerSnapshot::default()
         };
         let err = snapshot_surface(
@@ -94,6 +96,7 @@ mod snapshot_render_tests {
             value: None,
             states: ElementStates::default(),
             children: vec![],
+            ..StateNode::default()
         };
         assert_eq!(write_outline_str(&node), "button name=\"OK\"\n");
     }
@@ -111,6 +114,7 @@ mod snapshot_render_tests {
             expanded: Some(false),
             editable: true,
             busy: true,
+            ..ElementStates::default()
         };
         let node = StateNode {
             role: "checkbox".into(),
@@ -118,6 +122,7 @@ mod snapshot_render_tests {
             value: None,
             states,
             children: vec![],
+            ..StateNode::default()
         };
         assert_eq!(
             write_outline_str(&node),
@@ -140,6 +145,7 @@ mod snapshot_render_tests {
             value: None,
             states: unchecked,
             children: vec![],
+            ..StateNode::default()
         };
         assert_eq!(write_outline_str(&unchecked_node), "checkbox unchecked\n");
 
@@ -153,6 +159,7 @@ mod snapshot_render_tests {
             value: None,
             states: mixed,
             children: vec![],
+            ..StateNode::default()
         };
         assert_eq!(write_outline_str(&mixed_node), "checkbox mixed\n");
     }
@@ -171,6 +178,7 @@ mod snapshot_render_tests {
                 ..ElementStates::default()
             },
             children: vec![],
+            ..StateNode::default()
         };
         let root = StateNode {
             role: "window".into(),
@@ -178,6 +186,7 @@ mod snapshot_render_tests {
             value: None,
             states: ElementStates::default(),
             children: vec![child],
+            ..StateNode::default()
         };
         let json = render_tree(&SnapshotFormat::Json, &root);
         let value: serde_json::Value = serde_json::from_str(&json).expect("valid json");
@@ -213,6 +222,7 @@ mod snapshot_render_tests {
             value: None,
             states: toggled,
             children: vec![],
+            ..StateNode::default()
         };
         let toggled_json = render_tree(&SnapshotFormat::Json, &toggled_node);
         let toggled_value: serde_json::Value =
@@ -228,10 +238,53 @@ mod snapshot_render_tests {
             value: None,
             states: mixed_json_value,
             children: vec![],
+            ..StateNode::default()
         };
         let mixed_json = render_tree(&SnapshotFormat::Json, &mixed_node);
         let mixed_value: serde_json::Value = serde_json::from_str(&mixed_json).expect("valid json");
         assert_eq!(mixed_value["states"]["checked"], "mixed");
+    }
+
+    /// Actionable metadata rides on the same line: the description that tells
+    /// same-named controls apart, the stable id usable as a selector
+    /// attribute, the verbs the element declares, and the states that explain
+    /// a swallowed click or a blocked submit.
+    #[test]
+    fn metadata_and_states_render_on_the_line() {
+        let node = StateNode {
+            role: "button".into(),
+            name: Some("Run".into()),
+            description: Some("Start the job".into()),
+            stable_id: Some("run-btn".into()),
+            actions: vec!["press".into(), "show_menu".into()],
+            states: ElementStates {
+                modal: true,
+                required: true,
+                active: true,
+                ..ElementStates::default()
+            },
+            ..StateNode::default()
+        };
+        assert_eq!(
+            write_outline_str(&node),
+            "button name=\"Run\" description=\"Start the job\" stable_id=\"run-btn\" \
+             modal required active actions=[press,show_menu]\n"
+        );
+    }
+
+    /// A branch the depth limit cut must not read as a leaf — the subtree is
+    /// unknown, and saying so prevents "the control does not exist".
+    #[test]
+    fn cut_branch_is_marked_unknown() {
+        let node = StateNode {
+            role: "group".into(),
+            children_not_read: true,
+            ..StateNode::default()
+        };
+        assert_eq!(
+            write_outline_str(&node),
+            "group\n  … children not read (depth limit — raise max_depth)\n"
+        );
     }
 
     fn write_outline_str(node: &StateNode) -> String {

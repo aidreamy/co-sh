@@ -14,9 +14,7 @@
 //! element's CURRENT bounds at dispatch time — never stale.
 use std::time::Duration;
 
-use xa11y::{
-    Anchor, App, AppExt, ClickOptions, ClickTarget, DragOptions, MouseButton, Point, ScrollDelta,
-};
+use xa11y::{Anchor, ClickOptions, ClickTarget, DragOptions, MouseButton, Point, ScrollDelta};
 
 use super::keyboard;
 use super::snapshot::DEFAULT_TIMEOUT_MS;
@@ -223,10 +221,22 @@ pub fn run_step(
 
     // Resolve the effective point for actions that need one. `up` and the
     // button-state half of `down` run at the current cursor position.
+    let mut ambiguity = String::new();
     let point: Option<Point> = if let Some(selector) = &step.selector {
+        // A broad selector on a click is where acting on the wrong element
+        // costs the most; the count is only paid for click actions.
+        let locator = element_locator(step, selector, step.nth.unwrap_or(1), tool)?;
+        if matches!(
+            action,
+            PointerAction::Click | PointerAction::DoubleClick | PointerAction::RightClick
+        ) {
+            ambiguity = super::ambiguity_note(&locator, step.nth);
+        }
         // resolve_element already renders through the error component with
         // the failing selector in context — no extra wrapper here.
-        let element = resolve_element(step, selector, step.nth.unwrap_or(1), tool)?;
+        let element = locator
+            .element()
+            .map_err(|e| super::errors::render(tool, "resolve element", &e))?;
         Some(
             xa11y::point_for(&element, anchor(step.anchor.unwrap_or_default())).map_err(|e| {
                 super::errors::render(tool, &format!("resolve point for `{selector}`"), &e)
@@ -310,7 +320,7 @@ pub fn run_step(
     // Human-facing report with the EFFECTIVE point — for the element form
     // this is what the bounds resolved to at dispatch time, which makes a
     // mis-aimed click debuggable.
-    Ok(match action {
+    let report = match action {
         PointerAction::Click | PointerAction::DoubleClick | PointerAction::RightClick => {
             let verb = match action {
                 PointerAction::Click => "clicked",
@@ -346,7 +356,8 @@ pub fn run_step(
             let to = drag_to.expect("drag arm resolved its end point before dispatch");
             format!("dragged {} → ({},{})", where_at(step, point), to.x, to.y)
         }
-    })
+    };
+    Ok(format!("{report}{ambiguity}"))
 }
 
 /// Human-facing location of a pointer step's effect: the selector with its
@@ -360,32 +371,38 @@ fn where_at(step: &ComputerControl, point: Option<Point>) -> String {
     }
 }
 
-/// Resolve ONE element under the step's root — a shell surface when
-/// `surface` is set, the application otherwise (validated: exactly one of
-/// app/pid/surface). Shared by the click/move/scroll point resolution and
-/// the drag's `to_selector` end, so a future root addition lands in one
-/// place.
+/// Build the locator for ONE selector under the step's root — a shell
+/// surface when `surface` is set, the application otherwise (validated:
+/// exactly one of app/pid/surface).
+fn element_locator(
+    step: &ComputerControl,
+    selector: &str,
+    nth: usize,
+    tool: &str,
+) -> Result<xa11y::Locator, String> {
+    let timeout = Duration::from_millis(DEFAULT_TIMEOUT_MS);
+    if let Some(surface_kind) = step.surface {
+        let surface =
+            super::surface::resolve(surface_kind, timeout).map_err(|e| format!("{tool}: {e}"))?;
+        Ok(surface.locator(selector).nth(nth))
+    } else {
+        let app = super::resolve_app(step.app.as_deref(), step.pid, timeout, tool)?;
+        Ok(app.locator(selector).nth(nth))
+    }
+}
+
+/// Resolve ONE element under the step's root. Shared by the click/move/scroll
+/// point resolution and the drag's `to_selector` end, so a future root
+/// addition lands in one place.
 fn resolve_element(
     step: &ComputerControl,
     selector: &str,
     nth: usize,
     tool: &str,
 ) -> Result<xa11y::Element, String> {
-    let timeout = Duration::from_millis(DEFAULT_TIMEOUT_MS);
-    if let Some(surface_kind) = step.surface {
-        super::surface::resolve(surface_kind, timeout)
-            .map_err(|e| format!("{tool}: {e}"))?
-            .locator(selector)
-            .nth(nth)
-            .element()
-            .map_err(|e| super::errors::render(tool, "resolve element", &e))
-    } else {
-        resolve_app(step, tool)?
-            .locator(selector)
-            .nth(nth)
-            .element()
-            .map_err(|e| super::errors::render(tool, "resolve element", &e))
-    }
+    element_locator(step, selector, nth, tool)?
+        .element()
+        .map_err(|e| super::errors::render(tool, "resolve element", &e))
 }
 
 /// The drag's end point in the SAME form as the start (validated):
@@ -410,22 +427,6 @@ fn drag_end_point(step: &ComputerControl, tool: &str) -> Result<Point, String> {
 /// point by the time the click runs — the element's bounds were just read).
 fn point_target(point: Option<Point>) -> ClickTarget<'static> {
     ClickTarget::Point(point.unwrap_or(Point::new(0, 0)))
-}
-
-/// Resolve the target application (validating `app`/`pid` exclusivity).
-fn resolve_app(step: &ComputerControl, tool: &str) -> Result<App, String> {
-    let timeout = Duration::from_millis(DEFAULT_TIMEOUT_MS);
-    let name = step.app.as_deref().map(str::trim).filter(|s| !s.is_empty());
-    match (name, step.pid) {
-        (Some(name), None) => {
-            App::by_name(name, timeout).map_err(|e| super::errors::render_app_miss(tool, &e))
-        }
-        (None, Some(pid)) => {
-            App::by_pid(pid, timeout).map_err(|e| super::errors::render_app_miss(tool, &e))
-        }
-        (None, None) => Err(format!("{tool}: the element form requires `app` or `pid`")),
-        (Some(_), Some(_)) => Err(format!("{tool}: provide `app` or `pid`, not both")),
-    }
 }
 
 /// Parse a button name (`left`/`right`/`middle`).

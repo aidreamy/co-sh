@@ -6,13 +6,10 @@
 //! builds its own tree from `Element::children()` + `ElementData.states`
 //! because xa11y's `TreeNode` carries no states.
 //!
-//! Resolution is fail-fast: only the application lookup auto-waits (up to
-//! `timeout_ms`). Selector matching resolves once — a selector on an
-//! element that is not yet in the tree fails immediately; re-call after
-//! the interface settles instead of expecting the tool to poll.
+//! Resolution auto-waits: the application lookup and a `selector` match both
+//! poll up to `timeout_ms`, so a snapshot taken while the interface is still
+//! settling answers with the element instead of a miss.
 use std::time::Duration;
-
-use xa11y::{App, AppExt};
 
 use super::types::{ComputerSnapshot, ElementStates, SnapshotFormat, SnapshotOutput, StateNode};
 
@@ -57,7 +54,8 @@ pub async fn snapshot(input: &ComputerSnapshot) -> Result<SnapshotOutput, String
 }
 
 fn snapshot_blocking(input: &ComputerSnapshot) -> Result<SnapshotOutput, String> {
-    let timeout = Duration::from_millis(input.timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS));
+    let timeout_ms = input.timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS);
+    let timeout = Duration::from_millis(timeout_ms);
     let max_depth = Some(
         input
             .max_depth
@@ -74,24 +72,13 @@ fn snapshot_blocking(input: &ComputerSnapshot) -> Result<SnapshotOutput, String>
         return snapshot_surface(input, surface, max_depth, format);
     }
 
-    let name = input
-        .name
-        .as_deref()
-        .map(str::trim)
-        .filter(|s| !s.is_empty());
-
-    let app = match (name, input.pid) {
-        (Some(name), None) => App::by_name(name, timeout),
-        (None, Some(pid)) => App::by_pid(pid, timeout),
-        _ => unreachable!("validated in snapshot"),
-    }
-    .map_err(|e| super::errors::render_app_miss("computer_snapshot", &e))?;
+    let app = super::resolve_app(input.name.as_deref(), input.pid, timeout, "computer_snapshot")?;
 
     let (snapshot, elements) = match &input.selector {
         Some(selector) => {
             let nth = input.nth.unwrap_or(1);
             let locator = app.locator(selector).nth(nth);
-            render(&format, &locator, max_depth)?
+            render(&format, &locator, max_depth, timeout)?
         }
         None => render_root(&format, &app.as_element(), max_depth)?,
     };
@@ -113,11 +100,12 @@ pub(crate) fn snapshot_surface(
     max_depth: Option<usize>,
     format: SnapshotFormat,
 ) -> Result<SnapshotOutput, String> {
+    let timeout = Duration::from_millis(input.timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS));
     let (snapshot, elements) = match &input.selector {
         Some(selector) => {
             let nth = input.nth.unwrap_or(1);
             let locator = surface.locator(selector).nth(nth);
-            render(&format, &locator, max_depth)?
+            render(&format, &locator, max_depth, timeout)?
         }
         None => render_root(&format, &surface.as_element(), max_depth)?,
     };
@@ -130,13 +118,19 @@ pub(crate) fn snapshot_surface(
 }
 
 /// Render a locator-rooted snapshot in the requested format.
+///
+/// The match auto-waits up to `timeout`, so a snapshot taken right after a
+/// UI transition reports the element instead of a bare miss.
 fn render(
     format: &SnapshotFormat,
     locator: &xa11y::Locator,
     max_depth: Option<usize>,
+    timeout: Duration,
 ) -> Result<(String, usize), String> {
+    // Wait for ATTACHED, not visible: a minimized or hidden subtree is still
+    // a legitimate snapshot target.
     let root = locator
-        .element()
+        .wait_attached(timeout)
         .map_err(|e| super::errors::render("computer_snapshot", "resolve selector", &e))?;
     let tree = build_state_tree(&root, max_depth, 0)?;
     let count = checked_node_count(&tree)?;
@@ -183,7 +177,11 @@ fn build_state_tree(
         role: data.role.to_snake_case().to_string(),
         name: data.name.clone(),
         value: data.value.clone(),
+        description: data.description.clone(),
+        stable_id: data.stable_id.clone(),
+        actions: data.actions.clone(),
         states,
+        children_not_read: max_depth.is_some_and(|d| depth >= d),
         children,
     })
 }
@@ -215,11 +213,25 @@ pub(crate) fn write_outline(node: &StateNode, depth: usize, out: &mut String) {
     if let Some(value) = node.value.as_deref().filter(|v| !v.is_empty()) {
         out.push_str(&format!(" value={}", escape_text(value)));
     }
+    if let Some(description) = node.description.as_deref().filter(|d| !d.is_empty()) {
+        out.push_str(&format!(" description={}", escape_text(description)));
+    }
+    if let Some(id) = node.stable_id.as_deref().filter(|i| !i.is_empty()) {
+        out.push_str(&format!(" stable_id={}", escape_text(id)));
+    }
     for token in node.states.outline_tokens() {
         out.push(' ');
         out.push_str(token);
     }
+    if !node.actions.is_empty() {
+        out.push_str(&format!(" actions=[{}]", node.actions.join(",")));
+    }
     out.push('\n');
+    // A cut branch must never read as a leaf: say the subtree is unknown.
+    if node.children_not_read {
+        out.push_str(&indent);
+        out.push_str("  … children not read (depth limit — raise max_depth)\n");
+    }
     for child in &node.children {
         write_outline(child, depth + 1, out);
     }

@@ -129,10 +129,30 @@ mod keyboard_tests {
     use xa11y::Key;
 
     use crate::computer::keyboard::{
-        is_keyboard_step, is_wait_step, key_name, parse_key, parse_keys,
+        RELEASE_ALL, is_keyboard_step, is_wait_step, key_name, parse_key, parse_keys,
+        validate_release,
     };
 
     const TOOL: &str = "computer_control";
+
+    /// `release: ["all"]` is the escape hatch for keys a previous (possibly
+    /// aborted) call left down; it is release-only and must stand alone.
+    #[test]
+    fn release_all_is_accepted_alone_and_rejected_elsewhere() {
+        assert!(validate_release(&[RELEASE_ALL.into()], TOOL).is_ok());
+        assert!(validate_release(&["ALL".into()], TOOL).is_ok());
+
+        let err = validate_release(&[RELEASE_ALL.into(), "ctrl".into()], TOOL)
+            .expect_err("all must stand alone");
+        assert!(err.contains("only on its own"), "{err}");
+
+        let err = crate::computer::keyboard::parse_hold_keys(&[RELEASE_ALL.into()], TOOL)
+            .expect_err("hold cannot take the sentinel");
+        assert!(err.contains("release`-only"), "{err}");
+
+        assert!(validate_release(&["ctrl".into(), "shift".into()], TOOL).is_ok());
+        assert!(validate_release(&["hyper".into()], TOOL).is_err());
+    }
 
     /// Named keys parse case-insensitively, with every documented alias.
     #[test]
@@ -469,5 +489,158 @@ mod hold_release_extraction_tests {
             serde_json::from_value(repaired.arguments.clone()).expect("must deserialize");
         assert_eq!(input.hold, Some(vec!["shift".to_string()]));
         assert_eq!(input.release, Some(vec!["ctrl".to_string()]));
+    }
+}
+
+#[cfg(test)]
+mod held_key_tracking_tests {
+    use std::sync::{Mutex, MutexGuard};
+
+    use xa11y::{InputProvider, Key, MouseButton, Point, ScrollDelta};
+
+    use crate::computer::keyboard::{
+        RELEASE_ALL, forget_held, held_report, run_hold_step, run_release_step,
+    };
+
+    const TOOL: &str = "computer_control";
+
+    /// The held-key state is process-wide, so the tests in this module must
+    /// not interleave and must each start from a known state.
+    fn serial() -> MutexGuard<'static, ()> {
+        static LOCK: Mutex<()> = Mutex::new(());
+        let guard = LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        forget_held();
+        guard
+    }
+
+    /// Records key transitions, so the release path is asserted on the actual
+    /// calls instead of on a report string alone.
+    #[derive(Default)]
+    struct RecordingInput {
+        log: Mutex<Vec<String>>,
+    }
+
+    impl RecordingInput {
+        fn sim() -> (xa11y::InputSim, std::sync::Arc<Self>) {
+            let recorder = std::sync::Arc::new(Self::default());
+            (xa11y::InputSim::new(recorder.clone()), recorder)
+        }
+
+        fn log(&self) -> Vec<String> {
+            self.log.lock().expect("recorder log").clone()
+        }
+    }
+
+    impl InputProvider for RecordingInput {
+        fn pointer_move(&self, _to: Point) -> xa11y::Result<()> {
+            Ok(())
+        }
+        fn pointer_down(&self, _button: MouseButton) -> xa11y::Result<()> {
+            Ok(())
+        }
+        fn pointer_up(&self, _button: MouseButton) -> xa11y::Result<()> {
+            Ok(())
+        }
+        fn pointer_click(&self, _at: Point, _button: MouseButton, _count: u32) -> xa11y::Result<()> {
+            Ok(())
+        }
+        fn pointer_scroll(&self, _at: Point, _delta: ScrollDelta) -> xa11y::Result<()> {
+            Ok(())
+        }
+        fn key_down(&self, key: &Key) -> xa11y::Result<()> {
+            self.log
+                .lock()
+                .expect("recorder log")
+                .push(format!("down {key:?}"));
+            Ok(())
+        }
+        fn key_up(&self, key: &Key) -> xa11y::Result<()> {
+            self.log
+                .lock()
+                .expect("recorder log")
+                .push(format!("up {key:?}"));
+            Ok(())
+        }
+        fn type_text(&self, _text: &str) -> xa11y::Result<()> {
+            Ok(())
+        }
+    }
+
+    fn names(values: &[&str]) -> Vec<String> {
+        values.iter().map(|value| value.to_string()).collect()
+    }
+
+    /// `release: ["all"]` must undo a `hold` expressed with an ALIAS: the
+    /// tracked key is the parsed `Key`, so `control` releases as `Ctrl` and
+    /// the report names it in a form that parses back.
+    #[test]
+    fn release_all_releases_keys_held_through_an_alias() {
+        let _serial = serial();
+        let (sim, recorder) = RecordingInput::sim();
+
+        run_hold_step(&sim, &names(&["control"]), TOOL).expect("hold control");
+        let report = run_release_step(&sim, &names(&[RELEASE_ALL]), TOOL)
+            .expect("`all` must release an aliased key");
+
+        assert_eq!(recorder.log(), vec!["down Ctrl", "up Ctrl"], "{report}");
+        assert_eq!(held_report(), "", "nothing may still be reported as held");
+    }
+
+    /// Releasing by a DIFFERENT alias of the same key clears the tracking:
+    /// spelling is not identity.
+    #[test]
+    fn release_by_alias_clears_the_tracking() {
+        let _serial = serial();
+        let (sim, recorder) = RecordingInput::sim();
+
+        run_hold_step(&sim, &names(&["control"]), TOOL).expect("hold control");
+        run_release_step(&sim, &names(&["ctrl"]), TOOL).expect("release ctrl");
+
+        assert_eq!(recorder.log(), vec!["down Ctrl", "up Ctrl"]);
+        assert_eq!(held_report(), "", "`control` was released as `ctrl`");
+
+        let report = run_release_step(&sim, &names(&[RELEASE_ALL]), TOOL).expect("second release");
+        assert!(
+            report.contains("no key was held"),
+            "the tracking must be empty: {report}"
+        );
+    }
+
+    /// A held key is reported until it is released — the point of the state.
+    #[test]
+    fn held_keys_are_reported_with_a_parseable_name() {
+        let _serial = serial();
+        let (sim, _recorder) = RecordingInput::sim();
+
+        run_hold_step(&sim, &names(&["shift", "f1"]), TOOL).expect("hold shift + f1");
+        let report = held_report();
+        assert!(report.contains("still held"), "{report}");
+        assert!(report.contains("shift") && report.contains("f1"), "{report}");
+
+        run_release_step(&sim, &names(&[RELEASE_ALL]), TOOL).expect("release all");
+        assert_eq!(held_report(), "");
+    }
+
+    /// Every name the held-key advice hands back is accepted by `release` —
+    /// the round-trip the report promises.
+    #[test]
+    fn held_report_names_round_trip_through_release() {
+        let _serial = serial();
+        let (sim, _recorder) = RecordingInput::sim();
+
+        run_hold_step(&sim, &names(&["arrowup", "pagedown", "escape", "f12"]), TOOL)
+            .expect("hold named keys");
+        let report = held_report();
+        // The advice must use the canonical, release-parseable spellings.
+        for key in ["up", "pagedown", "escape", "f12"] {
+            assert!(report.contains(key), "`{key}` missing from: {report}");
+        }
+        run_release_step(
+            &sim,
+            &names(&["up", "pagedown", "escape", "f12"]),
+            TOOL,
+        )
+        .expect("the reported names must parse back as release keys");
+        assert_eq!(held_report(), "");
     }
 }

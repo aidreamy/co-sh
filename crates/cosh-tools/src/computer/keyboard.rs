@@ -7,12 +7,75 @@
 //! The keystrokes go into whatever element holds keyboard focus NOW —
 //! aiming them is the caller's job (a real click in `computer_control`, or
 //! a semantic action in `computer_act`).
+use std::sync::{Mutex, OnceLock};
+
 use xa11y::Key;
 
 /// Maximum duration of a `wait` step, in milliseconds — the pipeline stays
 /// one tool call, so a wait is a pause for the app to catch up, not a
 /// sleep primitive.
 pub const MAX_WAIT_MS: u64 = 10_000;
+
+/// `release` value that puts back EVERY key a `hold` left down.
+pub const RELEASE_ALL: &str = "all";
+
+/// Keys `hold` pressed and has not released yet, tracked by key IDENTITY (the
+/// parsed [`Key`]) rather than by spelling: releasing `ctrl` must clear the
+/// `control` a `hold` recorded, and the report must never claim a key is down
+/// because an alias was spelled differently.
+///
+/// The input simulator is process-wide, so a held key outlives the call that
+/// set it: reporting it lets a chain that was interrupted be understood (and
+/// undone) instead of silently corrupting later input.
+fn held_keys() -> &'static Mutex<Vec<Key>> {
+    static HELD: OnceLock<Mutex<Vec<Key>>> = OnceLock::new();
+    HELD.get_or_init(|| Mutex::new(Vec::new()))
+}
+
+/// Test seam: forget what is tracked (the OS keys are NOT touched) so a test
+/// starts from a known state.
+#[cfg(test)]
+pub(crate) fn forget_held() {
+    if let Ok(mut held) = held_keys().lock() {
+        held.clear();
+    }
+}
+
+/// Human-facing report of what is still pressed, or `""` when nothing is.
+pub fn held_report() -> String {
+    let held = held_keys()
+        .lock()
+        .map(|keys| keys.clone())
+        .unwrap_or_default();
+    if held.is_empty() {
+        return String::new();
+    }
+    let names: Vec<String> = held.iter().map(key_name).collect();
+    format!(
+        " — still held: {} (release with {{\"release\": [\"{}\"]}} or \"all\")",
+        names.join(", "),
+        names.join("\", \"")
+    )
+}
+
+/// True when `names` is exactly the `all` sentinel.
+fn is_release_all(names: &[String]) -> bool {
+    names.len() == 1 && names[0].trim().eq_ignore_ascii_case(RELEASE_ALL)
+}
+
+/// Validate a `release` step: either the `all` sentinel or ordinary key names.
+pub fn validate_release(names: &[String], tool: &str) -> Result<(), String> {
+    if is_release_all(names) {
+        return Ok(());
+    }
+    if names.iter().any(|n| n.trim().eq_ignore_ascii_case(RELEASE_ALL)) {
+        return Err(format!(
+            "{tool}: `release` accepts \"{RELEASE_ALL}\" only on its own — either release \
+             every key or name the keys explicitly"
+        ));
+    }
+    parse_hold_keys(names, tool).map(|_| ())
+}
 
 /// The keyboard fields of ONE pipeline step, tool-agnostic: both
 /// `ComputerControl` and `ComputerAct` narrow into this before handing the
@@ -90,8 +153,13 @@ pub fn run_hold_step(
     let keys = parse_hold_keys(names, tool)?;
     for (name, key) in names.iter().zip(keys.iter().cloned()) {
         sim.keyboard()
-            .down(key)
+            .down(key.clone())
             .map_err(|e| super::errors::render(tool, &format!("hold {name}"), &e))?;
+        if let Ok(mut held) = held_keys().lock()
+            && !held.contains(&key)
+        {
+            held.push(key);
+        }
     }
     Ok(format!("holding {}", names.join(",")))
 }
@@ -104,11 +172,39 @@ pub fn run_release_step(
     names: &[String],
     tool: &str,
 ) -> Result<String, String> {
+    // `all`: release everything this process left down, even keys a previous
+    // (possibly aborted) call pressed. The tracking list is only updated once
+    // each `up` SUCCEEDS, so a failed release keeps the key reported as held
+    // instead of turning a stuck key into an invisible one.
+    if is_release_all(names) {
+        let tracked = held_keys()
+            .lock()
+            .map(|keys| keys.clone())
+            .unwrap_or_default();
+        for key in &tracked {
+            sim.keyboard().up(key.clone()).map_err(|e| {
+                super::errors::render(tool, &format!("release {}", key_name(key)), &e)
+            })?;
+            if let Ok(mut held) = held_keys().lock() {
+                held.retain(|tracked| tracked != key);
+            }
+        }
+        return Ok(if tracked.is_empty() {
+            format!("released {RELEASE_ALL} (no key was held)")
+        } else {
+            let names: Vec<String> = tracked.iter().map(key_name).collect();
+            format!("released {}", names.join(","))
+        });
+    }
+
     let keys = parse_hold_keys(names, tool)?;
     for (name, key) in names.iter().zip(keys.iter().cloned()) {
         sim.keyboard()
-            .up(key)
+            .up(key.clone())
             .map_err(|e| super::errors::render(tool, &format!("release {name}"), &e))?;
+        if let Ok(mut held) = held_keys().lock() {
+            held.retain(|tracked| *tracked != key);
+        }
     }
     Ok(format!("released {}", names.join(",")))
 }
@@ -189,6 +285,9 @@ pub fn parse_hold_keys(names: &[String], tool: &str) -> Result<Vec<Key>, String>
     names
         .iter()
         .map(|n| match n.to_ascii_lowercase().as_str() {
+            RELEASE_ALL => Err(format!(
+                "{tool}: `{RELEASE_ALL}` is a `release`-only value (release every held key)"
+            )),
             "shift" => Ok(Key::Shift),
             "ctrl" | "control" => Ok(Key::Ctrl),
             "alt" | "option" => Ok(Key::Alt),
@@ -198,15 +297,32 @@ pub fn parse_hold_keys(names: &[String], tool: &str) -> Result<Vec<Key>, String>
         .collect()
 }
 
-/// Human-facing name of a modifier/`Key` (for the `sent` report).
+/// Human-facing name of a `Key` (for the `sent` report and the held-key
+/// advice). Every form is a name [`parse_key`] accepts, so `key_name` can be
+/// fed back into a `release` — a Debug rendering would not round-trip.
 pub fn key_name(key: &Key) -> String {
     match key {
+        Key::Char(c) => c.to_string(),
         Key::Shift => "shift".to_string(),
         Key::Ctrl => "ctrl".to_string(),
         Key::Alt => "alt".to_string(),
         Key::Meta => "meta".to_string(),
-        Key::Char(c) => c.to_string(),
-        other => format!("{other:?}"),
+        Key::Enter => "enter".to_string(),
+        Key::Escape => "escape".to_string(),
+        Key::Backspace => "backspace".to_string(),
+        Key::Tab => "tab".to_string(),
+        Key::Space => "space".to_string(),
+        Key::Delete => "delete".to_string(),
+        Key::Insert => "insert".to_string(),
+        Key::ArrowUp => "up".to_string(),
+        Key::ArrowDown => "down".to_string(),
+        Key::ArrowLeft => "left".to_string(),
+        Key::ArrowRight => "right".to_string(),
+        Key::Home => "home".to_string(),
+        Key::End => "end".to_string(),
+        Key::PageUp => "pageup".to_string(),
+        Key::PageDown => "pagedown".to_string(),
+        Key::F(n) => format!("f{n}"),
     }
 }
 

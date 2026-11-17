@@ -11,7 +11,7 @@
 //! it runs on tokio's blocking pool like every other tool in this module.
 use std::time::Duration;
 
-use xa11y::{App, AppExt};
+use xa11y::App;
 
 use super::snapshot::DEFAULT_TIMEOUT_MS;
 use super::types::{
@@ -140,17 +140,7 @@ fn windows_blocking(input: &ComputerWindows) -> Result<WindowsResult, String> {
     const TOOL: &str = "computer_windows";
     validate(input)?;
     let timeout = Duration::from_millis(input.timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS));
-    let name = input
-        .name
-        .as_deref()
-        .map(str::trim)
-        .filter(|s| !s.is_empty());
-    let app = match (name, input.pid) {
-        (Some(name), None) => App::by_name(name, timeout),
-        (None, Some(pid)) => App::by_pid(pid, timeout),
-        _ => unreachable!("validated: computer_windows carries exactly one app scope"),
-    }
-    .map_err(|e| super::errors::render_app_miss(TOOL, &e))?;
+    let app = super::resolve_app(input.name.as_deref(), input.pid, timeout, TOOL)?;
 
     match input.action {
         None => list(&app, input),

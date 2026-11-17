@@ -207,7 +207,7 @@ fn validate_step(step: &ComputerControl) -> Result<(), String> {
         if names.is_empty() {
             return Err("computer_control: `release` needs at least one key name".into());
         }
-        keyboard::parse_hold_keys(names, "computer_control")?;
+        keyboard::validate_release(names, "computer_control")?;
         return Ok(());
     }
 
@@ -274,29 +274,47 @@ fn control_blocking(input: &ComputerControl) -> Result<ControlOutput, String> {
     // Walk the chain iteratively (&&-semantics): one step at a time, each
     // only reached if the previous succeeded; the first failure aborts with
     // the exact step and everything that completed.
-    let mut report = String::new();
+    let mut completed: Vec<String> = Vec::new();
     let mut step = input;
     let mut index = 1usize;
     loop {
         let sent = run_step(&sim, step).map_err(|e| {
-            if report.is_empty() {
-                format!("computer_control: step {index}: {e}")
+            let done = completed.join(" → ");
+            let held = keyboard::held_report();
+            if done.is_empty() {
+                format!("computer_control: step {index}: {e}{held}")
             } else {
-                format!("computer_control: step {index}: {e} — completed: {report}")
+                format!("computer_control: step {index}: {e} — completed: {done}{held}")
             }
         })?;
-        if !report.is_empty() {
-            report.push_str(" → ");
-        }
-        report.push_str(&sent);
+        completed.push(format!("{sent}{}", step_feedback(step)));
         match &step.then {
             Some(next) => {
                 step = next;
                 index += 1;
             }
-            None => return Ok(ControlOutput { sent: report }),
+            None => {
+                return Ok(ControlOutput {
+                    sent: format!("{}{}", completed.join(" → "), keyboard::held_report()),
+                });
+            }
         }
     }
+}
+
+/// What the UI looks like after this step, or `""` for steps that act on no
+/// element and change no input state.
+fn step_feedback(step: &ComputerControl) -> String {
+    if step.wait.is_some() || step.hold.is_some() || step.release.is_some() {
+        return String::new();
+    }
+    super::verify::after(&super::verify::Target {
+        name: step.app.as_deref(),
+        pid: step.pid,
+        surface: step.surface,
+        selector: step.selector.as_deref(),
+        nth: step.nth,
+    })
 }
 
 /// Execute ONE validated step and return its human-facing report.

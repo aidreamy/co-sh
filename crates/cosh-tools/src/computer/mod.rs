@@ -38,6 +38,7 @@ pub mod snapshot;
 pub mod surface;
 pub mod touch;
 pub mod types;
+mod verify;
 pub mod wait;
 pub mod windows;
 
@@ -61,7 +62,86 @@ pub use types::{
 pub use wait::wait;
 pub use windows::windows;
 
+use xa11y::AppExt;
+
 use crate::ToolDescription;
+
+/// Resolve an application by exact `name` or `pid`.
+///
+/// An exact name keeps priority. On a miss the lookup retries with a
+/// normalized comparison (trim + case-insensitive, then a unique substring)
+/// so the everyday near-miss — `chrome` for `Google Chrome` — costs no extra
+/// tool call. Only a UNIQUE candidate is substituted: acting on the wrong
+/// application is worse than reporting the miss, which already carries the
+/// candidate list.
+pub(crate) fn resolve_app(
+    name: Option<&str>,
+    pid: Option<u32>,
+    timeout: std::time::Duration,
+    tool: &str,
+) -> Result<xa11y::App, String> {
+    let name = name.map(str::trim).filter(|s| !s.is_empty());
+    match (name, pid) {
+        (Some(name), None) => xa11y::App::by_name(name, timeout)
+            .or_else(|err| fuzzy_app(name, timeout).ok_or(err))
+            .map_err(|e| errors::render_app_miss(tool, &e)),
+        (None, Some(pid)) => {
+            xa11y::App::by_pid(pid, timeout).map_err(|e| errors::render_app_miss(tool, &e))
+        }
+        (None, None) => Err(format!("{tool}: provide `name` or `pid`")),
+        (Some(_), Some(_)) => Err(format!("{tool}: provide `name` or `pid`, not both")),
+    }
+}
+
+/// Unique normalized match for a name that missed an exact lookup.
+fn fuzzy_app(name: &str, timeout: std::time::Duration) -> Option<xa11y::App> {
+    let apps = xa11y::App::list().ok()?;
+    let resolved = unique_fuzzy_name(name, apps.iter().map(|app| app.name.as_str()))?;
+    // `App::by_name` refuses names carrying a double quote (the selector
+    // grammar cannot escape it); those are outside this convenience path.
+    xa11y::App::by_name(resolved, timeout).ok()
+}
+
+/// The single application name among `candidates` that matches `needle`
+/// case-insensitively (equal, or one containing the other).
+///
+/// Blank names never match: `"chrome".contains("")` is true, so an unnamed
+/// application would otherwise become the unique match for EVERY miss — the
+/// wrong-application outcome this helper exists to prevent.
+fn unique_fuzzy_name<'a>(
+    needle: &str,
+    candidates: impl IntoIterator<Item = &'a str>,
+) -> Option<&'a str> {
+    let needle = needle.trim().to_lowercase();
+    if needle.is_empty() {
+        return None;
+    }
+    let mut matches = candidates.into_iter().filter(|candidate| {
+        let candidate = candidate.trim().to_lowercase();
+        !candidate.is_empty()
+            && (candidate == needle || candidate.contains(&needle) || needle.contains(&candidate))
+    });
+    let only = matches.next()?;
+    matches.next().is_none().then_some(only)
+}
+
+/// Note appended to a step report when its selector matched more than one
+/// element and the caller did not pick one with `nth`.
+///
+/// Acting on an arbitrary first match is the quietest way to do the wrong
+/// thing; the count is one query and turns an invisible assumption into a
+/// sentence the model can act on.
+pub(crate) fn ambiguity_note(locator: &xa11y::Locator, nth: Option<usize>) -> String {
+    if nth.is_some() {
+        return String::new();
+    }
+    match locator.count() {
+        Ok(count) if count > 1 => format!(
+            " (selector matched {count} elements; acted on the first — set `nth` to target another)"
+        ),
+        _ => String::new(),
+    }
+}
 
 /// Process-wide input simulator shared by every computer-control step.
 ///
@@ -152,9 +232,17 @@ impl Computer {
                     "are exact and can be used directly as selectors for computer_act. ",
                     "Each line carries the element's current state as plain tokens — ",
                     "disabled, hidden, focused, checked/unchecked/mixed, selected, ",
-                    "expanded/collapsed, editable, busy — so a disabled or hidden ",
-                    "control is visible BEFORE you try to act on it. Optionally ",
-                    "snapshot only the subtree matching a CSS-like selector.",
+                    "expanded/collapsed, editable, busy, modal, required, active — so a ",
+                    "disabled or hidden control, an open modal dialog (clicks outside it ",
+                    "are ignored) or a required-but-empty field is visible BEFORE you ",
+                    "try to act on it. Lines also carry `description=` (tooltip/help, ",
+                    "often the only way to tell two same-named controls apart), ",
+                    "`stable_id=` (a selector attribute that survives UI changes) and ",
+                    "`actions=[…]` (the exact verbs the element accepts). A line reading ",
+                    "`… children not read (depth limit)` means the subtree was CUT, not ",
+                    "empty: raise max_depth. Optionally snapshot only the subtree ",
+                    "matching a CSS-like selector; that match auto-waits up to ",
+                    "`timeout_ms` instead of failing on the first try.",
                     "\n\nSelector patterns: `button`, `button[name='OK']`, ",
                     "`text_field[name^='Search']`, `text_field[name*='email']`, ",
                     "`group > button` (direct child), `window button` (descendant), ",
@@ -175,7 +263,7 @@ impl Computer {
                         },
                         "selector": {
                             "type": "string",
-                            "description": "Optional CSS-like selector to snapshot only the matching subtree, e.g. \"window[name='Main'] > group\". Resolution is fail-fast (no auto-wait); if the element may not exist yet, re-call after the app's interface settles."
+                            "description": "Optional CSS-like selector to snapshot only the matching subtree, e.g. \"window[name='Main'] > group\". The match auto-waits up to `timeout_ms`, so a snapshot taken right after a UI change reports the element instead of a miss."
                         },
                         "nth": {
                             "type": "integer",
@@ -186,7 +274,7 @@ impl Computer {
                             "type": "integer",
                             "minimum": 1,
                             "maximum": 40,
-                            "description": "Maximum snapshot depth (default 12, max 40)"
+                            "description": "Maximum snapshot depth (default 12, max 40). A branch cut here is marked `children not read` — it is unknown, not empty."
                         },
                         "format": {
                             "type": "string",
@@ -196,7 +284,7 @@ impl Computer {
                         "timeout_ms": {
                             "type": "integer",
                             "minimum": 0,
-                            "description": "How long to wait for the app to appear, in milliseconds (default 3000). Applies only to the app lookup."
+                            "description": "How long to wait for the app (and, with `selector`, for the element to exist) to appear, in milliseconds (default 3000)."
                         },
                         "surface": {
                             "type": "string",
@@ -240,10 +328,15 @@ impl Computer {
                     "spinner went away; tolerates the element never having existed), to ",
                     "ENABLE later (\"enabled\"), to CLOSE (\"hidden\"), or to gain/lose ",
                     "keyboard focus (\"focused\"/\"unfocused\").",
-                    "\n\nTwo element conditions need no state flag: `value`/`value_contains` ",
+                    "\n\nThree element conditions need no state flag: `value`/`value_contains` ",
                     "block until the element's value equals or contains a string — ",
                     "value='100%' for a progress bar, value_contains='Done' for a status ",
-                    "label that may word differently across runs.",
+                    "label that may word differently across runs — and ",
+                    "`numeric_value_gte` blocks until a slider/spinner/progress bar ",
+                    "reaches a number (numeric_value_gte=100 for a 0..100 bar). The ",
+                    "target may also be a SHELL SURFACE (`surface`) instead of an ",
+                    "application, which is how you wait for a menu bar item, a flyout ",
+                    "or a tray item to appear.",
                     "\n\nWith `event` instead of `selector` the wait is app-scoped and ",
                     "blocks until the platform accessibility stream raises the event: ",
                     "window_opened/window_closed/window_activated/window_deactivated, ",
@@ -284,7 +377,16 @@ impl Computer {
                         "state": {
                             "type": "string",
                             "enum": ["attached", "detached", "visible", "hidden", "enabled", "disabled", "focused", "unfocused"],
-                            "description": "The condition to wait for (default \"visible\"): \"attached\" = exists; \"detached\" = gone (or never existed); \"visible\" = exists and is visible; \"hidden\" = hidden or gone; \"enabled\"/\"disabled\"; \"focused\"/\"unfocused\". Mutually exclusive with `value`/`value_contains`."
+                            "description": "The condition to wait for (default \"visible\"): \"attached\" = exists; \"detached\" = gone (or never existed); \"visible\" = exists and is visible; \"hidden\" = hidden or gone; \"enabled\"/\"disabled\"; \"focused\"/\"unfocused\". Mutually exclusive with `value`/`value_contains`/`numeric_value_gte`."
+                        },
+                        "numeric_value_gte": {
+                            "type": "number",
+                            "description": "Block until the element's NUMERIC value reaches at least this number (slider, spinner, progress bar). Requires `selector`; mutually exclusive with `state`/`value`/`value_contains`."
+                        },
+                        "surface": {
+                            "type": "string",
+                            "enum": ["menu_bar", "status_items", "taskbar", "panel", "dock", "desktop", "flyout", "unknown"],
+                            "description": "Target an OS SHELL SURFACE instead of an application (element modes only; exactly one of `name`/`pid`/`surface`)."
                         },
                         "value": {
                             "type": "string",
@@ -308,12 +410,17 @@ impl Computer {
                     },
                     "anyOf": [
                         { "required": ["name"] },
-                        { "required": ["pid"] }
+                        { "required": ["pid"] },
+                        { "required": ["surface"] }
                     ],
                     "allOf": [
                         {
                             "if": { "required": ["name"] },
-                            "then": { "not": { "required": ["pid"] } }
+                            "then": { "not": { "anyOf": [{ "required": ["pid"] }, { "required": ["surface"] }] } }
+                        },
+                        {
+                            "if": { "required": ["pid"] },
+                            "then": { "not": { "required": ["surface"] } }
                         },
                         {
                             "if": {
@@ -323,10 +430,10 @@ impl Computer {
                         },
                         {
                             "if": { "required": ["event"] },
-                            "then": { "not": { "anyOf": [{ "required": ["selector"] }, { "required": ["nth"] }, { "required": ["state"] }, { "required": ["value"] }, { "required": ["value_contains"] }] } }
+                            "then": { "not": { "anyOf": [{ "required": ["selector"] }, { "required": ["nth"] }, { "required": ["state"] }, { "required": ["value"] }, { "required": ["value_contains"] }, { "required": ["numeric_value_gte"] }, { "required": ["surface"] }] } }
                         },
                         {
-                            "if": { "anyOf": [{ "required": ["value"] }, { "required": ["value_contains"] }] },
+                            "if": { "anyOf": [{ "required": ["value"] }, { "required": ["value_contains"] }, { "required": ["numeric_value_gte"] }] },
                             "then": { "allOf": [
                                 { "required": ["selector"] },
                                 { "not": { "required": ["state"] } }
@@ -334,7 +441,11 @@ impl Computer {
                         },
                         {
                             "if": { "required": ["value"] },
-                            "then": { "not": { "required": ["value_contains"] } }
+                            "then": { "not": { "anyOf": [{ "required": ["value_contains"] }, { "required": ["numeric_value_gte"] }] } }
+                        },
+                        {
+                            "if": { "required": ["value_contains"] },
+                            "then": { "not": { "required": ["numeric_value_gte"] } }
                         }
                     ]
                 }
@@ -498,10 +609,19 @@ impl Computer {
                     "target on many toolkits but NOT reliably on every one — the one ",
                     "mechanism that always moves OS keyboard focus is a real click, ",
                     "which is computer_control's job: if chained typing keeps missing ",
-                    "the field, click the field element there instead. In Build mode ",
+                    "the field, click the field element there instead. `type_text` ",
+                    "inserts at the caret of the target (it focuses the target first) ",
+                    "while `set_value` REPLACES the whole value — use `set_value` to ",
+                    "overwrite a field, `type_text` to append. In Build mode ",
                     "chains containing an element step ask for approval; keyboard ",
                     "steps with no element step in the chain are denied (the approval ",
-                    "dialog hands focus to the TUI)."
+                    "dialog hands focus to the TUI).",
+                    "\n\nEvery step report ends with an `after:` line describing the UI ",
+                    "you just changed — the target's fresh state (or `is gone`), the ",
+                    "foreground app and the element that now holds keyboard focus — so ",
+                    "a step that did nothing is visible without another snapshot. When ",
+                    "a selector matched several elements and you did not pass `nth`, ",
+                    "the report says how many matched and which one was used."
                 ),
                 "inputSchema": {
                     "type": "object",
@@ -593,7 +713,7 @@ impl Computer {
                                     "type": "array",
                                     "items": { "type": "string" },
                                     "minItems": 1,
-                                    "description": "Keys to put back UP as a STANDALONE step (no other fields), undoing a previous `hold` (releasing a key that is not held is harmless). Same name vocabulary as `hold`; order does not matter."
+                                    "description": "Keys to put back UP as a STANDALONE step (no other fields), undoing a previous `hold` (releasing a key that is not held is harmless). Same name vocabulary as `hold`; order does not matter. Pass [\"all\"] to release every key a previous `hold` left down."
                                 },
                                 "then": {
                                     "$ref": "#/$defs/step",
@@ -713,9 +833,13 @@ impl Computer {
                     "to_selector. `action: up` needs no target. A `hold` step presses ",
                     "keys down and LEAVES them down across steps (clicks land as ",
                     "ctrl+click, typed text lands shifted); a `release` step puts them ",
-                    "back up — both standalone, like `wait`. If the target appears ",
+                    "back up — both standalone, like `wait`; `release: [\"all\"]` puts ",
+                    "back every key a `hold` left down. If the target appears ",
                     "in computer_snapshot, prefer computer_act — it is semantic and ",
-                    "auto-waits. In Build mode the element form asks for approval; the ",
+                    "auto-waits. Each step report ends with an `after:` line (target's ",
+                    "fresh state, foreground app, focused element), and a selector ",
+                    "that matched several elements without `nth` says so. In Build ",
+                    "mode the element form asks for approval; the ",
                     "coordinate form is denied (coordinates go stale when the approval ",
                     "dialog moves the pointer)."
                 ),
@@ -829,7 +953,7 @@ impl Computer {
                                     "type": "array",
                                     "items": { "type": "string" },
                                     "minItems": 1,
-                                    "description": "Keys to put back UP as a STANDALONE step (no other fields), undoing a previous `hold` (releasing a key that is not held is harmless). Same name vocabulary as `hold`; order does not matter."
+                                    "description": "Keys to put back UP as a STANDALONE step (no other fields), undoing a previous `hold` (releasing a key that is not held is harmless). Same name vocabulary as `hold`; order does not matter. Pass [\"all\"] to release every key a previous `hold` left down."
                                 },
                                 "then": {
                                     "$ref": "#/$defs/step",

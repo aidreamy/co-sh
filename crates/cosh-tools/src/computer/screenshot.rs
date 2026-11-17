@@ -10,7 +10,7 @@ use std::time::Duration;
 
 use aiface::connector::{ChatMessage, ImageBlock, tool_result_message_with_images};
 use xa11y::{
-    Annotated, App, AppExt, Rect, Screenshot, screenshot as xa11y_screenshot, screenshot_annotated,
+    Annotated, Rect, Screenshot, screenshot as xa11y_screenshot, screenshot_annotated,
     screenshot_element, screenshot_region as xa11y_screenshot_region,
 };
 
@@ -288,7 +288,12 @@ fn target_locator(
             .map_err(|e| format!("computer_screenshot: {e}"))?;
         Ok(surface.locator(selector).nth(nth))
     } else {
-        let app = resolve_app(input)?;
+        let app = super::resolve_app(
+            input.app.as_deref(),
+            input.pid,
+            timeout,
+            "computer_screenshot",
+        )?;
         Ok(app.locator(selector).nth(nth))
     }
 }
@@ -485,25 +490,4 @@ pub(crate) fn without_quoted_spans(selector: &str) -> String {
         }
     }
     out
-}
-
-/// Resolve the target application (validating `app`/`pid` exclusivity).
-fn resolve_app(input: &ComputerScreenshot) -> Result<App, String> {
-    use std::time::Duration;
-    let timeout = Duration::from_millis(input.timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS));
-    let name = input
-        .app
-        .as_deref()
-        .map(str::trim)
-        .filter(|s| !s.is_empty());
-    match (name, input.pid) {
-        (Some(name), None) => App::by_name(name, timeout)
-            .map_err(|e| super::errors::render_app_miss("computer_screenshot", &e)),
-        (None, Some(pid)) => App::by_pid(pid, timeout)
-            .map_err(|e| super::errors::render_app_miss("computer_screenshot", &e)),
-        (None, None) => {
-            Err("computer_screenshot: element capture requires `app`, `pid` or `surface`".into())
-        }
-        (Some(_), Some(_)) => Err("computer_screenshot: provide `app` or `pid`, not both".into()),
-    }
 }
