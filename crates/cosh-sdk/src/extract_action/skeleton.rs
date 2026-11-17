@@ -56,6 +56,12 @@ fn resolve_ref<'a>(schema: &'a JsonValue, root: &'a JsonValue) -> Option<&'a Jso
     Some(current)
 }
 
+/// Whether `prop` points back at `schema` itself — `then: {$ref:
+/// '#/$defs/step'}` declared inside `$defs.step`.
+fn refs_self(prop: &JsonValue, schema: &JsonValue, root: &JsonValue) -> bool {
+    resolve_ref(prop, root).is_some_and(|target| std::ptr::eq(target, schema))
+}
+
 /// Whether this schema level carries a non-empty `properties` map of its own.
 fn has_own_properties(schema: &JsonValue) -> bool {
     schema
@@ -165,7 +171,7 @@ fn object_skeleton(schema: &JsonValue, depth: usize, ref_hops: usize, root: &Jso
         .map(|r| r.iter().filter_map(|v| v.as_str()).collect())
         .unwrap_or_default();
 
-    let mut fields: Vec<(String, String, &'static str)> = Vec::new();
+    let mut fields: Vec<(String, String, &'static str, bool)> = Vec::new();
     for (key, prop) in props {
         let marker = if required.iter().any(|r| *r == key) {
             ""
@@ -176,15 +182,29 @@ fn object_skeleton(schema: &JsonValue, depth: usize, ref_hops: usize, root: &Jso
             key.clone(),
             skeleton(prop, depth + 1, ref_hops, root),
             marker,
+            refs_self(prop, schema, root),
         ));
     }
-    fields.sort_by_key(|(_, _, marker)| if marker.is_empty() { 0 } else { 1 });
+    fields.sort_by_key(|(_, _, marker, _)| if marker.is_empty() { 0 } else { 1 });
     let truncated = fields.len() > MAX_PROPS;
-    let rendered: Vec<String> = fields
+    // A self-referential field (`then: {$ref: '#/$defs/step'}` declared inside
+    // `$defs.step` — how the computer pipelines chain the next step) is both
+    // the field models get wrong most often and one width truncation drops
+    // first, which leaves the rejection hint silent about the very shape that
+    // was rejected. Keep every dropped self-reference visible as a marker
+    // instead of expanding it.
+    let recursive: Vec<String> = fields
+        .iter()
+        .skip(MAX_PROPS)
+        .filter(|(_, _, _, recursive)| *recursive)
+        .map(|(key, _, marker, _)| format!("{key}{marker}: <same object>"))
+        .collect();
+    let mut rendered: Vec<String> = fields
         .into_iter()
         .take(MAX_PROPS)
-        .map(|(key, sk, marker)| format!("{key}{marker}: {sk}"))
+        .map(|(key, sk, marker, _)| format!("{key}{marker}: {sk}"))
         .collect();
+    rendered.extend(recursive);
     let body = rendered.join(", ");
     if truncated {
         format!("{{ {body}, ... }}")
@@ -309,6 +329,38 @@ mod skeleton_tests {
         assert!(rendered.contains("x: <number>"), "{rendered}");
         assert!(rendered.contains("y?: <number>"), "{rendered}");
         assert!(!rendered.contains("if"), "{rendered}");
+    }
+
+    #[test]
+    fn self_referential_field_survives_width_truncation() {
+        // The computer_control layout: the step shape has more properties than
+        // MAX_PROPS and chains the next step through `then: {$ref}` at the
+        // end. Truncation used to drop `then` entirely, so the rejection hint
+        // stayed silent about the one field models get wrong.
+        let schema = json!({
+            "type": "object",
+            "allOf": [{ "$ref": "#/$defs/step" }],
+            "$defs": {
+                "step": {
+                    "type": "object",
+                    "properties": {
+                        "x": { "type": "integer" },
+                        "y": { "type": "integer" },
+                        "action": { "type": "string" },
+                        "button": { "type": "string" },
+                        "dx": { "type": "integer" },
+                        "dy": { "type": "integer" },
+                        "count": { "type": "integer" },
+                        "key": { "type": "string" },
+                        "wait": { "type": "integer" },
+                        "then": { "$ref": "#/$defs/step" }
+                    }
+                }
+            }
+        });
+        let rendered = schema_skeleton(&schema);
+        assert!(rendered.contains("then?: <same object>"), "{rendered}");
+        assert!(rendered.contains("..."), "{rendered}");
     }
 
     #[test]
