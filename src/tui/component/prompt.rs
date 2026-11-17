@@ -503,12 +503,17 @@ impl PromptView {
     /// Replace the complete editable draft with a successful model
     /// correction. A correction is plain text, so any compressed-paste
     /// placeholders from the old draft are no longer applicable.
+    ///
+    /// Attached images are NOT part of the corrected text: the corrector
+    /// only rewrites the draft's text and never receives (or returns) the
+    /// images, so the attachments must survive the rewrite. Dropping them
+    /// here would make an image pasted before a correction disappear when
+    /// the corrected prompt came back.
     pub fn replace_with_correction(&mut self, corrected: String) {
         self.input = corrected;
         self.cursor_pos = self.input.len();
         self.history_index = -1;
         self.pasted_parts.clear();
-        self.attached_images.clear();
         self.clear_selection();
         // One atomic, marked step: the first Ctrl+Z after a correction
         // restores the exact pre-correction draft (never a mid-state), and
@@ -2136,6 +2141,52 @@ mod tests {
         assert_eq!(view.cursor_pos, view.input.len());
         assert!(view.pasted_parts.is_empty());
         assert!(!view.has_selection());
+    }
+
+    #[test]
+    fn correction_keeps_attached_images() {
+        // Regression: an image pasted before a correction was dropped with
+        // the corrected draft, because the correction reset every draft
+        // field. Images are attachments, not draft text, so they survive.
+        let mut view = PromptView::new();
+        view.input = "descreva a imagem".into();
+        view.cursor_pos = view.input.len();
+        view.add_image(
+            b"not-a-real-image".to_vec(),
+            "photo.png".into(),
+            "/tmp/photo.png".into(),
+        );
+        assert!(view.has_images());
+
+        view.replace_with_correction("Descreva a imagem.".into());
+
+        assert_eq!(view.input, "Descreva a imagem.");
+        assert!(view.has_images());
+        let images = view.take_images();
+        assert_eq!(images.len(), 1);
+        assert_eq!(images[0].source, "/tmp/photo.png");
+        assert_eq!(images[0].name, "photo.png");
+    }
+
+    #[test]
+    fn undo_after_a_correction_keeps_attached_images() {
+        let mut view = PromptView::new();
+        // Type the draft so the history holds the pre-correction state, the
+        // same way the real typing path records it.
+        for ch in "descreva a imagem".chars() {
+            view.type_char(ch);
+        }
+        view.add_image(
+            b"not-a-real-image".to_vec(),
+            "photo.png".into(),
+            "/tmp/photo.png".into(),
+        );
+
+        view.replace_with_correction("Descreva a imagem.".into());
+        view.undo();
+
+        assert_eq!(view.input, "descreva a imagem");
+        assert!(view.has_images());
     }
 
     #[test]

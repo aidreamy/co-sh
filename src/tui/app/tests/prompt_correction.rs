@@ -47,6 +47,11 @@ async fn correction_only_replaces_the_unchanged_prompt_snapshot() {
     isolate_home();
     let mut app = App::new("/tmp".to_string());
     app.prompt_view.input = "texto original".into();
+    app.prompt_view.add_image(
+        b"not-a-real-image".to_vec(),
+        "photo.png".into(),
+        "/tmp/photo.png".into(),
+    );
     app.prompt_correction_active = true;
 
     app.event_tx
@@ -57,6 +62,9 @@ async fn correction_only_replaces_the_unchanged_prompt_snapshot() {
         .unwrap();
     app.poll_events();
     assert_eq!(app.prompt_view.input, "Texto original.");
+    // The corrected text replaces only the draft's text: the attached image
+    // rides along instead of being discarded with the old prompt.
+    assert!(app.prompt_view.has_images());
 
     // A late reply must not overwrite a draft the user edited meanwhile.
     app.prompt_view.input = "nova redação".into();
