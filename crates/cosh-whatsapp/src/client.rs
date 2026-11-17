@@ -1,23 +1,25 @@
 //! The live link to WhatsApp.
 
+use std::collections::VecDeque;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use tokio::sync::mpsc;
+use tokio::sync::{RwLock, mpsc};
 use whatsapp_rust::bot::{Bot, BotHandle};
 use whatsapp_rust::pair_code::PairCodeOptions;
+use whatsapp_rust::send::SendOptions;
 use whatsapp_rust::store::SqliteStore;
 use whatsapp_rust::store::traits::Backend;
 use whatsapp_rust::transport::TokioWebSocketTransportFactory;
 use whatsapp_rust::waproto::whatsapp as wa;
-use whatsapp_rust::{Client, TokioRuntime};
+use whatsapp_rust::{Client, Jid, TokioRuntime};
 
 use crate::config::{Config, Pairing};
 use crate::error::{Error, Result};
 use crate::event::{BUFFER, Event, EventSink, Events};
 use crate::http::ReqwestHttpClient;
-use crate::message::ChatId;
+use crate::message::{ChatId, ChatKind, IncomingMessage, MessageContent};
 
 /// A message that was handed to WhatsApp.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -48,6 +50,80 @@ struct Inner {
     /// Kept alive so dropping it does not abort the run loop; `stop` aborts
     /// explicitly once the caller is done.
     run: Mutex<Option<BotHandle>>,
+    /// Ids of the messages this process sent, so their echoes are recognized.
+    sent: SentIds,
+    /// This account's own ids, resolved from the device store on first use.
+    account: RwLock<Option<Account>>,
+}
+
+/// How many of this process's sends stay recognizable as its own.
+///
+/// A message id is the only reliable way to tell this process's own output
+/// apart from something the user typed on their phone: both are `from_me`, and
+/// the text may come back reformatted. The engine does not fan a device's
+/// sends back to that device, so a normal send is not redelivered — but a
+/// stanza the server retries after a reconnect can be, and in the self chat
+/// answering it would feed the agent its own reply. An entry only has to
+/// survive that window, so a few hundred ids is generous.
+const SENT_IDS: usize = 256;
+
+/// Message ids this process sent, oldest first.
+#[derive(Default)]
+struct SentIds {
+    ids: Mutex<VecDeque<String>>,
+}
+
+impl SentIds {
+    /// Record an id **before** the message goes on the wire, so its echo can
+    /// never arrive while the id is still unknown.
+    fn remember(&self, id: &str) {
+        let mut ids = self.lock();
+        ids.push_back(id.to_string());
+        while ids.len() > SENT_IDS {
+            ids.pop_front();
+        }
+    }
+
+    fn contains(&self, id: &str) -> bool {
+        self.lock().iter().any(|sent| sent == id)
+    }
+
+    fn lock(&self) -> std::sync::MutexGuard<'_, VecDeque<String>> {
+        self.ids
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+}
+
+/// The account's own address forms.
+///
+/// A WhatsApp account answers to two ids: the phone-number JID
+/// (`…@s.whatsapp.net`) and the LID (`…@lid`) that newer conversations — the
+/// "Message yourself" chat included — are addressed by. Both are matched, so
+/// the self chat is recognized whichever form its chat id carries.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+struct Account {
+    pn: Option<String>,
+    lid: Option<String>,
+}
+
+impl Account {
+    fn is_known(&self) -> bool {
+        self.pn.is_some() || self.lid.is_some()
+    }
+
+    /// Whether both address forms are known, so a cached copy can be trusted
+    /// for the rest of the process.
+    fn is_complete(&self) -> bool {
+        self.pn.is_some() && self.lid.is_some()
+    }
+
+    /// Whether `chat` is this account's own conversation.
+    fn is_self(&self, chat: &ChatId) -> bool {
+        chat.is_direct()
+            && (self.pn.as_deref() == Some(chat.user())
+                || self.lid.as_deref() == Some(chat.user()))
+    }
 }
 
 impl std::fmt::Debug for Inner {
@@ -106,14 +182,14 @@ impl WhatsApp {
         let sink = EventSink::new(tx);
 
         let mut builder = Bot::builder()
-            .with_backend(Arc::new(store) as Arc<dyn Backend>)
+            .with_backend_arc(Arc::new(store) as Arc<dyn Backend>)
             .with_transport_factory(TokioWebSocketTransportFactory::new())
             .with_http_client(ReqwestHttpClient::new().map_err(Error::session)?)
             .with_runtime(TokioRuntime)
-            .on_event(move |engine_event, _client| {
+            .on_event(move |engine_event: std::sync::Arc<_>, _client| {
                 let sink = sink.clone();
                 async move {
-                    if let Some(event) = Event::from_engine(&engine_event) {
+                    for event in Event::from_engine(&engine_event) {
                         sink.send(event).await;
                     }
                 }
@@ -132,17 +208,22 @@ impl WhatsApp {
             });
         }
 
-        let mut bot = builder.build().await.map_err(Error::session)?;
+        let bot = builder.build().await.map_err(Error::session)?;
         // The store may have written its WAL files while opening; harden
         // them again now that they exist.
         restrict_store_permissions(config.store_path());
-        let handle = bot.run().await.map_err(Error::session)?;
+        // `spawn` starts the run loop on the engine's task; the handle aborts
+        // it if dropped, so it is kept next to the client it drives.
+        let handle = bot.spawn();
+        let client = handle.client();
 
         Ok((
             Self {
                 inner: Arc::new(Inner {
-                    client: bot.client(),
+                    client,
                     run: Mutex::new(Some(handle)),
+                    sent: SentIds::default(),
+                    account: RwLock::new(None),
                 }),
             },
             events,
@@ -153,22 +234,93 @@ impl WhatsApp {
     ///
     /// Empty or whitespace-only text is rejected with [`Error::EmptyMessage`]
     /// instead of uploading a blank message.
+    ///
+    /// The message id is chosen here and recorded **before** the send, so a
+    /// redelivery of this process's own message is recognizable (see
+    /// [`WhatsApp::is_prompt`]).
+    ///
+    /// Replies go to the chat exactly as it arrived. The self chat is
+    /// displayed by the phone under its own id (LID on modern accounts), so
+    /// rewriting it to the phone number would land the stanza in a chat the
+    /// phone never shows.
     pub async fn send_text(&self, chat: &ChatId, text: impl Into<String>) -> Result<SentMessage> {
         let message = wa::Message {
             conversation: Some(text_body(text)?),
             ..Default::default()
         };
+        let jid = chat.to_jid()?;
+
+        let id = self.inner.client.generate_message_id();
+        self.inner.sent.remember(&id);
+
+        let mut options = SendOptions::default();
+        options.message_id = Some(id.clone());
+
         let result = self
             .inner
             .client
-            .send_message(chat.to_jid()?, message)
+            .send_message_with_options(jid, message, options)
             .await
             .map_err(Error::send)?;
+
+        // The engine sends the id it was given; should it ever pick its own,
+        // the id it reports is the one the echo will carry.
+        if result.message_id != id {
+            self.inner.sent.remember(&result.message_id);
+        }
 
         Ok(SentMessage {
             id: result.message_id,
             to: ChatId::from_jid(&result.to),
         })
+    }
+
+    /// Whether `message` is a prompt the agent should answer.
+    ///
+    /// This is the one routing rule consumers share, and it differs from
+    /// "did this account send it?" in exactly one place: the account's own
+    /// chat ("Message yourself") is a prompt, so the agent can be driven from
+    /// the same number it runs on. Messages typed there on the phone arrive as
+    /// `from_me`, indistinguishable from the agent's own replies unless the
+    /// reply ids are known — which they are, because [`WhatsApp::send_text`]
+    /// reserves an id before each send. A redelivered own send is dropped in
+    /// every chat, not just groups, which keeps the self chat from looping.
+    ///
+    /// Everything else `from_me` — the user's messages to contacts and groups
+    /// — is left alone, as are status/broadcast posts, channels, protocol
+    /// chatter and reactions.
+    pub async fn is_prompt(&self, message: &IncomingMessage) -> bool {
+        let account = self.account().await;
+        is_prompt(message, account.as_ref(), &self.inner.sent)
+    }
+
+    /// This account's own ids, read from the device store and cached.
+    ///
+    /// The cache only becomes final once **both** ids are known. A pairing
+    /// that stored an empty LID reports the phone number alone, and freezing
+    /// that answer would make the LID-addressed self chat unrecognizable for
+    /// the rest of the process — the engine learns the LID later, so a later
+    /// read must be allowed to add it.
+    ///
+    /// `None` until the link is paired: there is no identity to report yet,
+    /// and caching that absence would hide the identity pairing adds.
+    async fn account(&self) -> Option<Account> {
+        let cached = self.inner.account.read().await.clone();
+        if let Some(account) = &cached
+            && account.is_complete()
+        {
+            return Some(account.clone());
+        }
+        let fresh = Account {
+            pn: own_user(self.inner.client.pn()),
+            lid: own_user(self.inner.client.lid()),
+        };
+        let account = merge_accounts(cached.unwrap_or_default(), fresh);
+        if !account.is_known() {
+            return None;
+        }
+        *self.inner.account.write().await = Some(account.clone());
+        Some(account)
     }
 
     /// Wait until the link is connected, authenticated and done with its
@@ -196,11 +348,9 @@ impl WhatsApp {
     /// The Signal keys are wiped on the server side; the local device store
     /// keeps its bytes but is useless, so delete it to start over cleanly.
     pub async fn logout(&self) -> Result<()> {
-        // Stop the run loop even when the server-side logout fails, so a
-        // failed unlink does not leave the link (and its tasks) running.
-        let result = self.inner.client.logout().await.map_err(Error::session);
+        self.inner.client.logout().await;
         self.inner.stop();
-        result
+        Ok(())
     }
 
     /// Disconnect gracefully and stop the link.
@@ -234,6 +384,67 @@ async fn prepare_store_dir(store_path: &Path) -> Result<()> {
         restrict_dir_permissions(parent);
     }
     Ok(())
+}
+
+/// [`WhatsApp::is_prompt`], with the account and the sent ids injected so the
+/// rule is testable without a link.
+fn is_prompt(message: &IncomingMessage, account: Option<&Account>, sent: &SentIds) -> bool {
+    // An echo of a message this process sent, in whichever chat it lands.
+    // Checked first and unconditionally: gating echo detection on a chat kind
+    // (groups only, say) is exactly how a self chat ends up answering itself.
+    if sent.contains(&message.id) {
+        return false;
+    }
+    // Chats nobody can answer: status/broadcast and channels.
+    if matches!(
+        message.chat_kind,
+        ChatKind::Broadcast | ChatKind::Newsletter
+    ) {
+        return false;
+    }
+    // Protocol chatter: edits, deletes, receipts, payloads we do not model.
+    if matches!(
+        message.content,
+        MessageContent::System | MessageContent::Unsupported | MessageContent::Reaction { .. }
+    ) {
+        return false;
+    }
+    // Anything the account did not send is simply a conversation.
+    if !message.from_me {
+        return true;
+    }
+    // `from_me` but not this process's own send: another device of the account
+    // wrote it (the phone, usually). Only the self chat is addressed to the
+    // agent; what the user sends to contacts and groups is not ours to answer.
+    let Some(account) = account else {
+        // No identity to compare the chat against — the link is not paired, or
+        // the device store has not learned one of its two ids. Dropping in
+        // silence is what makes a dead self chat look like a bot ignoring you.
+        log::warn!(
+            "cosh-whatsapp: own message {} in {} dropped: the account identity is unknown",
+            message.id,
+            message.chat
+        );
+        return false;
+    };
+    account.is_self(&message.chat)
+}
+
+/// The user part of an own JID, when the device store reports one.
+fn own_user(jid: Option<Jid>) -> Option<String> {
+    let user = ChatId::from_jid(&jid?).user().to_string();
+    (!user.is_empty()).then_some(user)
+}
+
+/// Fold a fresh read of the account's ids into what was already known.
+///
+/// A form the device store has not learned yet must never erase one it already
+/// reported, so each side keeps its own half.
+fn merge_accounts(known: Account, fresh: Account) -> Account {
+    Account {
+        pn: fresh.pn.or(known.pn),
+        lid: fresh.lid.or(known.lid),
+    }
 }
 
 /// The text of a message, rejecting blank input.
@@ -299,7 +510,204 @@ fn restrict_dir_permissions(_path: &Path) {}
 
 #[cfg(test)]
 mod tests {
+    use chrono::Utc;
+
     use super::*;
+    use crate::message::Sender;
+
+    const OWN_PN: &str = "5511912345678";
+    const OWN_LID: &str = "99887766554433";
+    const FRIEND: &str = "5511987654321";
+
+    fn account() -> Account {
+        Account {
+            pn: Some(OWN_PN.to_string()),
+            lid: Some(OWN_LID.to_string()),
+        }
+    }
+
+    fn message(chat: &str, content: MessageContent) -> IncomingMessage {
+        let chat_id = ChatId::parse(chat).expect("chat id");
+        IncomingMessage {
+            id: "MSG1".to_string(),
+            chat_kind: chat_id.kind(),
+            chat: chat_id,
+            sender: Sender {
+                id: ChatId::parse(chat).expect("sender id"),
+                name: None,
+            },
+            from_me: false,
+            timestamp: Utc::now(),
+            content,
+        }
+    }
+
+    fn sent_from_me(chat: &str, id: &str) -> IncomingMessage {
+        let mut message = message(chat, MessageContent::Text("written on the phone".into()));
+        message.id = id.to_string();
+        message.from_me = true;
+        message
+    }
+
+    #[test]
+    fn text_traffic_reaches_the_agent() {
+        let own = account();
+        assert!(is_prompt(
+            &message(
+                "5511987654321@s.whatsapp.net",
+                MessageContent::Text("hi".to_string())
+            ),
+            Some(&own),
+            &SentIds::default()
+        ));
+    }
+
+    #[test]
+    fn protocol_noise_is_ignored() {
+        let own = account();
+        for content in [
+            MessageContent::System,
+            MessageContent::Unsupported,
+            MessageContent::Reaction {
+                emoji: "👍".to_string(),
+                target_message_id: Some("MSG0".to_string()),
+            },
+        ] {
+            assert!(
+                !is_prompt(
+                    &message("5511987654321@s.whatsapp.net", content.clone()),
+                    Some(&own),
+                    &SentIds::default()
+                ),
+                "{content:?} should not reach the agent"
+            );
+        }
+    }
+
+    #[test]
+    fn status_and_channels_are_ignored() {
+        let own = account();
+        for chat in ["status@broadcast", "120363012345678901@newsletter"] {
+            assert!(!is_prompt(
+                &message(chat, MessageContent::Text("post".to_string())),
+                Some(&own),
+                &SentIds::default()
+            ));
+        }
+    }
+
+    #[test]
+    fn the_self_chat_is_a_prompt_whichever_id_addresses_it() {
+        // This is the behaviour that used to require a second number: the
+        // phone's own message to "Message yourself" arrives as `from_me`.
+        let own = account();
+        for chat in [
+            format!("{OWN_PN}@s.whatsapp.net"),
+            format!("{OWN_PN}:3@s.whatsapp.net"),
+            format!("{OWN_LID}@lid"),
+        ] {
+            assert!(
+                is_prompt(
+                    &sent_from_me(&chat, "FROM-PHONE"),
+                    Some(&own),
+                    &SentIds::default()
+                ),
+                "the self chat at {chat} should reach the agent"
+            );
+        }
+    }
+
+    #[test]
+    fn a_late_lid_upgrades_a_phone_number_only_identity() {
+        // Pairing can store an empty LID. The self chat is usually addressed
+        // by LID, so a fresh read that learns it has to be folded in — and
+        // once both ids are known, the LID-addressed self chat is a prompt.
+        let pn_only = Account {
+            pn: Some(OWN_PN.to_string()),
+            lid: None,
+        };
+        let lid_chat = format!("{OWN_LID}@lid");
+        assert!(
+            !is_prompt(
+                &sent_from_me(&lid_chat, "FROM-PHONE"),
+                Some(&pn_only),
+                &SentIds::default()
+            ),
+            "without the LID the self chat is unrecognizable"
+        );
+
+        let complete = merge_accounts(
+            pn_only,
+            Account {
+                pn: None,
+                lid: Some(OWN_LID.to_string()),
+            },
+        );
+        assert!(complete.is_complete());
+        assert!(is_prompt(
+            &sent_from_me(&lid_chat, "FROM-PHONE"),
+            Some(&complete),
+            &SentIds::default()
+        ));
+    }
+
+    #[test]
+    fn a_fresh_read_never_erases_a_known_id() {
+        let complete = account();
+        let empty = Account::default();
+        assert_eq!(merge_accounts(complete.clone(), empty.clone()), complete);
+        assert_eq!(merge_accounts(empty, complete.clone()), complete);
+    }
+
+    #[test]
+    fn our_own_reply_echo_never_reaches_the_agent() {
+        // The reply was sent to the self chat; its echo carries the reserved
+        // id, so answering it (forever) is impossible.
+        let own = account();
+        let sent = SentIds::default();
+        sent.remember("REPLY-1");
+
+        let echo = sent_from_me(&format!("{OWN_PN}@s.whatsapp.net"), "REPLY-1");
+        assert!(!is_prompt(&echo, Some(&own), &sent));
+    }
+
+    #[test]
+    fn own_sends_to_other_chats_are_not_prompts() {
+        // The user writing to a friend from the phone echoes back here with
+        // `from_me` and an id this process never sent; it is not our turn.
+        let own = account();
+        assert!(!is_prompt(
+            &sent_from_me(&format!("{FRIEND}@s.whatsapp.net"), "FROM-PHONE"),
+            Some(&own),
+            &SentIds::default()
+        ));
+        assert!(!is_prompt(
+            &sent_from_me("120363012345678901@g.us", "FROM-PHONE"),
+            Some(&own),
+            &SentIds::default()
+        ));
+    }
+
+    #[test]
+    fn an_unpaired_link_cannot_recognize_the_self_chat() {
+        // Fail closed: without an identity there is no way to tell the self
+        // chat from a conversation, so nothing `from_me` is answered.
+        assert!(!is_prompt(
+            &sent_from_me(&format!("{OWN_PN}@s.whatsapp.net"), "FROM-PHONE"),
+            None,
+            &SentIds::default()
+        ));
+    }
+
+    #[test]
+    fn sent_ids_stay_bounded_and_recognizable() {
+        let sent = SentIds::default();
+        for serial in 0..(SENT_IDS + 10) {
+            sent.remember(&format!("ID-{serial}"));
+        }
+        assert!(sent.contains(&format!("ID-{}", SENT_IDS + 9)));
+        assert!(!sent.contains("ID-0"), "oldest ids are evicted");
+    }
 
     #[test]
     fn blank_text_is_rejected() {

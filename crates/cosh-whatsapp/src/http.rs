@@ -1,11 +1,10 @@
 //! HTTP seam for the protocol engine.
 //!
 //! whatsapp-rust uses HTTP for two things: fetching the current WhatsApp Web
-//! version and moving media. Its bundled client is `ureq`, but the current
-//! `ureq` release requires `zeroize >= 1.8`, and this workspace pins
-//! `zeroize = 1.7` through `aiface`. The engine exposes `HttpClient` as a
-//! seam precisely for this, so the crate plugs in `reqwest` — already the
-//! project's HTTP client and TLS stack — instead of adding a second one.
+//! version and moving media. Its bundled client is `ureq`; this crate plugs in
+//! `reqwest` instead — already the project's HTTP client and TLS stack — so no
+//! second client is built or linked. The engine exposes [`HttpClient`] as a
+//! seam precisely for this.
 
 use std::time::Duration;
 

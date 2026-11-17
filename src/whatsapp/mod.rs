@@ -6,6 +6,13 @@
 //! only reports lifecycle events while messages are handled in the
 //! background.
 //!
+//! The account can talk to its own agent: a message to the "Message yourself"
+//! chat is delivered as `from_me`, like the agent's replies are, so the two
+//! are told apart by message id — every send reserves its id before it goes
+//! out, and a message carrying one is never a prompt. That is the rule in
+//! `WhatsApp::is_prompt`, shared with the crate's own `serve` loop, and the
+//! reply to that chat keeps the id it arrived with (see the crate docs).
+//!
 //! # Architecture
 //!
 //! ```text
@@ -64,7 +71,7 @@ use tokio::task::JoinSet;
 
 use cosh_whatsapp::{Config, Event, WhatsApp, qr};
 
-use agent::{WhatsAppAgent, is_agent_traffic};
+use agent::WhatsAppAgent;
 use config::RuntimeConfig;
 
 /// How many conversations may be answered at once. The same ceiling the
@@ -162,7 +169,10 @@ pub async fn run() -> i32 {
                 }
                 Event::Connected => {
                     connected = true;
-                    println!("Connected. Send a message or `/help` from WhatsApp.");
+                    println!(
+                        "Connected. Message this number or another contact — the agent answers \
+                         both. `/help` lists the commands."
+                    );
                     flush_stdout();
                 }
                 Event::Disconnected => {
@@ -189,7 +199,22 @@ pub async fn run() -> i32 {
                     eprintln!("cosh whatsapp: {reason}; reconnecting…");
                 }
                 Event::Message(message) => {
-                    if !is_agent_traffic(&message) {
+                    log::info!(
+                        "cosh whatsapp: inbound id={} chat={} from_me={} kind={:?} text={:?}",
+                        message.id, message.chat, message.from_me, message.chat_kind,
+                        message.text()
+                    );
+                    // The crate owns the routing rule: normal chats and this
+                    // account's own chat are prompts; echoes of replies we
+                    // sent, status posts, channels and protocol chatter are
+                    // not. In a self chat that is what prevents a loop.
+                    let is_prompt = whatsapp.is_prompt(&message).await;
+                    log::info!("cosh whatsapp: is_prompt={}", is_prompt);
+                    if !is_prompt {
+                        log::warn!(
+                            "cosh whatsapp: dropped inbound id={} chat={} from_me={} (not a prompt)",
+                            message.id, message.chat, message.from_me
+                        );
                         continue;
                     }
                     let Some(permit) = Arc::clone(&slots).try_acquire_owned().ok() else {
@@ -221,8 +246,19 @@ pub async fn run() -> i32 {
                         if reply.trim().is_empty() {
                             return;
                         }
-                        if let Err(error) = link.send_text(&message.chat, reply).await {
-                            log::warn!("cosh whatsapp: reply to {} failed: {error}", message.chat);
+                        log::info!(
+                            "cosh whatsapp: sending reply to {} ({} chars)",
+                            message.chat,
+                            reply.len()
+                        );
+                        match link.send_text(&message.chat, reply).await {
+                            Ok(sent) => log::info!(
+                                "cosh whatsapp: send_text ok id={} to={}",
+                                sent.id, sent.to
+                            ),
+                            Err(error) => {
+                                log::warn!("cosh whatsapp: reply to {} failed: {error}", message.chat)
+                            }
                         }
                     });
                 }

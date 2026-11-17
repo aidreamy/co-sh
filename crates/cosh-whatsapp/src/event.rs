@@ -118,51 +118,65 @@ impl Event {
         !matches!(self, Self::Message(_))
     }
 
-    pub(crate) fn from_engine(event: &whatsapp_rust::types::events::Event) -> Option<Self> {
+    /// Map an engine event onto this crate's vocabulary.
+    ///
+    /// Returns a list because the engine batches inbound messages: live
+    /// traffic arrives as a batch of one, an offline drain as one batch per
+    /// durable commit. Every other event maps to zero or one entry.
+    pub(crate) fn from_engine(event: &whatsapp_rust::types::events::Event) -> Vec<Self> {
         use whatsapp_rust::types::events::Event as Engine;
 
+        let one = |event: Self| vec![event];
         match event {
-            Engine::PairingQrCode { code, timeout } => Some(Self::QrCode {
-                payload: code.clone(),
-                expires_in: *timeout,
+            Engine::PairingQrCode(qr) => one(Self::QrCode {
+                payload: qr.code.clone(),
+                expires_in: qr.timeout,
             }),
-            Engine::PairingCode { code, timeout } => Some(Self::PairingCode {
-                code: code.clone(),
-                expires_in: *timeout,
+            Engine::PairingCode(code) => one(Self::PairingCode {
+                code: code.code.clone(),
+                expires_in: code.timeout,
             }),
-            Engine::PairError(error) => Some(Self::PairingFailed {
+            Engine::PairError(error) => one(Self::PairingFailed {
                 reason: error.error.clone(),
             }),
-            Engine::Connected(_) => Some(Self::Connected),
-            Engine::Disconnected(_) => Some(Self::Disconnected),
-            Engine::LoggedOut(_) => Some(Self::LoggedOut),
-            Engine::Message(message, info) => {
-                Some(Self::Message(IncomingMessage::from_engine(message, info)))
-            }
-            Engine::StreamReplaced(_) => Some(Self::Failure {
+            Engine::Connected(_) => one(Self::Connected),
+            Engine::Disconnected(_) => one(Self::Disconnected),
+            Engine::LoggedOut(_) => one(Self::LoggedOut),
+            Engine::Messages(batch) => batch
+                .messages
+                .iter()
+                .map(|message| {
+                    Self::Message(IncomingMessage::from_engine(&message.message, &message.info))
+                })
+                .collect(),
+            Engine::StreamReplaced(_) => one(Self::Failure {
                 kind: FailureKind::StreamReplaced,
                 reason: "another WhatsApp Web session took over this companion".to_string(),
             }),
-            Engine::TemporaryBan(ban) => Some(Self::Failure {
+            Engine::TemporaryBan(ban) => one(Self::Failure {
                 kind: FailureKind::TemporaryBan,
                 reason: format!(
                     "temporarily banned: {:?} (expires in {:?})",
                     ban.code, ban.expire
                 ),
             }),
-            Engine::ConnectFailure(failure) => Some(Self::Failure {
+            Engine::ConnectFailure(failure) => one(Self::Failure {
                 kind: FailureKind::ConnectFailed,
-                reason: format!("{:?}: {}", failure.reason, failure.message),
+                reason: format!(
+                    "{:?}: {}",
+                    failure.reason,
+                    failure.message.as_deref().unwrap_or_default()
+                ),
             }),
-            Engine::StreamError(error) => Some(Self::Failure {
+            Engine::StreamError(error) => one(Self::Failure {
                 kind: FailureKind::StreamError,
                 reason: format!("stream error {}", error.code),
             }),
-            Engine::ClientOutdated(_) => Some(Self::Failure {
+            Engine::ClientOutdated(_) => one(Self::Failure {
                 kind: FailureKind::ClientOutdated,
                 reason: "this client version is no longer accepted by WhatsApp".to_string(),
             }),
-            Engine::QrScannedWithoutMultidevice(_) => Some(Self::Failure {
+            Engine::QrScannedWithoutMultidevice(_) => one(Self::Failure {
                 kind: FailureKind::MultiDeviceUnsupported,
                 reason: "the phone scanned the code but does not support linked devices"
                     .to_string(),
@@ -172,7 +186,7 @@ impl Event {
                 // nodes are outside this crate's scope; trace keeps them
                 // observable without turning the log into a firehose.
                 log::trace!("cosh-whatsapp: ignored engine event {other:?}");
-                None
+                Vec::new()
             }
         }
     }
@@ -249,8 +263,8 @@ mod tests {
     use std::sync::Arc;
 
     use whatsapp_rust::types::events::{
-        ClientOutdated, ConnectFailure, ConnectFailureReason, Connected, Disconnected, StreamError,
-        StreamReplaced, TempBanReason, TemporaryBan,
+        BatchOrigin, ClientOutdated, ConnectFailure, ConnectFailureReason, Connected, Disconnected,
+        InboundMessage, MessageBatch, StreamError, StreamReplaced, TempBanReason, TemporaryBan,
     };
     use whatsapp_rust::types::message::MessageInfo;
     use whatsapp_rust::waproto::whatsapp as wa;
@@ -258,19 +272,46 @@ mod tests {
     use super::*;
     use crate::message::{ChatId, ChatKind, MessageContent, Sender};
 
+    /// The single event most engine events map to.
+    fn mapped(event: &whatsapp_rust::types::events::Event) -> Option<Event> {
+        let mut events = Event::from_engine(event);
+        assert!(events.len() <= 1, "expected at most one event: {events:?}");
+        events.pop()
+    }
+
+    fn engine_message(message: wa::Message, info: MessageInfo) -> InboundMessage {
+        InboundMessage::builder()
+            .message(Arc::new(message))
+            .info(Arc::new(info))
+            .build()
+    }
+
+    fn batch(messages: Vec<InboundMessage>) -> whatsapp_rust::types::events::Event {
+        whatsapp_rust::types::events::Event::Messages(
+            MessageBatch::builder()
+                .messages(Arc::from(messages))
+                .origin(BatchOrigin::Live)
+                .build(),
+        )
+    }
+
     #[test]
     fn lifecycle_events_keep_their_payload() {
-        let qr = Event::from_engine(&whatsapp_rust::types::events::Event::PairingQrCode {
-            code: "2@abc,def".to_string(),
-            timeout: Duration::from_secs(60),
-        })
+        let qr = mapped(&whatsapp_rust::types::events::Event::PairingQrCode(
+            whatsapp_rust::types::events::PairingQrCode::builder()
+                .code("2@abc,def".to_string())
+                .timeout(Duration::from_secs(60))
+                .build(),
+        ))
         .expect("qr is mapped");
         assert!(matches!(qr, Event::QrCode { ref payload, .. } if payload == "2@abc,def"));
 
-        let code = Event::from_engine(&whatsapp_rust::types::events::Event::PairingCode {
-            code: "ABCD-1234".to_string(),
-            timeout: Duration::from_secs(180),
-        })
+        let code = mapped(&whatsapp_rust::types::events::Event::PairingCode(
+            whatsapp_rust::types::events::PairingCode::builder()
+                .code("ABCD-1234".to_string())
+                .timeout(Duration::from_secs(180))
+                .build(),
+        ))
         .expect("pairing code is mapped");
         assert!(
             matches!(code, Event::PairingCode { ref code, .. } if code == "ABCD-1234"),
@@ -278,12 +319,16 @@ mod tests {
         );
 
         assert!(matches!(
-            Event::from_engine(&whatsapp_rust::types::events::Event::Connected(Connected)),
+            mapped(&whatsapp_rust::types::events::Event::Connected(
+                Connected::builder().build()
+            )),
             Some(Event::Connected)
         ));
         assert!(matches!(
-            Event::from_engine(&whatsapp_rust::types::events::Event::Disconnected(
-                Disconnected
+            mapped(&whatsapp_rust::types::events::Event::Disconnected(
+                Disconnected::builder()
+                    .reason(whatsapp_rust::wacore::net::DisconnectReason::StreamEnded)
+                    .build()
             )),
             Some(Event::Disconnected)
         ));
@@ -300,11 +345,8 @@ mod tests {
             ..Default::default()
         };
 
-        let event = Event::from_engine(&whatsapp_rust::types::events::Event::Message(
-            Arc::new(raw),
-            Arc::new(info),
-        ))
-        .expect("message is mapped");
+        let event =
+            mapped(&batch(vec![engine_message(raw, info)])).expect("message is mapped");
         match event {
             Event::Message(message) => assert_eq!(message.text(), Some("hi")),
             other => panic!("unexpected event: {other:?}"),
@@ -312,9 +354,45 @@ mod tests {
     }
 
     #[test]
+    fn message_batches_are_fanned_out_in_order() {
+        let mut second = MessageInfo::default();
+        second.source.chat = whatsapp_rust::Jid::from_str("5511912345678@s.whatsapp.net").unwrap();
+        second.source.sender = second.source.chat.clone();
+        second.id = "MSG2".into();
+        let mut first = second.clone();
+        first.id = "MSG1".into();
+
+        let events = Event::from_engine(&batch(vec![
+            engine_message(
+                wa::Message {
+                    conversation: Some("one".to_string()),
+                    ..Default::default()
+                },
+                first,
+            ),
+            engine_message(
+                wa::Message {
+                    conversation: Some("two".to_string()),
+                    ..Default::default()
+                },
+                second,
+            ),
+        ]));
+
+        let texts: Vec<_> = events
+            .iter()
+            .map(|event| match event {
+                Event::Message(message) => message.text().expect("text"),
+                other => panic!("unexpected event: {other:?}"),
+            })
+            .collect();
+        assert_eq!(texts, ["one", "two"]);
+    }
+
+    #[test]
     fn fatal_failures_are_surfaced() {
-        let replaced = Event::from_engine(&whatsapp_rust::types::events::Event::StreamReplaced(
-            StreamReplaced,
+        let replaced = mapped(&whatsapp_rust::types::events::Event::StreamReplaced(
+            StreamReplaced::builder().build(),
         ))
         .expect("stream replaced is mapped");
         match replaced {
@@ -325,8 +403,8 @@ mod tests {
             other => panic!("unexpected event: {other:?}"),
         }
 
-        let outdated = Event::from_engine(&whatsapp_rust::types::events::Event::ClientOutdated(
-            ClientOutdated,
+        let outdated = mapped(&whatsapp_rust::types::events::Event::ClientOutdated(
+            ClientOutdated::builder().build(),
         ))
         .expect("client outdated is mapped");
         assert!(
@@ -334,11 +412,11 @@ mod tests {
             "{outdated:?}"
         );
 
-        let ban = Event::from_engine(&whatsapp_rust::types::events::Event::TemporaryBan(
-            TemporaryBan {
-                code: TempBanReason::SentToTooManyPeople,
-                expire: chrono::TimeDelta::seconds(3600),
-            },
+        let ban = mapped(&whatsapp_rust::types::events::Event::TemporaryBan(
+            TemporaryBan::builder()
+                .code(TempBanReason::SentToTooManyPeople)
+                .expire(chrono::TimeDelta::seconds(3600))
+                .build(),
         ))
         .expect("temporary ban is mapped");
         match ban {
@@ -352,12 +430,11 @@ mod tests {
 
     #[test]
     fn recoverable_failures_are_not_fatal() {
-        let failure = Event::from_engine(&whatsapp_rust::types::events::Event::ConnectFailure(
-            ConnectFailure {
-                reason: ConnectFailureReason::Generic,
-                message: "boom".to_string(),
-                raw: None,
-            },
+        let failure = mapped(&whatsapp_rust::types::events::Event::ConnectFailure(
+            ConnectFailure::builder()
+                .reason(ConnectFailureReason::Generic)
+                .message("boom".to_string())
+                .build(),
         ))
         .expect("connect failure is mapped");
         match failure {
@@ -369,11 +446,8 @@ mod tests {
             other => panic!("unexpected event: {other:?}"),
         }
 
-        let stream = Event::from_engine(&whatsapp_rust::types::events::Event::StreamError(
-            StreamError {
-                code: "515".to_string(),
-                raw: None,
-            },
+        let stream = mapped(&whatsapp_rust::types::events::Event::StreamError(
+            StreamError::builder().code("515".to_string()).build(),
         ))
         .expect("stream error is mapped");
         assert!(matches!(stream, Event::Failure { kind, .. } if !kind.is_fatal()));
@@ -382,16 +456,18 @@ mod tests {
     #[test]
     fn out_of_scope_events_are_ignored() {
         let event = whatsapp_rust::types::events::Event::OfflineSyncCompleted(
-            whatsapp_rust::types::events::OfflineSyncCompleted { count: 3 },
+            whatsapp_rust::types::events::OfflineSyncCompleted::builder()
+                .count(3)
+                .build(),
         );
-        assert!(Event::from_engine(&event).is_none());
+        assert!(Event::from_engine(&event).is_empty());
     }
 
     #[test]
     fn scanned_without_multidevice_is_fatal() {
-        let event = Event::from_engine(
+        let event = mapped(
             &whatsapp_rust::types::events::Event::QrScannedWithoutMultidevice(
-                whatsapp_rust::types::events::QrScannedWithoutMultidevice,
+                whatsapp_rust::types::events::QrScannedWithoutMultidevice::builder().build(),
             ),
         )
         .expect("mapped");

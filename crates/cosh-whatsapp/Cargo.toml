@@ -16,8 +16,7 @@ edition = "2024"
 # generation of crates whatsmeow and Baileys implement in Go/TypeScript.
 # Default features pull the Tokio WebSocket transport, the ureq HTTP client,
 # the SQLite device store and the Tokio runtime.
-whatsapp-rust = { version = "0.6", default-features = false, features = [
-  "moka-cache",
+whatsapp-rust = { version = "0.7", default-features = false, features = [
   "sqlite-storage",
   "tokio-runtime",
   "tokio-transport",
@@ -40,10 +39,8 @@ async-trait = "0.1"
 anyhow = "1"
 
 # The HTTP client the protocol engine uses for media and version lookups.
-# whatsapp-rust's bundled client is ureq, whose current release requires
-# zeroize >= 1.8 — which the workspace cannot select while `aiface` pins
-# zeroize to 1.7. The engine exposes `HttpClient` as a seam exactly for
-# this, so cosh-whatsapp plugs in reqwest, already the project's HTTP client.
+# The engine bundles ureq; exposing `HttpClient` as a seam lets this crate
+# plug in reqwest instead, already the project's HTTP client and TLS stack.
 reqwest = { version = "0.13", features = ["json", "stream"] }
 
 # Default device-state location (`Config::default()`), reusing the same crate
