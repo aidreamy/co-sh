@@ -1144,6 +1144,60 @@ fn pipeline_integers_stay_integers_not_floats() {
 }
 
 #[test]
+fn pipeline_whole_floats_repair_to_integers() {
+    // Observed in the field on computer_control: coordinates come back as
+    // `"1310.0"` because the model does float arithmetic on the screenshot's
+    // `desktop_scale`. A whole float is an integer per JSON Schema and narrows
+    // exactly, and the tool's `i32` field rejects the float form either way.
+    let mut ex = ExtractAction::new().with_tool(pipeline_act_schema());
+    let call = NativeToolCall {
+        id: "call_1".into(),
+        name: "computer_act".into(),
+        arguments: r#"{"pid": "8016.0", "nth": 1.0, "numeric_value": "70.5"}"#.into(),
+        thought_signature: String::new(),
+    };
+    match ex.register_native_call(&call) {
+        StreamAction::ToolCall(tc) => {
+            assert_eq!(tc.arguments["pid"], 8016);
+            assert_eq!(tc.arguments["nth"], 1);
+            assert!(
+                tc.arguments["pid"].is_i64() && tc.arguments["nth"].is_i64(),
+                "whole floats must narrow to integers: {:?}",
+                tc.arguments
+            );
+            assert_eq!(
+                tc.arguments["numeric_value"], 70.5,
+                "a `number` field keeps its fraction: {:?}",
+                tc.arguments
+            );
+            assert_eq!(ex.take_tool_failures(), 0);
+        }
+        other => panic!("expected ToolCall, got {other:?}"),
+    }
+}
+
+#[test]
+fn pipeline_fractional_value_for_an_integer_field_is_still_rejected() {
+    // Narrowing is exact-only: a genuinely fractional value that cannot fit
+    // the schema's integer type is rejected with the hint, not rounded into a
+    // coordinate the model never asked for.
+    let mut ex = ExtractAction::new().with_tool(pipeline_act_schema());
+    for arguments in [r#"{"nth": 1.5}"#, r#"{"nth": "1.5"}"#] {
+        let call = NativeToolCall {
+            id: "call_1".into(),
+            name: "computer_act".into(),
+            arguments: arguments.into(),
+            thought_signature: String::new(),
+        };
+        assert!(
+            !matches!(ex.register_native_call(&call), StreamAction::ToolCall(_)),
+            "a fractional value for an integer field must be rejected: {arguments}"
+        );
+    }
+    assert_eq!(ex.take_tool_failures(), 2, "rejection, not silent rounding");
+}
+
+#[test]
 fn pipeline_cyclic_ref_terminates_instead_of_overflowing() {
     // A third-party MCP schema may declare a cyclic `$ref` — the dispatch
     // must hit the hop cap and terminate, not recurse until the stack

@@ -949,6 +949,25 @@ fn effective_schema_bounded<'a>(
 /// stays a string and fails validation with the schema hint.
 fn repair_string_encoded(value: &JsonValue, schema: &JsonValue, root: &JsonValue) -> JsonValue {
     let schema = effective_schema(schema, root);
+
+    // An integral float where an integer is expected: `"1310.0"` quoted, or a
+    // bare `1310.0` from the float arithmetic models do on the coordinates
+    // (screenshot returns a fractional `desktop_scale`). JSON Schema counts it
+    // as an integer and narrowing is exact, but the tool's serde field is
+    // `i32`/`i64`, which rejects a float — so narrow it here and let
+    // validation and deserialization agree. A fractional value (`1310.5`)
+    // keeps its float form and still fails validation with the schema hint.
+    if schema.get("type").and_then(JsonValue::as_str) == Some("integer") {
+        let number = match value {
+            JsonValue::Number(n) => Some(n.clone()),
+            JsonValue::String(s) => s.parse::<serde_json::Number>().ok(),
+            _ => None,
+        };
+        if let Some(whole) = number.as_ref().and_then(whole_i64) {
+            return JsonValue::Number(whole.into());
+        }
+    }
+
     if let JsonValue::String(s) = value
         && let Some(kind) = schema.get("type").and_then(JsonValue::as_str)
     {
@@ -1118,11 +1137,29 @@ fn truncate_payload(raw: &str) -> String {
     }
 }
 
+/// The exact `i64` behind a JSON number that carries none, or `None` for a
+/// fractional or out-of-`i64`-range value. Only floats convert (`70` and
+/// `-70.0` yield their value, `1310.5` does not); integers are left to the
+/// caller so a large `u64` is never rounded through `f64`.
+fn whole_i64(number: &serde_json::Number) -> Option<i64> {
+    if !number.is_f64() {
+        return None;
+    }
+    let f = number.as_f64()?;
+    (f.fract() == 0.0 && f >= -(2f64.powi(63)) && f < 2f64.powi(63)).then_some(f as i64)
+}
+
 fn value_type_matches(value: &JsonValue, expected_type: &str) -> bool {
     match expected_type {
         "string" => value.is_string(),
         "number" => value.is_number(),
-        "integer" => value.is_i64() || value.is_u64(),
+        // Any number with an empty fractional part is an integer in JSON
+        // Schema terms, so a `1310.0` that survived repair is not a type
+        // error and must not be reported as a schema mismatch.
+        "integer" => match value {
+            JsonValue::Number(n) => n.is_i64() || n.is_u64() || whole_i64(n).is_some(),
+            _ => false,
+        },
         "boolean" => value.is_boolean(),
         "object" => value.is_object(),
         "array" => value.is_array(),
