@@ -12,14 +12,16 @@
 //!
 //! This mirrors the `serve` loop of `cosh-whatsapp` (which also isolates
 //! conversations) while keeping the session state that `serve` deliberately
-//! does not own.
+//! does not own. Which messages are prompts at all is not decided here:
+//! `WhatsApp::is_prompt` owns that rule, so this interface and the crate's
+//! `serve` cannot drift apart on self chats, echoes or noise.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use tokio::sync::{mpsc, oneshot};
 
-use cosh_whatsapp::{ChatKind, IncomingMessage, MessageContent};
+use cosh_whatsapp::IncomingMessage;
 
 use super::config::RuntimeConfig;
 use super::session::ChatSession;
@@ -135,34 +137,12 @@ fn reply_text(message: &IncomingMessage) -> Option<&str> {
     message.text().or_else(|| message.caption())
 }
 
-/// Whether an inbound message is a conversation the agent should answer.
-///
-/// Echoes of this account, status/broadcast posts, channel messages,
-/// protocol chatter (edits, deletes, receipts) and reactions are not: an
-/// agent cannot meaningfully reply to any of them. The decision uses the
-/// `chat_kind` computed at normalization time instead of re-parsing the JID.
-#[must_use]
-pub fn is_agent_traffic(message: &IncomingMessage) -> bool {
-    if message.from_me
-        || matches!(
-            message.chat_kind,
-            ChatKind::Broadcast | ChatKind::Newsletter
-        )
-    {
-        return false;
-    }
-    !matches!(
-        message.content,
-        MessageContent::System | MessageContent::Unsupported | MessageContent::Reaction { .. }
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
 
     use super::*;
-    use cosh_whatsapp::{ChatId, Sender};
+    use cosh_whatsapp::{ChatId, MessageContent, Sender};
 
     fn message(chat: &str, content: MessageContent) -> IncomingMessage {
         let chat_id = ChatId::parse(chat).expect("chat id");
@@ -183,40 +163,9 @@ mod tests {
     const DIRECT: &str = "5511912345678@s.whatsapp.net";
 
     #[test]
-    fn direct_text_reaches_the_agent() {
+    fn direct_text_is_the_prompt() {
         let text = message(DIRECT, MessageContent::Text("hello".into()));
-        assert!(is_agent_traffic(&text));
         assert_eq!(reply_text(&text), Some("hello"));
-    }
-
-    #[test]
-    fn echoes_broadcasts_and_channels_are_ignored() {
-        let mut echo = message(DIRECT, MessageContent::Text("sent by me".into()));
-        echo.from_me = true;
-        assert!(!is_agent_traffic(&echo));
-
-        assert!(!is_agent_traffic(&message(
-            "status@broadcast",
-            MessageContent::Text("status".into())
-        )));
-        assert!(!is_agent_traffic(&message(
-            "120363012345678901@newsletter",
-            MessageContent::Text("post".into())
-        )));
-    }
-
-    #[test]
-    fn protocol_noise_and_reactions_are_ignored() {
-        for content in [
-            MessageContent::System,
-            MessageContent::Unsupported,
-            MessageContent::Reaction {
-                emoji: "👍".into(),
-                target_message_id: Some("MSG0".into()),
-            },
-        ] {
-            assert!(!is_agent_traffic(&message(DIRECT, content)));
-        }
     }
 
     #[test]
@@ -229,7 +178,6 @@ mod tests {
             },
         );
         assert_eq!(reply_text(&image), Some("/help"));
-        assert!(is_agent_traffic(&image));
 
         let uncaptioned = message(
             DIRECT,

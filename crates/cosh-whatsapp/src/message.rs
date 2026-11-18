@@ -72,6 +72,16 @@ impl ChatId {
         &self.0
     }
 
+    /// The addressing part of the JID — the `user` in `user@server`, without
+    /// the device suffix of `user:12@server`.
+    ///
+    /// This is what identifies an *account*, independent of which of its
+    /// devices sent the message and of whether it is addressed by phone
+    /// number (`@s.whatsapp.net`) or by LID (`@lid`).
+    pub fn user(&self) -> &str {
+        self.0.split(['@', ':']).next().unwrap_or_default()
+    }
+
     /// What kind of conversation this chat is.
     pub fn kind(&self) -> ChatKind {
         match Jid::from_str(&self.0) {
@@ -267,8 +277,11 @@ impl MessageContent {
 
 /// A decrypted message from the linked account.
 ///
-/// `from_me` messages are echoes of what this account sent from any of its
-/// devices — the linked phone included — so agents normally filter them out.
+/// `from_me` messages are what this account sent from any of its devices —
+/// the linked phone included — echoed back to this companion. They include
+/// the agent's own replies, which must never be answered again; use
+/// [`WhatsApp::is_prompt`](crate::WhatsApp::is_prompt) to decide what is
+/// addressed to the agent instead of testing this flag directly.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncomingMessage {
     /// Server message id; unique within a chat.
@@ -331,58 +344,61 @@ fn content_of(message: &wa::Message) -> MessageContent {
     }
     if let Some(text) = base
         .extended_text_message
-        .as_ref()
+        .as_option()
         .and_then(|m| m.text.as_ref())
     {
         return MessageContent::Text(text.clone());
     }
-    if let Some(image) = &base.image_message {
+    if let Some(image) = base.image_message.as_option() {
         return MessageContent::Image {
             caption: image.caption.clone(),
             mime_type: image.mimetype.clone(),
         };
     }
-    if let Some(video) = &base.video_message {
+    if let Some(video) = base.video_message.as_option() {
         return MessageContent::Video {
             caption: video.caption.clone(),
             seconds: video.seconds,
             gif: video.gif_playback.unwrap_or(false),
         };
     }
-    if let Some(audio) = &base.audio_message {
+    if let Some(audio) = base.audio_message.as_option() {
         return MessageContent::Audio {
             voice_note: audio.ptt.unwrap_or(false),
             seconds: audio.seconds,
         };
     }
-    if let Some(document) = &base.document_message {
+    if let Some(document) = base.document_message.as_option() {
         return MessageContent::Document {
             file_name: document.file_name.clone(),
             caption: document.caption.clone(),
         };
     }
-    if base.sticker_message.is_some() {
+    if base.sticker_message.is_set() {
         return MessageContent::Sticker;
     }
-    if let Some(location) = &base.location_message {
+    if let Some(location) = base.location_message.as_option() {
         return MessageContent::Location {
             latitude: location.degrees_latitude,
             longitude: location.degrees_longitude,
             name: location.name.clone(),
         };
     }
-    if let Some(contact) = &base.contact_message {
+    if let Some(contact) = base.contact_message.as_option() {
         return MessageContent::Contact {
             display_name: contact.display_name.clone(),
         };
     }
-    if let Some(reaction) = &base.reaction_message {
+    if let Some(reaction) = base.reaction_message.as_option() {
         return MessageContent::Reaction {
             emoji: reaction.text.clone().unwrap_or_default(),
-            target_message_id: reaction.key.as_ref().and_then(|key| key.id.clone()),
+            target_message_id: reaction
+                .key
+                .as_option()
+                .and_then(|key| key.id.clone()),
         };
     }
-    if let Some(poll) = &base.poll_creation_message {
+    if let Some(poll) = base.poll_creation_message.as_option() {
         return MessageContent::Poll {
             question: poll.name.clone().unwrap_or_default(),
             options: poll
@@ -392,7 +408,7 @@ fn content_of(message: &wa::Message) -> MessageContent {
                 .collect(),
         };
     }
-    if base.protocol_message.is_some() {
+    if base.protocol_message.is_set() {
         return MessageContent::System;
     }
 
@@ -419,6 +435,12 @@ mod tests {
             conversation: Some(value.to_string()),
             ..Default::default()
         }
+    }
+
+    /// A set (present) nested message, the shape the generated protobuf API
+    /// uses in place of a plain `Option`.
+    fn field<T: Default>(value: T) -> whatsapp_rust::waproto::buffa::MessageField<T> {
+        whatsapp_rust::waproto::buffa::MessageField::some(value)
     }
 
     #[test]
@@ -455,6 +477,22 @@ mod tests {
             ChatId::parse("5511912345678"),
             Err(Error::InvalidChatId { .. })
         ));
+    }
+
+    #[test]
+    fn user_is_the_account_part_of_a_jid() {
+        // Device suffixes and the server are addressing details, not identity:
+        // the same account is reached through all of these.
+        for raw in [
+            "5511912345678@s.whatsapp.net",
+            "5511912345678:12@s.whatsapp.net",
+            "5511912345678@hosted",
+        ] {
+            let chat = ChatId::parse(raw).expect("jid");
+            assert_eq!(chat.user(), "5511912345678", "{raw}");
+        }
+        let lid = ChatId::parse("99887766554433@lid").expect("lid");
+        assert_eq!(lid.user(), "99887766554433");
     }
 
     #[test]
@@ -503,12 +541,12 @@ mod tests {
     #[test]
     fn content_of_models_media_metadata() {
         let video = wa::Message {
-            video_message: Some(Box::new(wa::message::VideoMessage {
+            video_message: field(wa::message::VideoMessage {
                 caption: Some("clip".to_string()),
                 seconds: Some(9),
                 gif_playback: Some(true),
                 ..Default::default()
-            })),
+            }),
             ..Default::default()
         };
         assert_eq!(
@@ -521,11 +559,11 @@ mod tests {
         );
 
         let audio = wa::Message {
-            audio_message: Some(Box::new(wa::message::AudioMessage {
+            audio_message: field(wa::message::AudioMessage {
                 ptt: Some(true),
                 seconds: Some(4),
                 ..Default::default()
-            })),
+            }),
             ..Default::default()
         };
         assert_eq!(
@@ -537,11 +575,11 @@ mod tests {
         );
 
         let document = wa::Message {
-            document_message: Some(Box::new(wa::message::DocumentMessage {
+            document_message: field(wa::message::DocumentMessage {
                 file_name: Some("report.pdf".to_string()),
                 caption: Some("the report".to_string()),
                 ..Default::default()
-            })),
+            }),
             ..Default::default()
         };
         assert_eq!(
@@ -553,16 +591,16 @@ mod tests {
         );
 
         let sticker = wa::Message {
-            sticker_message: Some(Box::new(wa::message::StickerMessage::default())),
+            sticker_message: field(wa::message::StickerMessage::default()),
             ..Default::default()
         };
         assert_eq!(content_of(&sticker), MessageContent::Sticker);
 
         let contact = wa::Message {
-            contact_message: Some(Box::new(wa::message::ContactMessage {
+            contact_message: field(wa::message::ContactMessage {
                 display_name: Some("Ana".to_string()),
                 ..Default::default()
-            })),
+            }),
             ..Default::default()
         };
         assert_eq!(
@@ -576,12 +614,12 @@ mod tests {
     #[test]
     fn content_of_keeps_location_coordinates() {
         let message = wa::Message {
-            location_message: Some(Box::new(wa::message::LocationMessage {
+            location_message: field(wa::message::LocationMessage {
                 degrees_latitude: Some(-23.5505),
                 degrees_longitude: Some(-46.6333),
                 name: Some("Office".to_string()),
                 ..Default::default()
-            })),
+            }),
             ..Default::default()
         };
         assert_eq!(
@@ -599,10 +637,10 @@ mod tests {
         // A location that lost its coordinates must not look like a valid
         // point in the Gulf of Guinea.
         let message = wa::Message {
-            location_message: Some(Box::new(wa::message::LocationMessage {
+            location_message: field(wa::message::LocationMessage {
                 name: Some("Somewhere".to_string()),
                 ..Default::default()
-            })),
+            }),
             ..Default::default()
         };
         assert_eq!(
@@ -660,10 +698,10 @@ mod tests {
     #[test]
     fn extended_text_is_text() {
         let message = wa::Message {
-            extended_text_message: Some(Box::new(wa::message::ExtendedTextMessage {
+            extended_text_message: field(wa::message::ExtendedTextMessage {
                 text: Some("link preview".to_string()),
                 ..Default::default()
-            })),
+            }),
             ..Default::default()
         };
         let normalized = IncomingMessage::from_engine(
@@ -680,9 +718,9 @@ mod tests {
     #[test]
     fn ephemeral_wrapper_is_unwrapped() {
         let message = wa::Message {
-            ephemeral_message: Some(Box::new(wa::message::FutureProofMessage {
-                message: Some(Box::new(text("vanishing"))),
-            })),
+            ephemeral_message: field(wa::message::FutureProofMessage {
+                message: field(text("vanishing")),
+            }),
             ..Default::default()
         };
         let normalized = IncomingMessage::from_engine(
@@ -699,11 +737,11 @@ mod tests {
     #[test]
     fn media_caption_is_exposed() {
         let message = wa::Message {
-            image_message: Some(Box::new(wa::message::ImageMessage {
+            image_message: field(wa::message::ImageMessage {
                 caption: Some("see this".to_string()),
                 mimetype: Some("image/jpeg".to_string()),
                 ..Default::default()
-            })),
+            }),
             ..Default::default()
         };
         let normalized = IncomingMessage::from_engine(
@@ -723,9 +761,9 @@ mod tests {
     #[test]
     fn reaction_keeps_target_and_emoji() {
         let message = wa::Message {
-            reaction_message: Some(wa::message::ReactionMessage {
+            reaction_message: field(wa::message::ReactionMessage {
                 text: Some("👍".to_string()),
-                key: Some(wa::MessageKey {
+                key: field(wa::MessageKey {
                     id: Some("TARGET".to_string()),
                     ..Default::default()
                 }),
@@ -755,9 +793,7 @@ mod tests {
     #[test]
     fn protocol_messages_are_system() {
         let message = wa::Message {
-            protocol_message: Some(Box::new(wa::message::ProtocolMessage {
-                ..Default::default()
-            })),
+            protocol_message: field(wa::message::ProtocolMessage::default()),
             ..Default::default()
         };
         let normalized = IncomingMessage::from_engine(
@@ -774,7 +810,7 @@ mod tests {
     #[test]
     fn poll_keeps_question_and_options() {
         let message = wa::Message {
-            poll_creation_message: Some(Box::new(wa::message::PollCreationMessage {
+            poll_creation_message: field(wa::message::PollCreationMessage {
                 name: Some("Lunch?".to_string()),
                 options: vec![
                     wa::message::poll_creation_message::Option {
@@ -787,7 +823,7 @@ mod tests {
                     },
                 ],
                 ..Default::default()
-            })),
+            }),
             ..Default::default()
         };
         let normalized = IncomingMessage::from_engine(

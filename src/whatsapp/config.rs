@@ -185,7 +185,8 @@ impl RuntimeConfig {
             #[cfg(feature = "embed")]
             recall: None,
             ctx_state,
-            // WhatsApp turns carry no images.
+            // WhatsApp replies are text-only for now: no image rides along
+            // with the turn's prompt.
             user_images: Vec::new(),
             // A WhatsApp chat is a normal main loop: no manager requester
             // tag and no coworker pane binding.

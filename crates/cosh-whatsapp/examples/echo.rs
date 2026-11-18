@@ -58,7 +58,10 @@ async fn main() -> Result<()> {
                 break;
             }
             Event::Message(message) => {
-                if message.from_me {
+                // Answers normal chats and the account's own "Message
+                // yourself" chat, and drops everything the bot must not
+                // answer (status, channels, protocol chatter, its own sends).
+                if !whatsapp.is_prompt(&message) {
                     continue;
                 }
                 let Some(text) = message.text() else {

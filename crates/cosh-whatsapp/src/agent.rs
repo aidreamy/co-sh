@@ -10,7 +10,7 @@ use crate::client::WhatsApp;
 use crate::config::Config;
 use crate::error::{Error, Result};
 use crate::event::Event;
-use crate::message::{ChatKind, IncomingMessage, MessageContent};
+use crate::message::IncomingMessage;
 use crate::qr;
 
 /// How many agent calls may run at once. Replies are independent, so a slow
@@ -31,9 +31,11 @@ pub trait Agent: Send + Sync {
     /// Handle one inbound message.
     ///
     /// Return `Ok(Some(text))` to reply in the same chat, `Ok(None)` to stay
-    /// silent, or an error to log and skip the message. [`serve`] filters
-    /// echoes of this account, status/broadcast posts, channel messages,
-    /// protocol chatter and reactions before this method is called. Use
+    /// silent, or an error to log and skip the message. [`serve`] asks
+    /// [`WhatsApp::is_prompt`] first, so the agent is not handed
+    /// status/broadcast posts, channel messages, protocol chatter, reactions
+    /// or the account's own traffic addressed elsewhere — but *is* handed
+    /// what the user types in this account's own chat. Use
     /// [`WhatsApp::connect`] directly if reactions should reach the agent.
     ///
     /// Calls for different messages run concurrently (up to four at a time),
@@ -126,7 +128,7 @@ pub async fn serve<A: Agent + 'static>(config: Config, agent: A) -> Result<()> {
                 log::warn!("cosh-whatsapp: {reason}; the engine retries with backoff");
             }
             Event::Message(message) => {
-                if !is_agent_traffic(&message) {
+                if !whatsapp.is_prompt(&message) {
                     continue;
                 }
 
@@ -197,88 +199,9 @@ fn observe(finished: std::result::Result<(), JoinError>) {
     }
 }
 
-/// Whether an inbound message is a conversation an agent should answer.
-///
-/// Echoes of this account, status/broadcast posts, channel messages,
-/// protocol chatter (edits, deletes, receipts) and reactions are not — an
-/// agent cannot meaningfully reply to any of them. The decision uses
-/// [`IncomingMessage::chat_kind`], which was computed once when the message
-/// was normalized, instead of parsing the JID again.
-fn is_agent_traffic(message: &IncomingMessage) -> bool {
-    if message.from_me
-        || matches!(
-            message.chat_kind,
-            ChatKind::Broadcast | ChatKind::Newsletter
-        )
-    {
-        return false;
-    }
-    !matches!(
-        message.content,
-        MessageContent::System | MessageContent::Unsupported | MessageContent::Reaction { .. }
-    )
-}
-
 #[cfg(test)]
 mod tests {
-    use chrono::Utc;
-
     use super::*;
-    use crate::message::{ChatId, ChatKind, Sender};
-
-    fn message(chat: &str, content: MessageContent) -> IncomingMessage {
-        let chat_id = ChatId::parse(chat).expect("chat id");
-        IncomingMessage {
-            id: "MSG1".to_string(),
-            chat_kind: chat_id.kind(),
-            chat: chat_id,
-            sender: Sender {
-                id: ChatId::parse(chat).expect("sender id"),
-                name: None,
-            },
-            from_me: false,
-            timestamp: Utc::now(),
-            content,
-        }
-    }
-
-    #[test]
-    fn text_traffic_reaches_the_agent() {
-        assert!(is_agent_traffic(&message(
-            "5511912345678@s.whatsapp.net",
-            MessageContent::Text("hi".to_string())
-        )));
-    }
-
-    #[test]
-    fn protocol_noise_is_filtered_out() {
-        for content in [MessageContent::System, MessageContent::Unsupported] {
-            assert!(
-                !is_agent_traffic(&message("5511912345678@s.whatsapp.net", content)),
-                "protocol chatter should not reach the agent"
-            );
-        }
-    }
-
-    #[test]
-    fn echoes_broadcasts_and_channels_are_filtered_out() {
-        let mut echo = message(
-            "5511912345678@s.whatsapp.net",
-            MessageContent::Text("sent by me".to_string()),
-        );
-        echo.from_me = true;
-        assert!(!is_agent_traffic(&echo));
-
-        assert!(!is_agent_traffic(&message(
-            "status@broadcast",
-            MessageContent::Text("status".to_string())
-        )));
-
-        assert!(!is_agent_traffic(&message(
-            "120363012345678901@newsletter",
-            MessageContent::Text("channel post".to_string())
-        )));
-    }
 
     struct Recorder;
 
@@ -313,30 +236,6 @@ mod tests {
         assert_eq!(tasks.len(), 2, "both tasks are still owned by the set");
         reap(&mut tasks);
         assert!(tasks.is_empty(), "finished tasks must be reaped");
-    }
-
-    #[test]
-    fn chat_kind_decides_noise_without_reparsing_the_jid() {
-        // The filter trusts the kind computed at normalization time.
-        let mut channel = message(
-            "5511912345678@s.whatsapp.net",
-            MessageContent::Text("post".to_string()),
-        );
-        channel.chat_kind = ChatKind::Newsletter;
-        assert!(!is_agent_traffic(&channel));
-    }
-
-    #[test]
-    fn reactions_are_filtered_out() {
-        // `serve` must not answer a thumbs-up with "echo: 👍".
-        let reaction = message(
-            "5511912345678@s.whatsapp.net",
-            MessageContent::Reaction {
-                emoji: "👍".to_string(),
-                target_message_id: Some("MSG0".to_string()),
-            },
-        );
-        assert!(!is_agent_traffic(&reaction));
     }
 
     #[test]

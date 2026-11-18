@@ -60,7 +60,10 @@ impl Log for FileLogger {
             || (metadata.level() == Level::Debug
                 && matches!(
                     metadata.target().split("::").next(),
-                    Some("cosh" | "cosh_sdk" | "cosh_tui" | "cosh_tools" | "cosh_recall")
+                    Some(
+                        "cosh" | "cosh_sdk" | "cosh_tui" | "cosh_tools" | "cosh_recall"
+                            | "cosh_whatsapp"
+                    )
                 ))
     }
 

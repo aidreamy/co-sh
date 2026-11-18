@@ -61,6 +61,26 @@ On the first run `serve` logs a QR code (pairing instructions are logged at
 `info`). Scan it from **WhatsApp → Linked devices → Link a device**. The
 device store remembers the session; later runs reconnect without pairing.
 
+You do not need a second number: messages to the account's own "Message
+yourself" chat are prompts too. WhatsApp delivers them with `from_me` set,
+like anything the account writes from any of its devices, so `from_me` alone
+cannot decide — a `from_me` message is a prompt only when it is addressed to
+the account's own chat. The rule lives in `WhatsApp::is_prompt`, which is also
+what a custom event loop should call instead of testing `message.from_me`.
+Every send additionally reserves its message id, and a message carrying a
+reserved id is dropped in every chat; the engine does not deliver this
+device's own sends back to it, so that is a guard against the self chat
+looping rather than the mechanism the routing depends on.
+
+Replies to that chat keep the id the chat carries (its LID on modern
+accounts): that is the chat the phone displays as "Message yourself", and
+rewriting it to the phone number lands the stanza in a chat the phone never
+shows. Every device of the account receives the stanza, the phone included: the
+engine fans a direct message out to the recipient's devices, aligned to the
+recipient's addressing namespace. A send returns once the stanza is on the
+socket — the server's refusal is not an error here — so "sent" means handed
+over, not acknowledged.
+
 `serve` handles messages in spawned tasks (up to four at a time), so one slow
 LLM reply does not block pairing or other conversations. A slot is reserved
 before the task is spawned, so a burst cannot pile up waiting tasks: messages
@@ -101,6 +121,7 @@ let config = Config::new("device.db").with_pairing_code("15551234567");
 | Failures | Typed `Event::Failure` (session takeover, temp ban, outdated client, …) |
 | Messages | Text, extended text (link previews), captions, files (metadata) |
 | Chats | Direct, groups, broadcast/status, channels |
+| Self chat | The account's own "Message yourself" chat drives the agent; the agent's own messages are recognised by id, so no loop |
 | Interactions | Outbound `send_text`; inbound reactions and polls as typed content (`serve` filters reactions) |
 | History | Off by default (`Config::with_history_sync(true)` to opt in) |
 | Media bytes | Out of scope — metadata only |
@@ -148,9 +169,8 @@ files, not to agent code.
 - `send_text` rejects empty or whitespace-only text with
   `Error::EmptyMessage`, and `with_pairing_code` numbers are validated at
   connect time (7–15 digits) instead of failing inside the engine.
-- The workspace pins `zeroize = 1.7` through `aiface`, so the crate uses
-  whatsapp-rust 0.6 (0.7 requires `zeroize >= 1.8`) and plugs `reqwest` into
-  the engine's HTTP seam, replacing its bundled `ureq` client.
+- The crate plugs `reqwest` into the engine's HTTP seam, replacing the
+  bundled `ureq` client, so no second HTTP stack is built or linked.
 
 ## License
 

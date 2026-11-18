@@ -6,6 +6,14 @@
 //! only reports lifecycle events while messages are handled in the
 //! background.
 //!
+//! The account can talk to its own agent: a message to the "Message yourself"
+//! chat arrives as `from_me`, addressed to the account's own chat, and that is
+//! what `WhatsApp::is_prompt` recognises — the same rule the crate's own
+//! `serve` loop uses. The engine does not deliver this device's own sends back
+//! to it, and the ids every send reserves are kept as a guard, so a self chat
+//! cannot loop. The reply keeps the chat id it arrived with (see the crate
+//! docs).
+//!
 //! # Architecture
 //!
 //! ```text
@@ -64,7 +72,7 @@ use tokio::task::JoinSet;
 
 use cosh_whatsapp::{Config, Event, WhatsApp, qr};
 
-use agent::{WhatsAppAgent, is_agent_traffic};
+use agent::WhatsAppAgent;
 use config::RuntimeConfig;
 
 /// How many conversations may be answered at once. The same ceiling the
@@ -162,7 +170,10 @@ pub async fn run() -> i32 {
                 }
                 Event::Connected => {
                     connected = true;
-                    println!("Connected. Send a message or `/help` from WhatsApp.");
+                    println!(
+                        "Connected. Message this number or another contact — the agent answers \
+                         both. `/help` lists the commands."
+                    );
                     flush_stdout();
                 }
                 Event::Disconnected => {
@@ -189,7 +200,26 @@ pub async fn run() -> i32 {
                     eprintln!("cosh whatsapp: {reason}; reconnecting…");
                 }
                 Event::Message(message) => {
-                    if !is_agent_traffic(&message) {
+                    // The crate owns the routing rule: normal chats and this
+                    // account's own chat are prompts; status posts, channels,
+                    // protocol chatter and our own sends are not. In a self
+                    // chat that is what prevents a loop.
+                    //
+                    // The message body is deliberately not logged: this file
+                    // is plain text and every `info` record lands in it, so
+                    // its wording is recorded by id and content kind only.
+                    let is_prompt = whatsapp.is_prompt(&message);
+                    log::info!(
+                        "cosh whatsapp: inbound id={} chat={} from_me={} chat_kind={:?} \
+                         content={} prompt={}",
+                        message.id,
+                        message.chat,
+                        message.from_me,
+                        message.chat_kind,
+                        message.content.kind(),
+                        is_prompt
+                    );
+                    if !is_prompt {
                         continue;
                     }
                     let Some(permit) = Arc::clone(&slots).try_acquire_owned().ok() else {
@@ -221,8 +251,19 @@ pub async fn run() -> i32 {
                         if reply.trim().is_empty() {
                             return;
                         }
-                        if let Err(error) = link.send_text(&message.chat, reply).await {
-                            log::warn!("cosh whatsapp: reply to {} failed: {error}", message.chat);
+                        log::info!(
+                            "cosh whatsapp: sending reply to {} ({} chars)",
+                            message.chat,
+                            reply.len()
+                        );
+                        match link.send_text(&message.chat, reply).await {
+                            Ok(sent) => log::info!(
+                                "cosh whatsapp: send_text ok id={} to={}",
+                                sent.id, sent.to
+                            ),
+                            Err(error) => {
+                                log::warn!("cosh whatsapp: reply to {} failed: {error}", message.chat)
+                            }
                         }
                     });
                 }

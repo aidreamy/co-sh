@@ -26,6 +26,34 @@
 //!   one reply out, with the live [`WhatsApp`] handle available for anything
 //!   richer.
 //!
+//! # The account can talk to itself
+//!
+//! One number is enough: a message typed into WhatsApp's "Message yourself"
+//! chat is a prompt for the agent. Two details make that work.
+//!
+//! **Telling it apart from our own output.** The prompt arrives with
+//! `from_me` set, like anything the account writes from any of its devices,
+//! so that flag alone cannot decide: a message addressed to the account's own
+//! chat is a prompt, while what the user sends to contacts and groups is not.
+//! That rule is [`WhatsApp::is_prompt`] — consumers of the raw [`Event`]
+//! stream should use it rather than testing [`IncomingMessage::from_me`].
+//! Every send also reserves its message id, and a message carrying a reserved
+//! id is dropped in every chat: the engine excludes the sending device from a
+//! direct message's fan-out, so this is a guard against the self chat looping
+//! rather than the mechanism the routing depends on.
+//!
+//! **Addressing the reply.** The self chat is addressed by whatever id it
+//! carries (its LID on modern accounts), and replies keep that id: it is the
+//! chat the phone displays, so rewriting it to the phone number lands the
+//! stanza in a chat the phone never shows. All of this device's copies of the
+//! message (the phone included) receive the stanza, because the engine fans a
+//! direct message out to every device of the recipient, aligned to the
+//! recipient's own addressing namespace.
+//!
+//! What the engine cannot report is the server's answer: a send returns once
+//! the stanza is on the socket, and refusals are not surfaced to the caller as
+//! an error, so "sent" from this crate means handed over, not acknowledged.
+//!
 //! # The engine underneath
 //!
 //! The protocol work (Noise handshake, Signal sessions, binary node codec,
