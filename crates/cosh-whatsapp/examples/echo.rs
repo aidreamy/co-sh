@@ -59,8 +59,9 @@ async fn main() -> Result<()> {
             }
             Event::Message(message) => {
                 // Answers normal chats and the account's own "Message
-                // yourself" chat, and drops echoes of this bot's replies.
-                if !whatsapp.is_prompt(&message).await {
+                // yourself" chat, and drops everything the bot must not
+                // answer (status, channels, protocol chatter, its own sends).
+                if !whatsapp.is_prompt(&message) {
                     continue;
                 }
                 let Some(text) = message.text() else {

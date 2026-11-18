@@ -31,13 +31,16 @@
 //! One number is enough: a message typed into WhatsApp's "Message yourself"
 //! chat is a prompt for the agent. Two details make that work.
 //!
-//! **Telling it apart from our own output.** WhatsApp delivers the prompt,
-//! like the agent's own replies, with `from_me` set, so the two are told apart
-//! by **message id**: every send reserves its id before the message goes out,
-//! and a message carrying a reserved id is dropped in every chat. That rule is
-//! [`WhatsApp::is_prompt`] — consumers of the raw [`Event`] stream should use
-//! it rather than testing [`IncomingMessage::from_me`], which cannot separate
-//! the agent's own reply from something the user typed on their phone.
+//! **Telling it apart from our own output.** The prompt arrives with
+//! `from_me` set, like anything the account writes from any of its devices,
+//! so that flag alone cannot decide: a message addressed to the account's own
+//! chat is a prompt, while what the user sends to contacts and groups is not.
+//! That rule is [`WhatsApp::is_prompt`] — consumers of the raw [`Event`]
+//! stream should use it rather than testing [`IncomingMessage::from_me`].
+//! Every send also reserves its message id, and a message carrying a reserved
+//! id is dropped in every chat: the engine excludes the sending device from a
+//! direct message's fan-out, so this is a guard against the self chat looping
+//! rather than the mechanism the routing depends on.
 //!
 //! **Addressing the reply.** The self chat is addressed by whatever id it
 //! carries (its LID on modern accounts), and replies keep that id: it is the

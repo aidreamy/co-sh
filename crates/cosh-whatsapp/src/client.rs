@@ -5,7 +5,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use tokio::sync::{RwLock, mpsc};
+use tokio::sync::mpsc;
 use whatsapp_rust::bot::{Bot, BotHandle};
 use whatsapp_rust::pair_code::PairCodeOptions;
 use whatsapp_rust::send::SendOptions;
@@ -52,19 +52,17 @@ struct Inner {
     run: Mutex<Option<BotHandle>>,
     /// Ids of the messages this process sent, so their echoes are recognized.
     sent: SentIds,
-    /// This account's own ids, resolved from the device store on first use.
-    account: RwLock<Option<Account>>,
 }
 
 /// How many of this process's sends stay recognizable as its own.
 ///
-/// A message id is the only reliable way to tell this process's own output
-/// apart from something the user typed on their phone: both are `from_me`, and
-/// the text may come back reformatted. The engine does not fan a device's
-/// sends back to that device, so a normal send is not redelivered — but a
-/// stanza the server retries after a reconnect can be, and in the self chat
-/// answering it would feed the agent its own reply. An entry only has to
-/// survive that window, so a few hundred ids is generous.
+/// A message id is the only way to tell this process's own output apart from
+/// something the user typed on their phone if such a stanza were ever
+/// delivered back here: both are `from_me`, and the text may come back
+/// reformatted. The engine excludes the sending device from a direct
+/// message's fan-out, so a normal send is not redelivered today — this set is
+/// the guard that keeps the self chat from answering its own reply (forever)
+/// should that invariant ever change, and it costs a few hundred ids.
 const SENT_IDS: usize = 256;
 
 /// Message ids this process sent, oldest first.
@@ -101,7 +99,7 @@ impl SentIds {
 /// (`…@s.whatsapp.net`) and the LID (`…@lid`) that newer conversations — the
 /// "Message yourself" chat included — are addressed by. Both are matched, so
 /// the self chat is recognized whichever form its chat id carries.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Debug)]
 struct Account {
     pn: Option<String>,
     lid: Option<String>,
@@ -110,12 +108,6 @@ struct Account {
 impl Account {
     fn is_known(&self) -> bool {
         self.pn.is_some() || self.lid.is_some()
-    }
-
-    /// Whether both address forms are known, so a cached copy can be trusted
-    /// for the rest of the process.
-    fn is_complete(&self) -> bool {
-        self.pn.is_some() && self.lid.is_some()
     }
 
     /// Whether `chat` is this account's own conversation.
@@ -223,7 +215,6 @@ impl WhatsApp {
                     client,
                     run: Mutex::new(Some(handle)),
                     sent: SentIds::default(),
-                    account: RwLock::new(None),
                 }),
             },
             events,
@@ -235,8 +226,8 @@ impl WhatsApp {
     /// Empty or whitespace-only text is rejected with [`Error::EmptyMessage`]
     /// instead of uploading a blank message.
     ///
-    /// The message id is chosen here and recorded **before** the send, so a
-    /// redelivery of this process's own message is recognizable (see
+    /// The message id is chosen here and recorded **before** the send, so an
+    /// echo of it could never be mistaken for a prompt (see
     /// [`WhatsApp::is_prompt`]).
     ///
     /// Replies go to the chat exactly as it arrived. The self chat is
@@ -253,21 +244,13 @@ impl WhatsApp {
         let id = self.inner.client.generate_message_id();
         self.inner.sent.remember(&id);
 
-        let mut options = SendOptions::default();
-        options.message_id = Some(id.clone());
-
+        // The engine sends the id it is given and reports that same id back.
         let result = self
             .inner
             .client
-            .send_message_with_options(jid, message, options)
+            .send_message_with_options(jid, message, SendOptions::default().with_message_id(id))
             .await
             .map_err(Error::send)?;
-
-        // The engine sends the id it was given; should it ever pick its own,
-        // the id it reports is the one the echo will carry.
-        if result.message_id != id {
-            self.inner.sent.remember(&result.message_id);
-        }
 
         Ok(SentMessage {
             id: result.message_id,
@@ -280,47 +263,24 @@ impl WhatsApp {
     /// This is the one routing rule consumers share, and it differs from
     /// "did this account send it?" in exactly one place: the account's own
     /// chat ("Message yourself") is a prompt, so the agent can be driven from
-    /// the same number it runs on. Messages typed there on the phone arrive as
-    /// `from_me`, indistinguishable from the agent's own replies unless the
-    /// reply ids are known — which they are, because [`WhatsApp::send_text`]
-    /// reserves an id before each send. A redelivered own send is dropped in
-    /// every chat, not just groups, which keeps the self chat from looping.
+    /// the same number it runs on. A message typed there on the phone arrives
+    /// as `from_me` and is addressed to the account's own chat, which is what
+    /// `Account::is_self` recognises.
+    ///
+    /// The agent's own replies are not delivered back here — the engine
+    /// excludes the sending device from a direct message's fan-out — so the
+    /// ids [`WhatsApp::send_text`] reserves are a guard for that invariant
+    /// (see `SentIds`), not the mechanism the self chat relies on.
     ///
     /// Everything else `from_me` — the user's messages to contacts and groups
     /// — is left alone, as are status/broadcast posts, channels, protocol
     /// chatter and reactions.
-    pub async fn is_prompt(&self, message: &IncomingMessage) -> bool {
-        let account = self.account().await;
-        is_prompt(message, account.as_ref(), &self.inner.sent)
-    }
-
-    /// This account's own ids, read from the device store and cached.
-    ///
-    /// The cache only becomes final once **both** ids are known. A pairing
-    /// that stored an empty LID reports the phone number alone, and freezing
-    /// that answer would make the LID-addressed self chat unrecognizable for
-    /// the rest of the process — the engine learns the LID later, so a later
-    /// read must be allowed to add it.
-    ///
-    /// `None` until the link is paired: there is no identity to report yet,
-    /// and caching that absence would hide the identity pairing adds.
-    async fn account(&self) -> Option<Account> {
-        let cached = self.inner.account.read().await.clone();
-        if let Some(account) = &cached
-            && account.is_complete()
-        {
-            return Some(account.clone());
-        }
-        let fresh = Account {
-            pn: own_user(self.inner.client.pn()),
-            lid: own_user(self.inner.client.lid()),
-        };
-        let account = merge_accounts(cached.unwrap_or_default(), fresh);
-        if !account.is_known() {
-            return None;
-        }
-        *self.inner.account.write().await = Some(account.clone());
-        Some(account)
+    pub fn is_prompt(&self, message: &IncomingMessage) -> bool {
+        is_prompt(
+            message,
+            account(&self.inner.client).as_ref(),
+            &self.inner.sent,
+        )
     }
 
     /// Wait until the link is connected, authenticated and done with its
@@ -345,12 +305,14 @@ impl WhatsApp {
 
     /// Unlink this companion from the phone and stop.
     ///
-    /// The Signal keys are wiped on the server side; the local device store
-    /// keeps its bytes but is useless, so delete it to start over cleanly.
-    pub async fn logout(&self) -> Result<()> {
+    /// The engine's logout is infallible by design (the deregistration is
+    /// best-effort and the local teardown runs either way), so there is no
+    /// failure to report. The Signal keys are wiped on the server side; the
+    /// local device store keeps its bytes but is useless, so delete it to
+    /// start over cleanly.
+    pub async fn logout(&self) {
         self.inner.client.logout().await;
         self.inner.stop();
-        Ok(())
     }
 
     /// Disconnect gracefully and stop the link.
@@ -418,8 +380,9 @@ fn is_prompt(message: &IncomingMessage, account: Option<&Account>, sent: &SentId
     // agent; what the user sends to contacts and groups is not ours to answer.
     let Some(account) = account else {
         // No identity to compare the chat against — the link is not paired, or
-        // the device store has not learned one of its two ids. Dropping in
-        // silence is what makes a dead self chat look like a bot ignoring you.
+        // the device store has not learned one of its two ids. A silent drop
+        // is what makes a dead self chat look like a bot ignoring you, so say
+        // why.
         log::warn!(
             "cosh-whatsapp: own message {} in {} dropped: the account identity is unknown",
             message.id,
@@ -436,15 +399,18 @@ fn own_user(jid: Option<Jid>) -> Option<String> {
     (!user.is_empty()).then_some(user)
 }
 
-/// Fold a fresh read of the account's ids into what was already known.
+/// This account's own address forms, read on demand.
 ///
-/// A form the device store has not learned yet must never erase one it already
-/// reported, so each side keeps its own half.
-fn merge_accounts(known: Account, fresh: Account) -> Account {
-    Account {
-        pn: fresh.pn.or(known.pn),
-        lid: fresh.lid.or(known.lid),
-    }
+/// `Client::pn` and `Client::lid` read the engine's in-memory device snapshot
+/// (an `Arc` clone), so there is nothing worth caching — and a form the engine
+/// learns later, the LID usually, is picked up by the next message instead of
+/// being frozen at first use. `None` until pairing gives the link an identity.
+fn account(client: &Client) -> Option<Account> {
+    let account = Account {
+        pn: own_user(client.pn()),
+        lid: own_user(client.lid()),
+    };
+    account.is_known().then_some(account)
 }
 
 /// The text of a message, rejecting blank input.
@@ -618,45 +584,32 @@ mod tests {
     }
 
     #[test]
-    fn a_late_lid_upgrades_a_phone_number_only_identity() {
-        // Pairing can store an empty LID. The self chat is usually addressed
-        // by LID, so a fresh read that learns it has to be folded in — and
-        // once both ids are known, the LID-addressed self chat is a prompt.
+    fn a_pn_only_identity_cannot_match_the_lid_chat() {
+        // Pairing can store an empty LID, and the self chat is usually
+        // addressed by LID. Until the engine learns it, that chat is
+        // indistinguishable from a stranger's, so it is not answered — but
+        // nothing is frozen: every message re-reads the identity, so the LID
+        // is honoured as soon as the engine knows it.
         let pn_only = Account {
             pn: Some(OWN_PN.to_string()),
             lid: None,
         };
-        let lid_chat = format!("{OWN_LID}@lid");
         assert!(
             !is_prompt(
-                &sent_from_me(&lid_chat, "FROM-PHONE"),
+                &sent_from_me(&format!("{OWN_LID}@lid"), "FROM-PHONE"),
                 Some(&pn_only),
                 &SentIds::default()
             ),
             "without the LID the self chat is unrecognizable"
         );
-
-        let complete = merge_accounts(
-            pn_only,
-            Account {
-                pn: None,
-                lid: Some(OWN_LID.to_string()),
-            },
+        assert!(
+            is_prompt(
+                &sent_from_me(&format!("{OWN_PN}@s.whatsapp.net"), "FROM-PHONE"),
+                Some(&pn_only),
+                &SentIds::default()
+            ),
+            "the phone-number form of the self chat is still recognized"
         );
-        assert!(complete.is_complete());
-        assert!(is_prompt(
-            &sent_from_me(&lid_chat, "FROM-PHONE"),
-            Some(&complete),
-            &SentIds::default()
-        ));
-    }
-
-    #[test]
-    fn a_fresh_read_never_erases_a_known_id() {
-        let complete = account();
-        let empty = Account::default();
-        assert_eq!(merge_accounts(complete.clone(), empty.clone()), complete);
-        assert_eq!(merge_accounts(empty, complete.clone()), complete);
     }
 
     #[test]

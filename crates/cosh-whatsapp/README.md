@@ -63,10 +63,14 @@ device store remembers the session; later runs reconnect without pairing.
 
 You do not need a second number: messages to the account's own "Message
 yourself" chat are prompts too. WhatsApp delivers them with `from_me` set,
-like the bot's own replies, so `serve` recognises its own messages by id —
-every send reserves its id before going out, and a message carrying one is
-dropped in every chat. The rule lives in `WhatsApp::is_prompt`, which is also
+like anything the account writes from any of its devices, so `from_me` alone
+cannot decide — a `from_me` message is a prompt only when it is addressed to
+the account's own chat. The rule lives in `WhatsApp::is_prompt`, which is also
 what a custom event loop should call instead of testing `message.from_me`.
+Every send additionally reserves its message id, and a message carrying a
+reserved id is dropped in every chat; the engine does not deliver this
+device's own sends back to it, so that is a guard against the self chat
+looping rather than the mechanism the routing depends on.
 
 Replies to that chat keep the id the chat carries (its LID on modern
 accounts): that is the chat the phone displays as "Message yourself", and

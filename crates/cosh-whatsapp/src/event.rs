@@ -162,11 +162,14 @@ impl Event {
             }),
             Engine::ConnectFailure(failure) => one(Self::Failure {
                 kind: FailureKind::ConnectFailed,
-                reason: format!(
-                    "{:?}: {}",
-                    failure.reason,
-                    failure.message.as_deref().unwrap_or_default()
-                ),
+                reason: match failure.message.as_deref() {
+                    Some(details) if !details.is_empty() => {
+                        format!("{:?}: {details}", failure.reason)
+                    }
+                    // The engine leaves the detail out for most reasons; a
+                    // trailing separator would read as a truncated message.
+                    _ => format!("{:?}", failure.reason),
+                },
             }),
             Engine::StreamError(error) => one(Self::Failure {
                 kind: FailureKind::StreamError,
@@ -443,6 +446,19 @@ mod tests {
                 assert!(!kind.is_fatal());
                 assert!(reason.contains("boom"), "{reason}");
             }
+            other => panic!("unexpected event: {other:?}"),
+        }
+
+        // A failure without details names the reason only, instead of
+        // reporting "Generic: " as if the message had been cut off.
+        let bare = mapped(&whatsapp_rust::types::events::Event::ConnectFailure(
+            ConnectFailure::builder()
+                .reason(ConnectFailureReason::Generic)
+                .build(),
+        ))
+        .expect("connect failure is mapped");
+        match bare {
+            Event::Failure { reason, .. } => assert_eq!(reason, "Generic"),
             other => panic!("unexpected event: {other:?}"),
         }
 

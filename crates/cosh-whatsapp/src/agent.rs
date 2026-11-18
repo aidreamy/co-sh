@@ -32,11 +32,11 @@ pub trait Agent: Send + Sync {
     ///
     /// Return `Ok(Some(text))` to reply in the same chat, `Ok(None)` to stay
     /// silent, or an error to log and skip the message. [`serve`] asks
-    /// [`WhatsApp::is_prompt`] first, so the agent is not handed echoes of its
-    /// own replies, status/broadcast posts, channel messages, protocol
-    /// chatter or reactions — but *is* handed what the user types in this
-    /// account's own chat. Use [`WhatsApp::connect`] directly if reactions
-    /// should reach the agent.
+    /// [`WhatsApp::is_prompt`] first, so the agent is not handed
+    /// status/broadcast posts, channel messages, protocol chatter, reactions
+    /// or the account's own traffic addressed elsewhere — but *is* handed
+    /// what the user types in this account's own chat. Use
+    /// [`WhatsApp::connect`] directly if reactions should reach the agent.
     ///
     /// Calls for different messages run concurrently (up to four at a time),
     /// so implementations must not assume they are serialized.
@@ -128,7 +128,7 @@ pub async fn serve<A: Agent + 'static>(config: Config, agent: A) -> Result<()> {
                 log::warn!("cosh-whatsapp: {reason}; the engine retries with backoff");
             }
             Event::Message(message) => {
-                if !whatsapp.is_prompt(&message).await {
+                if !whatsapp.is_prompt(&message) {
                     continue;
                 }
 
