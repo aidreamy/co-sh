@@ -146,10 +146,10 @@ pub struct Theme {
     pub diff_removed_line_number_bg: RGBA,
     /// Background of the box frame that wraps a rendered diff block (the
     /// edit tool's unified/split diff body). `None` (every theme except
-    /// cosh) falls back to `background_panel` — the historical behavior.
-    /// cosh sets this to `background` so the diff box disappears into the
+    /// obsidian) falls back to `background_panel` — the historical behavior.
+    /// obsidian sets this to `background` so the diff box disappears into the
     /// transcript background instead of showing as a black panel
-    /// (cosh's `background_panel` is pure `#000000`).
+    /// (obsidian's `background_panel` is pure `#000000`).
     pub diff_panel_background: Option<RGBA>,
     pub markdown_text: RGBA,
     pub markdown_heading: RGBA,
@@ -190,6 +190,12 @@ pub struct Theme {
     /// themes that want the rails, caps, label and spinners in Build mode in
     /// a dedicated tone instead of the per-agent color.
     pub mode_build: Option<RGBA>,
+    /// Foreground of the `✧ Thought` / `✦ Thought` reasoning header. Defaults
+    /// to `accent` (the historical behavior); themes override it when the
+    /// accent tone would fight the panel — e.g. cosh keeps `accent` gold for
+    /// actions but draws the thought header in violet, the color of
+    /// introspection.
+    pub reasoning_header: RGBA,
     pub thinking_opacity: f64,
 }
 
@@ -209,6 +215,10 @@ impl ThemeRegistry {
             ThemeDef {
                 name: "cosh",
                 theme: cosh(),
+            },
+            ThemeDef {
+                name: "obsidian",
+                theme: obsidian(),
             },
             ThemeDef {
                 name: "sakura",
@@ -402,8 +412,8 @@ fn full_theme(
         diff_line_number: RGBA::from_hex(dln),
         diff_added_line_number_bg: RGBA::from_hex(dalb),
         diff_removed_line_number_bg: RGBA::from_hex(drlb),
-        // Every theme except cosh keeps the historical `background_panel`
-        // diff-box frame; cosh overrides below.
+        // Every theme except obsidian keeps the historical `background_panel`
+        // diff-box frame; obsidian overrides below.
         diff_panel_background: None,
         markdown_text: RGBA::from_hex(mt),
         markdown_heading: RGBA::from_hex(mh),
@@ -438,11 +448,69 @@ fn full_theme(
         // behavior); themes override below for a dedicated look.
         session_logo: RGBA::from_hex(pr),
         mode_build: None,
+        reasoning_header: RGBA::from_hex(ac),
         thinking_opacity: 0.6,
     }
 }
 
+/// The default `cosh` palette: a deep indigo night sky on the `#0F0F25` /
+/// `#19192F` background pair.
+///
+/// Color psychology: the whole chrome is a single hue-240 (indigo) ramp whose
+/// saturation falls as lightness rises, so depth comes from value alone.
+/// Indigo sits between blue (rationality, focus, calm) and violet
+/// (creativity, intuition), which fits a long-session coding tool: quiet,
+/// low-glare, and serious without reading as cold corporate navy. Accents are
+/// deliberately few — periwinkle for actions, lavender for structure, and a
+/// warm gold used sparingly as the complement (60-30-10: indigo dominates,
+/// violet supports, gold only where the eye must land). Semantic green /
+/// amber / rose and a crisp sky-blue info stay saturated enough to read as
+/// state on the dark surface.
+///
+/// The *tertiary* layer — markdown and syntax, the small details that cover
+/// the most screen area — stays in the blue band (hue ~205-220) so it reads
+/// as the same night sky as the hue-240 chrome, just cooler where attention
+/// is wanted. Depth comes from lightness (`#E8E8F8` body → `#A6C8FF`
+/// headings → `#7FB0F0` links), not from new hues: one brightness step per
+/// role is enough on a near-black surface and keeps red/green/amber reserved
+/// for state. The `Thought` header deliberately does *not* reuse the heading
+/// blue — it uses a deeper, grayer sky blue (`#7CB8E8`) so a reflection block
+/// never competes with a section title.
 fn cosh() -> Theme {
+    let mut t = full_theme(
+        "#0F0F25", "#19192F", "#1D1D38", "#35356A", "#8F8FF2", "#24244A", "#E8E8F8", "#8F8FF2",
+        "#B7A4FF", "#FFD28A", "#6FE3A8", "#F5C76B", "#FF7F96", "#6FC8FF", "#6FE3A8", "#FF7F96",
+        "#6A6A95", "#B7A4FF", "#B3F5CF", "#FFBAC4", "#122B22", "#2E1622", "#0F0F25", "#5C5C88",
+        "#173A2C", "#3A1C29", "#E8E8F8", "#A6C8FF", "#7FB0F0", "#A8CCFF", "#BBD4FF", "#8A97C0",
+        "#A6C4FF", "#C6DAFF", "#2A2A4A", "#6F7BA8", "#7FA8E8", "#8FBEFF", "#A6C8FF", "#E8E8F8",
+        "#5C6B88", "#A8C8FF", "#8FB8F8", "#B8D2FF", "#9FE3B4", "#FFCB85", "#9CCBF0", "#A6B8E8",
+        "#8A96B8",
+    );
+    // Headings in a deep navy blue, per the palette's chosen accent.
+    t.markdown_heading = RGBA::from_hex("#2442A4");
+    // Table frames lift off the panel as a quieter indigo than the headings.
+    t.markdown_table_border = RGBA::from_hex("#4A4A80");
+    // The thought header uses its own, deeper sky blue rather than the
+    // heading azure: a reflection block should sit a step below a section
+    // title, and the desaturation keeps it from reading as a link.
+    t.reasoning_header = RGBA::from_hex("#7CB8E8");
+    // Static session logo as a near-background watermark: an indigo just
+    // above the base, noticeable only in the corner of the eye.
+    t.session_logo = RGBA::from_hex("#22224A");
+    // Build-mode chrome in a muted periwinkle so the rails stay present
+    // without competing with the active agent's color.
+    t.mode_build = Some(RGBA::from_hex("#7C7CC8"));
+    // Pending-queue tints: warm amber for a next agent loop, cool teal for a
+    // next request, both pulled toward the indigo base so they sit in-palette.
+    t.queue_next_loop = RGBA::from_hex("#3A3120");
+    t.queue_next_request = RGBA::from_hex("#16323E");
+    t
+}
+
+/// The old `cosh` palette: near-black (`#07070A`) chrome with neon magenta,
+/// amber and teal accents. Renamed when the indigo `cosh` theme took over the
+/// default slot — the obsidian-black base is what the name now describes.
+fn obsidian() -> Theme {
     let mut t = full_theme(
         "#07070A", "#000000", "#11111C", "#7F7F9F", "#9999B4", "#1E2030", "#E8F0FF", "#A1A1BD",
         "#9999B4", "#E8F0FF", "#5CB87A", "#D4A742", "#D4575A", "#5FD4CB", "#5CB87A", "#D4575A",
@@ -478,14 +546,14 @@ fn cosh() -> Theme {
     // Static session logo as a near-background watermark: almost
     // `background` (#07070A), diverging just enough to be noticed.
     t.session_logo = RGBA::from_hex("#12121A");
-    // Build-mode chrome in the disabled tone (#474955): cosh-only, every
+    // Build-mode chrome in the disabled tone (#474955): obsidian-only, every
     // other theme keeps the per-agent "build" color.
     t.mode_build = Some(RGBA::from_hex("#474955"));
     t.queue_next_loop = RGBA::from_hex("#3A3116");
     t.queue_next_request = RGBA::from_hex("#123A38");
     // Diff blocks (unified and split) blend into the transcript: the box
     // frame takes the chat `background` instead of `background_panel`
-    // (#000000). cosh-only — see `Theme::diff_panel_background`.
+    // (#000000). obsidian-only — see `Theme::diff_panel_background`.
     t.diff_panel_background = Some(t.background);
     t
 }
@@ -615,6 +683,7 @@ fn orng() -> Theme {
         queue_next_request: RGBA::from_hex("#0C2A2E"),
         session_logo: RGBA::from_hex("#FF6B30"),
         mode_build: None,
+        reasoning_header: RGBA::from_hex("#FFF7F1"),
         thinking_opacity: 0.6,
     }
 }
@@ -860,13 +929,17 @@ mod tests {
     #[test]
     fn agents_pane_background_lifts_each_theme_off_its_own_background() {
         let registry = ThemeRegistry::new();
-        // COSH is the calibration pair: the derived fill must reproduce
-        // the exact tone the painter used to hardcode (background
-        // `#07070A` → pane `#0A0A0D`, a +3 step per channel).
-        let cosh = registry.get("cosh").expect("cosh is registered").clone();
-        assert_eq!(cosh.background, RGBA::from_ints(0x07, 0x07, 0x0a, 255));
+        // The old cosh palette (now `obsidian`) is the calibration pair: the
+        // derived fill must reproduce the exact tone the painter used to
+        // hardcode (background `#07070A` → pane `#0A0A0D`, a +3 step per
+        // channel).
+        let obsidian = registry
+            .get("obsidian")
+            .expect("obsidian is registered")
+            .clone();
+        assert_eq!(obsidian.background, RGBA::from_ints(0x07, 0x07, 0x0a, 255));
         assert_eq!(
-            cosh.agents_pane_background(),
+            obsidian.agents_pane_background(),
             RGBA::from_ints(0x0a, 0x0a, 0x0d, 255)
         );
         // Every theme derives its own step from its OWN background:

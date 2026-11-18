@@ -14,7 +14,7 @@ impl SessionView {
     ) {
         let header = if expanded { "✧ " } else { "✦ " };
         let title = format!("{header}Thought");
-        let header_style = Style::default().fg(rgba_color(theme.accent));
+        let header_style = Style::default().fg(rgba_color(theme.reasoning_header));
         draw_text_line(buf, &title, x, y, max_w, header_style);
         *line_h = 1;
 

@@ -108,8 +108,8 @@ pub(crate) fn agent_mode_color(
     mode: cosh::harness::Mode,
 ) -> RGBA {
     match mode {
-        // A theme-level override wins (cosh: disabled tone); otherwise the
-        // per-agent "build" color, as before.
+        // A theme-level override wins (obsidian: disabled tone, cosh: muted
+        // periwinkle); otherwise the per-agent "build" color, as before.
         cosh::harness::Mode::Build => theme
             .mode_build
             .unwrap_or_else(|| agent_colors.get("build", unique_agents)),
