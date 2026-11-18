@@ -85,7 +85,6 @@ pub enum CommandScope {
 /// | `themes`     | Global | `setup.appearance` theme                        |
 /// | `background` | Global | `setup.appearance` terminal background          |
 /// | `bell`       | Global | `setup.appearance.bell_enabled`                 |
-/// | `anim`       | Global | `setup.appearance.anim_enabled`                 |
 /// | `spinner`    | Global | `setup.appearance.spinner`                      |
 /// | `new`        | Global | the session list                                |
 /// | `rename`     | Global | the session's name                              |
@@ -104,7 +103,6 @@ pub const COMMAND_INVENTORY: &[(&str, CommandScope)] = &[
     ("themes", CommandScope::Global),
     ("background", CommandScope::Global),
     ("bell", CommandScope::Global),
-    ("anim", CommandScope::Global),
     ("spinner", CommandScope::Global),
     ("new", CommandScope::Global),
     ("rename", CommandScope::Global),
@@ -254,10 +252,6 @@ impl SlashMenu {
             SlashCommand {
                 name: "bell".into(),
                 desc: "Toggle completion bell".into(),
-            },
-            SlashCommand {
-                name: "anim".into(),
-                desc: "Toggle chat animation".into(),
             },
             SlashCommand {
                 name: "spinner".into(),
@@ -715,7 +709,6 @@ mod tests {
         for global in [
             "background",
             "bell",
-            "anim",
             "settings",
             "themes",
             "spinner",

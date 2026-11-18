@@ -25,8 +25,6 @@ use crate::left_panel::sessions::SessionsView;
 use crate::left_panel::{LEFT_PANEL_WIDTH, MIN_WIDTH_FOR_LEFT_PANEL, Mode};
 use crate::logo::LOGO_CHAT;
 use crate::routes::add_provider::AddProviderView;
-#[cfg(feature = "home")]
-use crate::routes::home::HomeView;
 use crate::routes::router::RouterView;
 use crate::routes::session::SessionView;
 use crate::routes::session::free_gateway_recommendation::FreeGatewayRecommendationDialog;
@@ -125,11 +123,6 @@ fn apply_background_preference(mut t: Theme, transparent_background: bool) -> Th
 /// Header back button label.
 const BACK_LINK_TEXT: &str = "← esc";
 
-/// Header link that opens the project's bug-report page.
-/// TODO: replace the URL with the real GitHub issues URL.
-const BUG_REPORT_TEXT: &str = "𓆦 bug report";
-const BUG_REPORT_URL: &str = "https://github.com/PLACEHOLDER-OWNER/PLACEHOLDER-REPO/issues";
-
 /// When the session is empty (no messages), the prompt is centered horizontally
 /// with a width of `RATIO * main_area` but at least `MIN_WIDTH` characters wide.
 const EMPTY_SESSION_PROMPT_MIN_WIDTH: u16 = 50;
@@ -140,8 +133,6 @@ const EMPTY_SESSION_PROMPT_RATIO: f64 = 0.4;
 const MIN_PROMPT_RESERVE_ROWS: u16 = 4;
 
 enum AppMode {
-    #[cfg(feature = "home")]
-    Home,
     Session,
     InternalTools,
     AddProvider,
@@ -239,8 +230,6 @@ pub struct App {
     pub question_dialog: QuestionDialog,
     pub queue_choice_dialog: QueueChoiceDialog,
     pub free_gateway_dialog: FreeGatewayRecommendationDialog,
-    #[cfg(feature = "home")]
-    pub home_view: HomeView,
     pub internal_tools_view: InternalToolsView,
     pub show_internal_tools: bool,
     pub add_provider_view: AddProviderView,
@@ -650,8 +639,6 @@ pub struct App {
     /// Whether the left panel is focused to receive scroll events.
     /// Set to true when the user clicks inside the left panel; false on outside clicks.
     sidebar_focused: bool,
-    /// Clickable area of the "bug report" header link (None when not drawn).
-    bug_link_area: Option<Rect>,
     /// Clickable area of the header's back/escape button (None when not drawn).
     back_link_area: Option<Rect>,
     /// Version of the announced release (e.g. `0.1.2`), without the `v`
@@ -662,7 +649,7 @@ pub struct App {
     /// published on GitHub — the value `spawn_update_pipeline` pins the
     /// installer script and `COSH_VERSION` to (kept verbatim: a tag
     /// published without the `v` prefix must survive reconstruction-free
-    /// into the pipeline, same contract the Home banner path follows).
+    /// into the pipeline, reconstruction-free).
     update_latest_tag: Option<String>,
     /// Clickable area of the session footer's update button (`v0.1.2` in
     /// `v0.1.1 → v0.1.2`). Refreshed by every frame; None when not drawn.
@@ -682,9 +669,6 @@ pub struct App {
     update_changelog_url: Option<String>,
     /// Whether the terminal bell rings when an agent loop finishes.
     bell_enabled: bool,
-    /// Whether the animated chat-logo plays on the empty-session landing
-    /// screen (`/anim` toggle). When off, the static LOGO_CHAT is drawn.
-    pub(super) anim_enabled: bool,
     /// Test-only fixed terminal size. `Some(rect)` makes `terminal_size()`
     /// return it instead of querying the real console — mouse hit-testing
     /// tests must not depend on the ambient terminal's actual geometry
@@ -770,7 +754,6 @@ impl App {
         };
 
         let saved_bell = setup.appearance.bell_enabled;
-        let saved_anim = setup.appearance.anim_enabled;
 
         // Restore the globally persisted agent mode (the last one the user
         // cycled to) so new sessions start in the mode they most likely
@@ -856,10 +839,6 @@ impl App {
         let usage_records = usage_store.load();
         let usage_next_id = usage_records.len() as u64;
 
-        // `mut` is only needed without the `home` feature, where the
-        // constructor boots straight into a live session (see the tail of
-        // this function); with `home` the literal is returned as-is.
-        #[cfg_attr(feature = "home", allow(unused_mut))]
         let mut app = Self {
             hypercredit_balance: None,
             state,
@@ -872,8 +851,6 @@ impl App {
             pending_worktree_confirmation: None,
             worktree_agent_grant: false,
             pending_permission_request: None,
-            #[cfg(feature = "home")]
-            home_view: HomeView::new(),
             internal_tools_view: {
                 let mut v = InternalToolsView::new();
                 v.disabled = saved_disabled_tools;
@@ -1016,7 +993,6 @@ impl App {
             last_scroll_time: Instant::now(),
             needs_full_redraw: false,
             sidebar_focused: false,
-            bug_link_area: None,
             back_link_area: None,
             update_latest_version: None,
             update_latest_tag: None,
@@ -1025,15 +1001,12 @@ impl App {
             update_event_tx,
             update_changelog_url: None,
             bell_enabled: saved_bell,
-            anim_enabled: saved_anim,
             #[cfg(test)]
             test_size_override: None,
         };
-        // Without the `home` feature there is no landing screen, so the app
-        // must never be modeless: boot straight into a live session (tests
-        // construct `App::new` directly, so the invariant lives here rather
-        // than in `main`).
-        #[cfg(not(feature = "home"))]
+        // The app must never be modeless: boot straight into a live session
+        // (tests construct `App::new` directly, so the invariant lives here
+        // rather than in `main`).
         app.start_new_session();
         app
     }
@@ -1098,20 +1071,6 @@ impl App {
     }
 
     // RAG helper methods (cfg-gated at method level, always compiles)
-    /// Whether the Home landing screen is built in AND currently shown.
-    /// Always `false` without the `home` feature, so Home branches fold away.
-    #[allow(unused_variables)]
-    fn is_home_mode(&self) -> bool {
-        #[cfg(feature = "home")]
-        {
-            matches!(self.mode(), AppMode::Home)
-        }
-        #[cfg(not(feature = "home"))]
-        {
-            false
-        }
-    }
-
     fn mode(&self) -> AppMode {
         #[cfg(feature = "embed")]
         if self.show_rag {
@@ -1125,17 +1084,8 @@ impl App {
             AppMode::AddProvider
         } else if self.show_settings {
             AppMode::Settings
-        } else if self.state.current_session().is_some() {
-            AppMode::Session
         } else {
-            #[cfg(feature = "home")]
-            {
-                AppMode::Home
-            }
-            #[cfg(not(feature = "home"))]
-            {
-                AppMode::Session
-            }
+            AppMode::Session
         }
     }
 
@@ -1451,8 +1401,8 @@ impl App {
             .as_millis() as u64;
         // Scope the record to the loop's OWNING session, exactly like every
         // other asynchronous event handler (ContextItemRecorded, Done, …):
-        // a Usage event arrives while the user may have switched sessions (or
-        // returned Home), and attributing it to the merely-VIEWED session puts
+        // a Usage event arrives while the user may have switched sessions,
+        // and attributing it to the merely-VIEWED session puts
         // that loop's spend on the wrong session's dashboard — and `""` (the
         // old `unwrap_or_default`) made it vanish from every session block.
         let session_id = self
@@ -1498,8 +1448,6 @@ impl App {
             return;
         }
         let feature = match self.mode() {
-            #[cfg(feature = "home")]
-            AppMode::Home => Feature::Home,
             AppMode::Session => Feature::Session,
             AppMode::InternalTools => Feature::Tools,
             AppMode::AddProvider => Feature::AddProvider,

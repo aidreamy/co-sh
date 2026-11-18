@@ -235,9 +235,7 @@ const WHATSAPP_PAGE: Page = Page {
                 Row::Note(
                     "With no approval dialog, tools that need permission are denied in build/ask mode. Use `/mode yolo` to allow them.",
                 ),
-                Row::Note(
-                    "TUI-only commands (anim, theme, spinner) are not available over WhatsApp.",
-                ),
+                Row::Note("TUI-only commands (theme, spinner) are not available over WhatsApp."),
             ],
         },
     ],

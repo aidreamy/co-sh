@@ -55,11 +55,11 @@ pub const COMMANDS: &[CommandSpec] = &[
 ];
 
 /// Commands that exist in the TUI but have no meaning in a remote chat:
-/// they customize the terminal UI (theme, animation, spinner), which the
+/// they customize the terminal UI (theme, spinner), which the
 /// WhatsApp interface does not render. Kept explicit so the exclusion is a
 /// tested contract instead of an accident of the allowlist.
 #[cfg(test)]
-pub const TUI_ONLY_COMMANDS: &[&str] = &["anim", "theme", "themes", "spinner"];
+pub const TUI_ONLY_COMMANDS: &[&str] = &["theme", "themes", "spinner"];
 
 /// A syntactically valid, registered command parsed out of a message.
 #[derive(Debug, Clone, PartialEq, Eq)]

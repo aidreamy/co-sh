@@ -3,7 +3,6 @@ use morpheus_tui::core::lib::rgba::RGBA;
 use std::sync::atomic::Ordering;
 
 use super::App;
-use super::BUG_REPORT_URL;
 use super::agents_dispatch::either_split;
 use crate::session::store::format_session_timestamp;
 use crate::ui::agents_picker::AgentPick;
@@ -458,7 +457,7 @@ impl App {
     /// The point-of-no-return variant: EVERY pane of the outgoing split
     /// (running or idle) loses its in-flight AND queued `agents_call`
     /// requests, and the pane leaves the registry. For a whole-set death —
-    /// a session switch, going Home — the outgoing panes will never serve
+    /// a session switch — the outgoing panes will never serve
     /// anything again in this process: a leftover queued request would
     /// hang its requester's busy-guard forever (`has_outstanding_requests`
     /// stuck true with nobody left to dispatch it — the harness loop's
@@ -619,7 +618,7 @@ impl App {
     /// with quitting the app, and the async writer's queue has no flush on
     /// the quit path — a fire-and-forget save could never land, reopening
     /// the session with the wrong mode. The job is one tiny metadata delta,
-    /// so blocking the frame is negligible. No session open (Home) → nothing.
+    /// so blocking the frame is negligible. No session open → nothing.
     pub(in crate::app) fn save_agents_metadata(
         &mut self,
         panes: Option<Vec<crate::types::AgentPaneRef>>,
@@ -902,70 +901,14 @@ impl App {
             .map(|entry| (entry.provider.clone(), entry.model.clone()))
             .collect()
     }
-    /// Opens the bug-report page in the default browser and shows a toast.
-    pub(super) fn open_bug_report_link(&mut self) {
-        use crate::ui::toast::{ToastOptions, ToastVariant};
-        self.toast_state.show(ToastOptions {
-            title: Some("Bug report".to_string()),
-            message: format!("Opening {BUG_REPORT_URL}…"),
-            variant: ToastVariant::Info,
-            duration_ms: 2500,
-        });
-        std::thread::spawn(move || {
-            if let Err(err) = open::that(BUG_REPORT_URL) {
-                log::error!("Failed to open bug report URL: {err}");
-            }
-        });
-    }
-
-    /// Handle a click (or Enter/`u` key press) on the home banner's update
-    /// announcement: run the update pipeline or open the changelog page.
-    #[cfg(feature = "home")]
-    pub(super) fn handle_banner_action(&mut self, action: crate::routes::home::BannerAction) {
-        use crate::routes::home::BannerAction;
-
-        let Some(crate::routes::home::BannerContent::ReleaseUpdate { tag, .. }) =
-            self.home_view.banner.content.clone()
-        else {
-            return;
-        };
-
-        match action {
-            BannerAction::OpenChangelog => {
-                let url = self.update_changelog_url.clone().unwrap_or_else(|| {
-                    format!(
-                        "https://github.com/{}/releases/tag/{tag}",
-                        crate::update::REPO
-                    )
-                });
-                std::thread::spawn(move || {
-                    if let Err(err) = open::that(url) {
-                        log::error!("Failed to open changelog URL: {err}");
-                    }
-                });
-            }
-            BannerAction::StartUpdate => {
-                // Fire-and-forget: the pipeline runs `morpheus update` detached
-                // and installs the release; this process exits first so the
-                // running image is not locked on Windows. The user reopens
-                // cosh once the install finishes, so the very next step is to
-                // close this TUI. No toast, no spinner, no in-app state —
-                // closing is the whole feedback.
-                crate::update::spawn_update_pipeline(&tag);
-                self.should_quit = true;
-            }
-        }
-    }
-
     /// Click on the session footer's update button (`v0.1.2` in
-    /// `v0.1.1 → v0.1.2`): run the SAME install pipeline the Home banner's
-    /// "Update version" button uses — `spawn_update_pipeline` hands the tag
-    /// to `morpheus update`, which installs that exact release and exits; closing
+    /// `v0.1.1 → v0.1.2`): `spawn_update_pipeline` hands the tag to
+    /// `morpheus update`, which installs that exact release and exits; closing
     /// the TUI is the whole feedback, and the user reopens cosh afterwards.
     pub(super) fn click_footer_update(&mut self) {
-        // The RAW release tag (`v0.1.2`) straight from the GitHub check —
-        // the same value the Home banner passes, never a reconstruction:
-        // `spawn_update_pipeline` passes it to `morpheus update` as the target
+        // The RAW release tag (`v0.1.2`) straight from the GitHub check,
+        // never a reconstruction: `spawn_update_pipeline` passes it to
+        // `morpheus update` as the target
         // version, so a tag published without the `v` prefix must survive
         // verbatim. It is validated again inside.
         if let Some(tag) = self.update_latest_tag.clone() {
@@ -983,8 +926,7 @@ impl App {
                     self.update_changelog_url = Some(release.url.clone());
                     // The version also feeds the session footer's
                     // `v0.1.1 → v0.1.2` hint; the raw tag is what the
-                    // footer's click hands to the install pipeline (same
-                    // value the Home banner passes).
+                    // footer's click hands to the install pipeline.
                     self.update_latest_version = Some(release.version.clone());
                     self.update_latest_tag = Some(release.tag.clone());
                     // Announce the release in a toast: title = new version,
@@ -1003,15 +945,6 @@ impl App {
                             },
                             command,
                         );
-                    }
-                    #[cfg(feature = "home")]
-                    {
-                        use crate::routes::home::{BannerContent, UpdateStatus};
-                        self.home_view.banner.content = Some(BannerContent::ReleaseUpdate {
-                            version: release.version.clone(),
-                            tag: release.tag.clone(),
-                        });
-                        self.home_view.banner.status = UpdateStatus::Idle;
                     }
                 }
                 crate::update::UpdateEvent::CheckFinished(None) => {
@@ -1037,7 +970,7 @@ impl App {
     ///
     /// The hand-off half of the open-lock lifecycle: a process must keep a
     /// claim ONLY while the session is its selected one. Every path that
-    /// moves the app away from a session (switch, Home, /new) goes through
+    /// moves the app away from a session (switch, /new) goes through
     /// this so the lock is handed to the next process the moment the
     /// session stops being ours — not when this process dies.
     pub(super) fn persist_and_release_current_session(&mut self) {
@@ -1051,64 +984,6 @@ impl App {
             }
             self.session_store.release_session_lock(&id);
         }
-    }
-
-    /// Leave the current session and return to Home: persist the session
-    /// when it holds real dialog, RELEASE its per-session open-lock, and
-    /// clear the header/panel state that belongs to a session.
-    ///
-    /// The release matters: without it the process keeps holding a session
-    /// it is not viewing, and any OTHER cosh process trying to open that
-    /// session is refused with "already open in another process" even
-    /// though nothing here is using it. The lifecycle of the open-lock
-    /// mirrors `switch_to_session`: held while the session is this
-    /// process's selected one, released the moment it stops being one.
-    pub(super) fn return_to_home(&mut self) {
-        self.persist_and_release_current_session();
-        self.state.current_session_id = None;
-        // Back to Home: the header widget is gone, so its state must not
-        // survive into the next session.
-        self.hypercredit_balance = None;
-        // Both `/agents` slots release the same way a switch does: running
-        // pane turns stop through their own signals; the pane set + bindings
-        // stay behind in the (no longer current) session's metadata. The
-        // epoch moves with the teardown: their terminal Done arrives stale
-        // and is dropped (Home has no pane set to bind into anyway). The
-        // in-flight `agents_call` requests fail first, keyed by the outgoing
-        // ids — the stale-dropped Done can never resolve them (see
-        // `fail_outgoing_pane_requests`).
-        // A whole-set death (session switch / Home): every outgoing pane
-        // loses its in-flight AND queued `agents_call` requests and leaves
-        // the registry — the incoming set re-syncs it below. Without this
-        // the registry keeps the old session's panes: a queued request
-        // nobody will ever dispatch hangs the requester's busy-guard
-        // forever, and a colliding id (same agent name) would be served by
-        // the NEW session's pane — cross-session injection.
-        self.fail_whole_outgoing_pane_set();
-        self.agents_pane_epoch = self.agents_pane_epoch.wrapping_add(1);
-        for split in self
-            .agents_split
-            .take()
-            .iter_mut()
-            .chain(self.parked_agents_split.take().iter_mut())
-        {
-            for pane in &mut split.panes {
-                if let Some(signal) = &pane.stop_signal {
-                    signal.store(true, std::sync::atomic::Ordering::Relaxed);
-                }
-                pane.running = false;
-            }
-        }
-        // Home has no session view: the whole panel resets below, mirrors
-        // included (a switch keeps the panel and drops/rebuilds mirrors
-        // explicitly instead).
-        self.state.right_panel = crate::routes::session::right_panel::types::RightPanelState::new();
-        // The registry follows the outgoing set out: it must stay EMPTY at
-        // Home (no session, no panes) — `has_coworkers()` false means the next
-        // harness build carries no `agents_call` tool and no stale panes
-        // context block, and `has_outstanding_requests` can no longer stick
-        // true with nobody left to dispatch a queued request.
-        self.sync_agents_pane_registry();
     }
 
     /// Switch to a session, refusing the switch when it is already open in
@@ -1171,7 +1046,7 @@ impl App {
         // `agents_call` requests fail first, keyed by the outgoing ids —
         // the stale-dropped Done can never resolve them (see
         // `fail_outgoing_pane_requests`).
-        // A whole-set death (session switch / Home): every outgoing pane
+        // A whole-set death (session switch): every outgoing pane
         // loses its in-flight AND queued `agents_call` requests and leaves
         // the registry — the incoming set re-syncs it below. Without this
         // the registry keeps the old session's panes: a queued request
@@ -1194,8 +1069,8 @@ impl App {
             }
         }
         // The session's mirrors leave the shared list with its slots (a
-        // switch rebuilds the NEW session's mirrors from its metadata; Home
-        // has no session, so none come back).
+        // switch rebuilds the NEW session's mirrors from its metadata; a
+        // fresh session starts with none).
         self.state.right_panel.drop_agents_pane_windows();
         // Restore the NEW session's `/agents` mode. ONLY a session left
         // with the mode OPEN (`agents_mode_open`) takes the screen back; a
@@ -1290,7 +1165,7 @@ impl App {
     }
 
     /// Create a fresh empty session and select it — the shared path behind
-    /// Home's "New session" (keyboard + mouse) and the `/new` slash command.
+    /// the `/new` slash command and the first-message bootstrap.
     /// Selecting the session flips the app into Session mode.
     pub(crate) fn start_new_session(&mut self) {
         // Entry funnel: claim the id (unique + exclusively locked for this
@@ -1329,7 +1204,7 @@ impl App {
         // the previous session's todos, PTY/subagent sessions, panel focus,
         // scroll offsets and history-navigation state would leak into the
         // new session — the same reset every other session-switch path
-        // (sidebar keyboard/mouse switch, Esc back to Home) performs.
+        // (sidebar keyboard/mouse switch) performs.
         self.state.right_panel = crate::routes::session::right_panel::types::RightPanelState::new();
         // A new session is restored with the globally persisted model (the
         // last one the user selected), recorded on the session so its history
@@ -1484,7 +1359,7 @@ impl App {
             }
             self.prompt_view.clear_all();
         } else if cmd.name == "router" {
-            // Same refresh the Home menu performs before opening the router:
+            // Same refresh the router needs before opening:
             // fallbacks from the prefs cache; models come from the model
             // cache when the view renders.
             let saved = crate::fallback::load_fallbacks(&self.setup);
@@ -1539,22 +1414,6 @@ impl App {
                 duration_ms: 3000,
             });
             self.setup.appearance.bell_enabled = self.bell_enabled;
-            self.setup.save();
-        } else if cmd.name == "anim" {
-            self.anim_enabled = !self.anim_enabled;
-            use crate::ui::toast::{ToastOptions, ToastVariant};
-            let message = if self.anim_enabled {
-                "Animated logo enabled."
-            } else {
-                "Animated logo disabled — using static LOGO_CHAT."
-            };
-            self.toast_state.show(ToastOptions {
-                title: Some("Anim".into()),
-                message: message.into(),
-                variant: ToastVariant::Info,
-                duration_ms: 3000,
-            });
-            self.setup.appearance.anim_enabled = self.anim_enabled;
             self.setup.save();
         } else if cmd.name == "spinner" {
             self.open_spinner_dialog();

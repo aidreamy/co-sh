@@ -6,15 +6,13 @@ use ratatui::layout::Rect;
 use ratatui::style::Style;
 
 use super::{
-    App, AppMode, BACK_LINK_TEXT, BUG_REPORT_TEXT, EMPTY_SESSION_PROMPT_MIN_WIDTH,
-    EMPTY_SESSION_PROMPT_RATIO, MIN_PROMPT_RESERVE_ROWS, SessionArea,
+    App, AppMode, BACK_LINK_TEXT, EMPTY_SESSION_PROMPT_MIN_WIDTH, EMPTY_SESSION_PROMPT_RATIO,
+    MIN_PROMPT_RESERVE_ROWS, SessionArea,
 };
 use crate::component::budget::{budget_bar_style, budget_block, budget_pct_style};
 use crate::component::prompt::PanePromptInfo;
 use crate::left_panel::{MIN_WIDTH_FOR_LEFT_PANEL, Mode};
 use crate::logo::LOGO_CHAT;
-#[cfg(feature = "home")]
-use crate::routes::home::footer::HomeFooterView;
 use crate::routes::session::agents_split::{MANAGER_LABEL, brand_name_styles};
 use crate::routes::session::footer::FooterView;
 use crate::routes::session::right_panel::render_right_panel;
@@ -111,19 +109,6 @@ impl App {
                 .agents_split
                 .as_ref()
                 .is_some_and(|split| split.pill_animating());
-        // Keep the lightweight landing and empty-session logo animations
-        // moving even when there is no input or agent activity.
-        #[cfg(feature = "home")]
-        {
-            live = live || (self.is_home_mode() && self.home_view.anim_active);
-        }
-        live = live
-            || (matches!(self.mode(), AppMode::Session)
-                && self.anim_enabled
-                && self
-                    .state
-                    .current_session()
-                    .is_some_and(|session| session.messages.is_empty()));
         self.live_requested = live;
         let area = frame.area();
 
@@ -192,8 +177,6 @@ impl App {
                 }
             }
             self.back_link_area = back_link_area;
-
-            let bug_w = BUG_REPORT_TEXT.chars().count() as u16;
 
             let SessionArea {
                 main: main_area,
@@ -351,39 +334,6 @@ impl App {
                     }
                 }
             }
-
-            // Bug report link — right-aligned in the header, only on the Home
-            // screen. Clicking it opens the GitHub issues page in the default
-            // browser. Other routers reuse this space, so it's hidden there.
-            let bug_right_x = main_area.right().saturating_sub(bug_w + 1);
-            let bug_link_area = if self.is_home_mode() && bug_right_x >= area.x + 9 {
-                // Hover feedback: at rest the link sits in the muted color;
-                // when the mouse cursor sits exactly on it, it lights up in
-                // the theme's default text color to signal it's clickable.
-                // (accent can't mark the hover state: in the default theme
-                // accent == text, so swapping between them is invisible.)
-                let bug_link_fg = if let Some(link_area) = self.bug_link_area
-                    && self.last_mouse_x >= link_area.x
-                    && self.last_mouse_x < link_area.right()
-                    && self.last_mouse_y >= link_area.y
-                    && self.last_mouse_y < link_area.bottom()
-                {
-                    rgba_color(self.theme.text)
-                } else {
-                    rgba_color(self.theme.text_muted)
-                };
-                let bug_link_style = Style::default().fg(bug_link_fg);
-                for (i, ch) in BUG_REPORT_TEXT.chars().enumerate() {
-                    if let Some(cell) = buf.cell_mut((bug_right_x + i as u16, area.y)) {
-                        cell.set_char(ch);
-                        cell.set_style(bug_link_style);
-                    }
-                }
-                Some(Rect::new(bug_right_x, area.y, bug_w, 1))
-            } else {
-                None
-            };
-            self.bug_link_area = bug_link_area;
 
             // Session header sparkle — Astra-style starfield flourish, ported
             // from the Codex TUI (`chat_composer/sparkle.rs`). Session router
@@ -711,22 +661,13 @@ impl App {
             );
 
             // The pill only ever animates inside the session view. Leaving
-            // for Home, settings, router etc. mid-animation would freeze
+            // for settings, router etc. mid-animation would freeze
             // `pill_progress` mid-flight while the mode-independent live gate
             // keeps redrawing, so park it whenever another route renders.
             if !matches!(self.mode(), AppMode::Session) {
                 self.session_view.clear_pill();
             }
             match self.mode() {
-                #[cfg(feature = "home")]
-                AppMode::Home => {
-                    self.prompt_view.blur();
-                    self.home_view
-                        .render(buf, session_area, &self.theme, animation_ticks);
-                    if self.telemetry.enabled() && self.home_view.banner.is_visible() {
-                        self.session_telemetry.mark_update_banner();
-                    }
-                }
                 AppMode::InternalTools => {
                     self.prompt_view.blur();
                     let tools_area = Rect::new(
@@ -1040,19 +981,13 @@ impl App {
                             model_name,
                             reasoning,
                             pane_badge,
-                            delta_time,
-                            is_empty_session && self.anim_enabled,
                         );
 
-                        // Static LOGO_CHAT replaces the animation when /anim is off,
-                        // centered above the prompt input. Skipped on short
-                        // terminals where the layout dropped the logo block.
-                        // Painted with the theme's session-logo slot (a dim
-                        // watermark on cosh), never the home-screen treatment.
-                        if is_empty_session
-                            && !self.anim_enabled
-                            && let Some(logo_start_y) = logo_start_y
-                        {
+                        // Static LOGO_CHAT above the prompt input, centered.
+                        // Skipped on short terminals where the layout dropped
+                        // the logo block. Painted with the theme's
+                        // session-logo slot (a dim watermark on cosh).
+                        if is_empty_session && let Some(logo_start_y) = logo_start_y {
                             // Centered on the whole main area, not on the
                             // (much narrower) empty-session prompt band: the
                             // logo is wider than that band, so centering it
@@ -1104,10 +1039,6 @@ impl App {
             // re-assignment contract `bug_link_area`/`back_link_area` follow).
             self.footer_update_area = None;
             match self.mode() {
-                #[cfg(feature = "home")]
-                AppMode::Home => {
-                    HomeFooterView::render(buf, footer_area, &self.theme);
-                }
                 AppMode::Session => {
                     let hide_text = self.question_dialog.visible
                         || self.permission_dialog.visible

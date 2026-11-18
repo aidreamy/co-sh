@@ -70,8 +70,8 @@ impl App {
         }
     }
 
-    /// Toast feedback after a `/spinner` pick (the same surface /bell and
-    /// /anim report through).
+    /// Toast feedback after a `/spinner` pick (the same surface /bell
+    /// reports through).
     fn toast_style_changed(&mut self, style: cosh::setup::SpinnerStyle) {
         use crate::ui::toast::{ToastOptions, ToastVariant};
         self.toast_state.show(ToastOptions {

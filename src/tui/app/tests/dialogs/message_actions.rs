@@ -475,8 +475,8 @@ async fn clicking_multiline_user_message_opens_message_actions_without_panicking
     // Sweep every viewport row through the app's real mouse dispatch so any
     // panic on the click-to-open-to-render path reproduces in CI. Row 0 is
     // the header — its left edge is the back link, whose Up handler runs the
-    // Esc pipeline and leaves the session (Home), so sweeping it would spend
-    // the rest of the sweep clicking Home. Start below the header.
+    // Esc pipeline and can open the quit confirm, so sweeping it would spend
+    // the rest of the sweep on that dialog. Start below the header.
     let mut opened = 0;
     for y in 1..h {
         for x in [4u16, 15, 30, 60] {

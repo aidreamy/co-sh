@@ -653,61 +653,6 @@ async fn hover_over_session_row_moves_the_selection() {
     assert_eq!(glyph_at(2), " ", "row 2 lost the highlight");
 }
 
-/// Hover-follow on the home screen: the left panel overlays every route,
-/// so the same list must follow the cursor there too — not only inside a
-/// session. (No current session ⇒ home mode.) Home-only: without the
-/// `home` feature a fresh app boots straight into a session
-/// (`App::new` → `start_new_session`), so the no-current-session premise
-/// does not exist there.
-#[cfg(feature = "home")]
-#[tokio::test]
-async fn hover_over_session_row_moves_the_selection_on_home() {
-    let _guard = HOME_LOCK.lock();
-    isolate_home();
-    let mut app = App::new("/tmp".to_string());
-    assert!(
-        app.state.current_session_id.is_none(),
-        "fresh app has no session: this is the home screen"
-    );
-    app.sidebar.open = true;
-    app.left_panel = Mode::History;
-    app.state.session_summaries.clear();
-    for i in 0..3 {
-        app.state
-            .session_summaries
-            .push(crate::session::store::SessionSummary {
-                session_id: format!("history-{i}"),
-                title: format!("session {i}"),
-                created_at: i as u64,
-                message_count: 0,
-                cwd: String::new(),
-                model: None,
-                title_generated: false,
-            });
-    }
-
-    // Rows: header 0..2, history-0 at 2, history-1 at 3, history-2 at 4.
-    assert_eq!(app.sidebar.selection.selected_index, 0);
-    let _ = app.handle_mouse_event(mouse(CKind::Moved, 5, 4)).unwrap();
-
-    assert_eq!(
-        app.sidebar.selection.selected_index, 2,
-        "hover must follow the cursor on home too"
-    );
-    assert!(
-        app.state.current_session_id.is_none(),
-        "hover never enters a session"
-    );
-    assert!(!app.dialog.visible(), "hover never opens a dialog");
-
-    // A miss keeps the selection, like in session mode.
-    let _ = app.handle_mouse_event(mouse(CKind::Moved, 5, 0)).unwrap();
-    assert_eq!(
-        app.sidebar.selection.selected_index, 2,
-        "a miss must keep the selection"
-    );
-}
-
 /// The `delete all` footer button: pinned geometry (terminal 140x40 →
 /// sidebar rows 0..40, footer row 39, centered button columns 6..16).
 #[tokio::test]

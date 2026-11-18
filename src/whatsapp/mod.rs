@@ -46,7 +46,7 @@
 //! # Commands
 //!
 //! `/help` lists the surface; `/mode <mode>` switches the harness mode.
-//! TUI-only commands (`anim`, `theme`, `spinner`, …) are deliberately not
+//! TUI-only commands (`theme`, `spinner`, …) are deliberately not
 //! published. Detection is conservative: a message is a command only when it
 //! starts with `/`, names a **registered** command, and that name is a bare
 //! word — so `/usr/bin/env` or `/home/me/report.txt` stay normal messages.

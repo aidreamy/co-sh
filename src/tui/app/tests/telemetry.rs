@@ -56,19 +56,6 @@ async fn telemetry_tracks_tui_events_and_rendered_views() {
     ]))
     .unwrap();
 
-    #[cfg(feature = "home")]
-    {
-        use crate::routes::home::BannerContent;
-        app.home_view.banner.content = Some(BannerContent::ReleaseUpdate {
-            version: "9.0.0".into(),
-            tag: "v9.0.0".into(),
-        });
-        let mut small = Terminal::new(TestBackend::new(20, 10)).unwrap();
-        small.draw(|f| app.render(f, 0.0)).unwrap();
-        assert!(!app.home_view.banner.is_visible());
-        terminal.draw(|f| app.render(f, 0.0)).unwrap();
-        assert!(app.home_view.banner.is_visible());
-    }
     app.show_settings = true;
     terminal.draw(|f| app.render(f, 0.0)).unwrap();
     terminal.draw(|f| app.render(f, 0.0)).unwrap();
@@ -139,9 +126,9 @@ async fn telemetry_tracks_tui_events_and_rendered_views() {
     assert_eq!(summary.messages(), if enabled { 4 } else { 0 });
     assert_eq!(summary.compactions(), u32::from(enabled));
     assert_eq!(summary.mcp_servers(), u32::from(enabled));
-    assert_eq!(
-        summary.update_banner_shown(),
-        enabled && cfg!(feature = "home")
+    assert!(
+        !summary.update_banner_shown(),
+        "the update banner is gone with the Home screen"
     );
     if enabled {
         assert_eq!(summary.tools().get("bash"), Some(&1));

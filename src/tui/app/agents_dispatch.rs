@@ -78,7 +78,7 @@ fn slash_lists_equal(
 ///
 /// The cases, in order — this order IS the contract:
 ///
-/// 1. **Global** (`themes`, `background`, `bell`, `anim`, `spinner`,
+/// 1. **Global** (`themes`, `background`, `bell`, `spinner`,
 ///    `settings`, `router`, `providers`, `new`, `rename`, `undo`, `agents`):
 ///    app/TUI state, of which there is exactly one instance per process.
 ///    Never handed to a pane, whoever is focused — a `/background` picked on

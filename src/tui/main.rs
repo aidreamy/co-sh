@@ -82,8 +82,8 @@ async fn run_tui(options: cli::LaunchOptions) {
     cosh::util::logger::init("tui_main");
 
     // Resolved BEFORE the terminal is initialized, so the messages are plain
-    // stderr lines: an unknown `-s` id exits, an empty `-c` falls back to
-    // Home with a hint.
+    // stderr lines: an unknown `-s` id exits, an empty `-c` falls back to a
+    // fresh session with a hint.
     let startup_session = match cli::resume::resolve(&options) {
         Ok(session) => session,
         Err(error) => {
@@ -102,7 +102,7 @@ async fn run_tui(options: cli::LaunchOptions) {
         && !app.open_session_at_startup(&session_id)
     {
         eprintln!(
-            "cosh: session {session_id} is already open in another cosh process — starting at home."
+            "cosh: session {session_id} is already open in another cosh process — starting a new session."
         );
     }
     app.show_welcome_toast();

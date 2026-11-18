@@ -70,12 +70,9 @@ impl App {
     /// Routes where the free-gateway recommendation dialog is rendered and
     /// takes input: Session only. Every trigger lives there — a parked
     /// message sent without credentials, or a keyless/keyed provider whose
-    /// request just failed with an auth-shaped error. Home never learns the
-    /// dialog exists. The shipped slim build (`--no-default-features`) has
-    /// no Home: `mode()` folds to Session even with no session yet, so the
-    /// offer renders inline over the empty session view. Render and input
-    /// guards MUST use this — a plain `is_session` check duplicated by hand
-    /// would drift.
+    /// request just failed with an auth-shaped error. The offer renders
+    /// inline over the empty session view. Render and input guards MUST use
+    /// this — a plain `is_session` check duplicated by hand would drift.
     pub(super) fn gateway_dialog_route(&self) -> bool {
         matches!(self.mode(), AppMode::Session)
     }

@@ -398,28 +398,6 @@ impl App {
                     self.scroll_pill_pressed = true;
                     return Ok(true);
                 }
-                // Chat-logo mini game: while the landing-screen logo is
-                // visible, a click that lands exactly on one of its glyph
-                // cells deals damage (top hits hurt the most). It consumes
-                // the press so the click never starts a text selection.
-                if matches!(self.mode(), AppMode::Session)
-                    && !self.dialog.visible()
-                    && !self.slash_menu.visible
-                    // Inline dialogs replace the prompt: a click there belongs
-                    // to them, never to the logo behind them (same guards as
-                    // the scroll-pill branch above).
-                    && !self.question_dialog.visible
-                    && !self.permission_dialog.visible
-                    && !self.queue_choice_dialog.visible
-                    && !self.free_gateway_dialog.visible
-                    && self.prompt_view.logo_visible()
-                    && self.prompt_view.click_logo(x, y)
-                {
-                    self.prompt_view.focus();
-                    self.prompt_view.note_activity();
-                    self.state.right_panel.panel_focus = None;
-                    return Ok(true);
-                }
                 self.mouse_down_pos = Some((x, y));
                 // NOTE: `press_started_in_prompt` is NOT armed here — it is
                 // armed by the anchor blocks below, only when a prompt text
@@ -1102,9 +1080,6 @@ impl App {
                         self.question_dialog.handle_wheel(y, area, false);
                     } else if matches!(self.mode(), AppMode::Session) {
                         self.session_view.scroll_by(-1.0);
-                    } else if self.is_home_mode() {
-                        #[cfg(feature = "home")]
-                        self.home_view.select_prev();
                     } else if matches!(self.mode(), AppMode::InternalTools) {
                         self.internal_tools_view.select_prev();
                     } else if matches!(self.mode(), AppMode::Router) {
@@ -1197,9 +1172,6 @@ impl App {
                         self.question_dialog.handle_wheel(y, area, true);
                     } else if matches!(self.mode(), AppMode::Session) {
                         self.session_view.scroll_by(1.0);
-                    } else if self.is_home_mode() {
-                        #[cfg(feature = "home")]
-                        self.home_view.select_next();
                     } else if matches!(self.mode(), AppMode::InternalTools) {
                         self.internal_tools_view.select_next();
                     } else if matches!(self.mode(), AppMode::Router) {
@@ -1434,17 +1406,6 @@ impl App {
             return Ok(true);
         }
 
-        // Bug report link in the header — clicking opens the GitHub issues page.
-        if let Some(link_area) = self.bug_link_area
-            && x >= link_area.x
-            && x < link_area.right()
-            && y >= link_area.y
-            && y < link_area.bottom()
-        {
-            self.open_bug_report_link();
-            return Ok(true);
-        }
-
         // ⧉ copy button of a copyable toast (e.g. the update announcement) —
         // copy the payload to the clipboard. Toasts render on top of all
         // chrome, so their button outranks the links below in z-order; the
@@ -1470,7 +1431,7 @@ impl App {
         }
 
         // Session footer's update button (`v0.1.2` in `v0.1.1 → v0.1.2`) —
-        // run the same install pipeline the Home banner's update button uses.
+        // run the release install pipeline.
         // Guarded by dialog visibility: this click INSTALLS software and
         // closes the app, so it must never fire through a modal dialog
         // (the header links above are inert by comparison).
@@ -1920,57 +1881,6 @@ impl App {
                         pane_action: None,
                     });
                     self.session_view.hovered_msg_idx = None;
-                }
-                return Ok(true);
-            }
-        }
-
-        // 8. Home view (same area computation as render: skip header row + footer)
-        #[cfg(feature = "home")]
-        if matches!(self.mode(), AppMode::Home) && !self.dialog.visible() {
-            let area = self.terminal_size();
-            let main_area = self.main_content_area(area);
-            let footer_y = main_area.bottom().saturating_sub(1);
-            let session_area = Rect::new(
-                main_area.x,
-                area.y + 1,
-                main_area.width,
-                footer_y.saturating_sub(area.y + 1),
-            );
-            if let Some(action) = self.home_view.handle_mouse(&mouse, session_area) {
-                match action {
-                    crate::routes::home::HomeAction::NewSession => {
-                        self.start_new_session();
-                    }
-                    crate::routes::home::HomeAction::ToggleSidebar => {
-                        self.sidebar.open = !self.sidebar.open;
-                    }
-                    crate::routes::home::HomeAction::OpenInternalTools => {
-                        self.show_internal_tools = true;
-                    }
-                    crate::routes::home::HomeAction::OpenShortcuts => {
-                        self.dialog.show(DialogType::Shortcuts { scroll: 0 });
-                    }
-                    crate::routes::home::HomeAction::OpenAddProvider => {
-                        self.show_add_provider = true;
-                    }
-                    crate::routes::home::HomeAction::OpenSettings => {
-                        self.show_settings = true;
-                    }
-                    crate::routes::home::HomeAction::OpenModelRouter => {
-                        let saved = fallback::load_fallbacks(&self.setup);
-                        self.router_view.set_fallbacks(saved);
-                        let saved = fallback::load_prompt_corrector_fallbacks(&self.setup);
-                        self.router_view.set_prompt_corrector_fallbacks(saved);
-                        self.show_router = true;
-                    }
-                    #[cfg(feature = "embed")]
-                    crate::routes::home::HomeAction::OpenRag => {
-                        self.show_rag = true;
-                    }
-                    crate::routes::home::HomeAction::Banner(banner_action) => {
-                        self.handle_banner_action(banner_action);
-                    }
                 }
                 return Ok(true);
             }

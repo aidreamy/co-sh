@@ -90,19 +90,19 @@ async fn usage_event_falls_back_to_current_session_without_loop_owner() {
     assert_eq!(app.usage_records[0].session_id, "s");
 }
 
-/// Regression for the vanishing-cost case: usage arrives while the user went
-/// back Home (`current_session_id == None`) with the loop still running.
+/// Regression for the vanishing-cost case: usage arrives while no session is
+/// selected (`current_session_id == None`) with the loop still running.
 /// The old code recorded `session_id: ""`, which showed in NO session block;
 /// the record must land on the loop owner instead.
 #[tokio::test]
-async fn usage_event_at_home_lands_on_loop_owner_not_empty() {
+async fn usage_event_without_a_current_session_lands_on_loop_owner() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
 
     let mut app = App::new("/tmp".to_string());
     app.state.add_empty_session("a".into(), "a".into(), 0);
     app.active_loop_session_id = Some("a".into());
-    // Back on Home: no current session, but the loop still runs in background.
+    // No current session, but the loop still runs in the background.
     app.state.current_session_id = None;
 
     app.record_usage(

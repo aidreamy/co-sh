@@ -12,7 +12,6 @@ use ratatui::style::{Color, Modifier, Style};
 use crate::agent_colors::AgentColors;
 use crate::component::cursor::{Cursor, CursorState, paint_cursor_cell};
 use crate::component::wall;
-use crate::logo::ChatLogo;
 use crate::lsp_colors;
 use crate::state::AppState;
 use crate::theme::{Theme, rgba_color};
@@ -270,14 +269,6 @@ pub struct PromptView {
     /// every draft mutation must go through the recording methods below so
     /// the mirror never diverges from `input` for longer than one operation.
     history: EditHistory,
-    /// The chat-logo animation (a single "O" with a red center and a laser beam).
-    pub logo: ChatLogo,
-    /// Snapshot of `(input.len(), cursor_pos)` from the previous frame, used to
-    /// detect keystrokes so the logo's head-bob follows the typing rhythm.
-    last_input_snapshot: Option<(usize, usize)>,
-    /// Whether the logo was rendered in the previous frame (used to detect the
-    /// landing-screen → chat transition so the animation can be reset).
-    was_visible: bool,
     /// Index of the first visible wrapped line when the prompt content exceeds
     /// [`MAX_PROMPT_LINES`]. Kept from the last render so mouse hit-testing
     /// (`char_pos_at_mouse`) can map screen rows back to content lines.
@@ -299,9 +290,6 @@ impl PromptView {
             pasted_parts: Vec::new(),
             attached_images: Vec::new(),
             history: EditHistory::new(),
-            logo: ChatLogo::new(),
-            last_input_snapshot: None,
-            was_visible: false,
             scroll_top: 0,
         }
     }
@@ -312,18 +300,6 @@ impl PromptView {
 
     pub const fn blur(&mut self) {
         self.is_focused = false;
-    }
-
-    /// Whether the chat logo was rendered in the last frame (it only appears
-    /// on the empty-session landing screen).
-    pub const fn logo_visible(&self) -> bool {
-        self.was_visible
-    }
-
-    /// Forward a click to the chat-logo mini game. Returns `true` when the
-    /// click landed exactly on a glyph cell and dealt damage.
-    pub fn click_logo(&mut self, x: u16, y: u16) -> bool {
-        self.logo.click_logo(x, y)
     }
 
     pub fn send_message(&mut self) -> String {
@@ -1237,8 +1213,6 @@ impl PromptView {
         model_name: &str,
         reasoning: Option<&str>,
         pane: Option<PanePromptInfo<'_>>,
-        delta_time: f64,
-        show_logo: bool,
     ) {
         // 6 columns of horizontal chrome: border + 2 padding on each side.
         let text_w = area.width.saturating_sub(6) as usize;
@@ -1711,58 +1685,11 @@ impl PromptView {
             }
         }
 
-        // ── Chat logo animation ───────────────────────────────────────────
-        // The O's center turns red, then a laser beams toward the typing
-        // position. The O drifts toward the cursor with a head-like motion.
-        // Only rendered on the empty-session landing screen where a logo slot
-        // is reserved above the prompt.
         // `cursor_line_idx`/`cursor_col_idx` were computed above when the scroll
         // window was established; only the cursor's screen row needs the
         // scroll offset subtracted so it stays inside the visible window.
         let cursor_y = text_start + (cursor_line_idx - scroll_top) as u16;
         let cursor_x = x_off + cursor_col_idx as u16;
-
-        if show_logo {
-            // Detect a keystroke since the previous frame (input changed) and
-            // feed it to the logo so its head-bob follows the typing rhythm.
-            let snapshot = (self.input.len(), self.cursor_pos);
-            if self.last_input_snapshot != Some(snapshot) {
-                self.logo.note_keystroke(cursor_x, cursor_y);
-            }
-            self.last_input_snapshot = Some(snapshot);
-
-            // Advance the animation toward the typing position, then draw it.
-            // The logo band sits just above the prompt box. The O glyph is
-            // clamped inside this band (it never enters the prompt), while the
-            // laser beam may cross the bottom edge and reach into the prompt
-            // toward the cursor.
-            let logo_x = input_area.x + input_area.width / 2;
-            let logo_y = input_area.y.saturating_sub(5);
-            let logo_area = Rect::new(logo_x.saturating_sub(4), logo_y, input_area.width, 5);
-            self.logo.anchor(logo_area);
-            self.logo
-                .advance(delta_time, cursor_x as f64, cursor_y as f64);
-            self.logo.render(
-                buf,
-                logo_area,
-                cursor_x,
-                cursor_y,
-                crate::logo::LogoColors {
-                    primary: rgba_color(theme.primary),
-                    background: rgba_color(theme.background),
-                    muted: rgba_color(theme.text_muted),
-                    info: rgba_color(theme.info),
-                    success: rgba_color(theme.success),
-                },
-            );
-            self.was_visible = true;
-        } else if self.was_visible {
-            // The landing screen is gone (message sent): reset the animation
-            // so it re-fills/re-fires when the next empty session appears.
-            self.was_visible = false;
-            self.last_input_snapshot = None;
-            self.logo.reset();
-        }
 
         if cursor_y < input_area.bottom()
             && cursor_line_idx < display_lines.len()
@@ -2403,8 +2330,6 @@ mod tests {
             "",
             None,
             None,
-            0.0,
-            false,
         );
 
         let secondary = rgba_color(theme.secondary);
@@ -2458,8 +2383,6 @@ mod tests {
             "",
             None,
             None,
-            0.0,
-            false,
         );
 
         let placeholder = "[Pasted ~3 lines]";
@@ -2515,8 +2438,6 @@ mod tests {
             "",
             None,
             None,
-            0.0,
-            false,
         );
 
         // Prompt text starts three columns inside the left border.
@@ -2639,8 +2560,6 @@ mod tests {
             "",
             None,
             None,
-            0.0,
-            false,
         );
         for x in 1..area.right() - 1 {
             let cell = &buf[(x, cap_y)];
@@ -2668,8 +2587,6 @@ mod tests {
             "",
             None,
             None,
-            0.0,
-            false,
         );
         for x in 1..area.right() - 1 {
             let cell = &buf[(x, cap_y)];
@@ -2784,8 +2701,6 @@ mod tests {
                 provider_label: Some("Nvidia"),
                 reasoning: Some("high"),
             }),
-            0.0,
-            false,
         );
 
         // One content line: the label row sits at BASE_H + 1.
@@ -2855,8 +2770,6 @@ mod tests {
                 provider_label: None,
                 reasoning: None,
             }),
-            0.0,
-            false,
         );
 
         let row = row_text(&buf, BASE_H + 1, area.width);

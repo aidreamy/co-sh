@@ -1119,7 +1119,7 @@ impl SessionStore {
     /// cosh process from the moment of creation.
     ///
     /// This is the entry funnel for every session-CREATION path (`/new`,
-    /// Home's "New session", the first-message and command-mode bootstraps).
+    /// the first-message and command-mode bootstraps).
     /// A session that enters the app without claiming its open-lock here is
     /// the exact regression this guards against: two processes could hold
     /// the same session open because `switch_to_session` only refuses when

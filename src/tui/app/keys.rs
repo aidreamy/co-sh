@@ -8,8 +8,6 @@ use super::{App, AppMode, PendingSessionDelete};
 use crate::fallback;
 use crate::left_panel::sessions::SessionsAction;
 use crate::left_panel::{MIN_WIDTH_FOR_LEFT_PANEL, Mode};
-#[cfg(feature = "home")]
-use crate::routes::home::HomeAction;
 use crate::routes::router::FocusTarget;
 use crate::routes::session::agents_split::AgentsSplitState;
 use crate::routes::session::queue_choice::QueueTarget;
@@ -735,7 +733,7 @@ impl App {
             }
 
             // Left-panel-focused arrow key scrolling (runs for ALL modes)
-            // Must come before mode-specific handlers (Home, InternalTools,
+            // Must come before mode-specific handlers (InternalTools,
             // Session) which also consume Up/Down before the action dispatch.
             if self.sidebar_focused
                 && self.sidebar.open
@@ -855,58 +853,6 @@ impl App {
             }
 
             let action = self.keymap.lookup(key.code, key.modifiers).cloned();
-
-            // Home mode: navigation keys (skip when dialog is visible)
-            #[cfg(feature = "home")]
-            if matches!(self.mode(), AppMode::Home) && !self.dialog.visible() {
-                match key.code {
-                    KeyCode::Up => {
-                        self.home_view.select_prev();
-                    }
-                    KeyCode::Down => {
-                        self.home_view.select_next();
-                    }
-                    KeyCode::Enter => {
-                        match self.home_view.selected_action() {
-                            HomeAction::NewSession => {
-                                self.start_new_session();
-                            }
-                            HomeAction::ToggleSidebar => {
-                                self.sidebar.open = !self.sidebar.open;
-                            }
-                            HomeAction::OpenInternalTools => {
-                                self.show_internal_tools = true;
-                            }
-                            HomeAction::OpenShortcuts => {
-                                self.dialog.show(DialogType::Shortcuts { scroll: 0 });
-                            }
-                            HomeAction::OpenAddProvider => {
-                                self.show_add_provider = true;
-                            }
-                            HomeAction::OpenSettings => {
-                                self.show_settings = true;
-                            }
-                            HomeAction::OpenModelRouter => {
-                                // Refresh fallbacks from prefs cache and models from model cache
-                                let saved = fallback::load_fallbacks(&self.setup);
-                                self.router_view.set_fallbacks(saved);
-                                let saved = fallback::load_prompt_corrector_fallbacks(&self.setup);
-                                self.router_view.set_prompt_corrector_fallbacks(saved);
-                                self.show_router = true;
-                            }
-                            #[cfg(feature = "embed")]
-                            HomeAction::OpenRag => {
-                                self.show_rag = true;
-                            }
-                            HomeAction::Banner(banner_action) => {
-                                self.handle_banner_action(banner_action);
-                            }
-                        }
-                        return Ok(false);
-                    }
-                    _ => {}
-                }
-            }
 
             // InternalTools mode: navigation and toggle keys
             // Each matched arm returns early so unmatched keys fall through
@@ -1353,7 +1299,7 @@ impl App {
             // Function-key owner switches for the right panel header (the
             // F1–F4 hints the buttons advertise): maximize one section or
             // restore the mixed view — the same state change a header click
-            // performs. Session-scoped so Home/Settings never react to them.
+            // performs. Session-scoped so the other routes never react to them.
             use crate::routes::session::right_panel::types::SectionKind;
             match action {
                 Some(crate::keymap::Action::MaximizeSubagent) => {
@@ -1754,7 +1700,7 @@ impl App {
                     // no-box-open cancel of a running loop. Each dismissal
                     // RETURNS: the box was the Esc's target, so the key
                     // must never continue into the no-box paths below
-                    // (which include the leave-to-Home session exit).
+                    // (which include the session-quit confirm).
                     if self.queue_choice_dialog.visible {
                         self.queue_choice_dialog.hide();
                         self.prompt_view.focus();
@@ -1830,68 +1776,19 @@ impl App {
                         return Ok(false);
                     }
                     if matches!(self.mode(), AppMode::Session) {
-                        #[cfg(feature = "home")]
-                        {
-                            // Idle-gated like every other leave-the-session
-                            // path (the Working branch above already
-                            // returned; `Retry` falls through here with a
-                            // loop still winding down — leaving NOW would
-                            // release its open-lock while it may still
-                            // write). Staying keeps the claim with the
-                            // still-alive loop; the next Esc, once Idle,
-                            // hands it off.
-                            if self.state.status != crate::types::SessionStatus::Idle {
-                                use crate::ui::toast::{ToastOptions, ToastVariant};
-                                self.toast_state.show(ToastOptions {
-                                    title: Some("Back to Home".into()),
-                                    message:
-                                        "The agent is winding down — wait a moment and press Esc again."
-                                            .into(),
-                                    variant: ToastVariant::Warning,
-                                    duration_ms: 2500,
-                                });
-                                return Ok(false);
-                            }
-                            // Persist the session and RELEASE its open-lock
-                            // before going Home: the process keeps no claim
-                            // on a session it is not viewing (a leftover
-                            // claim would make every other cosh process's
-                            // attempt to open it fail spuriously).
-                            self.return_to_home();
-                        }
-                        #[cfg(not(feature = "home"))]
-                        {
-                            // No Home screen to return to: Esc suggests
-                            // quitting the app instead. This is the
-                            // LOWEST-priority Esc job by STRUCTURE, not by
-                            // a status gate: every claimant above (modal
-                            // boxes, panel folds, split park, and the
-                            // `Working` loop-stop branch) already returned,
-                            // so this branch runs only when nothing else
-                            // claims Esc. Do NOT gate it on
-                            // `SessionStatus::Idle`: `Retry` is a TERMINAL
-                            // state (the harness thread already exited —
-                            // see `deletion_stops_running_loop` in
-                            // `routes/session/delete.rs`), it never
-                            // transitions back to `Idle` on its own, and
-                            // after an error this confirm is the no-home
-                            // build's only exit path — gating it there
-                            // would strand the user.
-                            self.pending_delete = None;
-                            self.dialog.show(DialogType::Confirm {
-                                message: "Quit cosh?".into(),
-                            });
-                            if let Some(d) = self.dialog.current_mut() {
-                                d.selected = 1;
-                            }
-                        }
-                    } else if matches!(self.mode(), AppMode::AddProvider) {
-                        self.show_add_provider = false;
-                    } else if matches!(self.mode(), AppMode::Settings) {
-                        self.show_settings = false;
-                    } else if self.is_rag_mode() {
-                        self.handle_rag_cancel_action();
-                    } else if self.is_home_mode() {
+                        // Esc suggests quitting the app. This is the
+                        // LOWEST-priority Esc job by STRUCTURE, not by a
+                        // status gate: every claimant above (modal boxes,
+                        // panel folds, split park, and the `Working`
+                        // loop-stop branch) already returned, so this branch
+                        // runs only when nothing else claims Esc. Do NOT gate
+                        // it on `SessionStatus::Idle`: `Retry` is a TERMINAL
+                        // state (the harness thread already exited — see
+                        // `deletion_stops_running_loop` in
+                        // `routes/session/delete.rs`), it never transitions
+                        // back to `Idle` on its own, and after an error this
+                        // confirm is the only exit path — gating it there
+                        // would strand the user.
                         self.pending_delete = None;
                         self.dialog.show(DialogType::Confirm {
                             message: "Quit cosh?".into(),
@@ -1899,6 +1796,12 @@ impl App {
                         if let Some(d) = self.dialog.current_mut() {
                             d.selected = 1;
                         }
+                    } else if matches!(self.mode(), AppMode::AddProvider) {
+                        self.show_add_provider = false;
+                    } else if matches!(self.mode(), AppMode::Settings) {
+                        self.show_settings = false;
+                    } else if self.is_rag_mode() {
+                        self.handle_rag_cancel_action();
                     }
                 }
                 Some(crate::keymap::Action::ToggleConceal) => {

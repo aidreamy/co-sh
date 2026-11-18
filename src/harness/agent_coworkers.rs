@@ -2659,7 +2659,7 @@ mod tests {
         assert_eq!(answer.end, AgentCoworkerTurnEnd::EndTurn);
     }
 
-    /// The point-of-no-return failure (a session switch / going Home): a
+    /// The point-of-no-return failure (a session switch): a
     /// coworker that will never serve again must lose its in-flight AND queued
     /// requests — every waiter unblocks with the failure, the coworker leaves
     /// the registry (`has_coworkers` drops), and no queued entry survives to

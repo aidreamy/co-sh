@@ -46,12 +46,11 @@ jobs:
       fail-fast: false
       matrix:
         # Two variants per platform, matching what download.sh/download.ps1 expect.
-        # Both ship WITHOUT the Home screen (`--no-default-features` drops the
-        # default `home` feature, so the app boots straight into a session):
+        # Both ship as slim builds (`--no-default-features`):
         #   slim       -> morpheus-v<VERSION>-<OS>-<ARCH>-slim.tar.gz|.zip
-        #                 (no RAG, no Home)
+        #                 (no RAG)
         #   slim-embed -> morpheus-v<VERSION>-<OS>-<ARCH>-slim-embed.tar.gz|.zip
-        #                 (workspace `embed` feature = local RAG, no Home)
+        #                 (workspace `embed` feature = local RAG)
         # `os` must be a real matrix key (not include-only): include entries
         # whose keys don't overlap the matrix get merged into EVERY existing
         # combination instead of creating new ones, so the last entry (win32)
@@ -130,9 +129,9 @@ jobs:
         id: vars
         shell: bash
         run: |
-          # Both variants drop the default `home` feature
-          # (--no-default-features); slim-embed additionally enables the
-          # workspace `embed` feature (local RAG via fastembed).
+          # Both variants are built --no-default-features; slim-embed
+          # additionally enables the workspace `embed` feature (local RAG via
+          # fastembed).
           if [ "${{ matrix.variant }}" = "slim-embed" ]; then
             echo "variant_suffix=-slim-embed" >> $GITHUB_OUTPUT
             echo "features=--no-default-features --features embed" >> $GITHUB_OUTPUT
@@ -144,7 +143,7 @@ jobs:
       # The `slim-embed` variant enables the workspace `embed` feature
       # (morpheus-tools/embed + fastembed). fastembed pulls the ONNX Runtime
       # shared library as a build-time download, so this job is slower.
-      # Both variants are built `--no-default-features` (no Home screen).
+      # Both variants are built `--no-default-features`.
       # Both `morpheus` and `morpheus-uninstall` are shipped; `highlight-demo`
       # is a dev-only target.
       #

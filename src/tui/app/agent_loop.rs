@@ -250,7 +250,7 @@ impl App {
             // Fresh session: the header's cost widget starts clean — no
             // balance carried over from the previous session.
             self.hypercredit_balance = None;
-            // First message from Home/after a deletion: the fresh session
+            // First message after a fresh boot/a deletion: the fresh session
             // starts with a CLEAN right panel, like every other session-
             // selection path (deleting the previous session left a stale,
             // populated panel behind on AppState).

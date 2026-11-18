@@ -8,11 +8,6 @@ members = ["crates/morpheus-onnx",
 ]
 
 [features]
-# The Home landing screen (logo + main menu). Without it the app boots
-# straight into a session and the routes are reached through the slash menu.
-# ON by default; the slim build is `--no-default-features`.
-default = ["home"]
-home = []
 embed = ["morpheus-tools/embed", "fastembed"]
 lancedb = ["morpheus-recall/lancedb"]
 fastembed = ["morpheus-recall/fastembed", "dep:fastembed"]

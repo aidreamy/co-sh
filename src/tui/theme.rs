@@ -180,11 +180,9 @@ pub struct Theme {
     pub queue_next_loop: RGBA,
     /// Background color of a "next request" pending-queue row.
     pub queue_next_request: RGBA,
-    /// Foreground of the static (non-animated) session logo — the LOGO_CHAT
-    /// drawn above the prompt on an empty session when `/anim` is off. The
-    /// home-screen logo keeps using `primary`; this slot exists so a theme
-    /// can dim the session mark independently (e.g. a near-background
-    /// watermark).
+    /// Foreground of the session logo — the LOGO_CHAT drawn above the
+    /// prompt on an empty session. This slot exists so a theme can dim the
+    /// session mark independently (e.g. a near-background watermark).
     pub session_logo: RGBA,
     /// Build-mode chrome override (`None` = the agent "build" color). Set by
     /// themes that want the rails, caps, label and spinners in Build mode in

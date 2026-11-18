@@ -3672,8 +3672,8 @@ impl RightPanelState {
         }
     }
 
-    /// Drop every pane mirror (the `/agents` mode left the session: Esc to
-    /// Home, session switch). Normal subagent windows are untouched.
+    /// Drop every pane mirror (the `/agents` mode left the session: session
+    /// switch). Normal subagent windows are untouched.
     pub(crate) fn drop_agents_pane_windows(&mut self) {
         let before = self.pty_sessions.len();
         self.pty_sessions
