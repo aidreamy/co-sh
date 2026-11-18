@@ -1053,17 +1053,31 @@ impl App {
                             && !self.anim_enabled
                             && let Some(logo_start_y) = logo_start_y
                         {
+                            // Centered on the whole main area, not on the
+                            // (much narrower) empty-session prompt band: the
+                            // logo is wider than that band, so centering it
+                            // there pinned it to the band's left edge. When
+                            // the logo is wider than the terminal it is
+                            // center-cropped instead of left-anchored.
+                            let logo_cols = main_area.width as usize;
+                            let logo_style = Style::default()
+                                .fg(rgba_color(self.theme.session_logo))
+                                .bg(rgba_color(self.theme.background));
                             for (i, line) in LOGO_CHAT.iter().enumerate() {
-                                let line_w = line.chars().count() as u16;
-                                let logo_x =
-                                    prompt_area.x + prompt_area.width.saturating_sub(line_w) / 2;
+                                let chars: Vec<char> = line.chars().collect();
+                                let line_w = chars.len();
+                                let (x_offset, skip) = if line_w <= logo_cols {
+                                    ((logo_cols - line_w) / 2, 0)
+                                } else {
+                                    (0, (line_w - logo_cols) / 2)
+                                };
+                                let visible: String =
+                                    chars[skip..(skip + logo_cols).min(line_w)].iter().collect();
                                 buf.set_string(
-                                    logo_x,
+                                    main_area.x + x_offset as u16,
                                     logo_start_y + i as u16,
-                                    line.trim_end(),
-                                    Style::default()
-                                        .fg(rgba_color(self.theme.session_logo))
-                                        .bg(rgba_color(self.theme.background)),
+                                    visible.trim_end(),
+                                    logo_style,
                                 );
                             }
                         }
