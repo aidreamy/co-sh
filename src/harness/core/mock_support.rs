@@ -40,6 +40,8 @@ impl Harness {
             tool_call_synthetic: 0,
             context_manager: ContextManager::new(MAX_CONTEXT_TOKENS),
             disabled_tools: HashSet::new(),
+            user_disabled_tools: HashSet::new(),
+            last_connector_error: None,
             tool_failure_count: 0,
             tool_extraction_failure_count: 0,
             last_failed_raw: String::new(),
@@ -93,6 +95,8 @@ impl Harness {
             mock_finish_reasons: VecDeque::new(),
             #[cfg(test)]
             mock_stream_resets: VecDeque::new(),
+            loop_retry_delay: Some(std::time::Duration::ZERO),
+            mock_connector_error_queue: VecDeque::new(),
             test_tools: Vec::new(),
         }
     }
@@ -130,6 +134,13 @@ impl Harness {
     #[cfg(test)]
     pub(crate) fn set_stop_nudges_left_for_test(&mut self, left: u32) {
         self.stop_nudge_budget_override = Some(left);
+    }
+
+    /// The per-loop transient-retry budget (test-only: `limits` is private to
+    /// `core`, so the constant needs a door for the bound test).
+    #[cfg(test)]
+    pub(crate) const fn loop_retry_budget_for_test() -> u32 {
+        super::limits::LOOP_RETRY_BUDGET
     }
 
     /// The per-loop resume budget the coworker tests assert against (test-only:
@@ -225,6 +236,60 @@ impl Harness {
                 .map_err(|s| s.to_string()),
         );
         self
+    }
+
+    /// Queue a TYPED connector error for the NEXT stream (consumed one per
+    /// stream, before the string queue). The mock path funnels it through the
+    /// same [`Harness::classify_connector_error`] the real connector uses, so
+    /// tests exercise the actual classification and recovery policies instead
+    /// of pytest-style string matching.
+    #[cfg(test)]
+    pub(crate) fn with_mock_connector_error(
+        mut self,
+        error: aiface::connector::ConnectorError,
+    ) -> Self {
+        self.mock_connector_error_queue.push_back(error);
+        self
+    }
+
+    /// Whether `name` is omitted from the ACTIVE tool set — the user's
+    /// disable list plus the model's capability gates.
+    #[cfg(test)]
+    pub(crate) fn is_tool_omitted(&self, name: &str) -> bool {
+        is_tool_disabled(name, &self.disabled_tools)
+    }
+
+    /// Seed the user's own disabled set (test-only), as the Internal Tools
+    /// screen would before construction.
+    #[cfg(test)]
+    pub(crate) fn with_user_disabled_tools<I>(mut self, tools: I) -> Self
+    where
+        I: IntoIterator<Item = &'static str>,
+    {
+        self.user_disabled_tools
+            .extend(tools.into_iter().map(str::to_string));
+        self.disabled_tools = self.user_disabled_tools.clone();
+        self
+    }
+
+    /// The user's own disabled set, independent of capability gates.
+    #[cfg(test)]
+    pub(crate) fn user_disabled_tools(&self) -> &HashSet<String> {
+        &self.user_disabled_tools
+    }
+
+    /// Apply a capability verdict through the production path (test-only:
+    /// the method is `pub(super)` to `core`, which the `harness::test`
+    /// siblings cannot reach).
+    #[cfg(test)]
+    pub(crate) fn learn_image_unsupported_for_test(&mut self) -> bool {
+        self.learn_image_unsupported()
+    }
+
+    /// Number of images the conversation would still send (test-only).
+    #[cfg(test)]
+    pub(crate) fn conversation_image_count(&self) -> usize {
+        self.context_manager.image_count()
     }
 
     /// Queue multiple sequential mock stream responses.

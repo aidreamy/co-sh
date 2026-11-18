@@ -15,9 +15,9 @@ use super::context::ContextManager;
 use super::discovered_context_window;
 use super::limits::LOOP_DETECTION_MAX_REPEATS;
 use super::{
-    CONTEXT_WINDOW_MARKER, Harness, INTERRUPTED_MARKER, ITERATION_RENEWALS,
-    LOOP_DETECTION_WINDOW_SIZE, MAX_ITERATIONS, MAX_TOOL_RETRIES, PrefixCacheProbe, RunOutcome,
-    StreamEvent, background,
+    CONTEXT_WINDOW_MARKER, Harness, IMAGE_UNSUPPORTED_MARKER, INTERRUPTED_MARKER,
+    ITERATION_RENEWALS, LOOP_DETECTION_WINDOW_SIZE, MAX_ITERATIONS, MAX_TOOL_RETRIES,
+    PrefixCacheProbe, RunOutcome, StreamEvent, background,
 };
 
 /// What ended a pre-Done busy-guard wait (see `Harness::wait_for_outstanding`).
@@ -383,6 +383,11 @@ impl Harness {
         // provider context-window recovery below remains independent.
         let mut automatic_compaction_failed = false;
 
+        // Per-loop budget for the transient-failure retry below. Like the
+        // nudge/veto budgets it belongs to the LOOP, not the harness, so a
+        // reused harness never starts with a spent share.
+        let mut loop_retries_left = super::limits::LOOP_RETRY_BUDGET;
+
         // Apply the 80% compaction before the first LLM request, so the
         // initial context is already within budget. When the useless-chain
         // sweep still leaves the total over the trigger, the LLM compaction
@@ -559,9 +564,16 @@ impl Harness {
             // overflow drains tool chains below, the retry must not re-send
             // the removed call/result pairs.
             log::debug!("run_agent_loop PHASE1_START iteration={iteration}");
-            let system_context = self.build_chat_context();
+            // Rebuilt in place when a capability verdict changes mid-attempt
+            // (see the image-unsupported branch): the inline tool list lives
+            // in this string, so a stale copy would keep advertising a tool
+            // the model just proved it cannot use.
+            let mut system_context = self.build_chat_context();
             let mut assistant_response = String::new();
             let mut overflow_recoveries = 0usize;
+            // Bounded recovery for a request the provider rejected because it
+            // carries images the model cannot read.
+            let mut image_recoveries = 0usize;
             let result = loop {
                 // Attempt boundary: the TUI scopes its discard-on-reset to the
                 // message(s) opened after this point — a reset can then never
@@ -635,6 +647,64 @@ impl Harness {
                     }
                     self.notify_context_overflow(&tx);
                 }
+                // The provider stated, in its body, that the model cannot read
+                // images (aiface's typed `ImageInputUnsupported` — never a
+                // bare 400). Act on the EVIDENCE, once:
+                //   1. record the verdict for the process lifetime, so the
+                //      vision-dependent tools stay omitted for every later
+                //      turn and are omitted in native mode right away;
+                //   2. drop the images the conversation is carrying (the
+                //      prompt images of this turn and any screenshot PNG in
+                //      history) — retrying with them would fail identically;
+                //   3. re-send. The model keeps the screenshot's TEXT payload
+                //      (geometry, legend, saved path), so the turn can still
+                //      finish, and it is told why the picture is gone.
+                // Ambiguous failures never reach this branch: they surface as
+                // ordinary errors and leave the tool set untouched.
+                if let Err(ref e) = attempt
+                    && e == IMAGE_UNSUPPORTED_MARKER
+                    && image_recoveries == 0
+                {
+                    image_recoveries += 1;
+                    self.learn_image_unsupported();
+                    let dropped = self.context_manager.drop_images();
+                    let model = self
+                        .connector
+                        .effective_model()
+                        .unwrap_or("?")
+                        .to_string();
+                    log::info!(
+                        target: "cosh::harness",
+                        "image input unsupported by {model}: dropped {dropped} image(s); \
+                         vision-dependent tools omitted for the process lifetime"
+                    );
+                    let _ = tx.send(HarnessEvent::Toast {
+                        message: format!(
+                            "{model} does not accept image input: images were removed from \
+                             this request and screenshot tools are disabled for it."
+                        ),
+                        variant: ToastVariant::Warning,
+                    });
+                    // Tell the MODEL too: it may otherwise claim to have seen
+                    // an image the user attached. A synthetic turn keeps the
+                    // conversation truthful without pretending the user
+                    // spoke.
+                    if dropped > 0 {
+                        self.context_manager.add_synthetic_user(&format!(
+                            "[automated note] The images in this conversation were removed \
+                             because the active model ({model}) does not accept image input. \
+                             Answer from the remaining text."
+                        ));
+                    }
+                    // Discard anything the failed attempt streamed before the
+                    // rejection, so the retry restarts clean (the same
+                    // contract the SDK's mid-stream reset follows).
+                    assistant_response.clear();
+                    self.tool_issuer.clear();
+                    let _ = tx.send(HarnessEvent::ClearAssistant);
+                    system_context = self.build_chat_context();
+                    continue;
+                }
                 break attempt;
             };
             log::debug!(
@@ -690,6 +760,57 @@ impl Harness {
                     break;
                 }
 
+                // Transient-failure resilience (aiface's own policy, not a
+                // second taxonomy): rate limits, 5xx, transport failures and
+                // truncated streams are re-sent with the SDK's backoff when a
+                // whole-request retry still has a reasonable chance. The
+                // failed attempt recorded NOTHING in the conversation, so the
+                // retry is the same request; its partial text was already on
+                // screen and is discarded like the SDK's mid-stream reset.
+                // Deterministic failures (auth, image rejection, context
+                // overflow) are excluded by `is_retryable_error`.
+                if loop_retries_left > 0
+                    && let Some(err) = self.last_connector_error.take()
+                    && aiface::connector::retry::is_retryable_error(&err)
+                {
+                    loop_retries_left -= 1;
+                    // 1-based attempt number, mirroring the SDK's own call.
+                    let attempt_no =
+                        (super::limits::LOOP_RETRY_BUDGET - loop_retries_left) as usize;
+                    #[cfg(test)]
+                    let delay = self.loop_retry_delay.unwrap_or_default();
+                    #[cfg(not(test))]
+                    let delay = aiface::connector::retry::jittered(
+                        aiface::connector::retry::retry_delay(&err, attempt_no),
+                    );
+                    log::warn!(
+                        "transient connector error (retry {attempt_no}/{}): {err}; \
+                         waiting {delay:?}",
+                        super::limits::LOOP_RETRY_BUDGET
+                    );
+                    let _ = tx.send(HarnessEvent::Toast {
+                        message: format!(
+                            "{err} — retrying in {:.1}s ({attempt_no}/{}).",
+                            delay.as_secs_f64(),
+                            super::limits::LOOP_RETRY_BUDGET
+                        ),
+                        variant: ToastVariant::Info,
+                    });
+                    // A stop request during the wait ends the turn instead of
+                    // sleeping through it.
+                    if check_stop!() {
+                        break;
+                    }
+                    tokio::time::sleep(delay).await;
+                    if check_stop!() {
+                        break;
+                    }
+                    assistant_response.clear();
+                    self.tool_issuer.clear();
+                    let _ = tx.send(HarnessEvent::ClearAssistant);
+                    continue;
+                }
+
                 let mut switched = false;
                 while !self.fallbacks.is_empty() {
                     let (provider, model) = self.fallbacks.remove(0);
@@ -743,6 +864,14 @@ impl Harness {
                                 c = c.with_reasoning_effort(resolved);
                             }
                             self.connector = c;
+                            // Recompute the capability gates for the model
+                            // that will ACTUALLY serve the request: a
+                            // text-only fallback must not inherit the vision
+                            // tools of the model that failed, and a capable
+                            // fallback must recover the ones the failed model
+                            // could not use.
+                            self.refresh_tool_omissions();
+                            self.format_header_context();
                             // Re-register native tool definitions on the new
                             // connector — otherwise the fallback provider
                             // receives zero tools.

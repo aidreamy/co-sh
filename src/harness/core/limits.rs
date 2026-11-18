@@ -151,6 +151,31 @@ pub(super) const SUBAGENT_INTERNAL_NOTE: &str = "When the `agent` argument is om
      the task instead — it starts with an empty context, runs in auto-approve \
      mode, persists nothing, and returns only its final report.";
 
+/// Loop-level retries granted to a request the connector reported as a
+/// TRANSIENT failure — rate limits, HTTP 5xx, transport failures and streams
+/// truncated without a `[DONE]`.
+///
+/// aiface's request middleware already re-sends those failures (3 retries,
+/// 5s → 10s → 20s, honoring `retry-after`), so reaching the harness means
+/// either the middleware exhausted its share or it was disabled for the
+/// session. Two more whole-request attempts are the resilience layer: a
+/// provider blip that outlived the middleware is often gone a few seconds
+/// later, and re-sending is safe because the failed attempt recorded nothing
+/// in the conversation (its partial text is discarded with the same
+/// `ClearAssistant` reset the SDK's mid-stream retry uses).
+///
+/// Deterministic failures (auth, malformed request, context overflow, image
+/// rejection) are NEVER retried here — see `is_retryable_error`.
+pub(crate) const LOOP_RETRY_BUDGET: u32 = 2;
+
+/// Internal marker returned by stream functions when the provider rejected
+/// the request because the conversation carries an image its model cannot
+/// read. Compared by identity, like [`CONTEXT_WINDOW_MARKER`]. Produced ONLY
+/// from aiface's typed `ConnectorError::ImageInputUnsupported`, whose
+/// classifier demands an unambiguous "text-only" body — never from a bare
+/// 400.
+pub(crate) const IMAGE_UNSUPPORTED_MARKER: &str = "__cosh_image_unsupported__";
+
 /// Internal marker returned by stream functions when the user presses Esc
 /// to stop the current generation. Compared by identity (constant), not by
 /// string value — prevents the fallback retry from misinterpreting a user
