@@ -95,7 +95,7 @@ pub(crate) fn extract_paths_from_args(tool_name: &str, args: &Value) -> Vec<Stri
 /// exemption, keeping both layers consistent.
 fn is_scratch_log_path(path: &Path) -> bool {
     let Ok(scratch) = std::env::temp_dir()
-        .join(cosh_tools::util::path_guard::HARNESS_SCRATCH_DIR)
+        .join(morpheus_tools::util::path_guard::HARNESS_SCRATCH_DIR)
         .canonicalize()
     else {
         return false;
@@ -211,8 +211,8 @@ fn textually_inside(path: &Path, root: &Path) -> bool {
 ///   These also ask for approval in Ask mode (same as Build).
 ///
 /// Path validation for all tools is delegated to
-/// [`PathGuard`](cosh_tools::util::path_guard::PathGuard) via
-/// [`resolve()`](cosh_tools::util::path_guard::PathGuard::resolve).
+/// [`PathGuard`](morpheus_tools::util::path_guard::PathGuard) via
+/// [`resolve()`](morpheus_tools::util::path_guard::PathGuard::resolve).
 ///
 /// `project_root` is optional — when `None`, all absolute paths trigger
 /// the permission dialog (defensive default).

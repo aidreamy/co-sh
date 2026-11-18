@@ -19,7 +19,7 @@ use std::sync::atomic::AtomicBool;
 
 use tokio::sync::mpsc;
 
-use cosh_tools::question::types::AnswerItem;
+use morpheus_tools::question::types::AnswerItem;
 
 use crate::harness::{ContextManagerState, Harness, HarnessEvent, Mode, PermissionAction};
 use crate::setup::Setup;
@@ -95,7 +95,7 @@ impl Turn {
             HarnessEvent::Toast { message, .. } => {
                 // Toasts are TUI chrome; keep them observable without
                 // spamming the chat.
-                log::warn!("cosh whatsapp: {message}");
+                log::warn!("morpheus whatsapp: {message}");
             }
             _ => {}
         }

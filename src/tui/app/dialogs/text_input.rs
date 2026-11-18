@@ -1022,7 +1022,7 @@ impl App {
             .iter()
             .map(|agent| (agent.name.clone(), agent.command.clone()))
             .collect();
-        if let Err(error) = cosh_tools::subagent::acp::register_custom_agents(&prospective_pairs) {
+        if let Err(error) = morpheus_tools::subagent::acp::register_custom_agents(&prospective_pairs) {
             self.toast_form_error("Agent not saved", error);
             return false;
         }
@@ -1461,7 +1461,7 @@ impl App {
             // same tolerance as boot: one stale entry (e.g. a name that no
             // longer validates) must not sink the whole re-publish and
             // leave the just-removed agent still offered.
-            let dropped = cosh_tools::subagent::acp::register_custom_agents_lossy(
+            let dropped = morpheus_tools::subagent::acp::register_custom_agents_lossy(
                 &self.setup.acp_agent_pairs(),
             );
             for err in dropped {

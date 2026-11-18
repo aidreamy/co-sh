@@ -1,7 +1,7 @@
 //! Stream-action extraction: turning raw LLM text into tool calls, harness
 //! tool interception and tool-name resolution.
 
-use cosh_sdk::extract_action::{ExtractAction, Item, ToolCallData, ToolSchema};
+use morpheus_sdk::extract_action::{ExtractAction, Item, ToolCallData, ToolSchema};
 
 use super::{Harness, Mode, background, tool_routing::is_manager_restricted};
 

@@ -3,7 +3,7 @@
 [English](../../README.md) | [Português](./README.pt-BR.md) | [Español](./README.es.md) | [Русский](./README.ru.md) | **中文** | [日本語](./README.ja.md)
 
 > [!WARNING]
-> **WhatsApp 功能仍在开发中。** WhatsApp 功能（`cosh-whatsapp`）仍处于实验阶段，**暂不推荐使用**。
+> **WhatsApp 功能仍在开发中。** WhatsApp 功能（`morpheus-whatsapp`）仍处于实验阶段，**暂不推荐使用**。
 
 Cosh 是一个运行在终端中的通用编码智能体（coding agent），除软件工程工具外，还配备了 *computer tools*，使其能够与图形应用程序交互。
 
@@ -63,16 +63,16 @@ irm https://raw.githubusercontent.com/aidreamy/co-sh/main/download.ps1 | iex
 
 | Crate | 描述 |
 |---|---|
-| [`cosh-tools`](../../crates/cosh-tools/README.md) | 开发工具与 computer tools |
-| [`cosh-tui`](../../crates/cosh-tui/README.md) | TUI 组件库（markdown/diff 渲染、布局）— 应用终端界面所基于的组件层 |
-| [`cosh-sdk`](../../crates/cosh-sdk/README.md) | 用于在 cosh 之上构建智能体的 SDK |
-| [`cosh-recall`](../../crates/cosh-recall/README.md) | 记忆与上下文召回 |
-| [`cosh-whatsapp`](../../crates/cosh-whatsapp/README.md) | WhatsApp Web（多设备）集成：配对、规范化事件和类型化发送 |
-| [`cosh-onnx`](../../crates/cosh-onnx/README.md) | 由 `onnx` feature 启用的 ONNX 决策引擎 |
+| [`morpheus-tools`](../../crates/morpheus-tools/README.md) | 开发工具与 computer tools |
+| [`morpheus-tui`](../../crates/morpheus-tui/README.md) | TUI 组件库（markdown/diff 渲染、布局）— 应用终端界面所基于的组件层 |
+| [`morpheus-sdk`](../../crates/morpheus-sdk/README.md) | 用于在 morpheus 之上构建智能体的 SDK |
+| [`morpheus-recall`](../../crates/morpheus-recall/README.md) | 记忆与上下文召回 |
+| [`morpheus-whatsapp`](../../crates/morpheus-whatsapp/README.md) | WhatsApp Web（多设备）集成：配对、规范化事件和类型化发送 |
+| [`morpheus-onnx`](../../crates/morpheus-onnx/README.md) | 由 `onnx` feature 启用的 ONNX 决策引擎 |
 
 ## 路线图
 
-- **Laya/ONNX 决策引擎** — 由 `cosh-onnx` crate 提供的可选 `onnx` feature；参见 [crate 指南](../onnx/onnx.md)。
+- **Laya/ONNX 决策引擎** — 由 `morpheus-onnx` crate 提供的可选 `onnx` feature；参见 [crate 指南](../onnx/onnx.md)。
 - **基于图的 harness 编排** — 一种用于协调多个 harness 的新会话模式。
 
 ## 许可证

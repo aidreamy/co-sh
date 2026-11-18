@@ -4,7 +4,7 @@
 //! chat layout. The caller supplies the anchor row; the pill centers
 //! itself on the given area and reports its hit rect while active.
 
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::rgba::RGBA;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};

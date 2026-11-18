@@ -1,4 +1,4 @@
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::rgba::RGBA;
 use ratatui::buffer::Buffer;
 use ratatui::style::{Color, Style};
 

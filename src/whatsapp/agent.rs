@@ -10,7 +10,7 @@
 //! - the worker owns the [`ChatSession`] and processes prompts FIFO, so two
 //!   messages can never mutate the same harness concurrently.
 //!
-//! This mirrors the `serve` loop of `cosh-whatsapp` (which also isolates
+//! This mirrors the `serve` loop of `morpheus-whatsapp` (which also isolates
 //! conversations) while keeping the session state that `serve` deliberately
 //! does not own. Which messages are prompts at all is not decided here:
 //! `WhatsApp::is_prompt` owns that rule, so this interface and the crate's
@@ -21,7 +21,7 @@ use std::sync::{Arc, Mutex};
 
 use tokio::sync::{mpsc, oneshot};
 
-use cosh_whatsapp::IncomingMessage;
+use morpheus_whatsapp::IncomingMessage;
 
 use super::config::RuntimeConfig;
 use super::session::ChatSession;
@@ -142,7 +142,7 @@ mod tests {
     use chrono::Utc;
 
     use super::*;
-    use cosh_whatsapp::{ChatId, MessageContent, Sender};
+    use morpheus_whatsapp::{ChatId, MessageContent, Sender};
 
     fn message(chat: &str, content: MessageContent) -> IncomingMessage {
         let chat_id = ChatId::parse(chat).expect("chat id");

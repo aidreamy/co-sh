@@ -8,7 +8,7 @@
 //! style switch is a pure decoration change — the loop code never learns
 //! which variant is live.
 
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::rgba::RGBA;
 use ratatui::buffer::Buffer;
 
 use crate::component::agent_spinner::AgentSpinner;

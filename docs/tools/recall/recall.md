@@ -10,8 +10,8 @@ agent retrieve relevant context from a stored knowledge base.
 | [`recall_search`](search.md) | Search a vector DB for entries similar to a query vector. |
 
 > **Feature-gated.** The `recall` module only compiles with the `embed`
-> feature (`cosh-tools/embed`, which enables the `lancedb` backend in
-> `cosh-recall`). Without it the module does not exist — this is also why
+> feature (`morpheus-tools/embed`, which enables the `lancedb` backend in
+> `morpheus-recall`). Without it the module does not exist — this is also why
 > the harness hides it behind the same feature flag.
 
 ---
@@ -45,7 +45,7 @@ crate: Recall::search(RecallSearchInput { db_uri, table_name, vector_dim,
 ## The `Recall` wrapper
 
 ```rust,ignore
-use cosh_tools::recall::{Recall, RecallSearchInput};
+use morpheus_tools::recall::{Recall, RecallSearchInput};
 
 let recall = Recall::new();
 let output = recall.search(&RecallSearchInput {

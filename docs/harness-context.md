@@ -1348,7 +1348,7 @@ decisions:
 - **Location**: at the top level of the data dir, **not** under the `cache/`
   subdir of the public catalogs — it is a **record**, not a cache: private
   per-machine state of what the user's own provider observed, deliberately
-  isolated from `cosh-sdk`'s discovery (which lists public models).
+  isolated from `morpheus-sdk`'s discovery (which lists public models).
 - **Atomic write**: temp file in the **same directory** (rename stays on one
   filesystem) with a **PID** suffix (two concurrent instances never
   interleave write/rename over a shared temp path), `write_all` + `sync_all`

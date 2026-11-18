@@ -1,7 +1,7 @@
 //! Startup session resolution for `-c` / `--continue` and `-s` / `--session`.
 //!
 //! The store is per directory (`{data}/sessions/{cwd-hash}/`), so "continue"
-//! means "the most recently active session of the directory cosh was started
+//! means "the most recently active session of the directory morpheus was started
 //! in" — the same isolation the TUI's session list has. Resolution happens
 //! before the terminal is initialized, which is why the messages are plain
 //! stderr lines instead of toasts.
@@ -24,7 +24,7 @@ pub fn resolve(options: &LaunchOptions) -> Result<Option<String>, String> {
         return match store.load_session(id) {
             Some(session) => Ok(Some(session.id)),
             None => Err(format!(
-                "no session '{id}' in {cwd}\n  Sessions are stored per directory; run `cosh -c` to continue the last one here, or press Ctrl+S in cosh to browse."
+                "no session '{id}' in {cwd}\n  Sessions are stored per directory; run `morpheus -c` to continue the last one here, or press Ctrl+S in morpheus to browse."
             )),
         };
     }
@@ -37,7 +37,7 @@ pub fn resolve(options: &LaunchOptions) -> Result<Option<String>, String> {
         Some(summary) => Ok(Some(summary.session_id)),
         None => {
             eprintln!(
-                "cosh: nothing to continue in {cwd} yet — starting at home.\n  Sessions are stored per directory, so `-c` only resumes sessions started here."
+                "morpheus: nothing to continue in {cwd} yet — starting at home.\n  Sessions are stored per directory, so `-c` only resumes sessions started here."
             );
             Ok(None)
         }

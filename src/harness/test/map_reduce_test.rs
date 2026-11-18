@@ -567,7 +567,7 @@ async fn whole_item_exceeding_the_actual_window_fails_without_slicing_or_committ
 #[tokio::test]
 #[ignore = "hangs in the full sequential suite (passes in isolation); pre-existing deadlock, see comment"]
 async fn resumed_plan_rehydrates_tools_before_the_first_loop() {
-    use cosh_tools::plan::types::TodoList;
+    use morpheus_tools::plan::types::TodoList;
     let plan: TodoList = serde_json::from_value(serde_json::json!({"items": [{
         "id": "task-1", "description": "Keep API compatibility",
         "status": "in_progress", "depends_on": []

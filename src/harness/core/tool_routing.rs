@@ -24,7 +24,7 @@ pub(crate) fn is_manager_restricted(name: &str) -> bool {
 /// mutate the tree is denied at the guardrail. The patterns match the
 /// common write shapes deliberately — this is a behavior fence for a
 /// cooperating model, not a security sandbox against a hostile one (the
-/// critical-pattern validation in `cosh_tools::bash` already covers the
+/// critical-pattern validation in `morpheus_tools::bash` already covers the
 /// hostile cases).
 ///
 /// The check is string-level over the WHOLE command, so a write hidden in
@@ -365,7 +365,7 @@ impl Harness {
         match self.schema_input(tool_name) {
             Some(schema) => format!(
                 "{err}\nExpected `{tool_name}` arguments — minimal shape: {}",
-                cosh_sdk::extract_action::schema_skeleton(&schema)
+                morpheus_sdk::extract_action::schema_skeleton(&schema)
             ),
             None => err,
         }

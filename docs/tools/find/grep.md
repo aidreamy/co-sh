@@ -130,7 +130,7 @@ no tags for them in this call.
 ## Example
 
 A complete runnable example is provided at
-[`examples/find/grep.rs`](../../../crates/cosh-tools/examples/find/grep.rs).
+[`examples/find/grep.rs`](../../../crates/morpheus-tools/examples/find/grep.rs).
 It builds a scratch project, searches it for a function name, then uses the
 returned hashline anchor to edit one of the matched files directly.
 

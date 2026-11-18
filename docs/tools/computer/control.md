@@ -19,7 +19,7 @@ mechanism that reliably moves OS keyboard focus across toolkits is a real
 synthetic click. That shapes the canonical pipeline:
 
 ```rust,ignore
-use cosh_tools::computer::{Computer, types::*};
+use morpheus_tools::computer::{Computer, types::*};
 
 // `chain` below is the extension trait from examples/computer/control.rs —
 // the crate ships the type, the example ships the fluent helper.

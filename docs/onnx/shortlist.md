@@ -76,7 +76,7 @@ pub fn shortlist_choice(
 ### Example
 
 ```rust,ignore
-use cosh_onnx::shortlist::{shortlist_choice, EmbedFn};
+use morpheus_onnx::shortlist::{shortlist_choice, EmbedFn};
 use serde_json::json;
 
 let state = json!({"message": "fix authentication bug"});
@@ -158,7 +158,7 @@ When a choice is shortlisted, the model's probabilities are over the **kept labe
 ### Example
 
 ```rust,ignore
-use cosh_onnx::shortlist::{predict_shortlist, EmbedFn};
+use morpheus_onnx::shortlist::{predict_shortlist, EmbedFn};
 use serde_json::{json, Map};
 
 let state = json!({"user_input": "login failure"});

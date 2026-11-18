@@ -367,7 +367,7 @@ async fn tool_loop_detection_stops_a_chat_turn_without_recovery() {
 /// requester is blocked on the report.
 #[tokio::test]
 async fn pending_todos_resume_a_pane_instead_of_ending_the_turn() {
-    use cosh_tools::plan::types::{TodoItem, TodoList, TodoStatus};
+    use morpheus_tools::plan::types::{TodoItem, TodoList, TodoStatus};
     let h = pane()
         .with_mock_streams(vec![
             Ok(vec!["Looks", " done"]),
@@ -408,7 +408,7 @@ async fn pending_todos_resume_a_pane_instead_of_ending_the_turn() {
 /// stands and the pane delivers without consuming a resume.
 #[tokio::test]
 async fn completed_todos_do_not_block_the_pane_completion() {
-    use cosh_tools::plan::types::{TodoItem, TodoList, TodoStatus};
+    use morpheus_tools::plan::types::{TodoItem, TodoList, TodoStatus};
     let mut h = pane()
         .with_mock_stream(Ok(vec!["the report"]))
         .with_mock_finish_reason(Some("stop"));

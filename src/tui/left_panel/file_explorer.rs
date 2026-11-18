@@ -14,9 +14,9 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-use cosh_tui::core::renderable::Renderable;
-use cosh_tui::core::renderables::r#box::BoxRenderable;
-use cosh_tui::core::types::MouseEvent;
+use morpheus_tui::core::renderable::Renderable;
+use morpheus_tui::core::renderables::r#box::BoxRenderable;
+use morpheus_tui::core::types::MouseEvent;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::KeyCode;
 use ratatui::layout::Rect;

@@ -75,7 +75,7 @@ impl Harness {
             checkup: None,
             // Measured, not conventional: the confidence-floor sweep over the
             // `loop_termination` corpus (`confidence_floor_sweep` in
-            // crates/cosh-onnx/tests/eval/loop_termination.rs) — 0.75 keeps
+            // crates/morpheus-onnx/tests/eval/loop_termination.rs) — 0.75 keeps
             // the sweep's optimum (23/24 correct) on the zero-false-continue
             // edge: no legitimate ending is vetoed, the single error is one
             // missed stop. Lower floors trade that for false continues
@@ -220,7 +220,7 @@ impl Harness {
     /// `CoshTools::new` default already covers `~/.skills`). Nested
     /// sub-agent harnesses inherit the parent's wrapper.
     #[must_use]
-    pub fn with_skills(mut self, skills: cosh_tools::skills::Skills) -> Self {
+    pub fn with_skills(mut self, skills: morpheus_tools::skills::Skills) -> Self {
         if let Some(tools) = self.cosh_tools.as_mut() {
             tools.set_skills(skills);
         }

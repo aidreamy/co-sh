@@ -12,7 +12,7 @@ undecided Latin text, and a maximum of two resident checkpoints. Models load
 lazily on first use.
 
 ```rust,ignore
-use cosh_onnx::prelude::*;
+use morpheus_onnx::prelude::*;
 use serde_json::json;
 
 let router = Router::new()?;

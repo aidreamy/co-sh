@@ -43,7 +43,7 @@ pub fn invalidate_all()                 // clear everything
   without repopulating the cache.
 - `invalidate_path` / `invalidate_all` — call these after **mutating** files
   so subsequent searches see the new state. This is exactly what the
-  `cosh-tools` wrappers do after every `fs_edit`.
+  `morpheus-tools` wrappers do after every `fs_edit`.
 
 ## The empty-result fast recheck
 

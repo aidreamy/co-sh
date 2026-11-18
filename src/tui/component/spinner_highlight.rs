@@ -16,7 +16,7 @@
 //! # Integration
 //!
 //! ```ignore
-//! use cosh_tui::core::lib::rgba::RGBA;
+//! use morpheus_tui::core::lib::rgba::RGBA;
 //! use spinner_highlight::HighlightSpinner;
 //!
 //! let mut spinner = HighlightSpinner::new(
@@ -31,7 +31,7 @@
 //! ```
 
 use crate::theme::rgba_color;
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::rgba::RGBA;
 use ratatui::buffer::Buffer;
 use ratatui::style::Style;
 

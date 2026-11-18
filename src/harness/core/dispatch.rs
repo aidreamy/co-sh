@@ -3,7 +3,7 @@
 
 use std::time::Duration;
 
-use cosh_tools::subagent::types::SubAgentCallInput;
+use morpheus_tools::subagent::types::SubAgentCallInput;
 
 use super::{Harness, Mode, background, wait_for_stop_signal};
 use crate::harness::tools::{Tools, is_tool_disabled};
@@ -105,7 +105,7 @@ impl Harness {
                 // final report gets the header ENFORCED in
                 // `run_internal_subagent`.
                 let is_review =
-                    cosh_tools::subagent::severity::is_review_task(&call_input, input.code_review);
+                    morpheus_tools::subagent::severity::is_review_task(&call_input, input.code_review);
                 // Right-panel list entry description (same contract as the
                 // external path): explicit values pass through; a code-review
                 // call may omit it (inferred `code-review-NN`), non-review
@@ -119,7 +119,7 @@ impl Harness {
                     // silently dropped.
                     tools.resolve_subagent_description(input.description.clone(), is_review)?;
                 }
-                let call_input = cosh_tools::subagent::severity::with_severity_contract(
+                let call_input = morpheus_tools::subagent::severity::with_severity_contract(
                     &call_input,
                     input.code_review,
                 );

@@ -182,7 +182,7 @@ when a result's `content` is missing or surprising.
 ## Example
 
 A complete runnable example is provided at
-[`examples/fs/read.rs`](../../../crates/cosh-tools/examples/fs/read.rs). It
+[`examples/fs/read.rs`](../../../crates/morpheus-tools/examples/fs/read.rs). It
 creates a scratch project, writes a small source file, and demonstrates all four
 read modes — whole file, line block, symbol, and exact ranges.
 

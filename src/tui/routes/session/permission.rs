@@ -2,7 +2,7 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
 
-use cosh_tui::core::types::MouseEvent;
+use morpheus_tui::core::types::MouseEvent;
 
 use crate::component::wall;
 use crate::theme::{Theme, rgba_color};

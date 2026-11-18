@@ -1,6 +1,6 @@
 # The `fs` module: reading, writing, and editing files
 
-This module is the file-system toolbox of `cosh-tools`. It exposes five
+This module is the file-system toolbox of `morpheus-tools`. It exposes five
 operations that an agent uses to work with source files inside a project:
 
 | Operation | What it does |
@@ -30,7 +30,7 @@ operations. Instead of passing a pile of configuration to every function call,
 you configure an `Fs` once and then call its methods:
 
 ```rust,ignore
-use cosh_tools::fs::{Fs, TargetFile};
+use morpheus_tools::fs::{Fs, TargetFile};
 
 let fs = Fs::new()
     .cwd("/home/user/project")   // the project root

@@ -340,7 +340,7 @@ async fn stream_reset_clears_queued_tool_calls() {
         .with_mock_stream(Ok(vec!["retried"]));
 
     // Simulate a tool call the failed attempt queued before the reset.
-    h.push_tool_call(cosh_sdk::extract_action::ToolCallData {
+    h.push_tool_call(morpheus_sdk::extract_action::ToolCallData {
         id: "call_1".to_string(),
         name: "fetch".to_string(),
         arguments: json!({"url": "https://example.com"}),

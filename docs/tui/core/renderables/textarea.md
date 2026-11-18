@@ -83,7 +83,7 @@ All return `bool` — `true` when the command changed state:
 Example — a small "submit on Enter" loop:
 
 ```rust,ignore
-use cosh_tui::core::renderables::textarea::{TextareaRenderable, TextareaOptions};
+use morpheus_tui::core::renderables::textarea::{TextareaRenderable, TextareaOptions};
 
 let mut editor = TextareaRenderable::new(TextareaOptions {
     initial_value: Some("line one".into()),

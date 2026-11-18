@@ -84,6 +84,6 @@ state, and an optional `warning`.
 ## Example
 
 A complete runnable example is provided at
-[`examples/fs/rollback.rs`](../../../crates/cosh-tools/examples/fs/rollback.rs).
+[`examples/fs/rollback.rs`](../../../crates/morpheus-tools/examples/fs/rollback.rs).
 It writes two versions of a file, rolls back to the first, and then rolls
 forward again using the recorded hash — the full undo/redo cycle.

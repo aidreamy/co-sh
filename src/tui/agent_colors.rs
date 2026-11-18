@@ -2,7 +2,7 @@
 //! panes visually. UI-only view of the theme; extracted from the former
 //! tui/types.rs when the conversation domain model moved to the library.
 
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::rgba::RGBA;
 
 use crate::theme::Theme;
 

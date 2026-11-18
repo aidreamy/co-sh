@@ -9,9 +9,9 @@ pub async fn fetch(fetch: &WebFetch) -> Result<String, String>
 ```
 
 ```rust,ignore
-use cosh_tools::web::WebFetch;
+use morpheus_tools::web::WebFetch;
 
-let content = cosh_tools::web::fetch(&WebFetch {
+let content = morpheus_tools::web::fetch(&WebFetch {
     url: "https://example.com".into(),
 })
 .await?;
@@ -89,7 +89,7 @@ retry, switch URLs, or give up.
 ## Example
 
 ```rust,ignore
-use cosh_tools::web::{Web, WebFetch};
+use morpheus_tools::web::{Web, WebFetch};
 
 let web = Web::new();
 match web.fetch(WebFetch { url: "https://example.com".into() }).await {

@@ -459,7 +459,7 @@ pub struct DecisionConfig {
     /// The agent-loop termination audit (the current audited decision).
     pub termination: TerminationDecision,
     /// The hub mirror the weights installer downloads from. THE single
-    /// application-level default for the mirror repo id: the `cosh-onnx`
+    /// application-level default for the mirror repo id: the `morpheus-onnx`
     /// crate carries no repo default — every install resolves this value
     /// (env override `COSH_ONNX_HUB_REPO` wins over the config).
     pub hub: DecisionHub,
@@ -523,7 +523,7 @@ impl DecisionHub {
 }
 
 /// The resident model's checkpoint identity — a kind-discriminated schema
-/// mapping 1:1 to `cosh_onnx::ModelKind` (named variants + `Custom`), so a
+/// mapping 1:1 to `morpheus_onnx::ModelKind` (named variants + `Custom`), so a
 /// new model family becomes a new `kind` without a config migration.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(tag = "kind", rename_all = "snake_case")]
@@ -588,7 +588,7 @@ pub struct TerminationDecision {
     /// The 0.75 default is the measured optimum edge of the
     /// confidence-floor sweep over the loop-termination corpus
     /// (`confidence_floor_sweep` in
-    /// crates/cosh-onnx/tests/eval/loop_termination.rs): it keeps the
+    /// crates/morpheus-onnx/tests/eval/loop_termination.rs): it keeps the
     /// sweep's best score (23/24 correct) on the zero-false-continue
     /// edge — no legitimate ending is vetoed, the single error is one
     /// missed stop. Lower floors trade that for false continues
@@ -714,10 +714,10 @@ impl SkillsConfig {
     /// home) are dropped.
     #[must_use]
     pub fn resolved_dirs(&self) -> Vec<String> {
-        // cosh_tools::skills::home_dir normalizes MSYS-style HOME values
+        // morpheus_tools::skills::home_dir normalizes MSYS-style HOME values
         // ("/c/Users/..." from Git Bash) that native fs calls cannot
         // resolve on Windows, falling back to USERPROFILE.
-        self.resolved_dirs_with(cosh_tools::skills::home_dir().as_deref())
+        self.resolved_dirs_with(morpheus_tools::skills::home_dir().as_deref())
     }
 
     /// [`Self::resolved_dirs`] with the home directory injected (pure —
@@ -741,8 +741,8 @@ impl SkillsConfig {
     /// hard error for unreadable sources, so a missing path is skipped),
     /// plus the recursion and name filters.
     #[must_use]
-    pub fn to_skills(&self) -> cosh_tools::skills::Skills {
-        use cosh_tools::skills::{SkillSource, normalize_shell_path};
+    pub fn to_skills(&self) -> morpheus_tools::skills::Skills {
+        use morpheus_tools::skills::{SkillSource, normalize_shell_path};
         let sources: Vec<SkillSource> = self
             .resolved_dirs()
             .into_iter()
@@ -753,7 +753,7 @@ impl SkillsConfig {
             .filter(|native| std::path::Path::new(native).is_dir())
             .map(|native| SkillSource::Directory { path: native })
             .collect();
-        cosh_tools::skills::Skills::new()
+        morpheus_tools::skills::Skills::new()
             .recursive(self.recursive)
             .ignore(self.ignore.clone())
             .include(self.include.clone())
@@ -898,7 +898,7 @@ pub fn data_dir_override() -> PathBuf {
     proj.data_dir().to_path_buf()
 }
 
-/// [`config_dir`] for callers outside this module (`cosh paths`): the
+/// [`config_dir`] for callers outside this module (`morpheus paths`): the
 /// override is honored exactly like the data directory's.
 pub fn config_dir_override() -> PathBuf {
     config_dir()
@@ -1169,7 +1169,7 @@ impl Setup {
 
     /// The user-registered ACP agent harnesses (`setup.json` →
     /// `acp_agents`), as `(name, launch command)` pairs in registration
-    /// order — the exact shape [`cosh_tools::subagent::acp
+    /// order — the exact shape [`morpheus_tools::subagent::acp
     /// ::register_custom_agents`] consumes.
     #[must_use]
     pub fn acp_agent_pairs(&self) -> Vec<(String, String)> {

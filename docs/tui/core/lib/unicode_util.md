@@ -57,7 +57,7 @@ assert_eq!(word_wrap("中文字", 4), vec!["中文".to_string(), "字".to_string
 ## Example — measuring mixed text
 
 ```rust,ignore
-use cosh_tui::core::lib::unicode_util::{str_display_width, grapheme_display_width, word_wrap};
+use morpheus_tui::core::lib::unicode_util::{str_display_width, grapheme_display_width, word_wrap};
 
 assert_eq!(str_display_width("abc"), 3);
 assert_eq!(str_display_width("中文字"), 6);                 // three 2-col chars

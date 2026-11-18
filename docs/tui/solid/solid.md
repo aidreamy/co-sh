@@ -7,7 +7,7 @@ on top of [`core`](../core/core.md) — every "DOM node" here is a
 [`Renderable`](../core/renderable.md).
 
 ```text
-cosh-tui/src/solid/
+morpheus-tui/src/solid/
 ├── elements/            — component hooks, widgets, and the catalogue
 │   ├── catalogue.rs     — Span/BR/Link widgets + component registry   → elements/catalogue.md
 │   ├── extras.rs        — DynamicRenderable                          → elements/extras.md
@@ -45,9 +45,9 @@ actually use today.
 
 ## How the pieces fit
 
-The SolidJS mental model maps onto cosh-tui like this:
+The SolidJS mental model maps onto morpheus-tui like this:
 
-| SolidJS concept | cosh-tui equivalent |
+| SolidJS concept | morpheus-tui equivalent |
 |---|---|
 | Component tree | `Renderable` tree (see [`core::renderable`](../core/renderable.md)) |
 | `createComponent` | [`create_component`](elements/catalogue.md) |

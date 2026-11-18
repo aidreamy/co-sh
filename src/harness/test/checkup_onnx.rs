@@ -14,7 +14,7 @@
 //! ```
 //!
 //! The assertions mirror the measured eval numbers
-//! (`crates/cosh-onnx/tests/eval/loop_termination.rs`): a terminating
+//! (`crates/morpheus-onnx/tests/eval/loop_termination.rs`): a terminating
 //! summary must read as `Terminated` and a next-step announcement as
 //! `NotTerminated`, both with the calibrated `answer_confidence` above the
 //! 0.6 floor measured by the confidence-floor sweep.
@@ -26,13 +26,13 @@ use crate::harness::checkup::TerminationDecision;
 /// Resolve a checkpoint for the integration test: the local dir when
 /// provided, else the published English checkpoint (Hub-cached;
 /// `convaiinnovations/laya` — the `PINNED_REVISIONS` head).
-fn checkpoint_kind() -> Option<cosh_onnx::ModelKind> {
+fn checkpoint_kind() -> Option<morpheus_onnx::ModelKind> {
     match std::env::var("CHECKUP_MODEL_DIR") {
-        Ok(dir) if !dir.is_empty() => Some(cosh_onnx::ModelKind::Custom {
+        Ok(dir) if !dir.is_empty() => Some(morpheus_onnx::ModelKind::Custom {
             repo: dir,
             subfolder: None,
         }),
-        _ => Some(cosh_onnx::ModelKind::English),
+        _ => Some(morpheus_onnx::ModelKind::English),
     }
 }
 

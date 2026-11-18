@@ -6,24 +6,24 @@ hooks are composed in that order.
 
 ## The context is the shared notebook
 
-Each call receives one [`PredictContext`](https://docs.rs/cosh-onnx/latest/cosh_onnx/struct.PredictContext.html).
+Each call receives one [`PredictContext`](https://docs.rs/morpheus-onnx/latest/morpheus_onnx/struct.PredictContext.html).
 It carries the states and questions, a `run_id`, the model and routing
 decision, token limits, usage, elapsed time and any error. A start hook can
 rewrite state or questions. It can also call `skip` with cached results; end
 hooks still run after a skip.
 
 ```rust,ignore
-use cosh_onnx::hooks::{Hook, PredictContext};
+use morpheus_onnx::hooks::{Hook, PredictContext};
 
 struct Audit;
 
 impl Hook for Audit {
-    fn on_predict_start(&self, ctx: &mut PredictContext) -> cosh_onnx::Result<()> {
+    fn on_predict_start(&self, ctx: &mut PredictContext) -> morpheus_onnx::Result<()> {
         eprintln!("starting {}", ctx.run_id);
         Ok(())
     }
 
-    fn on_predict_end(&self, ctx: &mut PredictContext) -> cosh_onnx::Result<()> {
+    fn on_predict_end(&self, ctx: &mut PredictContext) -> morpheus_onnx::Result<()> {
         eprintln!("finished {} in {:?} ms", ctx.run_id, ctx.elapsed_ms);
         Ok(())
     }

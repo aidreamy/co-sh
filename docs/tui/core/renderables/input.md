@@ -50,7 +50,7 @@ drawn; wrap this widget in a `BoxRenderable` for a framed field.
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::renderables::input::InputRenderable;
+use morpheus_tui::core::renderables::input::InputRenderable;
 
 let mut input = InputRenderable::new(Some("hi".into()));
 input.set_placeholder("Type a message…".into());

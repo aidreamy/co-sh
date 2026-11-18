@@ -3,7 +3,7 @@
 [English](../../README.md) | [Português](./README.pt-BR.md) | [Español](./README.es.md) | **Русский** | [中文](./README.zh-CN.md) | [日本語](./README.ja.md)
 
 > [!WARNING]
-> **WhatsApp находится в разработке.** Функция WhatsApp (`cosh-whatsapp`) пока экспериментальна, и **использовать её не рекомендуется**.
+> **WhatsApp находится в разработке.** Функция WhatsApp (`morpheus-whatsapp`) пока экспериментальна, и **использовать её не рекомендуется**.
 
 Cosh — универсальный coding agent для терминала с инструментами разработки ПО и *computer tools*, позволяющими взаимодействовать с графическими приложениями.
 
@@ -63,16 +63,16 @@ irm https://raw.githubusercontent.com/aidreamy/co-sh/main/download.ps1 | iex
 
 | Крейт | Описание |
 |---|---|
-| [`cosh-tools`](../../crates/cosh-tools/README.md) | Инструменты разработки и computer tools |
-| [`cosh-tui`](../../crates/cosh-tui/README.md) | Библиотека TUI-виджетов (рендеринг markdown/diff, layout) — компоненты, на которых построен терминальный интерфейс приложения |
-| [`cosh-sdk`](../../crates/cosh-sdk/README.md) | SDK для создания агентов на базе cosh |
-| [`cosh-recall`](../../crates/cosh-recall/README.md) | Память и восстановление контекста |
-| [`cosh-whatsapp`](../../crates/cosh-whatsapp/README.md) | Интеграция с WhatsApp Web (мультиустройство): сопряжение, нормализованные события и типизированная отправка |
-| [`cosh-onnx`](../../crates/cosh-onnx/README.md) | Движок принятия решений ONNX, включаемый feature `onnx` |
+| [`morpheus-tools`](../../crates/morpheus-tools/README.md) | Инструменты разработки и computer tools |
+| [`morpheus-tui`](../../crates/morpheus-tui/README.md) | Библиотека TUI-виджетов (рендеринг markdown/diff, layout) — компоненты, на которых построен терминальный интерфейс приложения |
+| [`morpheus-sdk`](../../crates/morpheus-sdk/README.md) | SDK для создания агентов на базе morpheus |
+| [`morpheus-recall`](../../crates/morpheus-recall/README.md) | Память и восстановление контекста |
+| [`morpheus-whatsapp`](../../crates/morpheus-whatsapp/README.md) | Интеграция с WhatsApp Web (мультиустройство): сопряжение, нормализованные события и типизированная отправка |
+| [`morpheus-onnx`](../../crates/morpheus-onnx/README.md) | Движок принятия решений ONNX, включаемый feature `onnx` |
 
 ## Планы
 
-- **Движок решений Laya/ONNX** — необязательная feature `onnx`, предоставляемая crate `cosh-onnx`; см. [руководство crate](../onnx/onnx.md).
+- **Движок решений Laya/ONNX** — необязательная feature `onnx`, предоставляемая crate `morpheus-onnx`; см. [руководство crate](../onnx/onnx.md).
 - **Оркестрация harness'ов через граф** — новый режим сессии для координации нескольких harness'ов.
 
 ## Лицензия

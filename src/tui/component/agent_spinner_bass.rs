@@ -20,7 +20,7 @@
 //! tone is shaded darker as it rises and lighter as it falls, so the colour
 //! breathes with the rhythm.
 
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::rgba::RGBA;
 use ratatui::buffer::Buffer;
 use ratatui::style::Style;
 

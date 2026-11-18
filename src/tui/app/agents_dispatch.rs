@@ -1,7 +1,7 @@
 //! Dispatch for the `/agents` split-pane mode: one submitted prompt goes to
 //! the FOCUSED pane — or, when `Alt+0` left NO pane focused, to the MAIN
 //! agent itself (the normal-mode loop, unchanged). External agent CLIs each
-//! get an independent ACP turn (`cosh_tools::subagent::acp::call` — the
+//! get an independent ACP turn (`morpheus_tools::subagent::acp::call` — the
 //! same one-shot contract the prompt corrector uses); each cosh pane (at
 //! any split position) runs the MAIN agent itself on its own real cosh
 //! session — persisted in the session store (visible in the history panel)
@@ -16,7 +16,7 @@
 use crate::routes::session::right_panel::types::SubagentTimelineEntry;
 use cosh::coordinator::turn::{TerminalCause, TerminalKind, assemble_turn_input, close_pane_turn};
 use cosh::harness::events::HarnessEvent;
-use cosh_tools::subagent::events::{SubagentEvent, ToolCallStatus, ToolOutputBlock};
+use morpheus_tools::subagent::events::{SubagentEvent, ToolCallStatus, ToolOutputBlock};
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -980,7 +980,7 @@ pub(super) fn ensure_pane_snapshot(app: &mut App, pane: usize) {
     let event_tx = app.event_tx.clone();
     let epoch = app.agents_pane_epoch;
     app.tokio_handle.spawn(async move {
-        let result = cosh_tools::subagent::acp::session_snapshot(&agent, session_id, cwd).await;
+        let result = morpheus_tools::subagent::acp::session_snapshot(&agent, session_id, cwd).await;
         let (commands, options, modes, mode_current) = match result {
             Ok(snapshot) => (
                 snapshot.commands,
@@ -1272,7 +1272,7 @@ impl App {
                     Some(id) => {
                         split.answer_pending_permission(
                             focused,
-                            cosh_tools::subagent::events::PanePermissionAnswer::Selected(id),
+                            morpheus_tools::subagent::events::PanePermissionAnswer::Selected(id),
                         );
                     }
                     None => {
@@ -1280,7 +1280,7 @@ impl App {
                         // cancellation.
                         split.answer_pending_permission(
                             focused,
-                            cosh_tools::subagent::events::PanePermissionAnswer::Cancel,
+                            morpheus_tools::subagent::events::PanePermissionAnswer::Cancel,
                         );
                     }
                 }
@@ -1290,7 +1290,7 @@ impl App {
                 if let Some(split) = self.agents_split.as_mut() {
                     split.answer_pending_permission(
                         focused,
-                        cosh_tools::subagent::events::PanePermissionAnswer::Cancel,
+                        morpheus_tools::subagent::events::PanePermissionAnswer::Cancel,
                     );
                 }
                 true
@@ -1913,7 +1913,7 @@ impl App {
             tokio_handle.spawn(async move {
                 let (chunk_tx, mut chunk_rx) =
                     tokio::sync::mpsc::unbounded_channel::<SubagentEvent>();
-                let call = cosh_tools::subagent::acp::call(
+                let call = morpheus_tools::subagent::acp::call(
                     &agent,
                     &input,
                     resume,
@@ -2062,7 +2062,7 @@ impl App {
     ///   `handle_loop_end` defers its own auto-start under).
     pub(super) fn wake_main_agent_if_pending_todos(
         &mut self,
-        todo: Option<&cosh_tools::plan::types::TodoList>,
+        todo: Option<&morpheus_tools::plan::types::TodoList>,
     ) {
         if self.any_agent_running() {
             return;
@@ -2999,7 +2999,7 @@ impl App {
         #[cfg(not(test))]
         tokio_handle.spawn(async move {
             let (chunk_tx, mut chunk_rx) = tokio::sync::mpsc::unbounded_channel::<SubagentEvent>();
-            let pass = cosh_tools::subagent::acp::replay(&agent, session_id, cwd, chunk_tx);
+            let pass = morpheus_tools::subagent::acp::replay(&agent, session_id, cwd, chunk_tx);
             tokio::pin!(pass);
             let mut chunks_open = true;
             let result = loop {
@@ -3134,7 +3134,7 @@ fn run_manager_turn(
     turn: u64,
     input: String,
     permission_rx: Option<
-        tokio::sync::mpsc::UnboundedReceiver<cosh_tools::subagent::events::PanePermissionAnswer>,
+        tokio::sync::mpsc::UnboundedReceiver<morpheus_tools::subagent::events::PanePermissionAnswer>,
     >,
     stop_signal: Arc<AtomicBool>,
     // The pane's steering queue: the user's "next request" messages, drained
@@ -3225,7 +3225,7 @@ fn run_manager_turn(
                         // option this build didn't offer has no trustworthy
                         // allow semantics.
                         let action = match answer {
-                            cosh_tools::subagent::events::PanePermissionAnswer::Selected(id) => {
+                            morpheus_tools::subagent::events::PanePermissionAnswer::Selected(id) => {
                                 match id.as_str() {
                                     "allow" => cosh::harness::PermissionAction::Allow,
                                     "deny" => cosh::harness::PermissionAction::Deny,
@@ -3236,7 +3236,7 @@ fn run_manager_turn(
                                     _ => cosh::harness::PermissionAction::AllowOnce,
                                 }
                             }
-                            cosh_tools::subagent::events::PanePermissionAnswer::Cancel => {
+                            morpheus_tools::subagent::events::PanePermissionAnswer::Cancel => {
                                 cosh::harness::PermissionAction::Deny
                             }
                         };
@@ -3264,7 +3264,7 @@ fn run_manager_turn(
             let cause_sink = terminal_cause.clone();
             let bridge_tx = event_tx.clone();
             let bridge = tokio::spawn(async move {
-                use cosh_tools::subagent::internal::InternalEventBridge;
+                use morpheus_tools::subagent::internal::InternalEventBridge;
                 let mut internal = InternalEventBridge::new();
                 while let Some(event) = loop_rx.recv().await {
                     // The terminal event: record WHY the loop ended, then let
@@ -3344,20 +3344,20 @@ fn run_manager_turn(
                             vec![SubagentEvent::PermissionRequest {
                                 call_id,
                                 title: description,
-                                kind: cosh_tools::subagent::events::ToolKind::Execute,
+                                kind: morpheus_tools::subagent::events::ToolKind::Execute,
                                 raw_input: serde_json::json!({ "tool": tool, "args": args }).into(),
                                 options: vec![
-                                    cosh_tools::subagent::events::AgentPermissionOption {
+                                    morpheus_tools::subagent::events::AgentPermissionOption {
                                         id: "allow".to_string(),
                                         name: "Allow".to_string(),
                                         kind: "allow_always".to_string(),
                                     },
-                                    cosh_tools::subagent::events::AgentPermissionOption {
+                                    morpheus_tools::subagent::events::AgentPermissionOption {
                                         id: "allow_once".to_string(),
                                         name: "Allow Once".to_string(),
                                         kind: "allow_once".to_string(),
                                     },
-                                    cosh_tools::subagent::events::AgentPermissionOption {
+                                    morpheus_tools::subagent::events::AgentPermissionOption {
                                         id: "deny".to_string(),
                                         name: "Deny".to_string(),
                                         kind: "reject_once".to_string(),
@@ -3569,7 +3569,7 @@ pub(in crate::app) fn manager_context_replay_events(
                 events.push(SubagentEvent::ToolCall {
                     id: call_id.clone(),
                     title: name.clone(),
-                    kind: cosh_tools::subagent::internal::tool_kind(name),
+                    kind: morpheus_tools::subagent::internal::tool_kind(name),
                     status: ToolCallStatus::InProgress,
                     raw_input: Some(input),
                     tool: Some(name.clone()),
@@ -3591,9 +3591,9 @@ pub(in crate::app) fn manager_context_replay_events(
                     title: None,
                     raw_output: None,
                     content: ToolOutputBlock {
-                        text: cosh_tools::subagent::internal::output_tail(content),
+                        text: morpheus_tools::subagent::internal::output_tail(content),
                         skipped: 0,
-                        diff: cosh_tools::subagent::internal::diff_summary_from_result(
+                        diff: morpheus_tools::subagent::internal::diff_summary_from_result(
                             tool, content,
                         ),
                     },
@@ -3806,9 +3806,9 @@ mod tests {
             crate::routes::session::right_panel::types::SubagentToolCall {
                 id: "t1".into(),
                 title: title.to_string(),
-                kind: cosh_tools::subagent::events::ToolKind::Read,
+                kind: morpheus_tools::subagent::events::ToolKind::Read,
                 tool: None,
-                status: cosh_tools::subagent::events::ToolCallStatus::Completed,
+                status: morpheus_tools::subagent::events::ToolCallStatus::Completed,
                 output_tail: None,
                 diff: None,
                 detail: detail.map(str::to_string),

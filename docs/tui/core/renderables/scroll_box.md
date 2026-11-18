@@ -34,7 +34,7 @@ renderer drives layout; content widgets inside it handle their own drawing
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::renderables::scroll_box::ScrollBoxRenderable;
+use morpheus_tui::core::renderables::scroll_box::ScrollBoxRenderable;
 
 let mut viewport = ScrollBoxRenderable::new();
 viewport.set_content_size(100, 500);   // content is 100×500

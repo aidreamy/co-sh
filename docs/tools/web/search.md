@@ -8,9 +8,9 @@ pub async fn search(search: &WebSearch) -> Result<String, String>
 ```
 
 ```rust,ignore
-use cosh_tools::web::WebSearch;
+use morpheus_tools::web::WebSearch;
 
-let results = cosh_tools::web::search(&WebSearch {
+let results = morpheus_tools::web::search(&WebSearch {
     num_results: 5,
     query: "rust async programming".into(),
 })
@@ -101,7 +101,7 @@ structured list. To read a promising result in full, fetch its `URL:` with
 ## Example
 
 ```rust,ignore
-use cosh_tools::web::{Web, WebSearch};
+use morpheus_tools::web::{Web, WebSearch};
 
 let web = Web::new().num_results(3);
 match web.search("rust web frameworks").await {
@@ -110,5 +110,5 @@ match web.search("rust web frameworks").await {
 }
 
 // The free functions validate the same way:
-assert!(cosh_tools::web::search(&WebSearch::default()).await.is_err());
+assert!(morpheus_tools::web::search(&WebSearch::default()).await.is_err());
 ```

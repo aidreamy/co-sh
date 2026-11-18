@@ -36,7 +36,7 @@ async fn main() {
         Ok(invocation) => invocation,
         Err(error) => {
             eprintln!("cosh: {error}");
-            eprintln!("Run `cosh --help` for usage.");
+            eprintln!("Run `morpheus --help` for usage.");
             std::process::exit(2);
         }
     };

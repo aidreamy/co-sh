@@ -4,8 +4,8 @@
 //! provider and the grand total for the selected period (day/week/month/year/
 //! all), cycled with Tab / Shift+Tab.
 
-use cosh_tui::core::renderable::Renderable;
-use cosh_tui::core::renderables::r#box::BoxRenderable;
+use morpheus_tui::core::renderable::Renderable;
+use morpheus_tui::core::renderables::r#box::BoxRenderable;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
@@ -35,7 +35,7 @@ pub struct DashboardData {
 fn period_highlight(
     period: crate::usage::UsagePeriod,
     theme: &Theme,
-) -> cosh_tui::core::lib::rgba::RGBA {
+) -> morpheus_tui::core::lib::rgba::RGBA {
     match period {
         crate::usage::UsagePeriod::Day => theme.success,
         crate::usage::UsagePeriod::Week => theme.primary,

@@ -36,8 +36,8 @@ pub fn detect_links(chunks: Vec<TextChunk>, content: &str, highlights: &[SimpleH
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::lib::styled_text::{TextChunk, string_to_styled_text};
-use cosh_tui::core::lib::detect_links::{detect_links, SimpleHighlight};
+use morpheus_tui::core::lib::styled_text::{TextChunk, string_to_styled_text};
+use morpheus_tui::core::lib::detect_links::{detect_links, SimpleHighlight};
 
 let content = "visit https://example.com now";
 let chunks = string_to_styled_text(content).chunks;

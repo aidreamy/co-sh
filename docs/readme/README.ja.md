@@ -3,7 +3,7 @@
 [English](../../README.md) | [Português](./README.pt-BR.md) | [Español](./README.es.md) | [Русский](./README.ru.md) | [中文](./README.zh-CN.md) | **日本語**
 
 > [!WARNING]
-> **WhatsApp 機能は開発中です。** WhatsApp 機能（`cosh-whatsapp`）はまだ実験的であり、**使用は推奨されません**。
+> **WhatsApp 機能は開発中です。** WhatsApp 機能（`morpheus-whatsapp`）はまだ実験的であり、**使用は推奨されません**。
 
 Cosh はターミナル上で動作する汎用コーディングエージェントです。ソフトウェア開発ツールに加え、*computer tools* を備えており、グラフィカルアプリケーションとも対話できます。
 
@@ -63,16 +63,16 @@ irm https://raw.githubusercontent.com/aidreamy/co-sh/main/download.ps1 | iex
 
 | Crate | 説明 |
 |---|---|
-| [`cosh-tools`](../../crates/cosh-tools/README.md) | 開発ツールと computer tools |
-| [`cosh-tui`](../../crates/cosh-tui/README.md) | TUI ウィジェットライブラリ（markdown/diff のレンダリング、レイアウト）— アプリのターミナル UI を構成するコンポーネント群 |
-| [`cosh-sdk`](../../crates/cosh-sdk/README.md) | cosh 上にエージェントを構築するための SDK |
-| [`cosh-recall`](../../crates/cosh-recall/README.md) | メモリとコンテキストの再呼び出し |
-| [`cosh-whatsapp`](../../crates/cosh-whatsapp/README.md) | WhatsApp Web（マルチデバイス）統合：ペアリング、正規化イベント、型付き送信 |
-| [`cosh-onnx`](../../crates/cosh-onnx/README.md) | `onnx` feature で有効にする ONNX 意思決定エンジン |
+| [`morpheus-tools`](../../crates/morpheus-tools/README.md) | 開発ツールと computer tools |
+| [`morpheus-tui`](../../crates/morpheus-tui/README.md) | TUI ウィジェットライブラリ（markdown/diff のレンダリング、レイアウト）— アプリのターミナル UI を構成するコンポーネント群 |
+| [`morpheus-sdk`](../../crates/morpheus-sdk/README.md) | morpheus 上にエージェントを構築するための SDK |
+| [`morpheus-recall`](../../crates/morpheus-recall/README.md) | メモリとコンテキストの再呼び出し |
+| [`morpheus-whatsapp`](../../crates/morpheus-whatsapp/README.md) | WhatsApp Web（マルチデバイス）統合：ペアリング、正規化イベント、型付き送信 |
+| [`morpheus-onnx`](../../crates/morpheus-onnx/README.md) | `onnx` feature で有効にする ONNX 意思決定エンジン |
 
 ## ロードマップ
 
-- **Laya/ONNX 意思決定エンジン** — `cosh-onnx` crate が提供する任意の `onnx` feature。[crate ガイド](../onnx/onnx.md)を参照してください。
+- **Laya/ONNX 意思決定エンジン** — `morpheus-onnx` crate が提供する任意の `onnx` feature。[crate ガイド](../onnx/onnx.md)を参照してください。
 - **グラフによる harness オーケストレーション** — 複数の harness を協調させる新しいセッションモード。
 
 ## ライセンス

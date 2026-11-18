@@ -84,7 +84,7 @@ copying content out of a rendered message.
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::renderables::markdown::MarkdownRenderable;
+use morpheus_tui::core::renderables::markdown::MarkdownRenderable;
 
 let mut md = MarkdownRenderable::new(Some(
     "# Title\n\nSome **bold** and `code`.\n\n```rust\nfn main() {}\n```\n".into(),

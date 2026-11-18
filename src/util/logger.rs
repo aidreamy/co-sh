@@ -61,8 +61,8 @@ impl Log for FileLogger {
                 && matches!(
                     metadata.target().split("::").next(),
                     Some(
-                        "cosh" | "cosh_sdk" | "cosh_tui" | "cosh_tools" | "cosh_recall"
-                            | "cosh_whatsapp"
+                        "cosh" | "morpheus_sdk" | "morpheus_tui" | "morpheus_tools" | "morpheus_recall"
+                            | "morpheus_whatsapp"
                     )
                 ))
     }
@@ -137,7 +137,7 @@ pub fn init(scope: &str) {
 }
 
 /// Non-panicking variant of [`init`] for entry points that must continue
-/// running even when logging cannot be set up (e.g. `cosh-uninstall`, whose
+/// running even when logging cannot be set up (e.g. `morpheus-uninstall`, whose
 /// documented invariant is that nothing panics before the cleanup). Returns
 /// `Err(reason)` when the log directory/file cannot be created or a logger
 /// has already been registered; logging simply stays off in that case.

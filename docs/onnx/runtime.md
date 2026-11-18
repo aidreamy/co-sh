@@ -16,13 +16,13 @@ which ONNX library is in use.
 `SessionRunner` is the key boundary:
 
 ```rust
-use cosh_onnx::runtime::session::{SessionOutput, SessionRunner};
-use cosh_onnx::runtime::batch::CollatedBatch;
+use morpheus_onnx::runtime::session::{SessionOutput, SessionRunner};
+use morpheus_onnx::runtime::batch::CollatedBatch;
 
 struct FixedSession;
 
 impl SessionRunner for FixedSession {
-    fn run(&self, _batch: &CollatedBatch) -> cosh_onnx::Result<Vec<SessionOutput>> {
+    fn run(&self, _batch: &CollatedBatch) -> morpheus_onnx::Result<Vec<SessionOutput>> {
         Ok(vec![SessionOutput {
             logits: vec![1.0, 0.0],
             act_logits: vec![0.5, -0.5],

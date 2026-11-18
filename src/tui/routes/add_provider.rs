@@ -5,7 +5,7 @@ use ratatui::style::{Color, Style};
 use aiface::connector::{
     get_provider, get_provider_env_var, has_api_key, is_local_provider, known_providers,
 };
-use cosh_tui::core::types::MouseEvent;
+use morpheus_tui::core::types::MouseEvent;
 
 use crate::component::search_bar::SearchBar;
 use crate::theme::{Theme, rgba_color};
@@ -364,7 +364,7 @@ const fn max_visible_items(remaining_h: u16) -> usize {
 mod tests {
     use super::*;
     use crate::theme::ThemeRegistry;
-    use cosh_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
 
     fn click(x: u16, y: u16) -> MouseEvent {
         MouseEvent::new(

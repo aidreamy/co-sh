@@ -26,7 +26,7 @@
 //! mode colour, deterministic render) follows the shared agent-spinner
 //! surface so the component slots into the same 1-row spinner area.
 
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::rgba::RGBA;
 use ratatui::buffer::Buffer;
 use ratatui::style::Style;
 

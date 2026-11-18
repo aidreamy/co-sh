@@ -59,7 +59,7 @@ truncated with `…` when a single tab is too narrow).
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::renderables::tab_select::{TabSelectRenderable, TabSelectOption};
+use morpheus_tui::core::renderables::tab_select::{TabSelectRenderable, TabSelectOption};
 
 let mut tabs = TabSelectRenderable::new();
 tabs.set_options(vec![

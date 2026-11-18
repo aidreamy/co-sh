@@ -49,9 +49,9 @@ pub const fn rgba_to_ratatui(c: RGBA) -> Color   // RGBA → Color::Rgb (alpha 0
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::renderables::markdown::MarkdownPalette;
-use cosh_tui::core::renderables::markdown::context::MarkdownElement;
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::renderables::markdown::MarkdownPalette;
+use morpheus_tui::core::renderables::markdown::context::MarkdownElement;
+use morpheus_tui::core::lib::rgba::RGBA;
 
 let palette = MarkdownPalette::new(
     RGBA::from_hex("#e0e0e0"),

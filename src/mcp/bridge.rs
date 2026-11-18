@@ -1,5 +1,5 @@
 use aiface::connector::{ToolDefinition, ToolFunction};
-use cosh_sdk::extract_action::ToolSchema;
+use morpheus_sdk::extract_action::ToolSchema;
 use rmcp::model::{
     CallToolResult, GetPromptResult, Prompt, PromptMessage, ReadResourceResult, Resource,
     ResourceTemplate, Tool,

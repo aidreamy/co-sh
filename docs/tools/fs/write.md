@@ -74,7 +74,7 @@ failed to write"*.
 ## Example
 
 A complete runnable example is provided at
-[`examples/fs/write.rs`](../../../crates/cosh-tools/examples/fs/write.rs). It
+[`examples/fs/write.rs`](../../../crates/morpheus-tools/examples/fs/write.rs). It
 creates a scratch project, writes a few files, and demonstrates the permission
 guards — including why a path outside the root is refused and how the allowlist
 grants access.

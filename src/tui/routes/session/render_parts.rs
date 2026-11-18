@@ -85,7 +85,7 @@ impl SessionView {
         // strip inside the box (default cosh: #07070A vs #0B0B12).
         let body_h = estimate_height(&part.text, wrap_w).max(1);
         let content = sanitize_text(&part.text);
-        let mut md = cosh_tui::core::renderables::markdown::MarkdownRenderable::new(Some(content));
+        let mut md = morpheus_tui::core::renderables::markdown::MarkdownRenderable::new(Some(content));
         md.set_fg(Some(ColorInput::RGBA(theme.text)));
         md.set_bg(Some(ColorInput::RGBA(theme.background_panel)));
         crate::util::markdown::apply_theme(&mut md, theme);
@@ -193,7 +193,7 @@ impl SessionView {
                             .min(bottom.saturating_sub(y))
                     };
                     let area = Rect::new(x, y, max_w, render_h);
-                    let mut md = cosh_tui::core::renderables::markdown::MarkdownRenderable::new(
+                    let mut md = morpheus_tui::core::renderables::markdown::MarkdownRenderable::new(
                         Some(content),
                     );
                     md.set_fg(Some(ColorInput::RGBA(fg_color)));
@@ -388,7 +388,7 @@ impl SessionView {
         y: u16,
         max_w: u16,
         theme: &Theme,
-        notes: &cosh_tools::fs::LspNotes,
+        notes: &morpheus_tools::fs::LspNotes,
     ) -> u16 {
         let error_style = Style::default().fg(rgba_color(theme.error));
         let warning_style = Style::default().fg(rgba_color(theme.warning));
@@ -540,13 +540,13 @@ impl SessionView {
                 .chars()
                 .filter(|ch| !ch.is_control())
                 .collect();
-            let lines = cosh_tui::core::lib::unicode_util::word_wrap(&error_text, max_w);
+            let lines = morpheus_tui::core::lib::unicode_util::word_wrap(&error_text, max_w);
             for (line_y, line) in (area.y + 1..).zip(lines.iter()) {
                 if line_y >= area.bottom() {
                     break;
                 }
                 let mut line_x = x_off;
-                for (grapheme, w) in cosh_tui::core::lib::unicode_util::graphemes_with_width(line) {
+                for (grapheme, w) in morpheus_tui::core::lib::unicode_util::graphemes_with_width(line) {
                     if line_x > x_off + max_w {
                         break;
                     }

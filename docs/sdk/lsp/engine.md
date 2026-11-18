@@ -1,6 +1,6 @@
 # LSP Engine
 
-The `cosh_sdk::lsp` module is a compact, tokio-native LSP client stack for
+The `morpheus_sdk::lsp` module is a compact, tokio-native LSP client stack for
 driving language servers from an agent process — no editor UI involved.
 
 ## Layering

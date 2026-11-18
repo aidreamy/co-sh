@@ -1,6 +1,6 @@
 # `rgba` — colors
 
-`RGBA` is the color type used throughout cosh-tui. It stores an 8-bit-per-
+`RGBA` is the color type used throughout morpheus-tui. It stores an 8-bit-per-
 channel color plus an *intent* (how the color was specified) and an optional
 palette slot, so colors can round-trip between RGB, indexed (ANSI-256), and
 "terminal default" representations.
@@ -89,7 +89,7 @@ Standard HSV→RGB conversion (`h` in degrees) returning an opaque `RGBA`.
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::lib::rgba::{RGBA, ColorInput, parse_color};
+use morpheus_tui::core::lib::rgba::{RGBA, ColorInput, parse_color};
 
 let a = RGBA::from_hex("#ff8800");            // opaque orange
 let b = RGBA::from_ints(255, 136, 0, 255);

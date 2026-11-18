@@ -20,7 +20,7 @@
 //! ```text
 //! coordinator → harness, (later) assembly, session, git
 //! assembly    → harness
-//! harness     → mcp, git::worktree::validate_name, cosh-tools
+//! harness     → mcp, git::worktree::validate_name, morpheus-tools
 //! tui (bin)   → all of the above
 //! ```
 //!

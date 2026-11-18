@@ -2,7 +2,7 @@
 
 `DynamicRenderable` wraps another renderable that is resolved **at
 construction time** from the [component catalogue](catalogue.md) by name —
-the cosh-tui analogue of SolidJS's `<Dynamic>` component.
+the morpheus-tui analogue of SolidJS's `<Dynamic>` component.
 
 ```rust
 DynamicRenderable::try_new(component_name: &str) -> Option<Self>  // None if unregistered

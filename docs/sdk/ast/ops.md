@@ -138,7 +138,7 @@ detects whether a pattern is a glob (`*`, `?`, `[`) vs. a literal path.
 ## Example
 
 ```rust,ignore
-use cosh_sdk::ast::{
+use morpheus_sdk::ast::{
     SupportLang, compile_pattern, collect_matches, resolve_language,
     AstMatchStrictness,
 };
@@ -150,7 +150,7 @@ assert_eq!(matches.len(), 2);
 ```
 
 A complete runnable version lives at
-[`examples/ast/ops.rs`](../../../crates/cosh-sdk/examples/ast/ops.rs).
+[`examples/ast/ops.rs`](../../../crates/morpheus-sdk/examples/ast/ops.rs).
 
 ---
 

@@ -62,17 +62,17 @@ there is no border and no visible fill, it draws nothing — so a bare
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::renderables::box::BoxRenderable;
-use cosh_tui::core::renderables::text::TextRenderable;
-use cosh_tui::core::lib::border::{BorderStyle, BorderSidesConfig};
-use cosh_tui::core::lib::styled_text::string_to_styled_text;
+use morpheus_tui::core::renderables::box::BoxRenderable;
+use morpheus_tui::core::renderables::text::TextRenderable;
+use morpheus_tui::core::lib::border::{BorderStyle, BorderSidesConfig};
+use morpheus_tui::core::lib::styled_text::string_to_styled_text;
 
 let mut panel = BoxRenderable::new();
 panel.set_border(true);
 panel.set_border_style(BorderStyle::Rounded);
 panel.set_border_color(Some("#00AAFF".into()));
 panel.set_title(Some("Status".into()));
-panel.set_title_alignment(cosh_tui::core::renderables::box::TitleAlignment::Center);
+panel.set_title_alignment(morpheus_tui::core::renderables::box::TitleAlignment::Center);
 panel.set_border_sides(BorderSidesConfig::ALL);   // re-assert sides after style set
 
 let mut label = TextRenderable::new(Some(string_to_styled_text("all good")));

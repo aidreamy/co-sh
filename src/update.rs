@@ -131,7 +131,7 @@ pub fn is_update_available(current_version: &str, tag: &str) -> bool {
 /// Latest published release, regardless of whether it is newer than the
 /// running build.
 ///
-/// `cosh update` needs the tag even when it equals (or trails) the current
+/// `morpheus update` needs the tag even when it equals (or trails) the current
 /// version: the user may be pinning it deliberately. The boot check uses
 /// [`fetch_latest_release`], which applies the "is there anything new"
 /// filter on top of this one.
@@ -204,11 +204,11 @@ pub fn manual_update_command(latest_tag: &str) -> Option<String> {
         log::warn!("manual update command: invalid release tag {latest_tag:?}");
         return None;
     }
-    Some(format!("cosh update {latest_tag}"))
+    Some(format!("morpheus update {latest_tag}"))
 }
 
 /// Fire-and-forget the in-app update: start this same binary as
-/// `cosh update <tag> --yes`.
+/// `morpheus update <tag> --yes`.
 ///
 /// The command line is the single implementation of "install a release"
 /// (`crate::cli::update`): it downloads the pinned installer script, runs it
@@ -259,7 +259,7 @@ pub fn spawn_update_pipeline(latest_tag: &str) {
 
     match command.spawn() {
         Ok(child) => log::info!(
-            "update pipeline spawned (pid {}, target {latest_tag}); closing cosh — reopen cosh once the update finishes",
+            "update pipeline spawned (pid {}, target {latest_tag}); closing morpheus — reopen morpheus once the update finishes",
             child.id()
         ),
         Err(err) => log::error!("failed to start update pipeline: {err}"),
@@ -343,7 +343,7 @@ mod tests {
     fn is_valid_tag_agrees_with_normalize_tag() {
         // The UI advertises on `is_valid_tag` but installs through
         // `normalize_tag`: a tag one accepts and the other refuses would be
-        // shown to the user and then silently rejected by `cosh update`.
+        // shown to the user and then silently rejected by `morpheus update`.
         for tag in [
             "v0.2.3",
             "0.2.3",
@@ -382,7 +382,7 @@ mod tests {
     fn manual_update_command_pins_the_release_tag() {
         assert_eq!(
             manual_update_command("v0.2.3"),
-            Some("cosh update v0.2.3".into())
+            Some("morpheus update v0.2.3".into())
         );
         assert_eq!(manual_update_command("v1; rm -rf /"), None);
     }

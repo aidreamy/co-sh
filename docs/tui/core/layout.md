@@ -53,7 +53,7 @@ viewport). After solving, `layout(node)` returns taffy's computed `Layout`
 
 ## Style helpers
 
-Two free functions bridge cosh-tui values into taffy styles:
+Two free functions bridge morpheus-tui values into taffy styles:
 
 ```rust
 pub const fn border_rect(
@@ -77,7 +77,7 @@ The default flex container style used by `BoxRenderable`: `display: flex`,
 ## Example — laying out two stacked panels
 
 ```rust,ignore
-use cosh_tui::core::layout::LayoutTree;
+use morpheus_tui::core::layout::LayoutTree;
 use taffy::{Style, LengthPercentage};
 
 let mut tree = LayoutTree::new();

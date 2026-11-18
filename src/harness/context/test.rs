@@ -268,7 +268,7 @@ fn a_fresh_input_after_a_compaction_with_nothing_produced_between_is_abandoned()
 
 #[test]
 fn correction_block_renders_at_the_tail_before_the_todo_block() {
-    use cosh_tools::plan::types::{TodoItem, TodoList, TodoStatus};
+    use morpheus_tools::plan::types::{TodoItem, TodoList, TodoStatus};
     let mut cm = cm(10_000);
     cm.add_user("task");
     cm.set_correction_block("## Correction History\n\n- bad call".into());

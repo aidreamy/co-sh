@@ -15,7 +15,7 @@ pub fn name_matches_glob(pattern: &str, name: &str) -> bool
 Returns `true` when **any** glob in `globs` matches **any** path in `paths`.
 This is the matcher behind the `Match` action:
 
-- Globs are compiled with the project's standard glob engine (`cosh_sdk`'s
+- Globs are compiled with the project's standard glob engine (`morpheus_sdk`'s
   `compile_glob`), so patterns like `**/*.rs` and `src/**` behave exactly as
   they do in the [`find`](../find/find.md) tools.
 - A glob that fails to compile is skipped (`Ok`-only matching); a list that

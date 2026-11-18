@@ -17,7 +17,7 @@ use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
-use cosh_tui::core::types::MouseEvent;
+use morpheus_tui::core::types::MouseEvent;
 
 use crate::theme::{Theme, rgba_color};
 use crate::util::list_selection::ListSelection;
@@ -487,7 +487,7 @@ pub fn validate_acp_agent(
     if name.split_whitespace().count() != 1 {
         return Err("Name must be a single word (it is the agent id the model calls).".into());
     }
-    if cosh_tools::subagent::acp::ACP_AGENTS
+    if morpheus_tools::subagent::acp::ACP_AGENTS
         .iter()
         .any(|agent| agent.name.eq_ignore_ascii_case(name))
     {
@@ -1642,7 +1642,7 @@ impl SettingsView {
                     // description uses, and visually distinct from the
                     // ✔/✗ toggles above. The name keeps the sub-row indent
                     // (+4) shared with the other lists and "+ Add agent".
-                    let installed = cosh_tools::subagent::acp::custom_agent_installed(&entry.name);
+                    let installed = morpheus_tools::subagent::acp::custom_agent_installed(&entry.name);
                     let name_color = if installed { fg } else { muted };
                     // 🗑 remove glyph hugs the box's right inner edge (the
                     // summarizer rows' controls slot); name and preview are
@@ -1964,7 +1964,7 @@ mod tests {
         );
     }
     use crate::theme::ThemeRegistry;
-    use cosh_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
 
     fn test_theme() -> Theme {
         ThemeRegistry::new().default_theme().clone()

@@ -148,13 +148,13 @@ impl Harness {
                     let last_error = std::sync::Arc::new(std::sync::Mutex::new(None::<String>));
                     let err_capture = last_error.clone();
                     let bridge = tokio::spawn(async move {
-                        use cosh_tools::subagent::internal::InternalEventBridge;
+                        use morpheus_tools::subagent::internal::InternalEventBridge;
                         let mut internal = InternalEventBridge::new();
                         while let Some(event) = nested_rx.recv().await {
                             if Harness::forward_nested_accounting(&event, bridge_tx.as_ref()) {
                                 continue;
                             }
-                            let subagent_events: Vec<cosh_tools::subagent::events::SubagentEvent> =
+                            let subagent_events: Vec<morpheus_tools::subagent::events::SubagentEvent> =
                                 match event {
                                     super::events::HarnessEvent::Token { text } => {
                                         vec![InternalEventBridge::message(text)]
@@ -240,7 +240,7 @@ impl Harness {
                             // touched — tinting a partial or errored turn
                             // would misreport it.
                             let report = if is_review && !report.trim().is_empty() {
-                                cosh_tools::subagent::severity::enforce_severity_header(
+                                morpheus_tools::subagent::severity::enforce_severity_header(
                                     &report, true,
                                 )
                             } else {
@@ -323,7 +323,7 @@ impl Harness {
         // panel (the TUI's parser falls back to the raw string on unknown
         // shapes). The task_id is kept verbatim in the text for the model.
         if let Some(task_id) = task_id {
-            let receipt = cosh_tools::subagent::types::SubAgentCallOutput {
+            let receipt = morpheus_tools::subagent::types::SubAgentCallOutput {
                 output: format!(
                     "Background sub-agent spawned (task_id: {task_id}, agent: internal). \
                      Its final report will arrive automatically as an [automated \

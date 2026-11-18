@@ -1,5 +1,5 @@
 use super::*;
-use cosh_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
+use morpheus_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
 
 fn summary(id: &str, title: &str) -> SessionSummary {
     SessionSummary {

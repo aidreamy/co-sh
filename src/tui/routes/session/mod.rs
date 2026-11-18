@@ -51,14 +51,14 @@ use ratatui::style::{Color, Modifier, Style};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 use self::tool_render::blank_border_chars;
-use cosh_tui::core::lib::border::BorderSidesConfig;
-use cosh_tui::core::lib::rgba::{ColorInput, RGBA, ansi256_index_to_rgb};
-use cosh_tui::core::renderable::Renderable;
-use cosh_tui::core::renderables::r#box::BoxRenderable;
-use cosh_tui::core::renderables::scroll_bar::{ScrollBarOrientation, ScrollBarRenderable};
-use cosh_tui::core::types::MouseEvent;
+use morpheus_tui::core::lib::border::BorderSidesConfig;
+use morpheus_tui::core::lib::rgba::{ColorInput, RGBA, ansi256_index_to_rgb};
+use morpheus_tui::core::renderable::Renderable;
+use morpheus_tui::core::renderables::r#box::BoxRenderable;
+use morpheus_tui::core::renderables::scroll_bar::{ScrollBarOrientation, ScrollBarRenderable};
+use morpheus_tui::core::types::MouseEvent;
 
-use cosh_tui::core::renderables::markdown::estimate_height;
+use morpheus_tui::core::renderables::markdown::estimate_height;
 
 use std::hash::Hasher;
 

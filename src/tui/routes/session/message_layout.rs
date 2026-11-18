@@ -58,7 +58,7 @@ impl SessionView {
                 .chars()
                 .filter(|ch| !ch.is_control())
                 .collect();
-            i32::from(cosh_tui::core::lib::unicode_util::word_wrap(&error_text, max_w).len() as u16)
+            i32::from(morpheus_tui::core::lib::unicode_util::word_wrap(&error_text, max_w).len() as u16)
         } else if let Some(heights) = part_heights {
             i32::from(heights.iter().copied().sum::<u16>())
         } else {

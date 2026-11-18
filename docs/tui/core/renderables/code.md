@@ -41,7 +41,7 @@ highlighting.
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::renderables::code::CodeRenderable;
+use morpheus_tui::core::renderables::code::CodeRenderable;
 
 let mut code = CodeRenderable::new(
     Some("fn main() {\n    println!(\"hi\");\n}".into()),

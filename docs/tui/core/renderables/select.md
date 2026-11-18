@@ -60,7 +60,7 @@ space allows. The viewport is the `area`; only options that fit are drawn.
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::renderables::select::{SelectRenderable, SelectOption};
+use morpheus_tui::core::renderables::select::{SelectRenderable, SelectOption};
 
 let mut select = SelectRenderable::new();
 select.set_options(vec![

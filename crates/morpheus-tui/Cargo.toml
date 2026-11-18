@@ -1,0 +1,33 @@
+[package]
+categories = ["development-tools"]
+description = "TUI crate for cosh - coding agent for the terminal"
+keywords = ["ai", "coding", "terminal", "agent"]
+license = "Apache-2.0"
+name = "morpheus-tui"
+readme = "README.md"
+repository = "https://github.com/aidreamy/co-sh"
+version = "0.1.6"
+edition = "2024"
+
+[dependencies]
+ratatui = "0.30"
+bitflags = "2.13"
+taffy = "0.11.0"
+pulldown-cmark = "0.13"
+morpheus-sdk = { path = "../morpheus-sdk", version = "0.1.6" }
+finl_unicode = "1.3"
+unicode-width = "0.2"
+lru = "0.18"
+log = { version = "0.4", features = ["std"] }
+open = "5"
+
+[[example]]
+name = "core"
+path = "examples/core/core.rs"
+
+[[example]]
+name = "solid"
+path = "examples/solid/solid.rs"
+
+[lints]
+workspace = true

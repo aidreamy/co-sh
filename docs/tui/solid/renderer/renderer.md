@@ -65,6 +65,6 @@ For a working renderer today, use [`core::renderer`](../../core/renderer.md)
 — the frame loop that actually drives a terminal. The `solid::renderer`
 traits are the abstraction layer for the (future) reactive framework; you
 only need them if you are implementing a node backend or a reactive
-framework on top of cosh-tui.
+framework on top of morpheus-tui.
 
 Next: [scrollback — scrollback snapshot writer](../scrollback.md).

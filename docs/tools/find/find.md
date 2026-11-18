@@ -8,7 +8,7 @@ project:
 | [`glob`](glob.md) | Find files and directories by **name** — a glob pattern like `**/*.rs`. |
 | [`grep`](grep.md) | Search **file contents** for lines matching a regex. |
 
-Both are built on the `cosh-sdk` find engine and share a single configuration
+Both are built on the `morpheus-sdk` find engine and share a single configuration
 wrapper, [`Find`](#the-find-wrapper), so one configured instance can dispatch
 either search. Every result is shaped to keep the model's context bounded and
 to feed the [`fs`](../fs/fs.md) tools directly.
@@ -27,7 +27,7 @@ and output data structures, and each tool has its own page with examples.
 `Fs`, you configure it once and then call operations:
 
 ```rust,ignore
-use cosh_tools::find::Find;
+use morpheus_tools::find::Find;
 
 let find = Find::new()
     .cwd("/home/user/project")   // the project root (path guards)

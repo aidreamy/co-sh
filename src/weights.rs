@@ -6,10 +6,10 @@
 //! the setup config (`crate::setup`), the harness event channel and the
 //! `onnx` feature.
 //! The mirror repo id lives HERE via setup.json (`model_decision.hub`) —
-//! the `cosh-onnx` crate receives it as a parameter and carries no
+//! the `morpheus-onnx` crate receives it as a parameter and carries no
 //! default.
 //!
-//! The install itself is `cosh_onnx::hub::install`: cache-first, the
+//! The install itself is `morpheus_onnx::hub::install`: cache-first, the
 //! built-in progress bar disabled, `sha256sums.txt` verified before
 //! success. This module only translates config → install request →
 //! `HarnessEvent::WeightsInstall` events.
@@ -143,7 +143,7 @@ pub fn resolve_target(model: &DecisionModel, hub: &DecisionHub) -> Option<Weight
 /// Is the target already fully cached (no download needed)?
 #[cfg(feature = "onnx")]
 pub fn is_cached(target: &WeightsTarget) -> bool {
-    cosh_onnx::hub::cache_status(
+    morpheus_onnx::hub::cache_status(
         &target.repo,
         target.subfolder.as_deref(),
         GRAPHS,
@@ -219,7 +219,7 @@ pub async fn ensure_installed(
         let files_init = Arc::clone(&files);
         let files_upd = Arc::clone(&files);
         let throttle = Arc::clone(&throttle);
-        cosh_onnx::hub::ProgressCallbacks::new(
+        morpheus_onnx::hub::ProgressCallbacks::new(
             move |size, filename| {
                 if let Ok(mut f) = files_init.lock() {
                     f.start_file(filename.to_string(), size as u64);
@@ -260,7 +260,7 @@ pub async fn ensure_installed(
     let subfolder = target.subfolder.clone();
     let revision = target.revision.clone();
     let result = tokio::task::spawn_blocking(move || {
-        cosh_onnx::hub::install(cosh_onnx::hub::InstallRequest {
+        morpheus_onnx::hub::install(morpheus_onnx::hub::InstallRequest {
             repo: &repo,
             subfolder: subfolder.as_deref(),
             revision: revision.as_deref(),
@@ -271,8 +271,8 @@ pub async fn ensure_installed(
     })
     .await
     .unwrap_or_else(|join| {
-        Err(cosh_onnx::Error::Runtime(format!(
-            "cosh-onnx: install task panicked: {join}"
+        Err(morpheus_onnx::Error::Runtime(format!(
+            "morpheus-onnx: install task panicked: {join}"
         )))
     });
 

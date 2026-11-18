@@ -2,7 +2,7 @@
 //!
 //! Keyboard and mouse event handling, extracted from the original monolith.
 
-use cosh_tui::core::types::MouseEvent;
+use morpheus_tui::core::types::MouseEvent;
 use ratatui::layout::Rect;
 
 use super::models::{CreateDbFocus, RagAction, RagMode};
@@ -253,7 +253,7 @@ impl RagView {
                 } else {
                     let name = self.db_name_input.trim().to_string();
                     // Validate table name before creating the DB.
-                    if let Err(e) = cosh_recall::embed::validate_table_name(&name) {
+                    if let Err(e) = morpheus_recall::embed::validate_table_name(&name) {
                         let msg = e.to_string();
                         let clean = msg.strip_prefix("Database error: ").unwrap_or(&msg);
                         return Some(RagAction::ShowWarning(clean.to_string()));
@@ -1216,7 +1216,7 @@ mod tests {
 
     #[test]
     fn click_positions_cursor_in_fields() {
-        use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+        use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
         let mut view = RagView::new();
         open_form(&mut view);
         view.db_name_input = "hello".into();
@@ -1262,7 +1262,7 @@ mod tests {
 
     #[test]
     fn drag_selection_selects_and_copies_text() {
-        use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+        use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
         let mut view = RagView::new();
         open_form(&mut view);
         view.db_name_input = "hello world".into();
@@ -1305,7 +1305,7 @@ mod tests {
 
     #[test]
     fn drag_selection_clamps_outside_field() {
-        use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+        use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
         let mut view = RagView::new();
         open_form(&mut view);
         view.db_name_input = "hello".into();
@@ -1339,7 +1339,7 @@ mod tests {
 
     #[test]
     fn plain_click_clears_lingering_selection() {
-        use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+        use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
         let mut view = RagView::new();
         open_form(&mut view);
         view.db_name_input = "hello".into();

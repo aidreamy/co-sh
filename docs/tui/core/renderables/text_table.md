@@ -49,8 +49,8 @@ the table uses the widest row's count and the widest cell per column.
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::renderables::text_table::TextTableRenderable;
-use cosh_tui::core::lib::styled_text::{TextChunk, string_to_styled_text};
+use morpheus_tui::core::renderables::text_table::TextTableRenderable;
+use morpheus_tui::core::lib::styled_text::{TextChunk, string_to_styled_text};
 
 let chunk = |s: &str| vec![TextChunk { text: s.into(), fg: None, bg: None, attributes: 0, link: None }];
 

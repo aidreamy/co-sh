@@ -2,8 +2,8 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use super::super::core::{Harness, annotate_summary_tool_set};
-use cosh_sdk::extract_action::ToolCallData;
-use cosh_tools::fs::Fs;
+use morpheus_sdk::extract_action::ToolCallData;
+use morpheus_tools::fs::Fs;
 use rmcp::ErrorData as McpError;
 use rmcp::ServiceExt;
 use rmcp::handler::server::ServerHandler;
@@ -444,7 +444,7 @@ async fn dispatch_next_multiple_calls_sequential() {
 // `subagent_call` is ONE visible tool with TWO dispatch paths: an external
 // agent CLI when `agent` is provided, or an INTERNAL sub-agent (nested
 // harness) when `agent` is omitted/empty. Routing happens in
-// `dispatch_next` before the cosh-tools tier.
+// `dispatch_next` before the morpheus-tools tier.
 
 #[tokio::test]
 async fn dispatch_next_routes_empty_agent_subagent_call_to_internal_path() {

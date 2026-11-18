@@ -3,7 +3,7 @@ use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
 
 use cosh::ModelEntry;
-use cosh_tui::core::types::MouseEvent;
+use morpheus_tui::core::types::MouseEvent;
 
 use crate::component::search_bar::SearchBar;
 use crate::fallback::{FallbackEntry, PromptCorrectorFallback, default_fallbacks};
@@ -385,12 +385,12 @@ impl RouterView {
 
     /// All registered ACP agents, installed harnesses first so the usable
     /// options lead the list. No filter: the registry is small and fixed.
-    fn acp_agents_ordered(&self) -> Vec<cosh_tools::subagent::acp::Agent> {
-        let installed = cosh_tools::subagent::acp::detect_installed();
+    fn acp_agents_ordered(&self) -> Vec<morpheus_tools::subagent::acp::Agent> {
+        let installed = morpheus_tools::subagent::acp::detect_installed();
         let (mut present, mut missing): (Vec<_>, Vec<_>) =
-            cosh_tools::subagent::acp::all_agent_names()
+            morpheus_tools::subagent::acp::all_agent_names()
                 .into_iter()
-                .filter_map(cosh_tools::subagent::acp::find_agent)
+                .filter_map(morpheus_tools::subagent::acp::find_agent)
                 .partition(|agent| installed.contains(&agent.name));
         present.append(&mut missing);
         present
@@ -737,20 +737,20 @@ impl RouterView {
                 prompt_choices.y,
                 prompt_choices.width,
                 ACP_LIST_TOP_OFFSET
-                    + cosh_tools::subagent::acp::all_agent_names().len() as u16
+                    + morpheus_tools::subagent::acp::all_agent_names().len() as u16
                     + ROUTER_SECTION_GAP,
             ),
             prompt_models: Rect::new(
                 prompt_choices.x,
                 prompt_choices.y
                     + ACP_LIST_TOP_OFFSET
-                    + cosh_tools::subagent::acp::all_agent_names().len() as u16
+                    + morpheus_tools::subagent::acp::all_agent_names().len() as u16
                     + ROUTER_SECTION_GAP,
                 prompt_choices.width,
                 prompt_choices
                     .height
                     .saturating_sub(ACP_LIST_TOP_OFFSET + 1)
-                    .saturating_sub(cosh_tools::subagent::acp::all_agent_names().len() as u16),
+                    .saturating_sub(morpheus_tools::subagent::acp::all_agent_names().len() as u16),
             ),
             prompt_fallbacks,
         }
@@ -813,7 +813,7 @@ impl RouterView {
                     let text = acp_row_text(
                         "  ",
                         agent.name,
-                        cosh_tools::subagent::acp::installed_agents_snapshot()
+                        morpheus_tools::subagent::acp::installed_agents_snapshot()
                             .contains(&agent.name),
                     );
                     if click_lands_on_text(mouse.x, choice_x, &text) {
@@ -1057,7 +1057,7 @@ impl RouterView {
             acp_title_style,
         );
 
-        let installed = cosh_tools::subagent::acp::installed_agents_snapshot();
+        let installed = morpheus_tools::subagent::acp::installed_agents_snapshot();
         let acp_list_top = layout.prompt_acp.y + ACP_LIST_TOP_OFFSET;
         for (index, agent) in self.acp_agents_ordered().into_iter().enumerate() {
             let y = acp_list_top + index as u16;
@@ -1458,7 +1458,7 @@ impl RouterView {
 mod tests {
     use super::*;
     use crate::theme::ThemeRegistry;
-    use cosh_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
 
     fn click(x: u16, y: u16) -> MouseEvent {
         MouseEvent::new(
@@ -1939,7 +1939,7 @@ mod tests {
 
         // ACP agents are ordered installed-first with no filter involved.
         let agents = view.acp_agents_ordered();
-        assert_eq!(agents.len(), cosh_tools::subagent::acp::ACP_AGENTS.len());
+        assert_eq!(agents.len(), morpheus_tools::subagent::acp::ACP_AGENTS.len());
     }
 
     #[test]

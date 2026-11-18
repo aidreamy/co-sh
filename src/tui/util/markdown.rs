@@ -1,6 +1,6 @@
-use cosh_tui::core::lib::rgba::{ColorInput, RGBA};
-use cosh_tui::core::renderable::Renderable;
-use cosh_tui::core::renderables::markdown::{
+use morpheus_tui::core::lib::rgba::{ColorInput, RGBA};
+use morpheus_tui::core::renderable::Renderable;
+use morpheus_tui::core::renderables::markdown::{
     MarkdownAccentColors, MarkdownRenderable, SyntaxColors,
 };
 use ratatui::buffer::Buffer;

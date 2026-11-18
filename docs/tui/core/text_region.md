@@ -152,7 +152,7 @@ This matters for single-cell selections and for releasing on the last character 
 ### Example
 
 ```rust,ignore
-use cosh_tui::core::text_region::{TextRegion, extract_text_in_region};
+use morpheus_tui::core::text_region::{TextRegion, extract_text_in_region};
 
 let region = TextRegion::one_row(0, 0, 10, "hello world".to_string());
 

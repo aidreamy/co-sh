@@ -5,7 +5,7 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
 
-use cosh_tui::core::types::MouseEvent;
+use morpheus_tui::core::types::MouseEvent;
 
 use crate::theme::{Theme, rgba_color};
 use crate::util::draw::draw_text_line;
@@ -484,7 +484,7 @@ const fn visible_items(area: Rect) -> usize {
 mod tests {
     use super::*;
     use crate::theme::ThemeRegistry;
-    use cosh_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
 
     fn click(x: u16, y: u16) -> MouseEvent {
         MouseEvent::new(

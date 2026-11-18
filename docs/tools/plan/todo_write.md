@@ -68,7 +68,7 @@ Each entry carries:
 ## Example
 
 ```rust,ignore
-use cosh_tools::plan::{TodoItemInput, TodoStatus, todo_write};
+use morpheus_tools::plan::{TodoItemInput, TodoStatus, todo_write};
 
 // Create the plan.
 let out = todo_write(&[

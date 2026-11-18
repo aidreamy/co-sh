@@ -51,7 +51,7 @@ ctx.handle_end(&TagEnd);      // call on every Event::End
 ## Typical usage
 
 ```rust,ignore
-use cosh_tui::core::renderables::markdown::context::{MarkdownContext, MarkdownElement};
+use morpheus_tui::core::renderables::markdown::context::{MarkdownContext, MarkdownElement};
 use pulldown_cmark::{Parser, Options, Event, Tag, TagEnd};
 
 let mut ctx = MarkdownContext::new();

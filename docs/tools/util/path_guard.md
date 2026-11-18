@@ -33,7 +33,7 @@ pub fn new(root: &Path, allowlist: Option<&[PathBuf]>, blocklist: Option<&[PathB
 Creates a guard with the project root and optional allow/block lists. The lists are cloned internally so the caller retains ownership.
 
 ```rust,ignore
-use cosh_tools::util::path_guard::PathGuard;
+use morpheus_tools::util::path_guard::PathGuard;
 use std::path::PathBuf;
 
 let root = PathBuf::from("/home/user/project");
@@ -158,7 +158,7 @@ pub fn validate_path(
 - A path is allowed if it is inside the root, in the allowlist, or in the scratch directory (and not blocked).
 
 ```rust,ignore
-use cosh_tools::util::path_guard::validate_path;
+use morpheus_tools::util::path_guard::validate_path;
 
 let result = validate_path(
     "/etc/config",
@@ -197,7 +197,7 @@ Called **only** by write-path tools (`fs::write`, `fs::edit`, `fs::ast_edit`) be
 - The file has no auto-generated marker in the first 10 lines.
 
 ```rust,ignore
-use cosh_tools::util::path_guard::assert_editable_file;
+use morpheus_tools::util::path_guard::assert_editable_file;
 
 assert_editable_file(Path::new("src/main.rs"))?; // OK
 assert_editable_file(Path::new("generated/proto.rs"))?; // Error if header has marker
@@ -223,7 +223,7 @@ pub fn validate_asset_path(base_dir: &Path, asset_path: &str) -> Result<PathBuf,
 - `Err(String)` — describes the violation or why the path couldn't be resolved
 
 ```rust,ignore
-use cosh_tools::util::path_guard::validate_asset_path;
+use morpheus_tools::util::path_guard::validate_asset_path;
 
 let asset = validate_asset_path(
     Path::new("/home/user/skills/my-skill"),

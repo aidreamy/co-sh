@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 #[cfg(test)]
 use aiface::connector::ClaudeThinkingBlock;
-use cosh_tools::lsp::Lsp;
+use morpheus_tools::lsp::Lsp;
 
 use super::Harness;
 
@@ -23,8 +23,8 @@ impl Harness {
                 for (key, lifecycle) in lsp.manager().states() {
                     if matches!(
                         lifecycle,
-                        cosh_sdk::lsp::ClientLifecycle::Starting
-                            | cosh_sdk::lsp::ClientLifecycle::Ready
+                        morpheus_sdk::lsp::ClientLifecycle::Starting
+                            | morpheus_sdk::lsp::ClientLifecycle::Ready
                     ) {
                         servers.insert(key.server);
                     }

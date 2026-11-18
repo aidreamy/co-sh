@@ -6,8 +6,8 @@
 
 use std::time::SystemTime;
 
-use cosh_tui::core::lib::rgba::RGBA;
-use cosh_tui::core::renderables::markdown::markdown_to_visible_text;
+use morpheus_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::renderables::markdown::markdown_to_visible_text;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
@@ -221,7 +221,7 @@ fn wrapped_cursor_pos(text: &str, pad_w: u16) -> (u16, u16) {
 
 /// Flush an accumulated word of `word_w` columns starting at `*x`, advancing
 /// `*y` by the number of extra lines the word spans (mirrors
-/// `flush_layout_word` in cosh-tui's markdown layout estimator).
+/// `flush_layout_word` in morpheus-tui's markdown layout estimator).
 fn flush_cursor_word(word_w: &mut u16, x: &mut u16, y: &mut u16, pad_w: u16) {
     if *word_w == 0 {
         return;
@@ -308,7 +308,7 @@ fn walk_wrapped_cursor(visible: &str, pad_w: u16) -> (u16, u16) {
     let mut y = 0u16;
     let mut word_w = 0u16;
 
-    for (grapheme, w) in cosh_tui::core::lib::unicode_util::graphemes_with_width(visible) {
+    for (grapheme, w) in morpheus_tui::core::lib::unicode_util::graphemes_with_width(visible) {
         if grapheme == "\n" {
             flush_cursor_word(&mut word_w, &mut x, &mut y, pad_w);
             y += 1;
@@ -1196,7 +1196,7 @@ impl RagView {
 #[cfg(test)]
 mod tests {
     use super::wrapped_cursor_pos;
-    use cosh_tui::core::renderables::markdown::estimate_height;
+    use morpheus_tui::core::renderables::markdown::estimate_height;
 
     #[test]
     fn pulldown_preserves_double_space() {

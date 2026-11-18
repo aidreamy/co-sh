@@ -21,14 +21,14 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
-use cosh_tools::subagent::events::{
+use morpheus_tools::subagent::events::{
     AgentCommand, AgentConfigOption, AgentPermissionOption, AgentSessionMode, PanePermissionAnswer,
     PlanEntryStatus, SubagentEvent, ToolCallStatus, ToolKind,
 };
-use cosh_tools::subagent::palette::{display_name, palette_for};
-use cosh_tui::core::lib::rgba::{ColorInput, RGBA};
-use cosh_tui::core::renderable::Renderable;
-use cosh_tui::core::renderables::markdown::MarkdownRenderable;
+use morpheus_tools::subagent::palette::{display_name, palette_for};
+use morpheus_tui::core::lib::rgba::{ColorInput, RGBA};
+use morpheus_tui::core::renderable::Renderable;
+use morpheus_tui::core::renderables::markdown::MarkdownRenderable;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};
@@ -2767,7 +2767,7 @@ fn draw_activity_line(
 /// Block height at `wrap_w` — the SAME estimator the height math uses, so
 /// the scratch buffer always matches the clipped blit.
 fn h_from(text: &str, wrap_w: u16) -> u16 {
-    cosh_tui::core::renderables::markdown::estimate_height(text, wrap_w).max(1)
+    morpheus_tui::core::renderables::markdown::estimate_height(text, wrap_w).max(1)
 }
 
 /// The pane header's agent name: bold, painted with the agent's OWN logo
@@ -4580,7 +4580,7 @@ mod tests {
             &SubagentEvent::ToolCall {
                 id: "c1".to_string(),
                 title: "fs_edit src/main.rs".to_string(),
-                kind: cosh_tools::subagent::events::ToolKind::Edit,
+                kind: morpheus_tools::subagent::events::ToolKind::Edit,
                 status: ToolCallStatus::InProgress,
                 raw_input: Some(serde_json::json!({"path": "src/main.rs"})),
                 tool: Some("fs_edit".to_string()),
@@ -4588,15 +4588,15 @@ mod tests {
         );
         state.apply_event(
             0,
-            &cosh_tools::subagent::events::SubagentEvent::ToolCallUpdate {
+            &morpheus_tools::subagent::events::SubagentEvent::ToolCallUpdate {
                 id: "c1".to_string(),
                 status: Some(ToolCallStatus::Completed),
                 title: None,
                 raw_output: None,
-                content: cosh_tools::subagent::events::ToolOutputBlock {
+                content: morpheus_tools::subagent::events::ToolOutputBlock {
                     text: "edited".to_string(),
                     skipped: 0,
-                    diff: Some(cosh_tools::subagent::events::ToolDiffSummary {
+                    diff: Some(morpheus_tools::subagent::events::ToolDiffSummary {
                         path: "src/main.rs".to_string(),
                         added: 1,
                         removed: 1,
@@ -4664,7 +4664,7 @@ mod tests {
             &SubagentEvent::ToolCall {
                 id: "c1".to_string(),
                 title: "find_grep src".to_string(),
-                kind: cosh_tools::subagent::events::ToolKind::Search,
+                kind: morpheus_tools::subagent::events::ToolKind::Search,
                 status: ToolCallStatus::InProgress,
                 raw_input: None,
                 tool: Some("find_grep".to_string()),
@@ -4695,7 +4695,7 @@ mod tests {
                 status: Some(ToolCallStatus::Completed),
                 title: None,
                 raw_output: None,
-                content: cosh_tools::subagent::events::ToolOutputBlock {
+                content: morpheus_tools::subagent::events::ToolOutputBlock {
                     text: "ok".to_string(),
                     skipped: 0,
                     diff: None,
@@ -4734,7 +4734,7 @@ mod tests {
                 &SubagentEvent::ToolCall {
                     id: "c1".to_string(),
                     title: "find_grep src".to_string(),
-                    kind: cosh_tools::subagent::events::ToolKind::Search,
+                    kind: morpheus_tools::subagent::events::ToolKind::Search,
                     status: ToolCallStatus::InProgress,
                     raw_input: None,
                     tool: Some("find_grep".to_string()),

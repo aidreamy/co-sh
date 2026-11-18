@@ -11,9 +11,9 @@ use ratatui::layout::Rect;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use cosh_tui::core::lib::rgba::{ColorInput, RGBA};
-use cosh_tui::core::renderable::Renderable;
-use cosh_tui::core::renderables::markdown::MarkdownRenderable;
+use morpheus_tui::core::lib::rgba::{ColorInput, RGBA};
+use morpheus_tui::core::renderable::Renderable;
+use morpheus_tui::core::renderables::markdown::MarkdownRenderable;
 
 use crate::config::TuiConfig;
 use crate::state::AppState;
@@ -141,7 +141,7 @@ fn test_render_small_message() {
 
 #[test]
 fn user_message_actions_only_hit_inside_the_rendered_box() {
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
 
     let msg = Message {
         id: "msg-user-actions-hitbox".into(),
@@ -1107,7 +1107,7 @@ fn buffer_text(buf: &Buffer) -> String {
 
 #[test]
 fn test_bash_output_expand_toggles_and_grows_height() {
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
 
     use crate::types::{ToolPart, ToolStatus};
 
@@ -1209,7 +1209,7 @@ fn test_bash_output_expand_toggles_and_grows_height() {
 
 #[test]
 fn test_bash_output_collapse_shrinks_without_scroll_gap() {
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
 
     use crate::types::{ToolPart, ToolStatus};
 
@@ -1300,7 +1300,7 @@ fn test_bash_output_collapse_shrinks_without_scroll_gap() {
 /// expanded/collapsed together.
 #[test]
 fn test_expansion_state_isolated_between_two_bash_boxes() {
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
 
     let msg = Message {
         id: "msg-two-bash".into(),
@@ -1365,7 +1365,7 @@ fn test_expansion_state_isolated_between_two_bash_boxes() {
 /// touch a glob box in the same session, and vice versa.
 #[test]
 fn test_expansion_state_isolated_across_tool_types() {
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
 
     let msg = Message {
         id: "msg-read-glob".into(),
@@ -1430,7 +1430,7 @@ fn test_expansion_state_isolated_across_tool_types() {
 /// `has_manual_scroll` and left the view mid-history after one toggle.
 #[test]
 fn test_sticky_expand_collapse_cycle_restores_scroll() {
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
 
     let msg = Message {
         id: "msg-cycle".into(),
@@ -1511,7 +1511,7 @@ fn test_sticky_expand_collapse_cycle_restores_scroll() {
 /// box is unmoved (only the clicked box's height changes).
 #[test]
 fn test_manual_scroll_viewport_anchored_while_toggling() {
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
 
     let msg = Message {
         id: "msg-manual".into(),
@@ -1568,7 +1568,7 @@ fn test_manual_scroll_viewport_anchored_while_toggling() {
 
 #[test]
 fn test_running_bash_click_can_expand_box() {
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
 
     use crate::types::{ToolPart, ToolStatus};
 
@@ -1625,7 +1625,7 @@ fn test_running_bash_click_can_expand_box() {
 /// streaming tail grows.
 #[test]
 fn test_completed_bash_click_expands_while_new_content_streams() {
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
 
     use crate::types::{ToolPart, ToolStatus};
 
@@ -1738,7 +1738,7 @@ fn test_completed_bash_click_expands_while_new_content_streams() {
 
 #[test]
 fn test_running_glob_click_can_expand_streaming_box() {
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
 
     use crate::types::{ToolPart, ToolStatus};
 
@@ -1817,7 +1817,7 @@ fn test_running_glob_click_can_expand_streaming_box() {
 /// shift the box's `prefix_y`, and make the click miss.)
 #[test]
 fn test_completed_bash_click_expands_below_wrapped_message_with_matching_widths() {
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
 
     use crate::types::{ToolPart, ToolStatus};
 
@@ -1919,7 +1919,7 @@ fn test_completed_bash_click_expands_below_wrapped_message_with_matching_widths(
 
 #[test]
 fn test_summarizing_box_click_expands_while_running() {
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
 
     use crate::types::{CompactionPart, CompactionPhase, Message, MessageRole, Part};
 
@@ -1970,7 +1970,7 @@ fn test_summarizing_box_click_expands_while_running() {
 
 #[test]
 fn test_completed_bash_click_expands_while_status_working() {
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
 
     use crate::types::{ToolPart, ToolStatus};
 
@@ -2026,7 +2026,7 @@ fn test_completed_bash_click_expands_while_status_working() {
 /// message/part heights grow to match (mirroring the bash block behaviour).
 #[test]
 fn test_glob_output_expand_shows_grouped_list() {
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
 
     use crate::types::{ToolPart, ToolStatus};
 
@@ -2301,7 +2301,7 @@ fn compaction_part_serde_roundtrip() {
 /// show blank rows).
 #[test]
 fn markdown_estimate_matches_render_height() {
-    use cosh_tui::core::renderables::markdown::estimate_height;
+    use morpheus_tui::core::renderables::markdown::estimate_height;
     let cases: &[&str] = &[
         // Note: code blocks here deliberately use NO language tag — the test
         // compares row counts, which syntax highlighting does not change, and
@@ -2375,7 +2375,7 @@ fn markdown_estimate_matches_render_height() {
 /// through the full-height render path and the text reappears).
 #[test]
 fn test_text_after_code_block_not_clipped() {
-    use cosh_tui::core::renderables::markdown::estimate_height;
+    use morpheus_tui::core::renderables::markdown::estimate_height;
     // Realistic shape: prose, a code block, then a closing paragraph — the
     // trailing paragraph is what got clipped.
     let text = "Aqui está a explicação completa. O problema ocorre porque o layout estima a altura de forma diferente do render real quando existem blocos de código.\n\n```rust\nfn compute(input: &str) -> i32 {\n    let parsed: Vec<i32> = input.split(',').filter_map(|s| s.parse().ok()).collect();\n    parsed.iter().sum()\n}\n```\n\nConclusão final do assistente.";
@@ -2403,7 +2403,7 @@ fn test_text_after_code_block_not_clipped() {
 
 #[test]
 fn test_summarizing_box_collapsed_tail_and_expand() {
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
 
     use crate::types::{CompactionPart, CompactionPhase, Message, MessageRole, Part};
 
@@ -4293,7 +4293,7 @@ fn bash_part(tool_call_id: &str, n: usize, status: ToolStatus) -> Part {
 
 /// Build a read tool part whose output mirrors `fs_read`: a JSON array of
 /// results carrying hashline content (header line, `N| text` body, and a
-/// trailing bracketed notice), exactly like `crates/cosh-tools/src/fs/read.rs`.
+/// trailing bracketed notice), exactly like `crates/morpheus-tools/src/fs/read.rs`.
 fn read_part(tool_call_id: &str, n: usize, status: ToolStatus) -> Part {
     let body: String = (0..n)
         .map(|i| format!("{}| fn code_line_{i}() {{ return {i}; }}", i + 1))
@@ -4843,7 +4843,7 @@ fn test_completed_read_renders_code_box() {
 /// tracks the toggle exactly.
 #[test]
 fn test_completed_read_expands_to_full_content() {
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
 
     let msg = Message {
         id: "msg-read".into(),
@@ -8755,7 +8755,7 @@ fn probe_estimate_vs_paint_row_counts() {
     ];
 
     for (name, text) in &cases {
-        let est = cosh_tui::core::renderables::markdown::estimate_height(text, area_w);
+        let est = morpheus_tui::core::renderables::markdown::estimate_height(text, area_w);
         // Render into a generous buffer and scan painted rows.
         let mut buf = Buffer::empty(Rect::new(0, 0, area_w, 400));
         let mut md = MarkdownRenderable::new(Some(super::sanitize_text(text)));
@@ -9155,7 +9155,7 @@ fn probe_streaming_cache_final_height_vs_full_estimate() {
         }
         let (_, _) = cache.update(full, width, tok, false);
         let final_stream_h = cache.height;
-        let full_est = cosh_tui::core::renderables::markdown::estimate_height(
+        let full_est = morpheus_tui::core::renderables::markdown::estimate_height(
             &super::sanitize_text(full),
             width,
         );

@@ -14,10 +14,10 @@
 //!   `x + 3` within `width - 6`; the pane blits its markdown block over
 //!   the band. The frame only owns the chrome.
 
-use cosh_tui::core::lib::border::{BorderCharacters, BorderSidesConfig};
-use cosh_tui::core::lib::rgba::RGBA;
-use cosh_tui::core::renderable::Renderable;
-use cosh_tui::core::renderables::r#box::BoxRenderable;
+use morpheus_tui::core::lib::border::{BorderCharacters, BorderSidesConfig};
+use morpheus_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::renderable::Renderable;
+use morpheus_tui::core::renderables::r#box::BoxRenderable;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 

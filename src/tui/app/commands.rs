@@ -1,5 +1,5 @@
 use cosh::harness::HarnessEvent;
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::rgba::RGBA;
 use std::sync::atomic::Ordering;
 
 use super::App;
@@ -945,7 +945,7 @@ impl App {
                 });
             }
             BannerAction::StartUpdate => {
-                // Fire-and-forget: the pipeline runs `cosh update` detached
+                // Fire-and-forget: the pipeline runs `morpheus update` detached
                 // and installs the release; this process exits first so the
                 // running image is not locked on Windows. The user reopens
                 // cosh once the install finishes, so the very next step is to
@@ -960,12 +960,12 @@ impl App {
     /// Click on the session footer's update button (`v0.1.2` in
     /// `v0.1.1 → v0.1.2`): run the SAME install pipeline the Home banner's
     /// "Update version" button uses — `spawn_update_pipeline` hands the tag
-    /// to `cosh update`, which installs that exact release and exits; closing
+    /// to `morpheus update`, which installs that exact release and exits; closing
     /// the TUI is the whole feedback, and the user reopens cosh afterwards.
     pub(super) fn click_footer_update(&mut self) {
         // The RAW release tag (`v0.1.2`) straight from the GitHub check —
         // the same value the Home banner passes, never a reconstruction:
-        // `spawn_update_pipeline` passes it to `cosh update` as the target
+        // `spawn_update_pipeline` passes it to `morpheus update` as the target
         // version, so a tag published without the `v` prefix must survive
         // verbatim. It is validated again inside.
         if let Some(tag) = self.update_latest_tag.clone() {
@@ -1118,7 +1118,7 @@ impl App {
     ///
     /// Returns `false` (with the toast shown) when the target session is
     /// locked by another process; `true` on a completed switch.
-    /// Open a session before the first frame — the `cosh -c` / `cosh -s`
+    /// Open a session before the first frame — the `morpheus -c` / `morpheus -s`
     /// startup path.
     ///
     /// Runs the sidebar switch (lock, persist the outgoing session, restore

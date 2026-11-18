@@ -1,4 +1,4 @@
-//! `cosh paths` — print the directories the app reads and writes.
+//! `morpheus paths` — print the directories the app reads and writes.
 //!
 //! Support and composition both need this: "where are my sessions?" is
 //! answered by the store's own resolution (including the `COSH_DATA_DIR`
@@ -26,7 +26,7 @@ pub fn entries() -> Vec<(&'static str, PathBuf)> {
 
 /// Print every path and return the process exit code.
 pub fn run(palette: &Palette) -> i32 {
-    println!("{}", palette.title("cosh paths"));
+    println!("{}", palette.title("morpheus paths"));
     println!();
     for (label, path) in entries() {
         println!(

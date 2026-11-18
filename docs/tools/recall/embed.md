@@ -37,7 +37,7 @@ pub enum Embedder {
 Uses ONNX Runtime to run models locally. Models are downloaded from Hugging Face on first use and cached.
 
 ```rust,ignore
-use cosh_recall::embed::Embedder;
+use morpheus_recall::embed::Embedder;
 use fastembed::EmbeddingModel;
 
 let embedder = Embedder::try_new_local(EmbeddingModel::BGESmallENV15)?;
@@ -53,7 +53,7 @@ Requires the `fastembed` feature. The download progress bar is suppressed automa
 Delegates to a cloud provider (OpenAI, Gemini, etc.) via the `aiface` connector.
 
 ```rust,ignore
-use cosh_recall::embed::Embedder;
+use morpheus_recall::embed::Embedder;
 use aiface::connector::Connector;
 
 let connector = Connector::new("openai")?
@@ -91,7 +91,7 @@ pub struct Rag {
 ### Connecting to a database
 
 ```rust,ignore
-use cosh_recall::embed::{Rag, Embedder};
+use morpheus_recall::embed::{Rag, Embedder};
 
 let embedder = Embedder::try_new_local(EmbeddingModel::BGESmallENV15)?;
 let rag = Rag::connect("data/lancedb", "my_docs", embedder).await?;
@@ -148,7 +148,7 @@ pub struct VecDb { /* LanceDB connection and table handle */ }
 ### Connecting
 
 ```rust,ignore
-use cosh_recall::embed::VecDb;
+use morpheus_recall::embed::VecDb;
 
 let db = VecDb::connect("data/lancedb", "my_table", 384).await?;
 ```
@@ -192,7 +192,7 @@ LanceDB tables created by `VecDb` have three columns:
 - Maximum 100 characters
 
 ```rust,ignore
-use cosh_recall::embed::validate_table_name;
+use morpheus_recall::embed::validate_table_name;
 
 validate_table_name("my_docs")?;       // OK
 validate_table_name("123_invalid")?;   // Error: must start with a letter
@@ -246,7 +246,7 @@ Enumerates the local embedding models supported by fastembed. The `Q` suffix ind
 Use `fastembed_model_from_str` to parse from a string:
 
 ```rust,ignore
-use cosh_recall::embed::fastembed_model_from_str;
+use morpheus_recall::embed::fastembed_model_from_str;
 
 let fastembed_model = fastembed_model_from_str("BGESmallENV15")?;
 ```

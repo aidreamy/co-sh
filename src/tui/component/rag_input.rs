@@ -7,7 +7,7 @@ use ratatui::style::Style;
 use crate::component::cursor::{Cursor, paint_cursor_cell};
 use crate::theme::{Theme, rgba_color};
 
-use cosh_tui::core::lib::unicode_util;
+use morpheus_tui::core::lib::unicode_util;
 
 const PLACEHOLDER: &str = "Enter URL or file path, then press Enter";
 

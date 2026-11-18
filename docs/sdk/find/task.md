@@ -55,7 +55,7 @@ impl AbortToken {
 ## Writing your own cancellable work
 
 ```rust,ignore
-use cosh_sdk::find::{task::{CancelToken, AbortReason}, glob, GlobOptions};
+use morpheus_sdk::find::{task::{CancelToken, AbortReason}, glob, GlobOptions};
 
 // A long-running loop that respects a deadline:
 fn my_loop(ct: &CancelToken) -> Result<(), String> {

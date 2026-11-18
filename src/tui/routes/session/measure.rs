@@ -24,14 +24,14 @@ impl SessionView {
                 }
             }
         }
-        let lines = cosh_tui::core::lib::unicode_util::word_wrap(text, max_w);
+        let lines = morpheus_tui::core::lib::unicode_util::word_wrap(text, max_w);
         let mut y = y_;
         for line in &lines {
             if y >= bottom {
                 break;
             }
             let mut cx = x;
-            for (grapheme, w) in cosh_tui::core::lib::unicode_util::graphemes_with_width(line) {
+            for (grapheme, w) in morpheus_tui::core::lib::unicode_util::graphemes_with_width(line) {
                 if cx >= right {
                     break;
                 }
@@ -107,7 +107,7 @@ impl SessionView {
                 estimate_height(&t.text, max_w)
             }
             Part::Text(t) if !t.synthetic => {
-                let lines = cosh_tui::core::lib::unicode_util::word_wrap(&t.text, max_w);
+                let lines = morpheus_tui::core::lib::unicode_util::word_wrap(&t.text, max_w);
                 lines.len().max(1) as u16
             }
             Part::Install(_) => 1,
@@ -339,7 +339,7 @@ impl SessionView {
 
 impl SessionView {
     /// Total findings across severities.
-    pub(super) fn lsp_notes_count(n: &cosh_tools::fs::LspNotes) -> u16 {
+    pub(super) fn lsp_notes_count(n: &morpheus_tools::fs::LspNotes) -> u16 {
         (n.errors.len() + n.warnings.len()).min(u16::MAX as usize) as u16
     }
 }

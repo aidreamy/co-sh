@@ -11,7 +11,7 @@
 //! per-entry source); when a project has no brand color the entry notes
 //! what was sampled instead.
 
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::rgba::RGBA;
 
 /// (short label, logo color) for a language server catalog name.
 ///
@@ -90,7 +90,7 @@ mod tests {
     /// otherwise it renders in the generic primary color.
     #[test]
     fn every_catalog_server_has_a_tag() {
-        for spec in cosh_sdk::lsp::CATALOG {
+        for spec in morpheus_sdk::lsp::CATALOG {
             assert!(
                 lsp_tag(spec.name).is_some(),
                 "`{}` is in the SDK catalog but has no LSP tag",

@@ -314,7 +314,7 @@ pub struct ToolPart {
     /// Passive LSP findings collected by the fs tool that produced this part
     /// (errors red, warnings yellow, rendered below the output block).
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub lsp_notes: Option<cosh_tools::fs::LspNotes>,
+    pub lsp_notes: Option<morpheus_tools::fs::LspNotes>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

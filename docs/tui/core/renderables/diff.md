@@ -58,7 +58,7 @@ All color setters take `RGBA` directly (not `ColorInput`).
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::renderables::diff::{DiffRenderable, DiffViewMode};
+use morpheus_tui::core::renderables::diff::{DiffRenderable, DiffViewMode};
 
 let diff = "\
 --- a/lib.rs

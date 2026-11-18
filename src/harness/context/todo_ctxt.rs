@@ -56,7 +56,7 @@
 //! rendering of the real todo list.
 
 use crate::util::TokenEncoding;
-use cosh_tools::plan::types::{TodoList, TodoStatus};
+use morpheus_tools::plan::types::{TodoList, TodoStatus};
 
 /// The dedicated, fully-protected TODO context block.
 ///
@@ -162,7 +162,7 @@ fn all_terminal(list: &TodoList) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cosh_tools::plan::types::TodoItem;
+    use morpheus_tools::plan::types::TodoItem;
 
     fn enc() -> TokenEncoding {
         TokenEncoding::Cl100k

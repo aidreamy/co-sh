@@ -1,6 +1,6 @@
 # The `computer` module: seeing and controlling the desktop
 
-This module is the desktop-control toolbox of `cosh-tools`. It gives an agent
+This module is the desktop-control toolbox of `morpheus-tools`. It gives an agent
 eyes (what is on screen, as a tree and as an image), a voice (semantic actions
 and synthetic input), and patience (blocking waits) over the machine it runs
 on:
@@ -41,7 +41,7 @@ around it:
    (`event: "window_opened"`) instead of re-polling in a loop.
 
 ```rust,ignore
-use cosh_tools::computer::{Computer, types::*};
+use morpheus_tools::computer::{Computer, types::*};
 
 let computer = Computer::new();
 
@@ -131,7 +131,7 @@ The source tree is the index:
 | `apps.rs` | [apps.md](apps.md) | `cargo run --example computer-apps` |
 | `snapshot.rs` | [snapshot.md](snapshot.md) | `cargo run --example computer-snapshot` |
 | `screenshot.rs` | [screenshot.md](screenshot.md) | `cargo run --example computer-screenshot` |
-| `windows.rs` | [windows.md](windows.md) | — (fixture-driven: `cargo test -p cosh-tools -- computer::test::windows`) |
+| `windows.rs` | [windows.md](windows.md) | — (fixture-driven: `cargo test -p morpheus-tools -- computer::test::windows`) |
 | `wait.rs` | [wait.md](wait.md) | `cargo run --example computer-wait` |
 | `act.rs` (the touch engine) | [act.md](act.md) | `cargo run --example computer-act` |
 | `control.rs` | [control.md](control.md) | `cargo run --example computer-control` |

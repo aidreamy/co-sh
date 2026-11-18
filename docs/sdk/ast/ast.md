@@ -14,7 +14,7 @@ source  ──▶ collect_matches ──▶ Vec<AstMatch>        (find)
         ──▶ rewrite_source   ──▶ (String, u32)       (replace)
 ```
 
-This is the engine behind cosh-tools' `fs_ast_edit` tool. It is vendored
+This is the engine behind morpheus-tools' `fs_ast_edit` tool. It is vendored
 from oh-my-pi's `pi-ast`/`pi-natives`, stripped of the N-API/JS surface.
 
 ---
@@ -30,7 +30,7 @@ from oh-my-pi's `pi-ast`/`pi-natives`, stripped of the N-API/JS surface.
 > See [Language resolution](#language-resolution) below for how to obtain a `SupportLang`, and [`ops.md`](ops.md#strictness) for matching behavior options.
 
 The public entry points are re-exported from `ast::ops` (and `SupportLang`
-from `ast::lang`), so `use cosh_sdk::ast::{SupportLang, collect_matches,
+from `ast::lang`), so `use morpheus_sdk::ast::{SupportLang, collect_matches,
 rewrite_source, …}` is all you typically need.
 
 ## The core concept: patterns with metavariables
@@ -70,7 +70,7 @@ Unknown languages and uninferable paths are structured errors, not panics
 ## Example
 
 A complete, runnable walkthrough lives at
-[`examples/ast/ops.rs`](../../../crates/cosh-sdk/examples/ast/ops.rs): it
+[`examples/ast/ops.rs`](../../../crates/morpheus-sdk/examples/ast/ops.rs): it
 resolves languages, compiles patterns with metavariables, collects matches,
 rewrites a snippet, applies raw edits, and shows the error paths.
 
@@ -83,6 +83,6 @@ rewrites a snippet, applies raw edits, and shows the error paths.
 - Patterns use metavariables (`$NAME` for single nodes, `$$$ARGS` for zero or more) and are parsed as real syntax in the target language.
 - Matching has a strictness knob: `Smart` (default, ignores trivia), `Cst` (exact concrete syntax), and progressively looser modes.
 - Language resolution can be explicit (from alias) or inferred from file paths; unknown languages are structured errors, not panics.
-- Public entry points are re-exported from `ast::ops` and `ast::lang`, so typical usage is `use cosh_sdk::ast::{SupportLang, collect_matches, rewrite_source, …}`.
+- Public entry points are re-exported from `ast::ops` and `ast::lang`, so typical usage is `use morpheus_sdk::ast::{SupportLang, collect_matches, rewrite_source, …}`.
 
 Next: [language resolution](lang.md), then [the operations](ops.md).

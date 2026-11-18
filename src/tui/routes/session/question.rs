@@ -5,8 +5,8 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
 
-use cosh_tools::question::types::{AnswerItem, QuestionItem, QuestionType};
-use cosh_tui::core::types::MouseEvent;
+use morpheus_tools::question::types::{AnswerItem, QuestionItem, QuestionType};
+use morpheus_tui::core::types::MouseEvent;
 
 use super::super::super::component::cursor::{Cursor, paint_cursor_cell};
 use super::super::super::theme::Theme;
@@ -2954,7 +2954,7 @@ impl QuestionDialog {
 
 #[cfg(test)]
 mod tests {
-    use cosh_tools::question::types::{QuestionItem, QuestionType};
+    use morpheus_tools::question::types::{QuestionItem, QuestionType};
     use crossterm::event::KeyCode;
 
     use super::{QuestionDialog, SelectionRegion};
@@ -2975,7 +2975,7 @@ mod tests {
             purpose: None,
             options: options.map(|o| {
                 o.into_iter()
-                    .map(cosh_tools::question::types::QuestionOption::from_label)
+                    .map(morpheus_tools::question::types::QuestionOption::from_label)
                     .collect()
             }),
             required: true,
@@ -3291,7 +3291,7 @@ mod tests {
             options: Some(
                 options
                     .into_iter()
-                    .map(cosh_tools::question::types::QuestionOption::from_label)
+                    .map(morpheus_tools::question::types::QuestionOption::from_label)
                     .collect(),
             ),
             recommended: recommended.map(str::to_string),
@@ -3463,7 +3463,7 @@ mod tests {
             question_type: QuestionType::SingleChoice,
             options: Some(
                 opts.into_iter()
-                    .map(cosh_tools::question::types::QuestionOption::from_label)
+                    .map(morpheus_tools::question::types::QuestionOption::from_label)
                     .collect(),
             ),
             ..QuestionItem::default()
@@ -3557,7 +3557,7 @@ mod tests {
 
     #[test]
     fn mouse_click_on_footer_esc_label_dismisses() {
-        use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+        use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
         use ratatui::layout::Rect;
         // The hit-test must agree with the footer renderer's label layout
         // (`footer_esc_x`), including the multi-question tab-hint offset.
@@ -3717,7 +3717,7 @@ mod tests {
             question_type: QuestionType::SingleChoice,
             options: Some(
                 opts.into_iter()
-                    .map(cosh_tools::question::types::QuestionOption::from_label)
+                    .map(morpheus_tools::question::types::QuestionOption::from_label)
                     .collect(),
             ),
             ..QuestionItem::default()
@@ -3830,7 +3830,7 @@ mod tests {
             question_type: QuestionType::SingleChoice,
             options: Some(
                 many.into_iter()
-                    .map(cosh_tools::question::types::QuestionOption::from_label)
+                    .map(morpheus_tools::question::types::QuestionOption::from_label)
                     .collect(),
             ),
             ..QuestionItem::default()
@@ -3880,7 +3880,7 @@ mod tests {
 
     #[test]
     fn mouse_click_selects_option_and_focuses_custom() {
-        use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+        use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
         use ratatui::layout::Rect;
         // Clicking a regular row commits it (advances); clicking the custom
         // row only focuses it so the user can type.
@@ -4037,7 +4037,7 @@ mod tests {
             options: Some(
                 ["A", "B"]
                     .into_iter()
-                    .map(cosh_tools::question::types::QuestionOption::from_label)
+                    .map(morpheus_tools::question::types::QuestionOption::from_label)
                     .collect(),
             ),
             recommended: Some("A".to_string()),
@@ -4084,7 +4084,7 @@ mod tests {
     /// gap rows and the tab bar yield `None` so a drag there never anchors.
     #[test]
     fn selection_target_scopes_to_copyable_regions() {
-        use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+        use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
         use ratatui::layout::Rect;
         let mut d = QuestionDialog::new();
         d.show_questions(vec![single_choice("s1", vec!["A", "B"], Some("A"))]);

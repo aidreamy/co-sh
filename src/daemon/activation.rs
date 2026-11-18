@@ -163,7 +163,7 @@ pub(crate) fn spawn_sibling(name: &str) -> Result<(), Lifecycle> {
         name: "decision",
         source: e,
     })?;
-    let daemon_exe = exe.with_file_name(format!("cosh-{name}d"));
+    let daemon_exe = exe.with_file_name(format!("morpheus-{name}d"));
     std::process::Command::new(&daemon_exe)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())

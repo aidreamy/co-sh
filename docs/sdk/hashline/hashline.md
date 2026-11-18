@@ -1,17 +1,17 @@
 # The `hashline` module: the anchored edit engine
 
-`hashline` is the **edit engine** behind `cosh-tools`' `fs_edit` tool. It
+`hashline` is the **edit engine** behind `morpheus-tools`' `fs_edit` tool. It
 parses a small, line-anchored patch language and applies the resulting edits
 to files — safely, with content-hash validation against drift and, when the
 file changed between read and edit, automatic 3-way-merge recovery against a
 cached snapshot.
 
 ```
-cosh-tools fs_edit  ──  hashline text  ──▶  Patch::parse  ──▶  Patcher::apply  ──▶  file
+morpheus-tools fs_edit  ──  hashline text  ──▶  Patch::parse  ──▶  Patcher::apply  ──▶  file
                     (¶path#TAG + ops)      (sections)          (validate + apply)
 ```
 
-If you only ever use `cosh-tools`, you never touch this module directly —
+If you only ever use `morpheus-tools`, you never touch this module directly —
 `fs_edit` is the wrapper. This documentation exists for anyone embedding the
 engine in their own tool (an editor, a CI linter, an agent harness), and to
 explain *why* `fs_edit` behaves the way it does.
@@ -123,7 +123,7 @@ directory, a database, or an in-memory map looks identical to the parser.
 ## Example
 
 A complete, runnable walkthrough lives at
-[`examples/hashline/patcher.rs`](../../../crates/cosh-sdk/examples/hashline/patcher.rs):
+[`examples/hashline/patcher.rs`](../../../crates/morpheus-sdk/examples/hashline/patcher.rs):
 it hashes content, parses a multi-section patch, applies edits in memory,
 records snapshots, demonstrates 3-way-merge recovery when the file drifts
 (external edit at the tail survives the merge), shows a hard mismatch
@@ -136,7 +136,7 @@ Next: the [types](types.md) the pipeline passes around, then the
 
 ## Summary
 
-- `hashline` is the edit engine behind `cosh-tools`' `fs_edit` tool, parsing a line-anchored patch language and applying edits with content-hash validation and 3-way-merge recovery.
+- `hashline` is the edit engine behind `morpheus-tools`' `fs_edit` tool, parsing a line-anchored patch language and applying edits with content-hash validation and 3-way-merge recovery.
 - Core design: anchored edits (line numbers + content-hash tag) instead of diffs — no searching, staleness detectable, stale edits often rescueable via 3-way merge.
 - Language constructs: section headers (`¶path#TAG`), replace/delete/insert operations (with line ranges), and block operations (resolve syntactic blocks).
 - Pipeline stages: tokenize → parse → split → resolve blocks → apply → normalize → store snapshots → validate + write → recover.

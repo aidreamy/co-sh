@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use cosh_tools::lsp::Lsp;
+use morpheus_tools::lsp::Lsp;
 
 pub struct PromptSystem {
     pub title: String,

@@ -1,4 +1,4 @@
-//! `cosh update` — install the latest (or a pinned) release.
+//! `morpheus update` — install the latest (or a pinned) release.
 //!
 //! The work is delegated to the release installer (`download.sh` /
 //! `download.ps1`), exactly as a manual install would: it knows the archive
@@ -10,13 +10,13 @@
 //! The installer is downloaded into a private temp file and executed directly
 //! instead of being piped through a shell: no tag or path is ever
 //! interpolated into a command line. The installer is started detached and
-//! this process exits right away: on Windows the running `cosh.exe` image is
+//! this process exits right away: on Windows the running `morpheus.exe` image is
 //! locked, so it could not be replaced while we were still alive. The user
-//! reopens cosh once the install finishes.
+//! reopens morpheus once the install finishes.
 //!
 //! Exit status therefore means "the installer was started", not "the update
 //! landed": the installer reports its own outcome on the inherited terminal
-//! after cosh has exited, and its exit code is not observable from here. Only
+//! after morpheus has exited, and its exit code is not observable from here. Only
 //! a failure to fetch or start the installer is reported as an error (status
 //! 1); a rejected version is a usage error (status 2).
 
@@ -28,7 +28,7 @@ use cosh::update::{REPO, fetch_latest_tag, is_update_available, normalize_tag};
 use crate::cli::VERSION;
 use crate::cli::style::Palette;
 
-/// Options of `cosh update`.
+/// Options of `morpheus update`.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct UpdateOptions {
     /// Release to install (`v0.2.3` or `0.2.3`). `None` targets the latest
@@ -69,7 +69,7 @@ pub async fn run(options: UpdateOptions) -> i32 {
     println!(
         "{}",
         palette.body(&format!(
-            "Updating cosh v{VERSION} → {target} ({} variant)",
+            "Updating morpheus v{VERSION} → {target} ({} variant)",
             variant()
         ))
     );
@@ -82,7 +82,7 @@ pub async fn run(options: UpdateOptions) -> i32 {
     println!(
         "{}",
         palette.success(&format!(
-            "Update started — cosh is exiting; reopen it to use {target}."
+            "Update started — morpheus is exiting; reopen it to use {target}."
         ))
     );
     0
@@ -113,7 +113,7 @@ async fn resolve_target(
         eprintln!(
             "{}",
             palette.error(
-                "could not reach the GitHub releases API — pass a version explicitly, e.g. `cosh update v0.2.3`"
+                "could not reach the GitHub releases API — pass a version explicitly, e.g. `morpheus update v0.2.3`"
             )
         );
         return Err(1);
@@ -122,7 +122,7 @@ async fn resolve_target(
         println!(
             "{}",
             palette.success(&format!(
-                "cosh v{VERSION} is already up to date (latest: {})",
+                "morpheus v{VERSION} is already up to date (latest: {})",
                 latest.tag
             ))
         );
@@ -148,7 +148,7 @@ fn confirm(palette: &Palette, target: &str, assume_yes: bool) -> Confirmation {
     println!(
         "{}",
         palette.body(&format!(
-            "This replaces the running cosh (v{VERSION}) with {target}."
+            "This replaces the running morpheus (v{VERSION}) with {target}."
         ))
     );
     print!("{} ", palette.body("Continue? [y/N]"));
@@ -192,7 +192,7 @@ async fn install(target: &str) -> Result<(), String> {
     // process swap the script between the download and its execution.
     let extension = if cfg!(windows) { "ps1" } else { "sh" };
     let script = std::env::temp_dir().join(format!(
-        "cosh-update-{}.{extension}",
+        "morpheus-update-{}.{extension}",
         std::process::id()
     ));
     // The copy cannot be deleted from here: the installer is still reading it
@@ -224,7 +224,7 @@ async fn install(target: &str) -> Result<(), String> {
         .env("COSH_VERSION", target)
         .env("COSH_VARIANT", variant());
 
-    // An in-app update spawns `cosh update` without a console; a console
+    // An in-app update spawns `morpheus update` without a console; a console
     // program started from a console-less process (powershell) would get a
     // fresh console window allocated for it, sitting empty on screen for the
     // whole download. Suppress it when there is no terminal to report into.
@@ -237,12 +237,12 @@ async fn install(target: &str) -> Result<(), String> {
 
     // Spawn the installer and return immediately WITHOUT waiting for it.
     //
-    // On Windows the running cosh.exe image is locked by the OS: if we
+    // On Windows the running morpheus.exe image is locked by the OS: if we
     // stayed alive while the installer ran, it could not replace the binary
     // (and would fail with an access-denied error). By exiting here first,
     // the installer finds the image unlocked and can replace it freely, even
     // with older installers that delete the file outright. The user reopens
-    // cosh once the update finishes.
+    // morpheus once the update finishes.
     match command.spawn() {
         Ok(_) => Ok(()),
         Err(error) => Err(format!("could not run the installer: {error}")),

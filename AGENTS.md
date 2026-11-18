@@ -9,7 +9,7 @@ caps apply automatically to any `cargo` command run from inside the repo —
 **use plain `cargo test` as you normally would; do not add `--test-threads`
 or `-j` flags yourself**, they are already handled.
 
-- Prefer scoped runs: `cargo test -p cosh-tools --lib fs::` instead of the
+- Prefer scoped runs: `cargo test -p morpheus-tools --lib fs::` instead of the
   whole workspace when you only changed one module.
 - Do NOT delete or override `.cargo/config.toml` and do NOT run cargo with
   `CARGO_BUILD_JOBS` / `RUST_TEST_THREADS` env overrides — a full-parallelism

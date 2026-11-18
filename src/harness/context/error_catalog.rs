@@ -3,7 +3,7 @@
 //! A context-window overflow is the provider's OWN report of its maximum input
 //! size ("maximum context length is 128000") — more authoritative than a guess
 //! from a public catalog, and worth persisting across launches. This lives
-//! HERE, in the harness, deliberately isolated from `cosh-sdk`'s discovery: it
+//! HERE, in the harness, deliberately isolated from `morpheus-sdk`'s discovery: it
 //! records the user's own observed maxima (private, per-machine state), not a
 //! public model listing. It is stored at the TOP level of the data dir
 //! (`~/.local/share/cosh`), not under the `cache/` subdir the public catalogs

@@ -125,7 +125,7 @@ skipped after.
 ## Example
 
 A complete runnable example is provided at
-[`examples/fs/edit.rs`](../../../crates/cosh-tools/examples/fs/edit.rs). It
+[`examples/fs/edit.rs`](../../../crates/morpheus-tools/examples/fs/edit.rs). It
 writes a small source file, reads it back to capture its hashline tag, then
 applies a multi-operation edit and prints the resulting diff.
 

@@ -101,7 +101,7 @@ grouping itself.
 ## Example
 
 A complete runnable example is provided at
-[`examples/find/glob.rs`](../../../crates/cosh-tools/examples/find/glob.rs).
+[`examples/find/glob.rs`](../../../crates/morpheus-tools/examples/find/glob.rs).
 It builds a scratch project and demonstrates the target shapes above — bare
 glob, scoped glob, directory literal, `file_type` filtering, `tree` formatting,
 and multi-target search.

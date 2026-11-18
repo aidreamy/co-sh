@@ -1,7 +1,7 @@
 use std::io;
 use std::time::Duration;
 
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::rgba::RGBA;
 use crossterm::event::{self, Event, KeyEventKind};
 use ratatui::style::Color;
 
@@ -16,7 +16,7 @@ use crate::types::{Part, Session, SessionStatus};
 use crate::ui::dialogs::DialogType;
 use cosh::harness::HarnessEvent;
 use cosh::harness::context::ContextManagerState;
-use cosh_tools::subagent::events::SubagentEvent;
+use morpheus_tools::subagent::events::SubagentEvent;
 
 /// Process-wide sequence for live-created tool parts' `tool_call_id`s. The
 /// id is the identity per-box UI state (expand/collapse, LSP-notes toggle)

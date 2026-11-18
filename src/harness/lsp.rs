@@ -17,8 +17,8 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-use cosh_sdk::lsp::{DiagnosticsEngine, Manager, ManagerConfig};
-use cosh_tools::lsp::Lsp;
+use morpheus_sdk::lsp::{DiagnosticsEngine, Manager, ManagerConfig};
+use morpheus_tools::lsp::Lsp;
 
 static LSP_ENABLED: AtomicBool = AtomicBool::new(true);
 

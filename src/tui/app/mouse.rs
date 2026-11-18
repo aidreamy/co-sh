@@ -2,8 +2,8 @@ use std::io;
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
-use cosh_tui::core::types::MouseEvent;
-use cosh_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
+use morpheus_tui::core::types::MouseEvent;
+use morpheus_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
 use crossterm::event::{
     KeyCode, KeyModifiers, MouseButton as CrosstermMouseButton, MouseEvent as CrosstermMouseEvent,
     MouseEventKind,
@@ -21,7 +21,7 @@ use crate::ui::toast::{ToastOptions, ToastVariant};
 use crate::util::selection;
 
 impl App {
-    /// Handle a crossterm mouse event by converting it to a cosh-tui `MouseEvent`
+    /// Handle a crossterm mouse event by converting it to a morpheus-tui `MouseEvent`
     /// and dispatching to the appropriate component based on current layout.
     #[allow(clippy::too_many_lines, clippy::unnecessary_wraps)]
     pub(super) fn handle_mouse_event(&mut self, evt: CrosstermMouseEvent) -> io::Result<bool> {
@@ -171,7 +171,7 @@ impl App {
                             if let Some(split) = self.agents_split.as_mut() {
                                 split.answer_pending_permission(
                                     index,
-                                    cosh_tools::subagent::events::PanePermissionAnswer::Selected(
+                                    morpheus_tools::subagent::events::PanePermissionAnswer::Selected(
                                         id,
                                     ),
                                 );

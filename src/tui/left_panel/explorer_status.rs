@@ -40,7 +40,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use cosh_sdk::lsp::lsp_types::DiagnosticSeverity;
+use morpheus_sdk::lsp::lsp_types::DiagnosticSeverity;
 
 /// Git state of one file, as the explorer renders it. Variant order is the
 /// display priority for directory aggregation (modified beats deleted beats

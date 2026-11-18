@@ -1,14 +1,14 @@
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 
-use cosh_tui::core::lib::border::BorderSidesConfig;
-use cosh_tui::core::lib::rgba::RGBA;
-use cosh_tui::core::lib::styled_text::string_to_styled_text;
-use cosh_tui::core::lib::unicode_util;
-use cosh_tui::core::renderable::Renderable;
-use cosh_tui::core::renderables::r#box::BoxRenderable;
-use cosh_tui::core::renderables::text::TextRenderable;
-use cosh_tui::core::types::TextAttributes;
+use morpheus_tui::core::lib::border::BorderSidesConfig;
+use morpheus_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::styled_text::string_to_styled_text;
+use morpheus_tui::core::lib::unicode_util;
+use morpheus_tui::core::renderable::Renderable;
+use morpheus_tui::core::renderables::r#box::BoxRenderable;
+use morpheus_tui::core::renderables::text::TextRenderable;
+use morpheus_tui::core::types::TextAttributes;
 
 use crate::theme::{Theme, rgba_color};
 

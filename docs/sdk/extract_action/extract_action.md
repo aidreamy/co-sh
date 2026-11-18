@@ -82,7 +82,7 @@ is self-contained: it exposes everything through the `extract_action` re-exports
 ## Example
 
 A complete runnable walkthrough lives at
-[`examples/extract_action/extract.rs`](../../../crates/cosh-sdk/examples/extract_action/extract.rs):
+[`examples/extract_action/extract.rs`](../../../crates/morpheus-sdk/examples/extract_action/extract.rs):
 it registers schemas, runs batch and streaming extractions over realistic
 model output, shows validation failures, and drives the jsonish parser
 directly.

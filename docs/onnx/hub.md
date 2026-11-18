@@ -15,7 +15,7 @@ subfolder, or a local checkpoint directory. `LoadOptions` can select the graph,
 pin a revision and provide an artifact-to-SHA-256 map.
 
 ```rust,ignore
-use cosh_onnx::{load, LoadOptions, ModelKind};
+use morpheus_onnx::{load, LoadOptions, ModelKind};
 
 let options = LoadOptions {
     revision: Some("reviewed-commit-sha".into()),
@@ -38,7 +38,7 @@ Embedders that need progress or want to install before loading can use
 `hub::install`:
 
 ```rust,ignore
-use cosh_onnx::hub::{InstallRequest, ProgressCallbacks, install};
+use morpheus_onnx::hub::{InstallRequest, ProgressCallbacks, install};
 
 let installed = install(InstallRequest {
     repo: "owner/model",

@@ -74,11 +74,11 @@ complete:
 ## Example
 
 ```rust,ignore
-use cosh_tui::solid::reconciler::{
+use morpheus_tui::solid::reconciler::{
     create_text_node, create_element, insert_node, remove_node, set_property,
 };
-use cosh_tui::core::renderables::r#box::BoxRenderable;
-use cosh_tui::core::renderable::RootRenderable;
+use morpheus_tui::core::renderables::r#box::BoxRenderable;
+use morpheus_tui::core::renderable::RootRenderable;
 
 let mut root: Box<dyn Renderable> = Box::new(RootRenderable::new());
 

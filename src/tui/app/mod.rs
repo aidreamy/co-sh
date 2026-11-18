@@ -11,7 +11,7 @@ use tokio::runtime::Handle;
 use tokio::sync::mpsc;
 
 use cosh::harness::HarnessEvent;
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::rgba::RGBA;
 
 use crate::component::any_spinner::AnySpinner as AgentSpinner;
 use crate::component::prompt::PromptView;
@@ -347,7 +347,7 @@ pub struct App {
     pub event_tx: mpsc::UnboundedSender<HarnessEvent>,
     event_rx: mpsc::UnboundedReceiver<HarnessEvent>,
     /// Sender for question answers back to the harness.
-    answer_tx: mpsc::UnboundedSender<Result<Vec<cosh_tools::question::types::AnswerItem>, String>>,
+    answer_tx: mpsc::UnboundedSender<Result<Vec<morpheus_tools::question::types::AnswerItem>, String>>,
     /// Sender for permission responses back to the harness.
     perm_tx: mpsc::UnboundedSender<cosh::harness::PermissionAction>,
     /// Handle to the SHARED "next request" queue of the running agent loop
@@ -506,9 +506,9 @@ pub struct App {
     /// model"): agent name → model id, written ONLY on a real user pick in a
     /// config box and read at turn dispatch to seed pane-less agents. The
     /// directory resolves from the data-dir override; the store itself lives
-    /// in the sub-agent domain (cosh-tools), which takes the directory as an
+    /// in the sub-agent domain (morpheus-tools), which takes the directory as an
     /// argument and owns nothing about cosh's paths.
-    agents_model_picks: cosh_tools::subagent::model_picks::ModelPicks,
+    agents_model_picks: morpheus_tools::subagent::model_picks::ModelPicks,
     /// Telemetry facade: consent-resolved state (setup.json flag + env
     /// override + CI hard-off) plus the local event queue.
     telemetry: cosh::telemetry::Telemetry,
@@ -719,7 +719,7 @@ impl App {
         // working ones are still published (an all-or-nothing failure here
         // would disable every harness because one entry rotted).
         for error in
-            cosh_tools::subagent::acp::register_custom_agents_lossy(&setup.acp_agent_pairs())
+            morpheus_tools::subagent::acp::register_custom_agents_lossy(&setup.acp_agent_pairs())
         {
             log::warn!("user-registered ACP agent skipped: {error}");
         }
@@ -933,7 +933,7 @@ impl App {
                 // portability stay one knob); the store itself lives in the
                 // sub-agent domain and takes the directory as an argument.
                 let dir = cosh::setup::data_dir_override().join("agents");
-                cosh_tools::subagent::model_picks::ModelPicks::new(&dir)
+                morpheus_tools::subagent::model_picks::ModelPicks::new(&dir)
             },
             setup,
             telemetry,

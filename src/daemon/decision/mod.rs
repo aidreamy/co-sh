@@ -1,4 +1,4 @@
-//! The decision-model daemon (`cosh-decisiond`).
+//! The decision-model daemon (`morpheus-decisiond`).
 //!
 //! One process owns the resident decision model (the ~1.3 GB ONNX graph and
 //! its ORT session); every cosh instance shares it over the daemon IPC
@@ -26,7 +26,7 @@ use std::time::Duration;
 pub use client::IpcCheckup;
 pub use protocol::Kind;
 
-/// The binary entrypoint (`cosh-decisiond`): bind the daemon's socket and
+/// The binary entrypoint (`morpheus-decisiond`): bind the daemon's socket and
 /// serve until idle or drained.
 ///
 /// Losing the bind race (a live daemon already owns the socket) is a
@@ -68,7 +68,7 @@ pub fn run() -> i32 {
             return 0;
         }
         Err(e) => {
-            eprintln!("cosh-decisiond: cannot bind {}: {e}", path.display());
+            eprintln!("morpheus-decisiond: cannot bind {}: {e}", path.display());
             return 1;
         }
     };

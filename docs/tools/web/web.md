@@ -21,7 +21,7 @@ string, not a structured payload.
 ## The `Web` wrapper
 
 ```rust,ignore
-use cosh_tools::web::{Web, WebFetch};
+use morpheus_tools::web::{Web, WebFetch};
 
 let web = Web::new().num_results(5);   // 5 results for searches
 

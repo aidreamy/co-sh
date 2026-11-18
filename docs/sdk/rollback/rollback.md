@@ -1,6 +1,6 @@
 # The `rollback` module: session-scoped file version history
 
-`rollback` is the **undo engine** behind `cosh-tools`' `fs_rollback` tool. It
+`rollback` is the **undo engine** behind `morpheus-tools`' `fs_rollback` tool. It
 keeps a bounded, in-memory history of every file version the session has
 observed and can restore any recorded version by its content hash — or step
 back one version at a time.
@@ -88,7 +88,7 @@ function. They differ in *who owns the store*:
   recommended wiring is to hand it `rollback::session_store()` via
   `Patcher::new_shared`, so edits and rollbacks share one history.
 
-In this crate's host, `cosh-tools`' `fs_edit` uses a patcher backed by the
+In this crate's host, `morpheus-tools`' `fs_edit` uses a patcher backed by the
 same session store, which is why a `fs_edit` response's new header can
 immediately be targeted by `fs_rollback`.
 
@@ -107,7 +107,7 @@ immediately be targeted by `fs_rollback`.
 ## Example
 
 A complete, runnable walkthrough lives at
-[`examples/rollback/core.rs`](../../../crates/cosh-sdk/examples/rollback/core.rs):
+[`examples/rollback/core.rs`](../../../crates/morpheus-sdk/examples/rollback/core.rs):
 it records a version chain, restores by explicit hash, steps back one
 version at a time, undoes a rollback, and exercises the error paths.
 

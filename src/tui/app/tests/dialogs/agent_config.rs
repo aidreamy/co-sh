@@ -5,7 +5,7 @@
 
 use super::super::{App, HOME_LOCK, isolate_home};
 use crate::routes::session::agent_command_map::ConfigTarget;
-use cosh_tools::subagent::events::{
+use morpheus_tools::subagent::events::{
     AgentConfigOption, AgentConfigValue, SubagentEvent, ToolCallStatus,
 };
 
@@ -108,7 +108,7 @@ async fn confirming_a_model_pick_persists_it_per_agent() {
     // session it was made in.
     let file = cosh::setup::data_dir_override()
         .join("agents")
-        .join(cosh_tools::subagent::model_picks::MODEL_PICKS_FILE);
+        .join(morpheus_tools::subagent::model_picks::MODEL_PICKS_FILE);
     let text = std::fs::read_to_string(&file).expect("the store file was written");
     let value: serde_json::Value = serde_json::from_str(&text).expect("whole json");
     assert_eq!(
@@ -138,7 +138,7 @@ async fn non_model_picks_and_defaults_never_persist() {
             event: SubagentEvent::ToolCall {
                 id: "c1".into(),
                 title: "find_grep".into(),
-                kind: cosh_tools::subagent::events::ToolKind::Search,
+                kind: morpheus_tools::subagent::events::ToolKind::Search,
                 status: ToolCallStatus::Completed,
                 raw_input: None,
                 tool: Some("find_grep".into()),

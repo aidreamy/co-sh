@@ -3,7 +3,7 @@
 `find` is the **search engine layer** of the SDK: it finds files by *name*
 ([`glob`](glob.md)) and by *content* ([`grep`](grep.md)), backed by a shared
 [filesystem scan cache](fs_cache.md) and a [cancellation model](task.md). It
-is the engine that powers the `find` tools in `cosh-tools` (`find_glob`,
+is the engine that powers the `find` tools in `morpheus-tools` (`find_glob`,
 `find_grep`, and the `fs_ast_edit` file discovery).
 
 ```
@@ -73,7 +73,7 @@ docs rather than assuming one rule:
   default (content search is expected to be exhaustive).
 
 Both engines prune `node_modules` unless the pattern mentions it, and `.git`
-is **always** skipped by the walker. (The `cosh-tools` wrappers default both
+is **always** skipped by the walker. (The `morpheus-tools` wrappers default both
 engines to `hidden: true` for the model's benefit — the SDK keeps its own,
 per-engine defaults.)
 
@@ -88,7 +88,7 @@ lineage (`GrepOptions.r#type`, `max_columns`, and so on).
 ## Example
 
 A complete runnable walkthrough lives at
-[`examples/find/find.rs`](../../../crates/cosh-sdk/examples/find/find.rs): it
+[`examples/find/find.rs`](../../../crates/morpheus-sdk/examples/find/find.rs): it
 builds a scratch project, searches it by name and by content, exercises the
 output modes and the scan cache, and shows the error paths.
 

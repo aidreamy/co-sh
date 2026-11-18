@@ -41,7 +41,7 @@ and end inside a cell; edge cells show half-block characters (`▌`, `▐`,
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::renderables::slider::{SliderRenderable, SliderOrientation};
+use morpheus_tui::core::renderables::slider::{SliderRenderable, SliderOrientation};
 
 let mut volume = SliderRenderable::new(SliderOrientation::Horizontal);
 volume.set_min(0.0);

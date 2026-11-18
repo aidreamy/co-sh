@@ -301,7 +301,7 @@ impl SessionView {
                                             }
                                         }
 
-                                        let mut md = cosh_tui::core::renderables::markdown::MarkdownRenderable::new(
+                                        let mut md = morpheus_tui::core::renderables::markdown::MarkdownRenderable::new(
                                             Some(content.clone()),
                                         );
                                         md.set_fg(Some(ColorInput::RGBA(theme.text)));
@@ -375,7 +375,7 @@ impl SessionView {
                                             }
                                             continue;
                                         }
-                                        let lines = cosh_tui::core::lib::unicode_util::word_wrap(
+                                        let lines = morpheus_tui::core::lib::unicode_util::word_wrap(
                                             logical_line,
                                             max_w,
                                         );
@@ -554,7 +554,7 @@ impl SessionView {
                                     if *temp.area() != scan_area {
                                         temp.resize(scan_area);
                                     }
-                                    let mut md = cosh_tui::core::renderables::markdown::
+                                    let mut md = morpheus_tui::core::renderables::markdown::
                                         MarkdownRenderable::new(Some(content));
                                     md.set_fg(Some(ColorInput::RGBA(theme.text_muted)));
                                     md.set_bg(Some(ColorInput::RGBA(theme.background)));

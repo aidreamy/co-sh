@@ -17,7 +17,7 @@ use crate::component::cursor::Cursor;
 use crate::component::rag_input::RagInput;
 use crate::component::search_bar::SearchBar;
 use crate::component::spinner::SpinnerState;
-use cosh_tui::core::renderables::markdown::estimate_height;
+use morpheus_tui::core::renderables::markdown::estimate_height;
 
 // Layout constants
 

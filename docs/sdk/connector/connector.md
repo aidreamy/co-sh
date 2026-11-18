@@ -71,7 +71,7 @@ SSE plumbing. You never touch them: everything routes through `Connector`.
 ## Example
 
 A complete runnable walkthrough lives at
-[`examples/connector/client.rs`](../../../crates/cosh-sdk/examples/connector/client.rs):
+[`examples/connector/client.rs`](../../../crates/morpheus-sdk/examples/connector/client.rs):
 it inspects the provider registry, builds and introspects connectors,
 constructs tool/message payloads, exercises the deterministic error paths,
 and makes best-effort live calls when an API key is available.

@@ -531,7 +531,7 @@ impl UpdatePayload {
 /// is truncated before it can enter the payload.
 pub const MAX_UNINSTALL_REASON: usize = 256;
 
-/// Payload for `uninstall` — emitted once, from `cosh uninstall`, right before
+/// Payload for `uninstall` — emitted once, from `morpheus uninstall`, right before
 /// the local installation is removed.
 ///
 /// The feedback message is the ONE free-form field in the whole schema (a

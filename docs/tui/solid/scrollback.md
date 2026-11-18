@@ -65,6 +65,6 @@ scrollback.
 Scrollback capture is not yet functional; treat these as forward-compatible
 API scaffolding. To render content off-screen today, render widgets into an
 in-memory `ratatui::buffer::Buffer` yourself (the same approach the
-[`core` example](../../../crates/cosh-tui/examples/core/core.rs) uses).
+[`core` example](../../../crates/morpheus-tui/examples/core/core.rs) uses).
 
 Next: [time_to_first_draw — TTFD marker](time_to_first_draw.md).

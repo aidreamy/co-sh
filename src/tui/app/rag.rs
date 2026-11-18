@@ -1,4 +1,4 @@
-use cosh_tui::core::types::MouseEvent;
+use morpheus_tui::core::types::MouseEvent;
 use crossterm::event::KeyCode;
 use ratatui::layout::Rect;
 
@@ -203,7 +203,7 @@ impl App {
                         let url = input.clone();
                         let url_for_log = url.clone();
                         let handle = self.tokio_handle.spawn(async move {
-                            use cosh_tools::web::{WebFetch, fetch as web_fetch_fn};
+                            use morpheus_tools::web::{WebFetch, fetch as web_fetch_fn};
                             let fetch_input = WebFetch { url };
                             let result = web_fetch_fn(&fetch_input).await;
                             let _ = tx.send(result);
@@ -482,7 +482,7 @@ pub(super) async fn embed_document(
     content: &str,
     base_urls: &std::collections::HashMap<String, String>,
 ) -> Result<(), String> {
-    use cosh_recall::embed::Rag;
+    use morpheus_recall::embed::Rag;
 
     let dim = embedder_config.vector_dim();
     let embedder = match embedder_config {
@@ -508,8 +508,8 @@ pub(super) async fn embed_document(
 #[cfg(feature = "embed")]
 pub(super) fn create_local_embedder(
     model: crate::routes::rag::models::LocalEmbedModel,
-) -> Result<cosh_recall::embed::Embedder, String> {
-    use cosh_recall::embed::Embedder;
+) -> Result<morpheus_recall::embed::Embedder, String> {
+    use morpheus_recall::embed::Embedder;
     let fast_model = model.to_fastembed_model();
     Embedder::try_new_local(fast_model).map_err(|e| format!("Failed to create local embedder: {e}"))
 }
@@ -520,9 +520,9 @@ pub(super) fn create_cloud_embedder(
     model: &str,
     dim: usize,
     base_urls: &std::collections::HashMap<String, String>,
-) -> Result<cosh_recall::embed::Embedder, String> {
+) -> Result<morpheus_recall::embed::Embedder, String> {
     use aiface::connector::Connector;
-    use cosh_recall::embed::Embedder;
+    use morpheus_recall::embed::Embedder;
     let mut connector = Connector::new(provider)
         .map_err(|e| format!("Failed to create connector: {e}"))?
         .with_model(model);
@@ -538,6 +538,6 @@ pub(super) fn create_cloud_embedder(
     _model: &str,
     _dim: usize,
     _base_urls: &std::collections::HashMap<String, String>,
-) -> Result<cosh_recall::embed::Embedder, String> {
+) -> Result<morpheus_recall::embed::Embedder, String> {
     Err("Cloud embedding requires the 'cloud' feature (enable with --features cloud)".into())
 }

@@ -87,7 +87,7 @@ returns `JsonishError("Depth limit reached. Likely a circular reference.")`.
 ## Using it directly
 
 ```rust,ignore
-use cosh_sdk::extract_action::{jsonish, ParseOptions};
+use morpheus_sdk::extract_action::{jsonish, ParseOptions};
 
 let v = jsonish::parse(
     r#"Here is the tool call:

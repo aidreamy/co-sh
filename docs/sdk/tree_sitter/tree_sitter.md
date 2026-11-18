@@ -44,7 +44,7 @@ pub fn tree_sitter() -> &'static TreeSitter;
 ```
 
 A process-global singleton with a 128-entry LRU, initialized on first use.
-This is what the file tools use: `rollback` and the cosh-tools file
+This is what the file tools use: `rollback` and the morpheus-tools file
 operations call `tree_sitter().invalidate(path)` after writing, so a stale
 tree is never served. Construct your own `TreeSitter::new(capacity)` when
 you need an isolated pool (tests, sandboxes).
@@ -74,7 +74,7 @@ more, and `highlight` accepts an explicit language name.
 
 - **`hashline`** — `BlockSpan` comes from `hashline::types`; `resolve_block`
   is exactly the [`BlockResolver`](../hashline/block.md) contract the
-  patcher accepts (cosh-tools wires it into `Patcher::new_shared`).
+  patcher accepts (morpheus-tools wires it into `Patcher::new_shared`).
 - **`ast`** — the ast-grep registry and `detect_language` mirror each
   other's extension sets; the low-level parse cache deliberately does not
   depend on the structural-matching engine.
@@ -86,7 +86,7 @@ more, and `highlight` accepts an explicit language name.
 ## Example
 
 A complete, runnable walkthrough lives at
-[`examples/tree_sitter/tree_sitter.rs`](../../../crates/cosh-sdk/examples/tree_sitter/tree_sitter.rs):
+[`examples/tree_sitter/tree_sitter.rs`](../../../crates/morpheus-sdk/examples/tree_sitter/tree_sitter.rs):
 it parses a Rust file, resolves blocks and a symbol, demonstrates the cache
 lifecycle (unchanged text reuses the tree, changed text re-parses), and
 highlights a source snippet.

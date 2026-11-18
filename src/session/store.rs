@@ -898,7 +898,7 @@ impl SessionStore {
     }
 
     /// The session most recently *touched* in this directory — what
-    /// `cosh -c` / `--continue` resumes.
+    /// `morpheus -c` / `--continue` resumes.
     ///
     /// [`list_sessions`](Self::list_sessions) orders by creation time, which
     /// answers "which session did I start last", not "which one did I work in

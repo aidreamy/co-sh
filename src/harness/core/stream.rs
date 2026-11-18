@@ -8,7 +8,7 @@ use tokio::time::Duration;
 use aiface::NativeToolCall;
 use aiface::connector::ChatMessage;
 use aiface::connector::ConnectorError;
-use cosh_sdk::extract_action::{ExtractAction, StreamAction, ToolCallData};
+use morpheus_sdk::extract_action::{ExtractAction, StreamAction, ToolCallData};
 
 use super::{CONTEXT_WINDOW_MARKER, Harness, INTERRUPTED_MARKER, StreamEvent, ToolCallMode};
 
@@ -384,7 +384,7 @@ impl Harness {
         extractor: &mut ExtractAction,
         on_event: &mut dyn FnMut(StreamEvent),
     ) {
-        let native = cosh_sdk::extract_action::NativeToolCall {
+        let native = morpheus_sdk::extract_action::NativeToolCall {
             id: native.id.clone(),
             name: native.name.clone(),
             arguments: native.arguments.clone(),

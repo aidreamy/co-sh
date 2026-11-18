@@ -41,15 +41,15 @@ pub(crate) const fn left_border_chars() -> BorderCharacters {
     }
 }
 
-use cosh_sdk::hashline::format::{HL_FILE_PREFIX, HL_LINE_BODY_SEP};
-use cosh_sdk::tree_sitter::highlight::{HighlightCategory, highlight};
-use cosh_tools::question::types::QuestionOutput;
-use cosh_tui::core::lib::border::{BorderCharacters, BorderSidesConfig};
-use cosh_tui::core::lib::rgba::RGBA;
-use cosh_tui::core::lib::unicode_util::{word_wrap, word_wrap_spans};
-use cosh_tui::core::renderable::Renderable;
-use cosh_tui::core::renderables::r#box::BoxRenderable;
-use cosh_tui::core::renderables::diff::{DiffRenderable, DiffViewMode};
+use morpheus_sdk::hashline::format::{HL_FILE_PREFIX, HL_LINE_BODY_SEP};
+use morpheus_sdk::tree_sitter::highlight::{HighlightCategory, highlight};
+use morpheus_tools::question::types::QuestionOutput;
+use morpheus_tui::core::lib::border::{BorderCharacters, BorderSidesConfig};
+use morpheus_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::unicode_util::{word_wrap, word_wrap_spans};
+use morpheus_tui::core::renderable::Renderable;
+use morpheus_tui::core::renderables::r#box::BoxRenderable;
+use morpheus_tui::core::renderables::diff::{DiffRenderable, DiffViewMode};
 
 use crate::component::spinner_highlight::HighlightSpinner;
 use crate::routes::session::right_panel::types::{subagent_display_output, subagent_visible_body};

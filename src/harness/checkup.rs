@@ -9,7 +9,7 @@
 //!
 //! The state the model reviews is deliberately MINIMAL — the final text
 //! alone (`{"message": …}`), verbatim the shape the `loop_terminated`
-//! evaluation scores. A measured probe (`crates/cosh-onnx/tests/eval/
+//! evaluation scores. A measured probe (`crates/morpheus-onnx/tests/eval/
 //! shape_probe.rs`) tested richer shapes — the user request prepended,
 //! concatenated, two-field — and every one made the published checkpoints
 //! FLIP closing summaries to `running` (the request reads as "work in
@@ -92,7 +92,7 @@ impl TerminationVerdict {
 #[cfg_attr(not(feature = "onnx"), allow(dead_code))]
 pub(crate) const QID: &str = "loop_terminated";
 
-/// The `loop_terminated` question, verbatim from the eval (`crates/cosh-onnx/
+/// The `loop_terminated` question, verbatim from the eval (`crates/morpheus-onnx/
 /// tests/eval/loop_termination.rs`), shared by the in-process adapter and the
 /// daemon client so both paths read the same question. Two options because
 /// `temperature_by_options` calibrates `choice:2` explicitly.
@@ -120,7 +120,7 @@ pub(crate) fn loop_questions() -> serde_json::Map<String, serde_json::Value> {
     questions
 }
 
-/// The ONNX adapter: drives the resident [`cosh_onnx::DecisionModel`] with
+/// The ONNX adapter: drives the resident [`morpheus_onnx::DecisionModel`] with
 /// the shared `loop_terminated` question over the bare `{"message"}` state.
 #[cfg(feature = "onnx")]
 pub use onnx_adapter::OnnxCheckup;
@@ -132,7 +132,7 @@ mod onnx_adapter {
 
     use serde_json::json;
 
-    use cosh_onnx::{DecisionModel, LoadOptions, ModelKind, Prediction};
+    use morpheus_onnx::{DecisionModel, LoadOptions, ModelKind, Prediction};
 
     use super::{Checkup, QID, TerminationDecision, TerminationVerdict, loop_questions};
 
@@ -214,14 +214,14 @@ mod onnx_adapter {
     /// handling: the loader falls back to the snapshot dir when the graph is
     /// not found relative to the process CWD (the same contract the eval
     /// tests follow when they pass `onnx_path` explicitly).
-    fn load_model(kind: &ModelKind) -> Result<Arc<dyn DecisionModel>, cosh_onnx::Error> {
+    fn load_model(kind: &ModelKind) -> Result<Arc<dyn DecisionModel>, morpheus_onnx::Error> {
         let mut options = LoadOptions::default();
         if let ModelKind::Custom { repo, .. } = kind
             && std::path::Path::new(repo).is_dir()
         {
             options.onnx_path = Some(format!("{repo}/laya.onnx"));
         }
-        cosh_onnx::load(kind.clone(), &options)
+        morpheus_onnx::load(kind.clone(), &options)
     }
 
     /// A [`Checkup`] over a resident decision model.
@@ -287,7 +287,7 @@ mod tests {
     /// The benchmark↔consumer 1:1 mapping is load-bearing: the eval scores
     /// the model on EXACTLY the question this consumer sends, so a wording
     /// change on either side silently invalidates the benchmark numbers.
-    /// The eval is a separate crate (`cosh-onnx`) that cannot import this
+    /// The eval is a separate crate (`morpheus-onnx`) that cannot import this
     /// one, so drift is caught mechanically by scanning its source for the
     /// exact strings this module sends.
     #[test]
@@ -300,7 +300,7 @@ mod tests {
 
         let eval = std::fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/crates/cosh-onnx/tests/eval/loop_termination.rs"
+            "/crates/morpheus-onnx/tests/eval/loop_termination.rs"
         ))
         .expect("the eval source is part of this workspace");
         for (what, needle) in [

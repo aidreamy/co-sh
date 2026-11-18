@@ -8,7 +8,7 @@ pub mod footer;
 
 pub use banner::{BannerAction, BannerContent, BannerView, UpdateStatus};
 
-use cosh_tui::core::types::MouseEvent;
+use morpheus_tui::core::types::MouseEvent;
 
 use crate::theme::{Theme, blend_color, rgba_color};
 

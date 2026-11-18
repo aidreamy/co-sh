@@ -1,4 +1,4 @@
-//! The WhatsApp interface: `cosh whatsapp`.
+//! The WhatsApp interface: `morpheus whatsapp`.
 //!
 //! Links this machine to a personal WhatsApp account as a companion device
 //! and answers the linked conversations with the cosh agent. There is no
@@ -70,7 +70,7 @@ use std::sync::Arc;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
-use cosh_whatsapp::{Config, Event, WhatsApp, qr};
+use morpheus_whatsapp::{Config, Event, WhatsApp, qr};
 
 use agent::WhatsAppAgent;
 use config::RuntimeConfig;
@@ -98,7 +98,7 @@ const MAX_IN_FLIGHT: usize = 4;
 pub async fn run() -> i32 {
     let Some(store_path) = Config::default_store_path() else {
         eprintln!(
-            "cosh whatsapp: cannot resolve the data directory for the device store; \
+            "morpheus whatsapp: cannot resolve the data directory for the device store; \
              is HOME set?"
         );
         return 1;
@@ -110,10 +110,10 @@ pub async fn run() -> i32 {
     if stale_marker(&store_path).exists() {
         if let Err(error) = clear_device_store(&store_path).await {
             eprintln!(
-                "cosh whatsapp: could not clear the unlinked device store at {}: {error}",
+                "morpheus whatsapp: could not clear the unlinked device store at {}: {error}",
                 store_path.display()
             );
-            eprintln!("Is another `cosh whatsapp` still running? Stop it and try again.");
+            eprintln!("Is another `morpheus whatsapp` still running? Stop it and try again.");
             return 1;
         }
         let _ = tokio::fs::remove_file(stale_marker(&store_path)).await;
@@ -140,7 +140,7 @@ pub async fn run() -> i32 {
         let (whatsapp, mut events) = match WhatsApp::connect(config).await {
             Ok(link) => link,
             Err(error) => {
-                eprintln!("cosh whatsapp: could not start the link: {error}");
+                eprintln!("morpheus whatsapp: could not start the link: {error}");
                 return 1;
             }
         };
@@ -166,7 +166,7 @@ pub async fn run() -> i32 {
                     flush_stdout();
                 }
                 Event::PairingFailed { reason } => {
-                    eprintln!("cosh whatsapp: pairing failed: {reason}");
+                    eprintln!("morpheus whatsapp: pairing failed: {reason}");
                 }
                 Event::Connected => {
                     connected = true;
@@ -177,7 +177,7 @@ pub async fn run() -> i32 {
                     flush_stdout();
                 }
                 Event::Disconnected => {
-                    eprintln!("cosh whatsapp: connection dropped; reconnecting…");
+                    eprintln!("morpheus whatsapp: connection dropped; reconnecting…");
                 }
                 Event::LoggedOut => {
                     // The device store still holds the dead credentials; clearing
@@ -197,7 +197,7 @@ pub async fn run() -> i32 {
                     if kind.is_fatal() {
                         break Err(format!("unrecoverable link failure: {reason}"));
                     }
-                    eprintln!("cosh whatsapp: {reason}; reconnecting…");
+                    eprintln!("morpheus whatsapp: {reason}; reconnecting…");
                 }
                 Event::Message(message) => {
                     // The crate owns the routing rule: normal chats and this
@@ -210,7 +210,7 @@ pub async fn run() -> i32 {
                     // its wording is recorded by id and content kind only.
                     let is_prompt = whatsapp.is_prompt(&message);
                     log::info!(
-                        "cosh whatsapp: inbound id={} chat={} from_me={} chat_kind={:?} \
+                        "morpheus whatsapp: inbound id={} chat={} from_me={} chat_kind={:?} \
                          content={} prompt={}",
                         message.id,
                         message.chat,
@@ -224,7 +224,7 @@ pub async fn run() -> i32 {
                     }
                     let Some(permit) = Arc::clone(&slots).try_acquire_owned().ok() else {
                         log::warn!(
-                            "cosh whatsapp: all {MAX_IN_FLIGHT} conversation slots are busy; \
+                            "morpheus whatsapp: all {MAX_IN_FLIGHT} conversation slots are busy; \
                          replying busy for message {}",
                             message.id
                         );
@@ -252,17 +252,17 @@ pub async fn run() -> i32 {
                             return;
                         }
                         log::info!(
-                            "cosh whatsapp: sending reply to {} ({} chars)",
+                            "morpheus whatsapp: sending reply to {} ({} chars)",
                             message.chat,
                             reply.len()
                         );
                         match link.send_text(&message.chat, reply).await {
                             Ok(sent) => log::info!(
-                                "cosh whatsapp: send_text ok id={} to={}",
+                                "morpheus whatsapp: send_text ok id={} to={}",
                                 sent.id, sent.to
                             ),
                             Err(error) => {
-                                log::warn!("cosh whatsapp: reply to {} failed: {error}", message.chat)
+                                log::warn!("morpheus whatsapp: reply to {} failed: {error}", message.chat)
                             }
                         }
                     });
@@ -287,7 +287,7 @@ pub async fn run() -> i32 {
                 // run, but failing to delete it is not worth a nonzero exit.
                 if let Err(error) = clear_device_store(&store_path).await {
                     log::warn!(
-                        "cosh whatsapp: could not clear the dead device store at {}: {error}; \
+                        "morpheus whatsapp: could not clear the dead device store at {}: {error}; \
                          it will be removed on the next start",
                         store_path.display()
                     );
@@ -302,11 +302,11 @@ pub async fn run() -> i32 {
                     // pair again; the marker makes the next start do the
                     // delete before opening it.
                     eprintln!(
-                        "cosh whatsapp: the unlinked device store is still in use ({error})."
+                        "morpheus whatsapp: the unlinked device store is still in use ({error})."
                     );
                     mark_stale_store(&store_path).await;
                     eprintln!(
-                        "Run `cosh whatsapp` again to pair: the dead session will be removed."
+                        "Run `morpheus whatsapp` again to pair: the dead session will be removed."
                     );
                     return 1;
                 }
@@ -314,7 +314,7 @@ pub async fn run() -> i32 {
                 continue;
             }
             Err(error) => {
-                eprintln!("cosh whatsapp: {error}");
+                eprintln!("morpheus whatsapp: {error}");
                 return 1;
             }
         }
@@ -391,7 +391,7 @@ async fn mark_stale_store(path: &Path) {
     }
     if let Err(error) = tokio::fs::write(&marker, b"pair again\n").await {
         log::warn!(
-            "cosh whatsapp: could not mark the unlinked device store at {}: {error}",
+            "morpheus whatsapp: could not mark the unlinked device store at {}: {error}",
             marker.display()
         );
     }
@@ -409,7 +409,7 @@ fn print_qr(payload: &str) {
         Err(error) => {
             // Rendering only fails on an oversized payload, which the
             // server never issues; keep the link alive and report it.
-            eprintln!("cosh whatsapp: could not render the pairing QR code: {error}");
+            eprintln!("morpheus whatsapp: could not render the pairing QR code: {error}");
         }
     }
 }
@@ -424,7 +424,7 @@ fn reap(tasks: &mut JoinSet<()>) {
         if let Err(error) = finished
             && error.is_panic()
         {
-            log::error!("cosh whatsapp: a conversation task panicked: {error}");
+            log::error!("morpheus whatsapp: a conversation task panicked: {error}");
         }
     }
 }
@@ -437,7 +437,7 @@ mod tests {
         static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let serial = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let dir = std::env::temp_dir().join(format!(
-            "cosh-whatsapp-store-{name}-{}-{serial}",
+            "morpheus-whatsapp-store-{name}-{}-{serial}",
             std::process::id()
         ));
         std::fs::create_dir_all(&dir).expect("temp dir");

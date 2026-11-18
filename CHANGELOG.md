@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-11-18
+
+### Changed
+
+- **Breaking:** the application binaries were renamed. `cosh` is now
+  `morpheus`, `cosh-uninstall` is `morpheus-uninstall` and `cosh-decisiond`
+  is `morpheus-decisiond`. Builds, release assets (`morpheus-v<version>-…`),
+  the installers, the self-update pipeline and the help pages all use the new
+  names, so scripts that invoke the old binary must be updated. The data and
+  config directories, the `COSH_*` environment variables and the session
+  store keep the old names, so existing installations keep their sessions,
+  settings and credentials.
+
+- The library crates moved to the `morpheus-*` names (`morpheus-onnx`,
+  `morpheus-recall`, `morpheus-sdk`, `morpheus-tools`, `morpheus-tui`,
+  `morpheus-whatsapp`). Code that depended on the `cosh-*` crates or on their
+  `cosh_*` crate paths must switch to `morpheus-*` / `morpheus_*`.
+
 ## [0.3.0]
 
 ### Added
@@ -20,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   approval dialog, tools that need permission are denied and the reply says
   so. The feature is still experimental and is not recommended for use yet.
 
-- New `cosh-whatsapp` crate: links a personal WhatsApp account as a
+- New `morpheus-whatsapp` crate: links a personal WhatsApp account as a
   companion device (QR code or pairing code) over the WhatsApp Web
   multi-device protocol and exposes it to agents as typed events, typed
   inbound messages and text sends, with persisted sessions, automatic
@@ -44,10 +62,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A real command line in front of the TUI: `-c/--continue` reopens the
   session most recently worked in for this directory, `-s/--session <id>`
   opens a chosen one, `-v/--version` prints the version and `-h/--help`
-  (also `cosh help [command]`) prints a themed help page per command,
+  (also `morpheus help [command]`) prints a themed help page per command,
   with the logo's "O" mark and the running version in its top-right
   corner.
-  `cosh paths` prints the data, config, log, session and binary paths for
+  `morpheus paths` prints the data, config, log, session and binary paths for
   other tools. Usage errors exit with status 2.
 
 - Revert, Copy and Fork now answer for `/agents` pane messages, routed by
@@ -86,13 +104,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The manager-only write restriction stays at harness depth; a pane still
   cannot ask the user, drive the computer or stop its own loop.
 
-- Updates use one command everywhere: `cosh update [version] [--yes]`
+- Updates use one command everywhere: `morpheus update [version] [--yes]`
   installs a release through the official installer for this OS and
   variant, and the in-app update button and the copied manual command now
   point at it instead of the raw `curl … | bash` one-liners.
 
-- `cosh update` no longer relaunches cosh when it finishes: it starts the
-  installer and exits, so the running `cosh.exe` is not locked while the
+- `morpheus update` no longer relaunches morpheus when it finishes: it starts
+  the installer and exits, so the running `morpheus.exe` is not locked while the
   installer replaces it (that used to fail on Windows with "access denied").
   The user reopens cosh once the install completes, and the command's exit
   status now means "installer started".
@@ -180,11 +198,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instead of popping an approval dialog like Build.
 
 - The multi-provider LLM connector (client, callers, OAuth device flow,
-  cost, discovery, retry and usage) left `cosh-sdk` as the standalone
+  cost, discovery, retry and usage) left `morpheus-sdk` as the standalone
   `aiface` crate, published and consumed as an external dependency.
   `coshsdk` keeps only the text-processing halves (ast, extract_action,
   find, hashline) and drops its transport dependencies (reqwest, base64);
-  every consumer - the harness, the TUI, mcp, cosh-tools and cosh-recall's
+  every consumer - the harness, the TUI, mcp, morpheus-tools and morpheus-recall's
   cloud embeddings - imports connector types from `aiface::connector`.
 
   The same change teaches the agent system prompt that an `fs_write` result
@@ -645,7 +663,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only after the user picks a model — never under the picker with a default.
   Under the hood, a hardened in-house OAuth 2.0 client (Authorization Code +
   PKCE S256, loopback redirect, device grant, issuer validation, zeroized
-  secrets, single-flight token renewal) joins `cosh-sdk`'s connector, ready
+  secrets, single-flight token renewal) joins `morpheus-sdk`'s connector, ready
   to back other providers.
 - In-app update announcement. When a newer release is detected, the session
   footer shows a `current → new` version hint whose version button updates
@@ -728,16 +746,16 @@ Initial release of **cosh** — a coding agent for the terminal.
 
 The agent's building blocks are published as reusable libraries:
 
-- `cosh-sdk` — LLM connector, tolerant tool-call extraction, hashline patch
+- `morpheus-sdk` — LLM connector, tolerant tool-call extraction, hashline patch
   engine, file rollback, embedded LSP client stack (26-server catalog) and
   tree-sitter/ast-grep code intelligence.
-- `cosh-tools` — every tool exposed to the agent, usable standalone.
-- `cosh-tui` — Ratatui widget/renderable toolkit (markdown, diff, layout,
+- `morpheus-tools` — every tool exposed to the agent, usable standalone.
+- `morpheus-tui` — Ratatui widget/renderable toolkit (markdown, diff, layout,
   colors) with a SolidJS-style reactive layer.
-- `cosh-recall` — optional RAG layer (behind the `embed` feature): local
+- `morpheus-recall` — optional RAG layer (behind the `embed` feature): local
   embeddings via fastembed or cloud providers, stored in LanceDB.
-- `cosh-onnx` — ONNX decision engine (behind the `onnx` feature, not
-  published to crates.io), including the `cosh-decisiond` daemon that shares
+- `morpheus-onnx` — ONNX decision engine (behind the `onnx` feature, not
+  published to crates.io), including the `morpheus-decisiond` daemon that shares
   one resident model across running instances.
 
 ### Distribution
@@ -748,13 +766,16 @@ The agent's building blocks are published as reusable libraries:
 - Two release variants: `slim` (default, no RAG) and `slim-embed` (local RAG
   via fastembed). Both boot straight into a session.
 - Library crates are published to crates.io on tag push
-  (`cosh-sdk` → `cosh-recall` → `cosh-tools` → `cosh-tui`).
+  (`morpheus-sdk` → `morpheus-recall` → `morpheus-tools` → `morpheus-tui`).
 
 ### Platform support
 
 - Linux and Windows are tested. macOS builds are published but untested —
   report any issues with details.
 
+[1.0.0]: https://github.com/aidreamy/co-sh/compare/v0.3.0...v1.0.0
+[0.3.0]: https://github.com/aidreamy/co-sh/compare/v0.2.2...v0.3.0
+[0.2.2]: https://github.com/aidreamy/co-sh/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/aidreamy/co-sh/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/aidreamy/co-sh/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/aidreamy/co-sh/compare/v0.1.3...v0.1.4

@@ -58,7 +58,7 @@ impl Harness {
         input: &str,
         tx: tokio::sync::mpsc::UnboundedSender<super::events::HarnessEvent>,
         answer_rx: tokio::sync::mpsc::UnboundedReceiver<
-            Result<Vec<cosh_tools::question::types::AnswerItem>, String>,
+            Result<Vec<morpheus_tools::question::types::AnswerItem>, String>,
         >,
         perm_rx: tokio::sync::mpsc::UnboundedReceiver<super::guardrails::PermissionAction>,
         stop_signal: Arc<AtomicBool>,
@@ -91,7 +91,7 @@ impl Harness {
         input: &str,
         tx: tokio::sync::mpsc::UnboundedSender<super::events::HarnessEvent>,
         answer_rx: tokio::sync::mpsc::UnboundedReceiver<
-            Result<Vec<cosh_tools::question::types::AnswerItem>, String>,
+            Result<Vec<morpheus_tools::question::types::AnswerItem>, String>,
         >,
         perm_rx: tokio::sync::mpsc::UnboundedReceiver<super::guardrails::PermissionAction>,
         stop_signal: Arc<AtomicBool>,
@@ -185,7 +185,7 @@ impl Harness {
         input: &str,
         tx: tokio::sync::mpsc::UnboundedSender<super::events::HarnessEvent>,
         mut answer_rx: tokio::sync::mpsc::UnboundedReceiver<
-            Result<Vec<cosh_tools::question::types::AnswerItem>, String>,
+            Result<Vec<morpheus_tools::question::types::AnswerItem>, String>,
         >,
         mut perm_rx: tokio::sync::mpsc::UnboundedReceiver<super::guardrails::PermissionAction>,
         stop_signal: Arc<AtomicBool>,
@@ -199,7 +199,7 @@ impl Harness {
         self.loop_queued_input = Some(queued_input.clone());
         self.context_manager.set_binding_sender(tx.clone());
         use super::guardrails::{PermissionCheck, check_tool_permission};
-        use cosh_tools::question::types::{QuestionInput, QuestionOutput};
+        use morpheus_tools::question::types::{QuestionInput, QuestionOutput};
 
         // The input lives in the context manager; `current_input` only carries
         // the harness's per-iteration steering message (empty for the first
@@ -1062,7 +1062,7 @@ impl Harness {
                             // TUI can badge it. On error the model gets a
                             // ToolError and can fix + retry (no dialog shown).
                             let normalized =
-                                cosh_tools::question::Question::validate_and_normalize(&q_input);
+                                morpheus_tools::question::Question::validate_and_normalize(&q_input);
                             let questions = match normalized {
                                 Ok(qs) => qs,
                                 Err(e) => {
@@ -2055,7 +2055,7 @@ impl Harness {
                     // final text is complete by construction and there is
                     // nothing to audit. Running the model here vetoes
                     // exactly the answers it cannot see the point of (a
-                    // measured probe — `crates/cosh-onnx/tests/eval/
+                    // measured probe — `crates/morpheus-onnx/tests/eval/
                     // shape_probe.rs` — showed every request-blind verdict
                     // on a direct answer reads `running`).
                     //
@@ -2341,7 +2341,7 @@ impl Harness {
     }
 
     /// Add paths from tool arguments to the appropriate allowlist so that
-    /// [`PathGuard`](cosh_tools::util::path_guard::PathGuard) lets them through.
+    /// [`PathGuard`](morpheus_tools::util::path_guard::PathGuard) lets them through.
     ///
     /// Reuses [`extract_paths_from_args`](super::guardrails::extract_paths_from_args)
     /// to avoid duplicating argument-shape logic.

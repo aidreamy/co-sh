@@ -26,7 +26,7 @@ The module has three pieces:
 ## The `SubAgent` wrapper
 
 ```rust,ignore
-use cosh_tools::subagent::SubAgent;
+use morpheus_tools::subagent::SubAgent;
 
 let sub = SubAgent::new();
 sub.resolve_input(Some("review this PR".into()))?;   // stores + returns

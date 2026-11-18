@@ -6,10 +6,10 @@ use ratatui::layout::Rect;
 use ratatui::style::{Color, Modifier, Style};
 
 use cosh::ModelEntry;
-use cosh_tui::core::lib::rgba::RGBA;
-use cosh_tui::core::renderable::Renderable;
-use cosh_tui::core::renderables::r#box::BoxRenderable;
-use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType};
+use morpheus_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::renderable::Renderable;
+use morpheus_tui::core::renderables::r#box::BoxRenderable;
+use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType};
 
 use crate::component::cursor::{Cursor, paint_cursor_cell};
 use crate::component::list_dialog::{self, FilterState, ListRow, MouseHit};
@@ -4508,7 +4508,7 @@ mod confirm_width_tests {
 mod hook_panel_tests {
     use super::*;
     use crate::theme::ThemeRegistry;
-    use cosh_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
     #[test]
     fn marker_fg_adapts_to_theme_background() {
         let registry = ThemeRegistry::new();
@@ -4788,7 +4788,7 @@ mod model_list_mouse_tests {
     use super::{DialogAction, DialogState, DialogType};
     use crate::theme::ThemeRegistry;
     use cosh::ModelEntry;
-    use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
     use ratatui::layout::Rect;
 
     fn entry(provider: &str, model: &str) -> ModelEntry {
@@ -4905,7 +4905,7 @@ mod theme_list_swatch_tests {
     use super::*;
     use crate::theme::ThemeRegistry;
     use crate::ui::theme_swatches::{swatches_width, theme_swatches};
-    use cosh_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
+    use morpheus_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
 
     fn mouse(event_type: MouseEventType, x: u16, y: u16) -> MouseEvent {
         MouseEvent::new(event_type, MouseButton::Left, x, y, MouseModifiers::none())

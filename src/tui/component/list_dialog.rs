@@ -37,7 +37,7 @@ use ratatui::style::{Color, Modifier, Style};
 use crate::component::cursor::{Cursor, CursorState, paint_cursor_cell};
 use crate::theme::{Theme, rgba_color};
 use crate::util::draw::draw_text_line_compact;
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::rgba::RGBA;
 
 /// One painted row of the shared list box. The caller maps its own data
 /// model onto rows; `header` rows are scope titles (a model list grouped

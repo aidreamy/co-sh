@@ -1640,17 +1640,11 @@ checksum = "7f8f80099a98041a3d1622845c271458a2d73e688351bf3cb999266764b81d48"
 
 [[package]]
 name = "cosh"
-version = "0.3.0"
+version = "1.0.0"
 dependencies = [
  "aiface",
  "arboard",
  "chrono",
- "cosh-onnx",
- "cosh-recall",
- "cosh-sdk",
- "cosh-tools",
- "cosh-tui",
- "cosh-whatsapp",
  "crossterm",
  "directories",
  "dotenvy",
@@ -1662,6 +1656,12 @@ dependencies = [
  "libc",
  "log",
  "lru",
+ "morpheus-onnx",
+ "morpheus-recall",
+ "morpheus-sdk",
+ "morpheus-tools",
+ "morpheus-tui",
+ "morpheus-whatsapp",
  "notify-rust",
  "open",
  "parking_lot 0.12.5",
@@ -1685,196 +1685,6 @@ dependencies = [
  "webbrowser",
  "windows-sys 0.61.2",
  "xxhash-rust",
-]
-
-[[package]]
-name = "cosh-onnx"
-version = "0.1.5"
-dependencies = [
- "fancy-regex 0.17.0",
- "hex",
- "hf-hub",
- "icu_properties",
- "log",
- "ort",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
- "thiserror 2.0.21",
- "tokenizers",
- "uuid",
-]
-
-[[package]]
-name = "cosh-recall"
-version = "0.1.5"
-dependencies = [
- "aiface",
- "arrow-array",
- "arrow-schema",
- "fastembed",
- "futures",
- "lancedb",
- "log",
- "serde",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
-]
-
-[[package]]
-name = "cosh-sdk"
-version = "0.1.6"
-dependencies = [
- "ast-grep-core",
- "async-stream",
- "env_logger",
- "globset",
- "grep-matcher",
- "grep-regex",
- "grep-searcher",
- "ignore",
- "libc",
- "log",
- "lru",
- "lsp-types",
- "memmap2",
- "phf 0.13.1",
- "rayon",
- "regex",
- "serde",
- "serde_json",
- "serial_test",
- "similar",
- "smallvec",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tokio-stream",
- "tree-sitter",
- "tree-sitter-astro-next",
- "tree-sitter-bash",
- "tree-sitter-c",
- "tree-sitter-c-sharp",
- "tree-sitter-clojure",
- "tree-sitter-cmake",
- "tree-sitter-cpp",
- "tree-sitter-css",
- "tree-sitter-dart",
- "tree-sitter-diff",
- "tree-sitter-dockerfile-updated",
- "tree-sitter-elisp",
- "tree-sitter-elixir",
- "tree-sitter-erlang",
- "tree-sitter-fortran",
- "tree-sitter-go",
- "tree-sitter-graphql",
- "tree-sitter-haskell",
- "tree-sitter-hcl",
- "tree-sitter-html",
- "tree-sitter-ini",
- "tree-sitter-java",
- "tree-sitter-javascript",
- "tree-sitter-json",
- "tree-sitter-julia",
- "tree-sitter-just",
- "tree-sitter-lua",
- "tree-sitter-make",
- "tree-sitter-md",
- "tree-sitter-nix",
- "tree-sitter-objc",
- "tree-sitter-ocaml",
- "tree-sitter-odin",
- "tree-sitter-php",
- "tree-sitter-powershell",
- "tree-sitter-proto",
- "tree-sitter-python",
- "tree-sitter-r",
- "tree-sitter-regex",
- "tree-sitter-ruby",
- "tree-sitter-rust",
- "tree-sitter-scala",
- "tree-sitter-sequel",
- "tree-sitter-solidity",
- "tree-sitter-starlark",
- "tree-sitter-svelte-next",
- "tree-sitter-swift",
- "tree-sitter-tlaplus",
- "tree-sitter-toml-ng",
- "tree-sitter-typescript",
- "tree-sitter-verilog",
- "tree-sitter-vue-next",
- "tree-sitter-xml",
- "tree-sitter-yaml",
- "tree-sitter-zig",
- "url",
- "willbooster-tree-sitter-kotlin",
- "xxhash-rust",
-]
-
-[[package]]
-name = "cosh-tools"
-version = "0.1.6"
-dependencies = [
- "agent-client-protocol",
- "aiface",
- "ast-grep-core",
- "async-stream",
- "cosh-recall",
- "cosh-sdk",
- "criterion",
- "libc",
- "log",
- "portable-pty",
- "regex",
- "reqwest 0.13.5",
- "rs-trafilatura",
- "rustix 1.1.6",
- "schemars 1.2.3",
- "serde",
- "serde_json",
- "strip-ansi-escapes",
- "sysinfo",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tokio-stream",
- "tree-sitter",
- "xa11y",
-]
-
-[[package]]
-name = "cosh-tui"
-version = "0.1.6"
-dependencies = [
- "bitflags 2.13.2",
- "cosh-sdk",
- "finl_unicode",
- "log",
- "lru",
- "open",
- "pulldown-cmark",
- "ratatui",
- "taffy",
- "unicode-width",
-]
-
-[[package]]
-name = "cosh-whatsapp"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "chrono",
- "directories",
- "log",
- "qrcode",
- "reqwest 0.13.5",
- "serde",
- "thiserror 2.0.21",
- "tokio",
- "whatsapp-rust",
 ]
 
 [[package]]
@@ -5973,6 +5783,196 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
+]
+
+[[package]]
+name = "morpheus-onnx"
+version = "0.1.5"
+dependencies = [
+ "fancy-regex 0.17.0",
+ "hex",
+ "hf-hub",
+ "icu_properties",
+ "log",
+ "ort",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokenizers",
+ "uuid",
+]
+
+[[package]]
+name = "morpheus-recall"
+version = "0.1.5"
+dependencies = [
+ "aiface",
+ "arrow-array",
+ "arrow-schema",
+ "fastembed",
+ "futures",
+ "lancedb",
+ "log",
+ "serde",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+]
+
+[[package]]
+name = "morpheus-sdk"
+version = "0.1.6"
+dependencies = [
+ "ast-grep-core",
+ "async-stream",
+ "env_logger",
+ "globset",
+ "grep-matcher",
+ "grep-regex",
+ "grep-searcher",
+ "ignore",
+ "libc",
+ "log",
+ "lru",
+ "lsp-types",
+ "memmap2",
+ "phf 0.13.1",
+ "rayon",
+ "regex",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "similar",
+ "smallvec",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+ "tokio-stream",
+ "tree-sitter",
+ "tree-sitter-astro-next",
+ "tree-sitter-bash",
+ "tree-sitter-c",
+ "tree-sitter-c-sharp",
+ "tree-sitter-clojure",
+ "tree-sitter-cmake",
+ "tree-sitter-cpp",
+ "tree-sitter-css",
+ "tree-sitter-dart",
+ "tree-sitter-diff",
+ "tree-sitter-dockerfile-updated",
+ "tree-sitter-elisp",
+ "tree-sitter-elixir",
+ "tree-sitter-erlang",
+ "tree-sitter-fortran",
+ "tree-sitter-go",
+ "tree-sitter-graphql",
+ "tree-sitter-haskell",
+ "tree-sitter-hcl",
+ "tree-sitter-html",
+ "tree-sitter-ini",
+ "tree-sitter-java",
+ "tree-sitter-javascript",
+ "tree-sitter-json",
+ "tree-sitter-julia",
+ "tree-sitter-just",
+ "tree-sitter-lua",
+ "tree-sitter-make",
+ "tree-sitter-md",
+ "tree-sitter-nix",
+ "tree-sitter-objc",
+ "tree-sitter-ocaml",
+ "tree-sitter-odin",
+ "tree-sitter-php",
+ "tree-sitter-powershell",
+ "tree-sitter-proto",
+ "tree-sitter-python",
+ "tree-sitter-r",
+ "tree-sitter-regex",
+ "tree-sitter-ruby",
+ "tree-sitter-rust",
+ "tree-sitter-scala",
+ "tree-sitter-sequel",
+ "tree-sitter-solidity",
+ "tree-sitter-starlark",
+ "tree-sitter-svelte-next",
+ "tree-sitter-swift",
+ "tree-sitter-tlaplus",
+ "tree-sitter-toml-ng",
+ "tree-sitter-typescript",
+ "tree-sitter-verilog",
+ "tree-sitter-vue-next",
+ "tree-sitter-xml",
+ "tree-sitter-yaml",
+ "tree-sitter-zig",
+ "url",
+ "willbooster-tree-sitter-kotlin",
+ "xxhash-rust",
+]
+
+[[package]]
+name = "morpheus-tools"
+version = "0.1.6"
+dependencies = [
+ "agent-client-protocol",
+ "aiface",
+ "ast-grep-core",
+ "async-stream",
+ "criterion",
+ "libc",
+ "log",
+ "morpheus-recall",
+ "morpheus-sdk",
+ "portable-pty",
+ "regex",
+ "reqwest 0.13.5",
+ "rs-trafilatura",
+ "rustix 1.1.6",
+ "schemars 1.2.3",
+ "serde",
+ "serde_json",
+ "strip-ansi-escapes",
+ "sysinfo",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+ "tokio-stream",
+ "tree-sitter",
+ "xa11y",
+]
+
+[[package]]
+name = "morpheus-tui"
+version = "0.1.6"
+dependencies = [
+ "bitflags 2.13.2",
+ "finl_unicode",
+ "log",
+ "lru",
+ "morpheus-sdk",
+ "open",
+ "pulldown-cmark",
+ "ratatui",
+ "taffy",
+ "unicode-width",
+]
+
+[[package]]
+name = "morpheus-whatsapp"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "directories",
+ "log",
+ "qrcode",
+ "reqwest 0.13.5",
+ "serde",
+ "thiserror 2.0.21",
+ "tokio",
+ "whatsapp-rust",
 ]
 
 [[package]]

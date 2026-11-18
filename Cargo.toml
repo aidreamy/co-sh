@@ -1,10 +1,10 @@
 [workspace]
-members = ["crates/cosh-onnx",
-  "crates/cosh-recall",
-  "crates/cosh-sdk",
-  "crates/cosh-tools",
-  "crates/cosh-tui",
-  "crates/cosh-whatsapp",
+members = ["crates/morpheus-onnx",
+  "crates/morpheus-recall",
+  "crates/morpheus-sdk",
+  "crates/morpheus-tools",
+  "crates/morpheus-tui",
+  "crates/morpheus-whatsapp",
 ]
 
 [features]
@@ -13,14 +13,14 @@ members = ["crates/cosh-onnx",
 # ON by default; the slim build is `--no-default-features`.
 default = ["home"]
 home = []
-embed = ["cosh-tools/embed", "fastembed"]
-lancedb = ["cosh-recall/lancedb"]
-fastembed = ["cosh-recall/fastembed", "dep:fastembed"]
-cloud = ["cosh-recall/cloud"]
-# The ONNX decision engine (cosh-onnx): gates the heavy ONNX runtime
+embed = ["morpheus-tools/embed", "fastembed"]
+lancedb = ["morpheus-recall/lancedb"]
+fastembed = ["morpheus-recall/fastembed", "dep:fastembed"]
+cloud = ["morpheus-recall/cloud"]
+# The ONNX decision engine (morpheus-onnx): gates the heavy ONNX runtime
 # (`ort`/`tokenizers`) out of the dependency graph. Without it the binary
 # never links ONNX Runtime and the harness compiles the Checkup trait only.
-onnx = ["dep:cosh-onnx"]
+onnx = ["dep:morpheus-onnx"]
 
 [package]
 description = "..."
@@ -29,46 +29,46 @@ license = "Apache-2.0"
 name = "cosh"
 readme = "README.md"
 repository = "https://github.com/aidreamy/co-sh"
-version = "0.3.0"
+version = "1.0.0"
 keywords = ["terminal", "cli"]
 categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies.cosh-recall]
-path = "crates/cosh-recall"
+[dependencies.morpheus-recall]
+path = "crates/morpheus-recall"
 version = "0.1.5"
 
-[dependencies.cosh-tools]
-path = "crates/cosh-tools"
+[dependencies.morpheus-tools]
+path = "crates/morpheus-tools"
 version = "0.1.6"
 
-[dependencies.cosh-onnx]
-path = "crates/cosh-onnx"
+[dependencies.morpheus-onnx]
+path = "crates/morpheus-onnx"
 version = "0.1.5"
 optional = true
 
-[dependencies.cosh-tui]
-path = "crates/cosh-tui"
+[dependencies.morpheus-tui]
+path = "crates/morpheus-tui"
 version = "0.1.6"
 
-[dependencies.cosh-whatsapp]
-path = "crates/cosh-whatsapp"
+[dependencies.morpheus-whatsapp]
+path = "crates/morpheus-whatsapp"
 version = "0.1.0"
 
 [dependencies.fastembed]
 # Pinned to 7: it selects `ort =2.0.0-rc.13` (ndarray, std, api-24), matching
-# cosh-onnx so the workspace builds a single ort.
+# morpheus-onnx so the workspace builds a single ort.
 version = "7"
 optional = true
 
 [[bin]]
-name = "cosh"
+name = "morpheus"
 path = "src/tui/main.rs"
 
 [[bin]]
-name = "cosh-uninstall"
-path = "src/bin/cosh_uninstall.rs"
+name = "morpheus-uninstall"
+path = "src/bin/morpheus_uninstall.rs"
 
 [[bin]]
 name = "highlight-demo"
@@ -78,7 +78,7 @@ path = "src/bin/highlight_demo.rs"
 # daemon exists only when the model does, and without `onnx` the binary is
 # never built at all.
 [[bin]]
-name = "cosh-decisiond"
+name = "morpheus-decisiond"
 path = "src/daemon/decision/main.rs"
 required-features = ["onnx"]
 
@@ -87,29 +87,29 @@ required-features = ["onnx"]
 serde_json = "1.0"
 # Unified multi-provider LLM connector (published standalone as `aiface`).
 aiface = "0.2.5"
-cosh-sdk = { path = "crates/cosh-sdk", version = "0.1.6" }
+morpheus-sdk = { path = "crates/morpheus-sdk", version = "0.1.6" }
 # toml = "1.1"
 chrono = "0.4"
 log = { version = "0.4", features = ["std"] }
 dotenvy = "0.15.7"
 # System-browser handoff for the Charm gateway device sign-in (same crate and
-# `hardened` feature the cosh-sdk OAuth module uses for its own flows).
+# `hardened` feature the morpheus-sdk OAuth module uses for its own flows).
 webbrowser = { version = "1", features = ["hardened"] }
 # Parallel cold rebuild of the session view's height cache (a left-panel
 # toggle re-estimates every message height; see SessionView's width-snapshot
-# logic). Same crate/version the workspace already uses in cosh-sdk.
+# logic). Same crate/version the workspace already uses in morpheus-sdk.
 rayon = "1"
-# Reused workspace-wide at these exact versions (see crates/cosh-sdk,
-# crates/cosh-tools, crates/cosh-recall): error enums, header maps, URL
+# Reused workspace-wide at these exact versions (see crates/morpheus-sdk,
+# crates/morpheus-tools, crates/morpheus-recall): error enums, header maps, URL
 # parsing for the MCP client. Not new crates, just newly direct.
 thiserror = "2"
 # The activation lock (`flock`) that serializes daemon bind races — see
-# `daemon::activation`. Same crate/version cosh-tools already carries.
+# `daemon::activation`. Same crate/version morpheus-tools already carries.
 libc = "0.2"
 http = "1"
 url = "2"
 # GitHub release check for the home update banner (same crate/version the
-# cosh-sdk connector already uses for its catalog fetches).
+# morpheus-sdk connector already uses for its catalog fetches).
 reqwest = { version = "0.13", features = ["json", "blocking"] }
 crossterm = { version = "0.29", features = ["bracketed-paste"] }
 directories = "6.0.0"

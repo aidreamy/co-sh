@@ -35,8 +35,8 @@ so the model follows them:
 ## The `Question` wrapper
 
 ```rust,ignore
-use cosh_tools::question::Question;
-use cosh_tools::question::types::{QuestionInput, QuestionItem, QuestionType};
+use morpheus_tools::question::Question;
+use morpheus_tools::question::types::{QuestionInput, QuestionItem, QuestionType};
 
 let question = Question::new();
 let output = question.ask(&QuestionInput {

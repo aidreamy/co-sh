@@ -19,7 +19,7 @@ and table rows are all counted identically.
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::renderables::markdown::layout::estimate_height;
+use morpheus_tui::core::renderables::markdown::layout::estimate_height;
 
 let md = "# Title\n\nSome body text that may wrap across several lines.\n";
 let rows = estimate_height(md, 40);   // how tall the rendered block will be

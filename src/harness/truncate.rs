@@ -205,7 +205,7 @@ fn truncation_notice(
 /// back with `fs_read` / `find_grep` without permission friction.
 #[must_use]
 pub fn scratch_log_dir() -> PathBuf {
-    std::env::temp_dir().join(cosh_tools::util::path_guard::HARNESS_SCRATCH_DIR)
+    std::env::temp_dir().join(morpheus_tools::util::path_guard::HARNESS_SCRATCH_DIR)
 }
 
 /// Write `middle` verbatim to `<scratch>/<xxh64(middle)>.log`.

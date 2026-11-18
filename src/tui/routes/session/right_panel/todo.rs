@@ -1,5 +1,5 @@
-use cosh_tui::core::renderable::Renderable;
-use cosh_tui::core::renderables::r#box::BoxRenderable;
+use morpheus_tui::core::renderable::Renderable;
+use morpheus_tui::core::renderables::r#box::BoxRenderable;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};
@@ -282,7 +282,7 @@ mod tests {
         let todos = vec![TodoItem {
             status: "in_progress".to_string(),
             content:
-                "run cargo build --bin cosh --features embed and then run the full test suite twice"
+                "run cargo build --bin morpheus --features embed and then run the full test suite twice"
                     .to_string(),
         }];
         let max_w = 42u16; // RIGHT_PANEL_WIDTH

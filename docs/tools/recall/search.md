@@ -1,7 +1,7 @@
 # `search` — the vector search pipeline
 
 `search` turns a `RecallSearchInput` into a ranked list of matching entries.
-It is a thin, well-defined pipeline over the `cosh-recall` `VecDb` wrapper:
+It is a thin, well-defined pipeline over the `morpheus-recall` `VecDb` wrapper:
 
 ```rust,ignore
 pub async fn search(input: &RecallSearchInput) -> Result<RecallOutput, String>
@@ -58,7 +58,7 @@ catches the mismatch up front.
 ## Example
 
 ```rust,ignore
-use cosh_tools::recall::{Recall, RecallSearchInput};
+use morpheus_tools::recall::{Recall, RecallSearchInput};
 
 let recall = Recall::new();
 let output = recall.search(&RecallSearchInput {

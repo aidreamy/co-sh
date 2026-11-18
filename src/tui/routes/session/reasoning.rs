@@ -34,7 +34,7 @@ impl SessionView {
             let md_h = estimate_height(&content, body_w).max(1);
             let md_area = Rect::new(x + 2, y + 1, body_w, md_h);
             let mut md =
-                cosh_tui::core::renderables::markdown::MarkdownRenderable::new(Some(content));
+                morpheus_tui::core::renderables::markdown::MarkdownRenderable::new(Some(content));
             md.set_fg(Some(ColorInput::RGBA(theme.text_muted)));
             md.set_bg(Some(ColorInput::RGBA(theme.background)));
             crate::util::markdown::apply_theme(&mut md, theme);

@@ -41,7 +41,7 @@ mod spinner_highlight;
 #[path = "../tui/theme.rs"]
 mod theme;
 
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::rgba::RGBA;
 use spinner_highlight::HighlightSpinner;
 
 // Demo presets

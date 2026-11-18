@@ -1,4 +1,4 @@
-//! The `cosh-decisiond` binary.
+//! The `morpheus-decisiond` binary.
 //!
 //! A thin shim over [`cosh::daemon::decision::run`]: all the logic (bind,
 //! serve, idle exit, the bind-race outcome) lives in the library so the

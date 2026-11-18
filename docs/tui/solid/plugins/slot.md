@@ -1,7 +1,7 @@
 # `plugins::slot` — the slot registry
 
 `SlotRegistry` maps slot names to lists of registered renderer closures —
-the cosh-tui analogue of `createSlotRegistry` from `@opentui/core`. Plugins
+the morpheus-tui analogue of `createSlotRegistry` from `@opentui/core`. Plugins
 register UI fragments under named slots; the host resolves them, possibly
 filtering by [`SlotMode`](#slotmode). This is the **most functional part of
 the plugin system** — fully implemented and synchronous.
@@ -55,9 +55,9 @@ report_error(&PluginErrorEvent) // dispatch an event to all handlers
 ## Example
 
 ```rust,ignore
-use cosh_tui::solid::plugins::slot::{SlotRegistry, SlotMode};
-use cosh_tui::core::renderables::text::TextRenderable;
-use cosh_tui::core::lib::styled_text::string_to_styled_text;
+use morpheus_tui::solid::plugins::slot::{SlotRegistry, SlotMode};
+use morpheus_tui::core::renderables::text::TextRenderable;
+use morpheus_tui::core::lib::styled_text::string_to_styled_text;
 
 let mut registry = SlotRegistry::new();
 

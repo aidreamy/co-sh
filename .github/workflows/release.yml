@@ -20,7 +20,7 @@ jobs:
   # Fails fast, before spending ~1h building 8 artifacts: the tag version
   # must match the version of the main `cosh` app package (the binaries
   # embed their own version via CARGO_PKG_VERSION, and the release assets
-  # are named cosh-v<VERSION>-...). Bumping the version of the library
+  # are named morpheus-v<VERSION>-...). Bumping the version of the library
   # crates under crates/ is OPTIONAL: the publish job skips any crate
   # already uploaded to crates.io, so releasing unchanged crates is fine.
   verify:
@@ -48,9 +48,9 @@ jobs:
         # Two variants per platform, matching what download.sh/download.ps1 expect.
         # Both ship WITHOUT the Home screen (`--no-default-features` drops the
         # default `home` feature, so the app boots straight into a session):
-        #   slim       -> cosh-v<VERSION>-<OS>-<ARCH>-slim.tar.gz|.zip
+        #   slim       -> morpheus-v<VERSION>-<OS>-<ARCH>-slim.tar.gz|.zip
         #                 (no RAG, no Home)
-        #   slim-embed -> cosh-v<VERSION>-<OS>-<ARCH>-slim-embed.tar.gz|.zip
+        #   slim-embed -> morpheus-v<VERSION>-<OS>-<ARCH>-slim-embed.tar.gz|.zip
         #                 (workspace `embed` feature = local RAG, no Home)
         # `os` must be a real matrix key (not include-only): include entries
         # whose keys don't overlap the matrix get merged into EVERY existing
@@ -104,7 +104,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
-          # libxkbcommon-dev: linked by the xkbcommon crate (cosh-tools ->
+          # libxkbcommon-dev: linked by the xkbcommon crate (morpheus-tools ->
           # xa11y -> xa11y-linux), which declares the symbols via plain
           # `extern "C"` — no pkg-config discovery — so the dev package
           # (headers not needed, just the .so for the linker) must be
@@ -142,22 +142,22 @@ jobs:
           fi
 
       # The `slim-embed` variant enables the workspace `embed` feature
-      # (cosh-tools/embed + fastembed). fastembed pulls the ONNX Runtime
+      # (morpheus-tools/embed + fastembed). fastembed pulls the ONNX Runtime
       # shared library as a build-time download, so this job is slower.
       # Both variants are built `--no-default-features` (no Home screen).
-      # Both `cosh` and `cosh-uninstall` are shipped; `highlight-demo` is a
-      # dev-only target.
+      # Both `morpheus` and `morpheus-uninstall` are shipped; `highlight-demo`
+      # is a dev-only target.
       #
       # COSH_TELEMETRY_PUBLISHABLE_KEY is a BUILD-TIME constant: option_env!()
       # bakes the publishable key (safe-to-ship — it only reaches what the
       # public grants allow) into the binaries. Release builds embed it so the
       # installed CLI can upload telemetry without any user-side env setup;
       # local/dev builds leave it unset and the sink stays idle (fail closed).
-      - name: Build cosh (${{ matrix.variant }})
+      - name: Build morpheus (${{ matrix.variant }})
         shell: bash
         env:
           COSH_TELEMETRY_PUBLISHABLE_KEY: ${{ secrets.COSH_TELEMETRY_PUBLISHABLE_KEY }}
-        run: cargo build --release --locked --bin cosh --bin cosh-uninstall --target ${{ matrix.target }} ${{ steps.vars.outputs.features }}
+        run: cargo build --release --locked --bin morpheus --bin morpheus-uninstall --target ${{ matrix.target }} ${{ steps.vars.outputs.features }}
 
       - name: Package GitHub Release asset
         shell: bash
@@ -165,16 +165,16 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           EXT="${{ matrix.platform == 'win32' && '.exe' || '' }}"
           SUFFIX="${{ steps.vars.outputs.variant_suffix }}"
-          ASSET="cosh-v${VERSION}-${{ matrix.platform }}-${{ matrix.arch }}${SUFFIX}"
+          ASSET="morpheus-v${VERSION}-${{ matrix.platform }}-${{ matrix.arch }}${SUFFIX}"
 
           cd "target/${{ matrix.target }}/release"
 
           if [ "${{ matrix.platform }}" = "win32" ]; then
             ASSET_FILE="${ASSET}.zip"
-            powershell -NoProfile -Command "Compress-Archive -Path 'cosh${EXT}','cosh-uninstall${EXT}' -DestinationPath '${ASSET_FILE}' -Force"
+            powershell -NoProfile -Command "Compress-Archive -Path 'morpheus${EXT}','morpheus-uninstall${EXT}' -DestinationPath '${ASSET_FILE}' -Force"
           else
             ASSET_FILE="${ASSET}.tar.gz"
-            tar czf "${ASSET_FILE}" "cosh${EXT}" "cosh-uninstall${EXT}"
+            tar czf "${ASSET_FILE}" "morpheus${EXT}" "morpheus-uninstall${EXT}"
           fi
 
           if [ "${{ matrix.platform }}" = "win32" ]; then
@@ -190,9 +190,9 @@ jobs:
         with:
           name: release-assets-${{ matrix.platform }}-${{ matrix.arch }}${{ steps.vars.outputs.variant_suffix }}
           path: |
-            cosh-*.tar.gz
-            cosh-*.zip
-            cosh-*.sha256
+            morpheus-*.tar.gz
+            morpheus-*.zip
+            morpheus-*.sha256
 
   release:
     name: Create Release
@@ -253,11 +253,11 @@ jobs:
         shell: bash
         run: |
           for readme in \
-            crates/cosh-recall/README.md \
-            crates/cosh-sdk/README.md \
-            crates/cosh-tools/README.md \
-            crates/cosh-tui/README.md \
-            crates/cosh-whatsapp/README.md
+            crates/morpheus-recall/README.md \
+            crates/morpheus-sdk/README.md \
+            crates/morpheus-tools/README.md \
+            crates/morpheus-tui/README.md \
+            crates/morpheus-whatsapp/README.md
           do
             if [ ! -f "$readme" ]; then
               echo "Creating placeholder $readme"
@@ -274,11 +274,11 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
           crates="
-            cosh-sdk
-            cosh-recall
-            cosh-tools
-            cosh-tui
-            cosh-whatsapp
+            morpheus-sdk
+            morpheus-recall
+            morpheus-tools
+            morpheus-tui
+            morpheus-whatsapp
           "
           for crate in $crates; do
             crate_version="$(grep -m1 '^version = ' "crates/$crate/Cargo.toml" | cut -d'"' -f2)"

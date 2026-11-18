@@ -1,5 +1,5 @@
 use aiface::connector::TokenUsage;
-use cosh_tools::question::types::QuestionItem;
+use morpheus_tools::question::types::QuestionItem;
 use serde_json::Value;
 
 use crate::mcp::ServerSnapshot;
@@ -130,7 +130,7 @@ pub enum HarnessEvent {
         call_ref: Option<String>,
     },
     /// A typed progress event from a running ACP sub-agent
-    /// ([`cosh_tools::subagent::events::SubagentEvent`]). Message-text
+    /// ([`morpheus_tools::subagent::events::SubagentEvent`]). Message-text
     /// events are ALSO mirrored through [`HarnessEvent::ToolOutput`] so the
     /// existing chat rendering does not regress; this variant carries the
     /// rest (thoughts, tool calls, plans, usage) for the TUI's sub-agent
@@ -144,7 +144,7 @@ pub enum HarnessEvent {
         /// other's activity lines.
         call_ref: Option<String>,
         /// The typed event.
-        event: cosh_tools::subagent::events::SubagentEvent,
+        event: morpheus_tools::subagent::events::SubagentEvent,
     },
     /// One live event of the `/agents` split-pane mode. Each pane is an
     /// independent ACP (or nested cosh) turn driven directly by the TUI —
@@ -182,7 +182,7 @@ pub enum HarnessEvent {
         turn: u64,
         /// The typed event, the same shape the right-panel sub-agent box
         /// renders.
-        event: cosh_tools::subagent::events::SubagentEvent,
+        event: morpheus_tools::subagent::events::SubagentEvent,
     },
     /// A `/agents` pane turn ENDED. Carries the final report (the
     /// `TurnClosure` contract: the last post-tool-call message), the stop
@@ -244,7 +244,7 @@ pub enum HarnessEvent {
         /// The fs tool that produced the findings (e.g. `fs_edit`).
         tool: String,
         /// Structured findings, already settled and severity-split.
-        notes: cosh_tools::fs::LspNotes,
+        notes: morpheus_tools::fs::LspNotes,
     },
     /// A fatal error occurred. The harness paths carry the context snapshot
     /// WITH the display-only error item already recorded

@@ -56,7 +56,7 @@ impl RuntimeConfig {
         // here (rather than in `from_setup`) keeps the pure resolver
         // testable.
         for error in
-            cosh_tools::subagent::acp::register_custom_agents_lossy(&setup.acp_agent_pairs())
+            morpheus_tools::subagent::acp::register_custom_agents_lossy(&setup.acp_agent_pairs())
         {
             log::warn!("user-registered ACP agent skipped: {error}");
         }

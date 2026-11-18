@@ -1,8 +1,8 @@
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::rgba::RGBA;
 use ratatui::style::Color;
 
 /// Map a theme [`RGBA`] onto a ratatui [`Color`], honoring the crate-wide
-/// transparency convention (see the renderables in `cosh-tui`, e.g.
+/// transparency convention (see the renderables in `morpheus-tui`, e.g.
 /// `diff.rs`): alpha 0 means "no fill" and maps to [`Color::Reset`] so the
 /// terminal's own default background shows through instead of an opaque
 /// RGB(0,0,0) block. The `/background` toggle relies on this by zeroing the

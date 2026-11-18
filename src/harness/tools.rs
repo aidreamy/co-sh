@@ -8,9 +8,9 @@ use super::events::HarnessEvent;
 use super::truncate::{
     WEB_FETCH_MAX_TOKENS, truncate_tool_output, truncate_tool_output_with_budget,
 };
-use cosh_sdk::extract_action::ToolSchema;
-use cosh_sdk::find::{GlobMatch, GrepMatch};
-use cosh_tools::{
+use morpheus_sdk::extract_action::ToolSchema;
+use morpheus_sdk::find::{GlobMatch, GrepMatch};
+use morpheus_tools::{
     bash::{Bash, BashRunInput},
     computer::{
         Computer,
@@ -36,7 +36,7 @@ use cosh_tools::{
 };
 
 #[cfg(feature = "embed")]
-use cosh_tools::recall::Recall;
+use morpheus_tools::recall::Recall;
 
 use tokio_stream::StreamExt;
 
@@ -143,7 +143,7 @@ pub struct CoshTools {
     web: Web,
     plan: Mutex<Plan>,
     question: Question,
-    lsp: Option<Arc<cosh_tools::lsp::Lsp>>,
+    lsp: Option<Arc<morpheus_tools::lsp::Lsp>>,
     #[cfg(feature = "embed")]
     recall: Recall,
     #[cfg(feature = "embed")]
@@ -183,7 +183,7 @@ pub struct CoshTools {
 /// does not exist must never break the skills tools — they simply report
 /// an empty list until the directory (or a setup.json override) appears.
 fn default_skill_sources() -> Vec<SkillSource> {
-    default_skill_sources_for(cosh_tools::skills::home_dir().as_deref())
+    default_skill_sources_for(morpheus_tools::skills::home_dir().as_deref())
 }
 
 /// [`default_skill_sources`] with the home directory injected (testable).
@@ -196,7 +196,7 @@ fn default_skill_sources_for(home: Option<&str>) -> Vec<SkillSource> {
     // Windows — normalize it before the `is_dir` probe, or the default
     // source would be silently dropped (empty skills list).
     let dir = format!("{home}/.skills");
-    let dir = cosh_tools::skills::normalize_shell_path(&dir);
+    let dir = morpheus_tools::skills::normalize_shell_path(&dir);
     if std::path::Path::new(&dir).is_dir() {
         vec![SkillSource::Directory { path: dir }]
     } else {
@@ -283,7 +283,7 @@ impl CoshTools {
     /// # Panics
     ///
     /// Panics if the internal `plan` mutex is poisoned.
-    pub fn todo_list(&self) -> cosh_tools::plan::types::TodoList {
+    pub fn todo_list(&self) -> morpheus_tools::plan::types::TodoList {
         self.plan.lock().unwrap().list().clone()
     }
 
@@ -291,7 +291,7 @@ impl CoshTools {
     ///
     /// # Panics
     /// Panics if the internal plan mutex is poisoned.
-    pub fn restore_todo_list(&self, list: cosh_tools::plan::types::TodoList) {
+    pub fn restore_todo_list(&self, list: morpheus_tools::plan::types::TodoList) {
         self.plan.lock().unwrap().restore_list(list);
     }
 
@@ -706,18 +706,18 @@ impl CoshTools {
 // searches the vector database. This requires at least one of the
 // `fastembed` or `cloud` features to be enabled at build time.
 
-/// Convert `RecallEmbedderConfig` to a `cosh_recall::embed::Embedder`.
+/// Convert `RecallEmbedderConfig` to a `morpheus_recall::embed::Embedder`.
 #[cfg(feature = "embed")]
 #[cfg(any(feature = "fastembed", feature = "cloud"))]
 fn config_to_embedder(
     config: &RecallEmbedderConfig,
     _base_urls: &std::collections::HashMap<String, String>,
-) -> Result<cosh_recall::embed::Embedder, String> {
+) -> Result<morpheus_recall::embed::Embedder, String> {
     match config {
         #[cfg(feature = "fastembed")]
         RecallEmbedderConfig::Local { model_name } => {
-            let fb_model = cosh_recall::embed::fastembed_model_from_str(model_name)?;
-            cosh_recall::embed::Embedder::try_new_local(fb_model)
+            let fb_model = morpheus_recall::embed::fastembed_model_from_str(model_name)?;
+            morpheus_recall::embed::Embedder::try_new_local(fb_model)
                 .map_err(|e| format!("failed to create local embedder: {e}"))
         }
         #[cfg(not(feature = "fastembed"))]
@@ -736,7 +736,7 @@ fn config_to_embedder(
             if let Some(url) = _base_urls.get(provider) {
                 connector = connector.with_base_url(url.clone());
             }
-            Ok(cosh_recall::embed::Embedder::new_cloud(connector, *dim))
+            Ok(morpheus_recall::embed::Embedder::new_cloud(connector, *dim))
         }
         #[cfg(not(feature = "cloud"))]
         RecallEmbedderConfig::Cloud { .. } => {
@@ -764,7 +764,7 @@ async fn dispatch_recall_search(
     let embedder = config_to_embedder(&db.embedder, base_urls)?;
 
     // 2. Connect to the LanceDB table in READ-ONLY mode
-    let vec_db = cosh_recall::embed::VecDb::connect_readonly(&db.uri, &db.table_name)
+    let vec_db = morpheus_recall::embed::VecDb::connect_readonly(&db.uri, &db.table_name)
         .await
         .map_err(|e| format!("database connection error: {e}"))?;
 
@@ -782,15 +782,15 @@ async fn dispatch_recall_search(
         .map_err(|e| format!("search error: {e}"))?;
 
     // 5. Serialize results
-    let results: Vec<cosh_tools::recall::types::RecallEntry> = entries
+    let results: Vec<morpheus_tools::recall::types::RecallEntry> = entries
         .into_iter()
-        .map(|e| cosh_tools::recall::types::RecallEntry {
+        .map(|e| morpheus_tools::recall::types::RecallEntry {
             id: e.id,
             content: e.content,
         })
         .collect();
 
-    let output = cosh_tools::recall::types::RecallOutput {
+    let output = morpheus_tools::recall::types::RecallOutput {
         query: query.to_string(),
         results,
     };
@@ -1094,7 +1094,7 @@ impl Tools for CoshTools {
                         let complete: Vec<u8> = carry[..split].to_vec();
                         carry.drain(..split);
 
-                        let text = cosh_tools::bash::strip_ansi(&complete);
+                        let text = morpheus_tools::bash::strip_ansi(&complete);
                         if !text.is_empty() {
                             if let Some(ref tx) = self.event_tx {
                                 let _ = tx.send(HarnessEvent::ToolOutput {
@@ -1158,7 +1158,7 @@ impl Tools for CoshTools {
                 // vte parser drops an incomplete UTF-8 lead and the next
                 // chunk's continuation bytes turn into U+FFFD garbage.
                 if !carry.is_empty() {
-                    let text = cosh_tools::bash::strip_ansi(&carry);
+                    let text = morpheus_tools::bash::strip_ansi(&carry);
                     carry.clear();
                     if !text.is_empty() {
                         if let Some(ref tx) = self.event_tx {
@@ -1472,7 +1472,7 @@ impl Tools for CoshTools {
                 let Some(lsp) = &self.lsp else {
                     return Err("LSP tooling is disabled".into());
                 };
-                let input: cosh_tools::lsp::types::DefinitionsInput =
+                let input: morpheus_tools::lsp::types::DefinitionsInput =
                     serde_json::from_value(args).map_err(|e| e.to_string())?;
                 let output = lsp.definitions(&input).await.map_err(|e| e.to_string())?;
                 serde_json::to_string(&output).map_err(|e| e.to_string())
@@ -1481,7 +1481,7 @@ impl Tools for CoshTools {
                 let Some(lsp) = &self.lsp else {
                     return Err("LSP tooling is disabled".into());
                 };
-                let input: cosh_tools::lsp::types::ReferencesInput =
+                let input: morpheus_tools::lsp::types::ReferencesInput =
                     serde_json::from_value(args).map_err(|e| e.to_string())?;
                 let output = lsp.references(&input).await.map_err(|e| e.to_string())?;
                 serde_json::to_string(&output).map_err(|e| e.to_string())
@@ -1490,7 +1490,7 @@ impl Tools for CoshTools {
                 let Some(lsp) = &self.lsp else {
                     return Err("LSP tooling is disabled".into());
                 };
-                let input: cosh_tools::lsp::types::SymbolsInput =
+                let input: morpheus_tools::lsp::types::SymbolsInput =
                     serde_json::from_value(args).map_err(|e| e.to_string())?;
                 let output = lsp.symbols(&input).await.map_err(|e| e.to_string())?;
                 serde_json::to_string(&output).map_err(|e| e.to_string())
@@ -1499,7 +1499,7 @@ impl Tools for CoshTools {
                 let Some(lsp) = &self.lsp else {
                     return Err("LSP tooling is disabled".into());
                 };
-                let input: cosh_tools::lsp::types::HoverInput =
+                let input: morpheus_tools::lsp::types::HoverInput =
                     serde_json::from_value(args).map_err(|e| e.to_string())?;
                 let output = lsp.hover(&input).await.map_err(|e| e.to_string())?;
                 serde_json::to_string(&output).map_err(|e| e.to_string())
@@ -1508,7 +1508,7 @@ impl Tools for CoshTools {
                 let Some(lsp) = &self.lsp else {
                     return Err("LSP tooling is disabled".into());
                 };
-                let input: cosh_tools::lsp::types::WorkspaceSymbolsInput =
+                let input: morpheus_tools::lsp::types::WorkspaceSymbolsInput =
                     serde_json::from_value(args).map_err(|e| e.to_string())?;
                 let output = lsp
                     .workspace_symbols(&input)
@@ -1520,7 +1520,7 @@ impl Tools for CoshTools {
                 let Some(lsp) = &self.lsp else {
                     return Err("LSP tooling is disabled".into());
                 };
-                let input: cosh_tools::lsp::types::RenameInput =
+                let input: morpheus_tools::lsp::types::RenameInput =
                     serde_json::from_value(args).map_err(|e| e.to_string())?;
                 let output = lsp.rename(&input).await.map_err(|e| e.to_string())?;
                 serde_json::to_string(&output).map_err(|e| e.to_string())
@@ -1529,7 +1529,7 @@ impl Tools for CoshTools {
                 let Some(lsp) = &self.lsp else {
                     return Err("LSP tooling is disabled".into());
                 };
-                let input: cosh_tools::lsp::types::CallHierarchyInput =
+                let input: morpheus_tools::lsp::types::CallHierarchyInput =
                     serde_json::from_value(args).map_err(|e| e.to_string())?;
                 let output = lsp
                     .call_hierarchy(&input)
@@ -1541,7 +1541,7 @@ impl Tools for CoshTools {
                 let Some(lsp) = &self.lsp else {
                     return Err("LSP tooling is disabled".into());
                 };
-                let input: cosh_tools::lsp::types::CodeActionsInput =
+                let input: morpheus_tools::lsp::types::CodeActionsInput =
                     serde_json::from_value(args).map_err(|e| e.to_string())?;
                 let output = lsp.code_actions(&input).await.map_err(|e| e.to_string())?;
                 serde_json::to_string(&output).map_err(|e| e.to_string())
@@ -1550,7 +1550,7 @@ impl Tools for CoshTools {
                 let Some(lsp) = &self.lsp else {
                     return Err("LSP tooling is disabled".into());
                 };
-                let input: cosh_tools::lsp::types::RestartInput =
+                let input: morpheus_tools::lsp::types::RestartInput =
                     serde_json::from_value(args).map_err(|e| e.to_string())?;
                 let output = lsp.restart(&input).await.map_err(|e| e.to_string())?;
                 serde_json::to_string(&output).map_err(|e| e.to_string())
@@ -1598,7 +1598,7 @@ impl Tools for CoshTools {
                 // review decision is kept for the report side: a finished
                 // review turn's report gets the header ENFORCED below.
                 let is_review =
-                    cosh_tools::subagent::severity::is_review_task(&call_input, input.code_review);
+                    morpheus_tools::subagent::severity::is_review_task(&call_input, input.code_review);
                 // Right-panel list entry description: explicit values pass
                 // through; a code-review call may omit it (the harness infers
                 // `code-review-NN`), non-review calls must carry one. The
@@ -1606,7 +1606,7 @@ impl Tools for CoshTools {
                 // from the raw input — so this call exists to VALIDATE.
                 self.subagent
                     .resolve_description(input.description.clone(), is_review)?;
-                let call_input = cosh_tools::subagent::severity::with_severity_contract(
+                let call_input = morpheus_tools::subagent::severity::with_severity_contract(
                     &call_input,
                     input.code_review,
                 );
@@ -1650,7 +1650,7 @@ impl Tools for CoshTools {
                         .clone()
                         .unwrap_or_else(|| Arc::new(AtomicBool::new(false)));
                     let (chunk_tx, mut chunk_rx) = tokio::sync::mpsc::unbounded_channel::<
-                        cosh_tools::subagent::events::SubagentEvent,
+                        morpheus_tools::subagent::events::SubagentEvent,
                     >();
                     // Clones for the detached task: the originals stay with
                     // the caller, which returns the spawn receipt below.
@@ -1688,7 +1688,7 @@ impl Tools for CoshTools {
                                     }
                                 }
                             });
-                            let turn = cosh_tools::subagent::acp::call(
+                            let turn = morpheus_tools::subagent::acp::call(
                                 &body_agent,
                                 &call_input,
                                 resume,
@@ -1724,7 +1724,7 @@ impl Tools for CoshTools {
                                 let completed = stop_reason == "end_turn";
                                 let output = if is_review && completed && !output.trim().is_empty()
                                 {
-                                    cosh_tools::subagent::severity::enforce_severity_header(
+                                    morpheus_tools::subagent::severity::enforce_severity_header(
                                         &output, true,
                                     )
                                 } else {
@@ -1813,7 +1813,7 @@ impl Tools for CoshTools {
                     .unwrap_or_else(|| Arc::new(AtomicBool::new(false)));
 
                 let (chunk_tx, mut chunk_rx) = tokio::sync::mpsc::unbounded_channel::<
-                    cosh_tools::subagent::events::SubagentEvent,
+                    morpheus_tools::subagent::events::SubagentEvent,
                 >();
 
                 // `agent` is moved into the spawned turn below; the clone
@@ -1822,7 +1822,7 @@ impl Tools for CoshTools {
                 let stored_agent = agent.clone();
 
                 let mut call_handle = tokio::task::spawn(async move {
-                    cosh_tools::subagent::acp::call(
+                    morpheus_tools::subagent::acp::call(
                         &agent,
                         &call_input,
                         resume,
@@ -1898,7 +1898,7 @@ impl Tools for CoshTools {
                 // completed — this match will silently exclude it.
                 let completed = matches!(stop_reason.as_str(), "end_turn");
                 let accumulated = if is_review && completed && !accumulated.trim().is_empty() {
-                    cosh_tools::subagent::severity::enforce_severity_header(&accumulated, true)
+                    morpheus_tools::subagent::severity::enforce_severity_header(&accumulated, true)
                 } else {
                     accumulated
                 };
@@ -2074,7 +2074,7 @@ mod skills_sources_tests {
 
         let sources = default_skill_sources_for(Some(&msys_home));
         assert_eq!(sources.len(), 1, "MSYS-spelled home must resolve natively");
-        let cosh_tools::skills::SkillSource::Directory { path } = &sources[0] else {
+        let morpheus_tools::skills::SkillSource::Directory { path } = &sources[0] else {
             panic!("expected a Directory source");
         };
         assert!(

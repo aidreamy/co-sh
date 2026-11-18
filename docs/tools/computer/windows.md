@@ -80,6 +80,6 @@ a verb the platform does not support renders as an ordinary
 ## See also
 
 [`apps`](apps.md) for which applications run · [`snapshot`](snapshot.md)
-for the tree INSIDE a window · `cargo test -p cosh-tools --
+for the tree INSIDE a window · `cargo test -p morpheus-tools --
 computer::test::windows` (the
 fixture app models every verb on both platforms)

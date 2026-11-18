@@ -71,8 +71,8 @@ const OVERVIEW: Page = Page {
         Section {
             title: "Usage",
             rows: &[
-                Row::Prose("cosh [options]"),
-                Row::Prose("cosh <command> [options]"),
+                Row::Prose("morpheus [options]"),
+                Row::Prose("morpheus <command> [options]"),
             ],
         },
         Section {
@@ -103,10 +103,10 @@ const OVERVIEW: Page = Page {
         Section {
             title: "Examples",
             rows: &[
-                Row::Example("cosh -c", "continue where you left off"),
-                Row::Example("cosh -s 1788063765396", "open a specific session"),
-                Row::Example("cosh update", "install the latest release"),
-                Row::Example("cosh whatsapp", "chat with the agent from WhatsApp"),
+                Row::Example("morpheus -c", "continue where you left off"),
+                Row::Example("morpheus -s 1788063765396", "open a specific session"),
+                Row::Example("morpheus update", "install the latest release"),
+                Row::Example("morpheus whatsapp", "chat with the agent from WhatsApp"),
             ],
         },
         Section {
@@ -115,23 +115,23 @@ const OVERVIEW: Page = Page {
                 Row::Note(
                     "Sessions are stored per directory: -c and -s only see sessions started in the current one.",
                 ),
-                Row::Note("Run `cosh help <command>` for one command's page."),
+                Row::Note("Run `morpheus help <command>` for one command's page."),
             ],
         },
     ],
 };
 
 const UPDATE_PAGE: Page = Page {
-    title: "cosh update",
+    title: "morpheus update",
     sections: &[
         Section {
             title: "Usage",
-            rows: &[Row::Prose("cosh update [version] [--yes]")],
+            rows: &[Row::Prose("morpheus update [version] [--yes]")],
         },
         Section {
             title: "Description",
             rows: &[Row::Prose(
-                "Installs a release through the official installer for this OS and variant, replacing the binaries next to the running cosh. With no version, targets the latest GitHub release.",
+                "Installs a release through the official installer for this OS and variant, replacing the binaries next to the running morpheus. With no version, targets the latest GitHub release.",
             )],
         },
         Section {
@@ -154,16 +154,16 @@ const UPDATE_PAGE: Page = Page {
         Section {
             title: "Examples",
             rows: &[
-                Row::Example("cosh update", "install the latest release"),
-                Row::Example("cosh update v0.2.3", "pin a specific release"),
-                Row::Example("cosh update --yes", "unattended: scripts and containers"),
+                Row::Example("morpheus update", "install the latest release"),
+                Row::Example("morpheus update v0.2.3", "pin a specific release"),
+                Row::Example("morpheus update --yes", "unattended: scripts and containers"),
             ],
         },
         Section {
             title: "Notes",
             rows: &[
                 Row::Note(
-                    "The update replaces the running binary; start cosh again when it finishes.",
+                    "The update replaces the running binary; start morpheus again when it finishes.",
                 ),
                 Row::Note("Set COSH_BIN_DIR to install into a different directory."),
             ],
@@ -172,16 +172,16 @@ const UPDATE_PAGE: Page = Page {
 };
 
 const PATHS_PAGE: Page = Page {
-    title: "cosh paths",
+    title: "morpheus paths",
     sections: &[
         Section {
             title: "Usage",
-            rows: &[Row::Prose("cosh paths")],
+            rows: &[Row::Prose("morpheus paths")],
         },
         Section {
             title: "Description",
             rows: &[Row::Prose(
-                "Prints the directories cosh reads and writes, one per line, so other tools can use them.",
+                "Prints the directories morpheus reads and writes, one per line, so other tools can use them.",
             )],
         },
         Section {
@@ -204,16 +204,16 @@ const PATHS_PAGE: Page = Page {
 };
 
 const WHATSAPP_PAGE: Page = Page {
-    title: "cosh whatsapp",
+    title: "morpheus whatsapp",
     sections: &[
         Section {
             title: "Usage",
-            rows: &[Row::Prose("cosh whatsapp")],
+            rows: &[Row::Prose("morpheus whatsapp")],
         },
         Section {
             title: "Description",
             rows: &[Row::Prose(
-                "Links this machine to a personal WhatsApp account as a companion device and answers the linked chats with the cosh agent. No TUI is opened: the pairing QR code is printed, then the terminal only reports connection events while messages are handled in the background.",
+                "Links this machine to a personal WhatsApp account as a companion device and answers the linked chats with the morpheus agent. No TUI is opened: the pairing QR code is printed, then the terminal only reports connection events while messages are handled in the background.",
             )],
         },
         Section {
@@ -244,11 +244,11 @@ const WHATSAPP_PAGE: Page = Page {
 };
 
 const HELP_PAGE: Page = Page {
-    title: "cosh help",
+    title: "morpheus help",
     sections: &[
         Section {
             title: "Usage",
-            rows: &[Row::Prose("cosh help [command]")],
+            rows: &[Row::Prose("morpheus help [command]")],
         },
         Section {
             title: "Description",
@@ -262,7 +262,7 @@ const HELP_PAGE: Page = Page {
         },
         Section {
             title: "Examples",
-            rows: &[Row::Example("cosh help update", "the update page")],
+            rows: &[Row::Example("morpheus help update", "the update page")],
         },
     ],
 };
@@ -509,7 +509,7 @@ mod tests {
             );
             let page = plain(Some(command));
             assert!(
-                page.contains(&format!("cosh {command}")),
+                page.contains(&format!("morpheus {command}")),
                 "the `{command}` page does not name the command"
             );
         }
@@ -553,8 +553,8 @@ mod tests {
         assert!(lines[1].contains("co-sh"));
         assert!(lines[1].contains(&format!("v{VERSION}")));
         assert!(lines[2].contains("Usage"));
-        assert!(lines[3].contains("cosh [options]"));
-        assert!(lines[4].contains("cosh <command> [options]"));
+        assert!(lines[3].contains("morpheus [options]"));
+        assert!(lines[4].contains("morpheus <command> [options]"));
     }
 
     #[test]

@@ -5,7 +5,7 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};
 
-use cosh_tui::core::types::MouseEvent;
+use morpheus_tui::core::types::MouseEvent;
 
 use crate::component::wall;
 use crate::theme::{Theme, rgba_color};
@@ -397,7 +397,7 @@ impl FreeGatewayRecommendationDialog {
     /// for layout, render and hit-test in every phase.
     fn body_rows(&self, inner_w: u16) -> Vec<String> {
         let plain =
-            cosh_tui::core::renderables::markdown::markdown_to_visible_text(self.revealed_text());
+            morpheus_tui::core::renderables::markdown::markdown_to_visible_text(self.revealed_text());
         wrap_plain(&plain, inner_w)
     }
 
@@ -1722,7 +1722,7 @@ mod tests {
     /// phase, and the shared body makes the switch seamless.
     #[test]
     fn mouse_click_switches_tabs_mid_stream() {
-        use cosh_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
+        use morpheus_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
 
         let mut d = FreeGatewayRecommendationDialog::new();
         d.show_offers(OFFERS);
@@ -1768,12 +1768,12 @@ mod tests {
         let question_y = footer_y - 5;
 
         // The exact question row: inside the box, no action fires…
-        let click = cosh_tui::core::types::MouseEvent::new(
-            cosh_tui::core::types::MouseEventType::Up,
-            cosh_tui::core::types::MouseButton::Left,
+        let click = morpheus_tui::core::types::MouseEvent::new(
+            morpheus_tui::core::types::MouseEventType::Up,
+            morpheus_tui::core::types::MouseButton::Left,
             10,
             question_y,
-            cosh_tui::core::types::MouseModifiers::none(),
+            morpheus_tui::core::types::MouseModifiers::none(),
         );
         assert!(d.handle_mouse(&click, area, &test_theme()));
         assert!(!d.submitted, "the question row never submits");

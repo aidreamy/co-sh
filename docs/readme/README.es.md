@@ -3,7 +3,7 @@
 [English](../../README.md) | [Português](./README.pt-BR.md) | **Español** | [Русский](./README.ru.md) | [中文](./README.zh-CN.md) | [日本語](./README.ja.md)
 
 > [!WARNING]
-> **WhatsApp está en desarrollo.** La función de WhatsApp (`cosh-whatsapp`) aún es experimental y **no se recomienda su uso**.
+> **WhatsApp está en desarrollo.** La función de WhatsApp (`morpheus-whatsapp`) aún es experimental y **no se recomienda su uso**.
 
 Cosh es un coding agent de propósito general para la terminal, con herramientas de ingeniería de software y *computer tools* que le permiten interactuar con aplicaciones gráficas.
 
@@ -63,16 +63,16 @@ Después de instalar, ejecuta `cosh` en la terminal. Si el directorio de instala
 
 | Crate | Descripción |
 |---|---|
-| [`cosh-tools`](../../crates/cosh-tools/README.md) | Herramientas de desarrollo y computer tools |
-| [`cosh-tui`](../../crates/cosh-tui/README.md) | Biblioteca de widgets de TUI (renderización de markdown/diff, layout) — los componentes sobre los que se construye la interfaz de terminal de la app |
-| [`cosh-sdk`](../../crates/cosh-sdk/README.md) | SDK para construir agentes sobre cosh |
-| [`cosh-recall`](../../crates/cosh-recall/README.md) | Memoria y recall de contexto |
-| [`cosh-whatsapp`](../../crates/cosh-whatsapp/README.md) | Integración con WhatsApp Web (multidispositivo): emparejamiento, eventos normalizados y envíos tipados |
-| [`cosh-onnx`](../../crates/cosh-onnx/README.md) | Motor de decisiones ONNX, habilitado por la feature `onnx` |
+| [`morpheus-tools`](../../crates/morpheus-tools/README.md) | Herramientas de desarrollo y computer tools |
+| [`morpheus-tui`](../../crates/morpheus-tui/README.md) | Biblioteca de widgets de TUI (renderización de markdown/diff, layout) — los componentes sobre los que se construye la interfaz de terminal de la app |
+| [`morpheus-sdk`](../../crates/morpheus-sdk/README.md) | SDK para construir agentes sobre morpheus |
+| [`morpheus-recall`](../../crates/morpheus-recall/README.md) | Memoria y recall de contexto |
+| [`morpheus-whatsapp`](../../crates/morpheus-whatsapp/README.md) | Integración con WhatsApp Web (multidispositivo): emparejamiento, eventos normalizados y envíos tipados |
+| [`morpheus-onnx`](../../crates/morpheus-onnx/README.md) | Motor de decisiones ONNX, habilitado por la feature `onnx` |
 
 ## Roadmap
 
-- **Motor de decisiones Laya/ONNX** — feature opcional `onnx`, proporcionada por el crate `cosh-onnx`; consulta la [guía del crate](../onnx/onnx.md).
+- **Motor de decisiones Laya/ONNX** — feature opcional `onnx`, proporcionada por el crate `morpheus-onnx`; consulta la [guía del crate](../onnx/onnx.md).
 - **Orquestación de harnesses en grafo** — un nuevo modo de sesión para coordinar múltiples harnesses.
 
 ## Licencia

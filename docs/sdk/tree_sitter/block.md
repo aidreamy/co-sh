@@ -41,7 +41,7 @@ pub fn resolve_symbol(&self, path: &str, text: &str, name: &str) -> Option<Block
 ```
 
 Answers "where is the definition of `name`?" — used by symbol-targeted
-file reads (cosh-tools `fs_read` with a `symbol` target). It walks the tree
+file reads (morpheus-tools `fs_read` with a `symbol` target). It walks the tree
 in **pre-order** looking for the first node whose `name` field matches, so
 the *outermost* matching definition wins (a module before a nested symbol).
 Returns `None` when nothing matches.
@@ -55,7 +55,7 @@ pub fn with_tree<R>(&self, path: &str, text: &str, f: impl FnOnce(&Tree, &str) -
 Runs `f` with the parsed `Tree` and its source text, sharing the same cache
 lifecycle (miss → full parse, hit unchanged → reuse, hit changed →
 incremental re-parse). This is the escape hatch for consumers that need to
-walk and match nodes themselves (the AST rewrite engine in cosh-tools uses
+walk and match nodes themselves (the AST rewrite engine in morpheus-tools uses
 it), and the basis for the higher-level helpers.
 
 ## The cache contract
@@ -77,7 +77,7 @@ put the entry back
 Two consequences worth knowing:
 
 - **The cache is invalidated by writers.** `rollback::restore` and the
-  cosh-tools write/edit paths call `tree_sitter().invalidate(path)` after
+  morpheus-tools write/edit paths call `tree_sitter().invalidate(path)` after
   changing a file, so the next read never sees a stale tree. If you mutate a
   file yourself, call `invalidate` too.
 - **Incremental re-parses reuse the old tree**, which is much cheaper than a

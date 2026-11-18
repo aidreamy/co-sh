@@ -89,13 +89,13 @@ controls where a box title sits along its border.
 ## Example — a custom border with only some sides
 
 ```rust,ignore
-use cosh_tui::core::lib::border::{
+use morpheus_tui::core::lib::border::{
     BorderSidesConfig, BorderStyle, BorderCharacters, border_chars, get_border_from_sides,
 };
 
 // Only a top and bottom line, no verticals.
 let sides = BorderSidesConfig { top: true, right: false, bottom: true, left: false };
-assert_eq!(get_border_from_sides(sides), vec![cosh_tui::core::border::BorderSide::Top, cosh_tui::core::border::BorderSide::Bottom]);
+assert_eq!(get_border_from_sides(sides), vec![morpheus_tui::core::border::BorderSide::Top, morpheus_tui::core::border::BorderSide::Bottom]);
 
 let chars = border_chars(BorderStyle::Rounded);
 assert_eq!(chars.top_left, '╭');

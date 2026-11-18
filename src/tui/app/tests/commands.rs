@@ -1191,7 +1191,7 @@ async fn adding_panes_while_running_keeps_the_running_turns_and_chats() {
             pane_id,
             epoch,
             turn: 0,
-            event: cosh_tools::subagent::events::SubagentEvent::Message {
+            event: morpheus_tools::subagent::events::SubagentEvent::Message {
                 text: "turn in flight".into(),
             },
         })
@@ -1238,7 +1238,7 @@ async fn adding_panes_while_running_keeps_the_running_turns_and_chats() {
             pane_id,
             epoch: app.agents_pane_epoch,
             turn: 0,
-            event: cosh_tools::subagent::events::SubagentEvent::Message {
+            event: morpheus_tools::subagent::events::SubagentEvent::Message {
                 text: "still streaming after the re-pick".into(),
             },
         })
@@ -1338,7 +1338,7 @@ async fn adding_panes_while_running_keeps_the_running_turns_and_chats() {
             pane_id: dropped_id,
             epoch: app.agents_pane_epoch,
             turn: 0,
-            event: cosh_tools::subagent::events::SubagentEvent::Message {
+            event: morpheus_tools::subagent::events::SubagentEvent::Message {
                 text: "dropped pane leak".into(),
             },
         })
@@ -1393,7 +1393,7 @@ async fn parked_agents_split_survives_park_and_re_attach() {
                 .unwrap_or(0),
             epoch: app.agents_pane_epoch,
             turn: 0,
-            event: cosh_tools::subagent::events::SubagentEvent::Message {
+            event: morpheus_tools::subagent::events::SubagentEvent::Message {
                 text: "still streaming".into(),
             },
         })
@@ -1426,7 +1426,7 @@ async fn parked_agents_split_survives_park_and_re_attach() {
                 .unwrap_or(0),
             epoch: app.agents_pane_epoch,
             turn: 0,
-            event: cosh_tools::subagent::events::SubagentEvent::Message {
+            event: morpheus_tools::subagent::events::SubagentEvent::Message {
                 text: "parked stream".into(),
             },
         })
@@ -1901,7 +1901,7 @@ async fn reopening_the_split_rehydrates_bound_panes_with_empty_timelines() {
                 .unwrap_or(0),
             epoch,
             turn: 0,
-            event: cosh_tools::subagent::events::SubagentEvent::UserMessage {
+            event: morpheus_tools::subagent::events::SubagentEvent::UserMessage {
                 text: "what changed today?".into(),
             },
         })
@@ -1917,7 +1917,7 @@ async fn reopening_the_split_rehydrates_bound_panes_with_empty_timelines() {
                 .unwrap_or(0),
             epoch,
             turn: 0,
-            event: cosh_tools::subagent::events::SubagentEvent::Message {
+            event: morpheus_tools::subagent::events::SubagentEvent::Message {
                 text: "the answer from yesterday".into(),
             },
         })
@@ -2242,7 +2242,7 @@ async fn a_session_model_event_lands_on_the_pane() {
                 .unwrap_or(0),
             epoch: app.agents_pane_epoch,
             turn: 0,
-            event: cosh_tools::subagent::events::SubagentEvent::SessionModel {
+            event: morpheus_tools::subagent::events::SubagentEvent::SessionModel {
                 model: Some("kilo/nvidia/nemotron-3-ultra-550b-a55b:free".into()),
                 model_label: Some("Nemotron free".into()),
                 provider: Some("nvidia".into()),
@@ -2315,7 +2315,7 @@ async fn a_usage_event_lands_on_the_pane() {
                 .unwrap_or(0),
             epoch: app.agents_pane_epoch,
             turn: 0,
-            event: cosh_tools::subagent::events::SubagentEvent::Usage {
+            event: morpheus_tools::subagent::events::SubagentEvent::Usage {
                 context_window: 100_000,
                 tokens_in_context: 9_612,
             },
@@ -2881,7 +2881,7 @@ async fn a_manager_initiated_pane_report_never_wakes_the_main_agent() {
 /// previous wake (an unreconciled list must not re-wake forever).
 #[tokio::test]
 async fn a_pending_todo_wakes_the_idle_main_agent_with_the_rerun_message() {
-    use cosh_tools::plan::types::{TodoItem, TodoList, TodoStatus};
+    use morpheus_tools::plan::types::{TodoItem, TodoList, TodoStatus};
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
@@ -2951,7 +2951,7 @@ async fn a_pending_todo_wakes_the_idle_main_agent_with_the_rerun_message() {
 /// list that already fired once must not wake forever).
 #[tokio::test]
 async fn the_todo_wake_stays_silent_without_open_items_or_a_change() {
-    use cosh_tools::plan::types::{TodoItem, TodoList, TodoStatus};
+    use morpheus_tools::plan::types::{TodoItem, TodoList, TodoStatus};
 
     let _guard = HOME_LOCK.lock();
     isolate_home();

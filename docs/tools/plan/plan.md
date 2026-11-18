@@ -30,7 +30,7 @@ stateful shell around it.
 ## The `Plan` wrapper
 
 ```rust,ignore
-use cosh_tools::plan::{Plan, TodoWriteInput};
+use morpheus_tools::plan::{Plan, TodoWriteInput};
 
 let mut plan = Plan::new();                       // an empty list
 

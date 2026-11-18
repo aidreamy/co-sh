@@ -25,11 +25,11 @@ use aiface::NativeToolCall;
 #[cfg(test)]
 use aiface::connector::ChatMessage;
 use aiface::connector::{ClaudeThinkingBlock, Connector, ToolCallMode};
-use cosh_sdk::extract_action::ToolCallData;
+use morpheus_sdk::extract_action::ToolCallData;
 #[cfg(test)]
-use cosh_sdk::extract_action::ToolSchema;
-use cosh_tools::TOOL_FORMAT;
-use cosh_tools::lsp::Lsp;
+use morpheus_sdk::extract_action::ToolSchema;
+use morpheus_tools::TOOL_FORMAT;
+use morpheus_tools::lsp::Lsp;
 pub use guards::{todo_rerun_message, todo_rerun_open_items};
 use std::collections::{HashSet, VecDeque};
 use std::fmt::Write as _;
@@ -296,7 +296,7 @@ pub struct Harness {
     /// The harness checks this BEFORE calling `check_tool_permission`:
     /// if all paths from a tool call are already approved, the dialog
     /// is skipped entirely. Paths approved via AllowOnce are NOT stored
-    /// here — they are only added transiently to the cosh-tools allowlist
+    /// here — they are only added transiently to the morpheus-tools allowlist
     /// and removed after dispatch.
     approved_paths: HashSet<std::path::PathBuf>,
 
@@ -440,7 +440,7 @@ impl Harness {
         let tool_format = if include_inline_schemas {
             TOOL_FORMAT
         } else {
-            cosh_tools::TOOL_FORMAT_NATIVE
+            morpheus_tools::TOOL_FORMAT_NATIVE
         };
         let _ = write!(out, "## Tool Format\n{tool_format}");
         for prompt in &self.system_prompts {

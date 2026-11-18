@@ -1,6 +1,6 @@
-# The `cosh-onnx` crate: making a decision from structured state
+# The `morpheus-onnx` crate: making a decision from structured state
 
-`cosh-onnx` runs a small ONNX decision model over JSON state. It is useful
+`morpheus-onnx` runs a small ONNX decision model over JSON state. It is useful
 when an application needs a bounded answer — a choice, a score or a yes/no
 probability — rather than an open-ended generation.
 
@@ -12,7 +12,7 @@ The crate is split into two layers:
    routes each request to the right checkpoint.
 
 The important idea is that callers depend on a model contract, not on ONNX
-Runtime details. The [`DecisionModel`](https://docs.rs/cosh-onnx/latest/cosh_onnx/trait.DecisionModel.html)
+Runtime details. The [`DecisionModel`](https://docs.rs/morpheus-onnx/latest/morpheus_onnx/trait.DecisionModel.html)
 trait is the boundary; `load` returns an `Arc<dyn DecisionModel>`.
 
 ## Modules
@@ -32,10 +32,10 @@ This example shows the complete path. It is `ignore` because the first load
 may download a large checkpoint from Hugging Face.
 
 ```rust,ignore
-use cosh_onnx::{load, LoadOptions, ModelKind, Prediction};
+use morpheus_onnx::{load, LoadOptions, ModelKind, Prediction};
 use serde_json::json;
 
-fn main() -> cosh_onnx::Result<()> {
+fn main() -> morpheus_onnx::Result<()> {
     let model = load(ModelKind::English, &LoadOptions::default())?;
     let state = json!({"message": "the invoice was charged twice"});
     let questions = json!({
@@ -80,7 +80,7 @@ There are three details worth noticing:
 
 ## Summary
 
-- `cosh-onnx` turns JSON state into bounded decisions.
+- `morpheus-onnx` turns JSON state into bounded decisions.
 - `DecisionModel` is the backend-neutral seam.
 - `load` chooses one checkpoint; `Router` chooses among residents.
 - The decision vocabulary is `choice`, `score` and `noul`.

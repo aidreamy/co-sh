@@ -1,8 +1,8 @@
-//! `cosh-uninstall` — self-removal of the cosh CLI (Linux, macOS, Windows).
+//! `morpheus-uninstall` — self-removal of the morpheus CLI (Linux, macOS, Windows).
 //!
-//! Lives in its OWN binary (`src/bin/cosh_uninstall.rs`, shipped alongside
-//! `cosh` by the release workflow and the download scripts): a separate
-//! process can delete the running `cosh` image directly — on Windows the
+//! Lives in its OWN binary (`src/bin/morpheus_uninstall.rs`, shipped alongside
+//! `morpheus` by the release workflow and the download scripts): a separate
+//! process can delete the running `morpheus` image directly — on Windows the
 //! main binary is unlinked while this uninstaller runs, and only the
 //! uninstaller's own image needs the rename-and-defer trick.
 //!
@@ -10,7 +10,7 @@
 //!
 //! 1. Ask ONCE, in plain text, why the user is uninstalling. The answer is
 //!    optional — pressing Enter skips it. No suggestions, no ratings.
-//! 2. Cleanup phase 1: remove the `cosh` binary plus the cosh profile
+//! 2. Cleanup phase 1: remove the `morpheus` binary plus the morpheus profile
 //!    directories (config, cache, and the data dir's non-telemetry entries).
 //! 3. Telemetry: enqueue the `uninstall` event and flush the queue. The event
 //!    queue LIVES inside the data dir (`data_dir/telemetry`), so this MUST
@@ -47,7 +47,7 @@ const TELEMETRY_DIR_NAME: &str = "telemetry";
 /// Run the uninstall flow. `consented_in_config` is the persisted telemetry
 /// consent flag (same source `Telemetry::resolve` expects).
 ///
-/// With `dry_run` (cosh-uninstall --dry-run) NOTHING is deleted and NO
+/// With `dry_run` (morpheus-uninstall --dry-run) NOTHING is deleted and NO
 /// telemetry is sent: the same prompt is shown, and every phase runs in a
 /// report-only mode that lists exactly what a real run would remove —
 /// binaries, profile directories and which keyring credentials exist. The
@@ -130,16 +130,16 @@ fn report_dry_run(reason: Option<&str>) {
 
     // Binaries: the sibling pair the download scripts install.
     if let Ok(self_exe) = std::env::current_exe() {
-        let main = self_exe.with_file_name(cosh_binary_name());
+        let main = self_exe.with_file_name(morpheus_binary_name());
         say(if main.exists() {
-            "  - remove the main cosh binary:"
+            "  - remove the main morpheus binary:"
         } else {
-            "  - (main cosh binary already absent - nothing to remove at)"
+            "  - (main morpheus binary already absent - nothing to remove at)"
         });
         say(format!("        {}", main.display()).as_str());
         say(format!("  - remove this uninstaller: {}", self_exe.display()).as_str());
     } else {
-        say("  - remove the cosh binaries (location undeterminable in this run)");
+        say("  - remove the morpheus binaries (location undeterminable in this run)");
     }
 
     // Profile directories.
@@ -195,7 +195,7 @@ fn ask_reason() -> Option<String> {
     }
 }
 
-/// Best-effort line write to stdout: a closed/broken pipe (`cosh uninstall |
+/// Best-effort line write to stdout: a closed/broken pipe (`morpheus uninstall |
 /// head`) is IGNORED — `print!`/`println!` would panic, and a closed stdout
 /// must never abort an uninstall.
 fn say(text: &str) {
@@ -205,13 +205,13 @@ fn say(text: &str) {
     let _ = out.flush();
 }
 
-/// Delete the main `cosh` binary and this uninstaller's own image.
+/// Delete the main `morpheus` binary and this uninstaller's own image.
 ///
 /// The download scripts install BOTH binaries side by side in the same
-/// directory (`cosh` + `cosh-uninstall`, `.exe` on Windows). Because this is
-/// a separate process:
+/// directory (`morpheus` + `morpheus-uninstall`, `.exe` on Windows). Because
+/// this is a separate process:
 ///
-/// - The main `cosh` binary is unlinked DIRECTLY on every platform (nothing
+/// - The main `morpheus` binary is unlinked DIRECTLY on every platform (nothing
 ///   is running from it while the uninstaller executes).
 /// - This uninstaller's own image: Unix can unlink a running executable;
 ///   Windows cannot, so it is renamed to `<name>.old` (renaming a running
@@ -221,9 +221,9 @@ fn remove_binaries() -> bool {
     let Ok(self_exe) = std::env::current_exe() else {
         return false;
     };
-    let main = self_exe.with_file_name(cosh_binary_name());
+    let main = self_exe.with_file_name(morpheus_binary_name());
     // Main binary FIRST: the uninstaller's own image must never be the
-    // reason `cosh` survives. A missing main binary (never installed,
+    // reason `morpheus` survives. A missing main binary (never installed,
     // already removed, or a differently-named manual copy) is a success —
     // there is nothing left to clean.
     let main_removed = !main.exists() || std::fs::remove_file(&main).is_ok();
@@ -234,9 +234,14 @@ fn remove_binaries() -> bool {
     main_removed && self_removed
 }
 
-/// File name of the main cosh binary, as installed next to this uninstaller.
-fn cosh_binary_name() -> &'static str {
-    if cfg!(windows) { "cosh.exe" } else { "cosh" }
+/// File name of the main morpheus binary, as installed next to this
+/// uninstaller.
+fn morpheus_binary_name() -> &'static str {
+    if cfg!(windows) {
+        "morpheus.exe"
+    } else {
+        "morpheus"
+    }
 }
 
 /// `<name>.old` sibling of `exe` (append, never replace the `.exe` suffix).
@@ -440,15 +445,15 @@ fn print_summary(
     queue_removed: bool,
 ) {
     if binary_removed && data_removed && keyring_removed && queue_removed {
-        say("cosh was uninstalled. Thank you for trying it!");
+        say("morpheus was uninstalled. Thank you for trying it!");
         return;
     }
-    say("cosh uninstall finished with warnings:");
+    say("morpheus uninstall finished with warnings:");
     if !binary_removed {
-        say("  - the cosh binary could not be removed automatically");
+        say("  - the morpheus binary could not be removed automatically");
     }
     if !data_removed {
-        say("  - some cosh data/config directories could not be removed");
+        say("  - some morpheus data/config directories could not be removed");
     }
     if !keyring_removed {
         say("  - some API keys could not be removed from the OS credential store");
@@ -456,7 +461,7 @@ fn print_summary(
     if !queue_removed {
         say("  - the telemetry queue was kept (pending events) — remove it later");
     }
-    say("If your PATH still references the cosh install dir, remove that entry manually.");
+    say("If your PATH still references the morpheus install dir, remove that entry manually.");
 }
 
 #[cfg(test)]
@@ -466,10 +471,10 @@ mod tests {
     #[test]
     #[cfg(windows)]
     fn old_binary_path_appends_suffix() {
-        let p = PathBuf::from("/opt/bin/cosh.exe");
-        assert_eq!(old_binary_path(&p), PathBuf::from("/opt/bin/cosh.exe.old"));
-        let p = PathBuf::from("/opt/bin/cosh");
-        assert_eq!(old_binary_path(&p), PathBuf::from("/opt/bin/cosh.old"));
+        let p = PathBuf::from("/opt/bin/morpheus.exe");
+        assert_eq!(old_binary_path(&p), PathBuf::from("/opt/bin/morpheus.exe.old"));
+        let p = PathBuf::from("/opt/bin/morpheus");
+        assert_eq!(old_binary_path(&p), PathBuf::from("/opt/bin/morpheus.old"));
     }
 
     #[test]
@@ -497,11 +502,11 @@ mod tests {
     }
 
     #[test]
-    fn cosh_binary_name_matches_platform() {
+    fn morpheus_binary_name_matches_platform() {
         if cfg!(windows) {
-            assert_eq!(cosh_binary_name(), "cosh.exe");
+            assert_eq!(morpheus_binary_name(), "morpheus.exe");
         } else {
-            assert_eq!(cosh_binary_name(), "cosh");
+            assert_eq!(morpheus_binary_name(), "morpheus");
         }
     }
 

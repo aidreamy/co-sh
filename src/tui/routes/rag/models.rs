@@ -1,4 +1,4 @@
-pub use cosh_recall::embed::models::{
+pub use morpheus_recall::embed::models::{
     CloudEmbedConfig, EmbedderConfig, LocalEmbedModel, cloud_known_dim,
 };
 use serde::{Deserialize, Serialize};

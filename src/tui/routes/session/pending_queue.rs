@@ -18,8 +18,8 @@ use ratatui::style::Style;
 
 use crate::state::PendingQueues;
 use crate::theme::{Theme, contrast_color, rgba_color};
-use cosh_tui::core::lib::rgba::RGBA;
-use cosh_tui::core::lib::unicode_util::graphemes_with_width;
+use morpheus_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::unicode_util::graphemes_with_width;
 
 /// One visual row of the pending-queue strip. Every queued message owns
 /// its own internal padding: a `Pad` row directly above its first text

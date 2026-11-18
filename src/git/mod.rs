@@ -17,7 +17,7 @@
 //!
 //! Neither module is a tool: no schema, no `ToolDescription`, no registry
 //! entry. The TUI (slash command) and the harness (`agents_worktree` tool)
-//! are the only callers. Keeping them here rather than in `crates/cosh-tools`
+//! are the only callers. Keeping them here rather than in `crates/morpheus-tools`
 //! also keeps the git shelling out of the SDK's dependency graph.
 
 pub mod branch;

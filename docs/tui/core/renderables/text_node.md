@@ -99,7 +99,7 @@ get_renderable_index(id) -> Option<usize>
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::renderables::text_node::{
+use morpheus_tui::core::renderables::text_node::{
     TextNodeRenderable, TextNodeOptions, TextNodeAddItem, InheritedStyle,
 };
 
@@ -107,7 +107,7 @@ let mut root = TextNodeRenderable::new(TextNodeOptions { ..Default::default() })
 root.add(TextNodeAddItem::Text("Hello ".into()));
 
 let mut bold = TextNodeRenderable::new(TextNodeOptions {
-    attributes: Some(cosh_tui::core::types::TextAttributes::BOLD.bits()),
+    attributes: Some(morpheus_tui::core::types::TextAttributes::BOLD.bits()),
     ..Default::default()
 });
 bold.add(TextNodeAddItem::Text("world".into()));
@@ -115,7 +115,7 @@ root.add(TextNodeAddItem::Node(bold));
 
 let chunks = root.to_chunks(&InheritedStyle::new());
 assert_eq!(chunks.len(), 2);
-assert_ne!(chunks[1].attributes & cosh_tui::core::types::TextAttributes::BOLD.bits(), 0);
+assert_ne!(chunks[1].attributes & morpheus_tui::core::types::TextAttributes::BOLD.bits(), 0);
 ```
 
 Next: [markdown — the full markdown renderer](markdown/markdown.md).

@@ -55,9 +55,9 @@ placeholder" bookkeeping.
 ## Example
 
 ```rust,ignore
-use cosh_tui::solid::elements::slot::{SlotRenderable, TextSlotRenderable};
-use cosh_tui::core::renderables::text::TextRenderable;
-use cosh_tui::core::lib::styled_text::string_to_styled_text;
+use morpheus_tui::solid::elements::slot::{SlotRenderable, TextSlotRenderable};
+use morpheus_tui::core::renderables::text::TextRenderable;
+use morpheus_tui::core::lib::styled_text::string_to_styled_text;
 
 let mut slot = SlotRenderable::new();
 let mut text = TextSlotRenderable::new();

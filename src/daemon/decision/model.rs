@@ -11,7 +11,7 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use cosh_onnx::{DecisionModel, LoadOptions, ModelKind};
+use morpheus_onnx::{DecisionModel, LoadOptions, ModelKind};
 
 use super::protocol::Kind;
 
@@ -152,9 +152,9 @@ impl Registry {
 /// - a NAMED kind (and a `Custom` hub repo id / bundled pair) resolves
 ///   EVERY artifact — weights, config, tokenizer, and the exported graph
 ///   — from the checkpoint's snapshot in the hf-hub cache, the single
-///   rule the cosh-onnx exporter installs into (no override, no second
+///   rule the morpheus-onnx exporter installs into (no override, no second
 ///   lookup root on this side).
-pub(crate) fn load_model(kind: &Kind) -> Result<Arc<dyn DecisionModel>, cosh_onnx::Error> {
+pub(crate) fn load_model(kind: &Kind) -> Result<Arc<dyn DecisionModel>, morpheus_onnx::Error> {
     let mut options = LoadOptions::default();
     if let Kind::Custom { repo, .. } = kind
         && std::path::Path::new(repo).is_dir()
@@ -170,7 +170,7 @@ pub(crate) fn load_model(kind: &Kind) -> Result<Arc<dyn DecisionModel>, cosh_onn
             subfolder: subfolder.clone(),
         },
     };
-    cosh_onnx::load(model_kind, &options)
+    morpheus_onnx::load(model_kind, &options)
 }
 
 #[cfg(test)]

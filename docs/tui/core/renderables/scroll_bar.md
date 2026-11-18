@@ -44,7 +44,7 @@ single cell.
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::renderables::scroll_bar::{ScrollBarRenderable, ScrollBarOrientation};
+use morpheus_tui::core::renderables::scroll_bar::{ScrollBarRenderable, ScrollBarOrientation};
 
 let mut bar = ScrollBarRenderable::new(ScrollBarOrientation::Vertical);
 bar.set_scroll_size(100.0);

@@ -107,7 +107,7 @@ Calling any method after `destroy()` panics.
 ## Example — themed tokens for a code widget
 
 ```rust,ignore
-use cosh_tui::core::syntax_style::{SyntaxStyle, StyleDefinitionInput, ThemeTokenStyle, ThemeTokenStyleInner};
+use morpheus_tui::core::syntax_style::{SyntaxStyle, StyleDefinitionInput, ThemeTokenStyle, ThemeTokenStyleInner};
 
 let theme = vec![
     ThemeTokenStyle {

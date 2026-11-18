@@ -23,9 +23,9 @@
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 
-use cosh_tui::core::lib::rgba::ColorInput;
-use cosh_tui::core::renderable::Renderable;
-use cosh_tui::core::renderables::markdown::{
+use morpheus_tui::core::lib::rgba::ColorInput;
+use morpheus_tui::core::renderable::Renderable;
+use morpheus_tui::core::renderables::markdown::{
     MarkdownRenderable, boundary_blank_rows, estimate_height, estimate_height_interior_slice,
 };
 

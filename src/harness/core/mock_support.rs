@@ -60,7 +60,7 @@ impl Harness {
             checkup: None,
             // Measured, not conventional: the confidence-floor sweep over the
             // `loop_termination` corpus (`confidence_floor_sweep` in
-            // crates/cosh-onnx/tests/eval/loop_termination.rs) — 0.75 keeps
+            // crates/morpheus-onnx/tests/eval/loop_termination.rs) — 0.75 keeps
             // the sweep's optimum (23/24 correct) on the zero-false-continue
             // edge: no legitimate ending is vetoed, the single error is one
             // missed stop. Lower floors trade that for false continues

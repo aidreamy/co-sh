@@ -69,7 +69,7 @@ pub struct GlobResult {
 
 Paths are **relative to the searched directory**, using forward slashes even
 on Windows. Directories report `size: None`; the trailing `/` is **not**
-added (unlike the cosh-tools wrapper, which renders one).
+added (unlike the morpheus-tools wrapper, which renders one).
 
 ## Errors
 

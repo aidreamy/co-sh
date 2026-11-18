@@ -43,9 +43,9 @@ slider) additionally expose **state mutation methods** — `insert_text`,
 ## Composing a screen
 
 ```rust,ignore
-use cosh_tui::core::renderables::box::BoxRenderable;
-use cosh_tui::core::renderables::text::TextRenderable;
-use cosh_tui::core::lib::styled_text::string_to_styled_text;
+use morpheus_tui::core::renderables::box::BoxRenderable;
+use morpheus_tui::core::renderables::text::TextRenderable;
+use morpheus_tui::core::lib::styled_text::string_to_styled_text;
 
 let mut panel = BoxRenderable::new();
 panel.set_border(true);

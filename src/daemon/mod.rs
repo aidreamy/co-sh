@@ -16,7 +16,7 @@
 //!                  bind-as-lock race resolution, the idle shutdown timer
 //!   client.rs      the generic client handle (connect, request/response
 //!                  correlation, reconnect); protocol types stay per-daemon
-//!   decision/      the decision-model daemon (`cosh-decisiond`): protocol,
+//!   decision/      the decision-model daemon (`morpheus-decisiond`): protocol,
 //!                  server, resident model registry, and the `Checkup` client
 //! ```
 //!

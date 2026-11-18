@@ -12,7 +12,7 @@ scripts are strong evidence for the multilingual checkpoint. A Latin script
 is only the beginning of the decision; it does not prove English.
 
 ```rust
-use cosh_onnx::lang::{detect_script, latin_profile, script_profile};
+use morpheus_onnx::lang::{detect_script, latin_profile, script_profile};
 
 assert_eq!(detect_script("Hello from Rust"), "latin");
 let profile = script_profile("Olá, mundo");

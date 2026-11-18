@@ -20,7 +20,7 @@
 $ErrorActionPreference = "Stop"
 
 $REPO = "aidreamy/co-sh"
-$OUT_FILE = "cosh.exe"
+$OUT_FILE = "morpheus.exe"
 
 if (-not $env:COSH_BIN_DIR) {
     $env:COSH_BIN_DIR = Join-Path $env:USERPROFILE "cosh"
@@ -60,7 +60,7 @@ if ($ARCH -eq "AMD64") {
 
 # Variant note: both variants are built without the Home screen
 # (--no-default-features). "slim-embed" additionally enables the workspace
-# `embed` feature (cosh-tools/embed + fastembed) for local RAG. Both are
+# `embed` feature (morpheus-tools/embed + fastembed) for local RAG. Both are
 # produced by the release workflow.
 if ($COSH_VARIANT -ne "slim" -and $COSH_VARIANT -ne "slim-embed") {
     Write-Error "Unsupported COSH_VARIANT '$COSH_VARIANT'. Expected 'slim' or 'slim-embed'."
@@ -69,10 +69,10 @@ if ($COSH_VARIANT -ne "slim" -and $COSH_VARIANT -ne "slim-embed") {
 
 $VERSION = $RELEASE_TAG.TrimStart("v")
 $SUFFIX = "-$COSH_VARIANT"
-$FILE = "cosh-v${VERSION}-win32-${ARCH}${SUFFIX}.zip"
+$FILE = "morpheus-v${VERSION}-win32-${ARCH}${SUFFIX}.zip"
 $DOWNLOAD_URL = "https://github.com/$REPO/releases/download/$RELEASE_TAG/$FILE"
 
-Write-Host "Downloading cosh $RELEASE_TAG ($COSH_VARIANT variant)..." -ForegroundColor Green
+Write-Host "Downloading morpheus $RELEASE_TAG ($COSH_VARIANT variant)..." -ForegroundColor Green
 
 try {
     Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile $FILE -UseBasicParsing
@@ -103,13 +103,13 @@ try {
 Remove-Item -Path $FILE -Force
 
 $EXTRACT_DIR = $TMP_DIR
-if (Test-Path (Join-Path $TMP_DIR "cosh-package")) {
-    $EXTRACT_DIR = Join-Path $TMP_DIR "cosh-package"
+if (Test-Path (Join-Path $TMP_DIR "morpheus-package")) {
+    $EXTRACT_DIR = Join-Path $TMP_DIR "morpheus-package"
 }
 
-$SOURCE = Join-Path $EXTRACT_DIR "cosh.exe"
+$SOURCE = Join-Path $EXTRACT_DIR "morpheus.exe"
 if (-not (Test-Path $SOURCE)) {
-    Write-Error "cosh.exe not found in extracted archive"
+    Write-Error "morpheus.exe not found in extracted archive"
     Remove-Item -Path $TMP_DIR -Recurse -Force -ErrorAction SilentlyContinue
     exit 1
 }
@@ -119,7 +119,7 @@ if (-not (Test-Path $env:COSH_BIN_DIR)) {
 }
 
 $DEST = Join-Path $env:COSH_BIN_DIR $OUT_FILE
-Write-Host "Installing cosh to $DEST" -ForegroundColor Green
+Write-Host "Installing morpheus to $DEST" -ForegroundColor Green
 
 if (Test-Path $DEST) {
     Remove-Item -Path $DEST -Force
@@ -128,9 +128,9 @@ Move-Item -Path $SOURCE -Destination $DEST -Force
 
 # The standalone uninstaller ships next to the main binary (cosh::uninstall
 # deletes BOTH images from the same directory).
-$UNINSTALL_SOURCE = Join-Path $EXTRACT_DIR "cosh-uninstall.exe"
+$UNINSTALL_SOURCE = Join-Path $EXTRACT_DIR "morpheus-uninstall.exe"
 if (Test-Path $UNINSTALL_SOURCE) {
-    $UNINSTALL_DEST = Join-Path $env:COSH_BIN_DIR "cosh-uninstall.exe"
+    $UNINSTALL_DEST = Join-Path $env:COSH_BIN_DIR "morpheus-uninstall.exe"
     if (Test-Path $UNINSTALL_DEST) {
         Remove-Item -Path $UNINSTALL_DEST -Force
     }
@@ -153,7 +153,7 @@ Remove-Item -Path $TMP_DIR -Recurse -Force -ErrorAction SilentlyContinue
 $CURRENT_PATH = $env:PATH
 if ($CURRENT_PATH -notlike "*$env:COSH_BIN_DIR*") {
     Write-Host ""
-    Write-Host "Warning: cosh installed, but $env:COSH_BIN_DIR is not in your PATH." -ForegroundColor Yellow
+    Write-Host "Warning: morpheus installed, but $env:COSH_BIN_DIR is not in your PATH." -ForegroundColor Yellow
     Write-Host "To add it permanently (user scope, no admin required):" -ForegroundColor Yellow
     Write-Host "    [Environment]::SetEnvironmentVariable('PATH', [Environment]::GetEnvironmentVariable('PATH','User') + ';$env:COSH_BIN_DIR', 'User')" -ForegroundColor Cyan
     Write-Host ""
@@ -162,6 +162,6 @@ if ($CURRENT_PATH -notlike "*$env:COSH_BIN_DIR*") {
     Write-Host ""
 }
 
-Write-Host "cosh $RELEASE_TAG installed successfully at $DEST" -ForegroundColor Green
+Write-Host "morpheus $RELEASE_TAG installed successfully at $DEST" -ForegroundColor Green
 Write-Host ""
-Write-Host "Run it with: cosh" -ForegroundColor Cyan
+Write-Host "Run it with: morpheus" -ForegroundColor Cyan

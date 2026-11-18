@@ -2424,7 +2424,7 @@ async fn a_mid_stream_reset_discards_the_failed_attempts_reasoning() {
 // Mocks mirror the real provider wire: reasoning deltas accumulate exactly
 // like Anthropic's `thinking` / OpenAI `reasoning` deltas, and the finish
 // frames are the normalized values the SDK produces (see
-// `normalize_finish_reason` in cosh-sdk connector/output.rs).
+// `normalize_finish_reason` in morpheus-sdk connector/output.rs).
 
 #[tokio::test]
 async fn natural_stop_gate_continues_a_reasoning_only_stream_and_promotes_the_reasoning_once() {

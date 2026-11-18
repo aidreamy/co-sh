@@ -1,5 +1,5 @@
-use cosh_tui::core::lib::rgba::RGBA;
-use cosh_tui::core::types::{MouseButton, MouseEvent, MouseEventType};
+use morpheus_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
@@ -751,7 +751,7 @@ mod tests {
             MouseButton::Left,
             x,
             y,
-            cosh_tui::core::types::MouseModifiers::none(),
+            morpheus_tui::core::types::MouseModifiers::none(),
         )
     }
 

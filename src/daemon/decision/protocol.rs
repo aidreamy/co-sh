@@ -2,7 +2,7 @@
 //!
 //! The v1 surface is exactly what has a consumer (see the approved schema):
 //! `hello`, `decision/decide`, `health`, `shutdown`. `decide` mirrors
-//! [`cosh_onnx::DecisionModel::decide`] with NO translation — `state` and
+//! [`morpheus_onnx::DecisionModel::decide`] with NO translation — `state` and
 //! `questions` are opaque JSON in, the model's raw result object out. The
 //! parameters the only consumer never passes (`lang`, `max_len`,
 //! `head_max_len`) and the batch method with no caller are deliberately
@@ -171,7 +171,7 @@ impl<'de> serde::Deserialize<'de> for Kind {
 
 impl Kind {
     /// The canonical name the model registry keys residents by (the same
-    /// names `cosh_onnx::ModelKind::name()` publishes for the variants).
+    /// names `morpheus_onnx::ModelKind::name()` publishes for the variants).
     pub fn name(&self) -> String {
         match self {
             Self::English => "english".to_owned(),
@@ -206,7 +206,7 @@ pub struct HelloResult {
     pub version: String,
 }
 
-/// `decision/decide` params — [`cosh_onnx::DecisionModel::decide`] verbatim.
+/// `decision/decide` params — [`morpheus_onnx::DecisionModel::decide`] verbatim.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DecideParams {
     /// Which checkpoint to run.

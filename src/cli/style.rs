@@ -2,7 +2,7 @@
 //!
 //! The palette is the user's **active theme** — the same [`Theme`] the TUI
 //! paints with — converted to 24-bit ANSI escapes. Loading goes through
-//! [`cosh::setup::Setup`], so `cosh --help` looks like the app the user
+//! [`cosh::setup::Setup`], so `morpheus --help` looks like the app the user
 //! configured, without a second colour configuration to keep in sync.
 //!
 //! Colour is emitted only when it cannot hurt: stdout must be a terminal,
@@ -10,7 +10,7 @@
 //! terminal must also advertise VT support (`WT_SESSION` or `TERM`) — plain
 //! `cmd.exe` without those would print raw escape bytes instead of colours.
 
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::rgba::RGBA;
 
 use crate::theme::{Theme, ThemeRegistry};
 
@@ -115,7 +115,7 @@ impl Palette {
         self.paint(self.theme.border, text)
     }
 
-    /// Success lines (`cosh vX is up to date`).
+    /// Success lines (`morpheus vX is up to date`).
     pub fn success(&self, text: &str) -> String {
         self.paint(self.theme.success, text)
     }
@@ -197,7 +197,7 @@ mod tests {
     #[test]
     fn paint_is_a_no_op_without_colour() {
         let palette = Palette::new(ThemeRegistry::new().default_theme().clone(), false);
-        assert_eq!(palette.title("cosh"), "cosh");
+        assert_eq!(palette.title("morpheus"), "morpheus");
         assert_eq!(palette.error("boom"), "boom");
     }
 

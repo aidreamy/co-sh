@@ -26,7 +26,7 @@ security pattern list.
 reusable execution context:
 
 ```rust,ignore
-use cosh_tools::bash::Bash;
+use morpheus_tools::bash::Bash;
 
 let bash = Bash::new()
     .cwd("/home/user/project")     // working directory

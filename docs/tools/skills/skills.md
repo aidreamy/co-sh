@@ -24,7 +24,7 @@ filters in the module.
 ## The `Skills` wrapper
 
 ```rust,ignore
-use cosh_tools::skills::{Skills, SkillSource};
+use morpheus_tools::skills::{Skills, SkillSource};
 
 let skills = Skills::new()
     .sources(vec![SkillSource::Directory { path: "/home/user/.skills".into() }])

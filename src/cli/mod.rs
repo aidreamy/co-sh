@@ -6,19 +6,19 @@
 //! painted with the user's active theme — a TUI asset — while everything else
 //! (session lookup, update, paths) is plain command-line work.
 //!
-//! The grammar is deliberately small and hand-parsed: `cosh` is an interactive
+//! The grammar is deliberately small and hand-parsed: `morpheus` is an interactive
 //! TUI first, and its CLI is a handful of flags plus three commands. A parser
 //! crate would be more surface than the surface it parses.
 //!
 //! ```text
-//! cosh                          start the TUI
-//! cosh -c | --continue          start in the most recently active session here
-//! cosh -s <id> | --session <id> start in a specific session
-//! cosh update [version] [-y]    install the latest (or a pinned) release
-//! cosh paths                    print the storage directories
-//! cosh whatsapp                 answer WhatsApp messages with the agent
-//! cosh -h | --help [command]    show help
-//! cosh -v | --version           print the version
+//! morpheus                          start the TUI
+//! morpheus -c | --continue          start in the most recently active session here
+//! morpheus -s <id> | --session <id> start in a specific session
+//! morpheus update [version] [-y]    install the latest (or a pinned) release
+//! morpheus paths                    print the storage directories
+//! morpheus whatsapp                 answer WhatsApp messages with the agent
+//! morpheus -h | --help [command]    show help
+//! morpheus -v | --version           print the version
 //! ```
 
 use std::ffi::OsString;
@@ -31,20 +31,20 @@ pub mod style;
 pub mod update;
 
 /// Program name used in usage lines and error hints.
-pub const NAME: &str = "cosh";
+pub const NAME: &str = "morpheus";
 
 /// The version `--version` prints, the help header shows and `update` reports
 /// against. Compile-time so it can never drift from the release tag.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// Every command `cosh --help` documents.
+/// Every command `morpheus --help` documents.
 ///
-/// This list is also what `cosh help <command>` validates against, so a
+/// This list is also what `morpheus help <command>` validates against, so a
 /// command cannot ship without a help page (the guard test in [`help`] keeps
 /// the two in lockstep).
 pub const COMMANDS: &[&str] = &["update", "paths", "whatsapp", "help"];
 
-/// Options for the plain `cosh` (TUI) start.
+/// Options for the plain `morpheus` (TUI) start.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct LaunchOptions {
     /// `-c` / `--continue`: resume the most recently active session of the
@@ -59,13 +59,13 @@ pub struct LaunchOptions {
 pub enum Invocation {
     /// Start the interactive TUI.
     Launch(LaunchOptions),
-    /// `cosh update [version]`
+    /// `morpheus update [version]`
     Update(update::UpdateOptions),
-    /// `cosh paths`
+    /// `morpheus paths`
     Paths,
-    /// `cosh whatsapp` — the WhatsApp interface without the TUI.
+    /// `morpheus whatsapp` — the WhatsApp interface without the TUI.
     WhatsApp,
-    /// `cosh --check-keyring` — the keyring diagnostic, unchanged.
+    /// `morpheus --check-keyring` — the keyring diagnostic, unchanged.
     CheckKeyring,
     /// Print help and exit 0. `None` = the top-level page.
     Help(Option<String>),
@@ -222,7 +222,7 @@ fn help_subject(rest: &[String]) -> Result<Option<String>, CliError> {
         return Ok(None);
     };
     if subject.starts_with('-') {
-        // `cosh help --foo` is a mistake, not a request for global help.
+        // `morpheus help --foo` is a mistake, not a request for global help.
         return Err(CliError::unknown_flag(subject));
     }
     if COMMANDS.contains(&subject.as_str()) {

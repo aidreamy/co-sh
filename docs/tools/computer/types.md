@@ -3,8 +3,8 @@
 Every computer tool takes a single input struct and returns a single output.
 The inputs ARE the MCP wire payloads: each derives `Deserialize` with
 snake_case keys, so the JSON an MCP client sends maps field-for-field onto
-the struct below. All structs live in `cosh_tools::computer::types` and are
-re-exported through `cosh_tools::computer`.
+the struct below. All structs live in `morpheus_tools::computer::types` and are
+re-exported through `morpheus_tools::computer`.
 
 ---
 

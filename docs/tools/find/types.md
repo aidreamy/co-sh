@@ -66,7 +66,7 @@ arguments) and implement `Default` so you can build them incrementally:
 
 ```rust
 let glob = Glob { file_type: Some("dir".into()), max_results: Some(20), ..Default::default() };
-cosh_tools::find::glob(&glob, "**", "src")?;
+morpheus_tools::find::glob(&glob, "**", "src")?;
 ```
 
 > **Caveat: the free-function structs are raw config.** Fields you leave `None`

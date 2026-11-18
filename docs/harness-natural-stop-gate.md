@@ -97,7 +97,7 @@ Codex implements precisely this: `while (turnInput.length > 0)` re-sends only th
 
 **Where:**
 
-- `crates/cosh-sdk/src/extract_action/extract.rs:295–306` — new `ExtractAction::has_unfinished_stream()`: true when the stream ended with `pending_tool_call` parked (a validated call awaiting delivery that would be silently dropped) or with `depth > 0` (a `{` opened and never closed — the tool-call JSON is incomplete). `deferred_tail` is deliberately excluded: trailing text after a completed call also occurs on healthy ends, so it cannot distinguish a cut from a clean finish.
+- `crates/morpheus-sdk/src/extract_action/extract.rs:295–306` — new `ExtractAction::has_unfinished_stream()`: true when the stream ended with `pending_tool_call` parked (a validated call awaiting delivery that would be silently dropped) or with `depth > 0` (a `{` opened and never closed — the tool-call JSON is incomplete). `deferred_tail` is deliberately excluded: trailing text after a completed call also occurs on healthy ends, so it cannot distinguish a cut from a clean finish.
 - `src/harness/core.rs:722` — new harness field `last_stream_unfinished`; set at the end of every stream from the extractor (`:3124` mock path, `:3279` real path), reset at every stream start (`:3043`), including the mid-stream-reset path (`handle_mid_stream_reset` clears extractor state, which the next `has_unfinished_stream()` read re-evaluates).
 - `src/harness/core.rs:5388` — the whitelist becomes:
 
@@ -122,7 +122,7 @@ Every veto leaves a `laya.log` trace (`log::info!(target: "laya", ...)`) so "why
 
 ## 3. Tests — mocks identical to what the providers return
 
-All new tests live in `src/harness/test/agent_loop_test.rs` and drive the same accumulation + event path the real stream uses (`with_mock_reasonings` feeds reasoning deltas through the identical accumulator as Anthropic `thinking` / OpenAI `reasoning` deltas; `with_mock_finish_reason` feeds the *normalized* finish values the SDK produces — see `normalize_finish_reason` in `crates/cosh-sdk/src/connector/output.rs:168`, which maps raw provider frames like OpenAI's `{"choices":[{"finish_reason":"stop"}]}` and Anthropic's `{"delta":{"stop_reason":"end_turn"}}`).
+All new tests live in `src/harness/test/agent_loop_test.rs` and drive the same accumulation + event path the real stream uses (`with_mock_reasonings` feeds reasoning deltas through the identical accumulator as Anthropic `thinking` / OpenAI `reasoning` deltas; `with_mock_finish_reason` feeds the *normalized* finish values the SDK produces — see `normalize_finish_reason` in `crates/morpheus-sdk/src/connector/output.rs:168`, which maps raw provider frames like OpenAI's `{"choices":[{"finish_reason":"stop"}]}` and Anthropic's `{"delta":{"stop_reason":"end_turn"}}`).
 
 The raw wire shapes the mocks stand in for:
 
@@ -157,7 +157,7 @@ The mid-JSON cut mock mirrors what a truncated OpenAI-compatible stream looks li
 
 | File | Change |
 |---|---|
-| `crates/cosh-sdk/src/extract_action/extract.rs` | `has_unfinished_stream()` (`:295–306`) |
+| `crates/morpheus-sdk/src/extract_action/extract.rs` | `has_unfinished_stream()` (`:295–306`) |
 | `src/harness/context/todo_ctxt.rs` | `has_open_tasks()` (`:169`), `open_task_descriptions()` (`:178`) |
 | `src/harness/context/mod.rs` | `plan_has_open_tasks()` (`:721`), `open_plan_tasks()` (`:728`) |
 | `src/harness/core.rs` | `last_stream_unfinished` (`:722`), `stop_nudges_left` (`:734`), test log (`:740`), stream-end capture (`:3124`, `:3279`, reset `:3043`), per-loop budget reset (`:3994`), whitelist hardened (`:5388`), veto layer (`:5432–5494`), prompt removal (`:5648–5666`) |

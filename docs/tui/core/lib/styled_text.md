@@ -50,10 +50,10 @@ get plain text into a styled widget.
 To build richer text, construct chunks yourself:
 
 ```rust,ignore
-use cosh_tui::core::lib::styled_text::{StyledText, TextChunk, UrlLink};
-use cosh_tui::core::lib::rgba::RGBA;
-use cosh_tui::core::types::TextAttributes;
-use cosh_tui::core::utils::{TextAttributeOptions, create_text_attributes};
+use morpheus_tui::core::lib::styled_text::{StyledText, TextChunk, UrlLink};
+use morpheus_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::types::TextAttributes;
+use morpheus_tui::core::utils::{TextAttributeOptions, create_text_attributes};
 
 let styled = StyledText {
     chunks: vec![

@@ -10,9 +10,9 @@ Every definition has `type`, `instructions` and `criteria`.
 
 | Type | Criteria | Answer accessor |
 |---|---|---|
-| `choice` | JSON object mapping labels to descriptions | [`Prediction::choice`](https://docs.rs/cosh-onnx/latest/cosh_onnx/struct.Prediction.html#method.choice) |
-| `score` | JSON array of ordered level descriptions | [`Prediction::score`](https://docs.rs/cosh-onnx/latest/cosh_onnx/struct.Prediction.html#method.score) |
-| `noul` | Optional object with `false` and `true` descriptions | [`Prediction::noul`](https://docs.rs/cosh-onnx/latest/cosh_onnx/struct.Prediction.html#method.noul) |
+| `choice` | JSON object mapping labels to descriptions | [`Prediction::choice`](https://docs.rs/morpheus-onnx/latest/morpheus_onnx/struct.Prediction.html#method.choice) |
+| `score` | JSON array of ordered level descriptions | [`Prediction::score`](https://docs.rs/morpheus-onnx/latest/morpheus_onnx/struct.Prediction.html#method.score) |
+| `noul` | Optional object with `false` and `true` descriptions | [`Prediction::noul`](https://docs.rs/morpheus-onnx/latest/morpheus_onnx/struct.Prediction.html#method.noul) |
 
 `noul` means “not one of the other two”: it represents a statement whose
 truth probability is the result. Its semantic order is always false, then
@@ -43,7 +43,7 @@ let questions = json!({
 ```
 
 Validation happens before tokenization. A malformed question names its id in
-the returned [`Error`](https://docs.rs/cosh-onnx/latest/cosh_onnx/enum.Error.html),
+the returned [`Error`](https://docs.rs/morpheus-onnx/latest/morpheus_onnx/enum.Error.html),
 so a caller can fix the definition instead of diagnosing a low-level model
 failure.
 
@@ -53,7 +53,7 @@ failure.
 `Prediction` when you want typed read-only access:
 
 ```rust
-use cosh_onnx::Prediction;
+use morpheus_onnx::Prediction;
 use serde_json::json;
 
 let raw = json!({
@@ -84,7 +84,7 @@ When the desired output is already described by JSON Schema, the schema
 helpers remove the manual mapping step:
 
 ```rust
-use cosh_onnx::decision::schema::{answers_to_json, questions_from_json_schema};
+use morpheus_onnx::decision::schema::{answers_to_json, questions_from_json_schema};
 use serde_json::json;
 
 let schema = json!({
@@ -99,7 +99,7 @@ let questions = questions_from_json_schema(&schema)?;
 // After a model call, use `prediction.answers()` here.
 let answers = serde_json::Map::new();
 let values = answers_to_json(&answers, &schema)?;
-# Ok::<(), cosh_onnx::Error>(())
+# Ok::<(), morpheus_onnx::Error>(())
 ```
 
 The supported subset is intentionally small: enum/const values become
@@ -110,7 +110,7 @@ That limit is what makes the result finite and explainable.
 ## Shortlisting large choices
 
 A choice with hundreds of labels can spend most of its token budget describing
-options. The [`shortlist`](https://docs.rs/cosh-onnx/latest/cosh_onnx/shortlist/index.html)
+options. The [`shortlist`](https://docs.rs/morpheus-onnx/latest/morpheus_onnx/shortlist/index.html)
 module lets a caller provide an `EmbedFn`, keep the top `k` labels by cosine
 similarity, and then run one decision over the reduced criteria set.
 

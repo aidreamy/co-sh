@@ -1,0 +1,42 @@
+[package]
+categories = ["development-tools"]
+description = "Memory/recall crate for cosh - coding agent for the terminal"
+keywords = ["ai", "coding", "terminal", "agent"]
+license = "Apache-2.0"
+readme = "README.md"
+name = "morpheus-recall"
+repository = "https://github.com/aidreamy/co-sh"
+version = "0.1.5"
+edition = "2024"
+
+[features]
+default = []
+lancedb = ["dep:lancedb", "dep:arrow-array", "dep:arrow-schema", "dep:futures"]
+fastembed = ["dep:fastembed"]
+cloud = ["dep:aiface"]
+
+[dependencies]
+log = "0.4"
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+
+# Local text embedding via fastembed (ONNX Runtime). Version 7 pins
+# `ort =2.0.0-rc.13` (features ndarray, std, api-24), which is the exact
+# configuration morpheus-onnx uses, so a single ort build serves both.
+fastembed = { version = "7", optional = true }
+
+# Vector database
+lancedb = { version = "0.30", optional = true }
+arrow-array = { version = "58", optional = true }
+arrow-schema = { version = "58", optional = true }
+futures = { version = "0.3", optional = true }
+
+# Cloud embedding via the aiface connector
+aiface = { version = "0.2.3", optional = true }
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { version = "1", features = ["full"] }
+
+[lints]
+workspace = true

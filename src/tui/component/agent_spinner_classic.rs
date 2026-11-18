@@ -9,7 +9,7 @@
 //! wrapper keeps exactly that pacing on the shared spinner surface (label
 //! swap per activity, mode colour, theme updates, deterministic render).
 
-use cosh_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::rgba::RGBA;
 use ratatui::buffer::Buffer;
 use ratatui::style::Style;
 

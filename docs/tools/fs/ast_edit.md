@@ -116,7 +116,7 @@ preserve, so no `applied`/`skipped` distinction. Top-level errors occur when:
 ## Example
 
 A complete runnable example is provided at
-[`examples/fs/ast_edit.rs`](../../../crates/cosh-tools/examples/fs/ast_edit.rs).
+[`examples/fs/ast_edit.rs`](../../../crates/morpheus-tools/examples/fs/ast_edit.rs).
 It writes a small source file, then uses `Fs::edit` with an `ast` argument to
 rename a function everywhere it appears — including across a directory tree.
 

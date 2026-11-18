@@ -23,7 +23,7 @@ set -eu
 # (v*) and published at github.com/aidreamy/co-sh/releases.
 
 REPO="aidreamy/co-sh"
-OUT_FILE="cosh"
+OUT_FILE="morpheus"
 
 if [[ "${WINDIR:-}" ]] || [[ "${windir:-}" ]] || [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]]; then
     DEFAULT_BIN_DIR="$USERPROFILE/cosh"
@@ -35,7 +35,7 @@ COSH_BIN_DIR="${COSH_BIN_DIR:-$DEFAULT_BIN_DIR}"
 COSH_VARIANT="${COSH_VARIANT:-slim}"
 
 if ! command -v curl >/dev/null 2>&1; then
-  echo "Error: 'curl' is required to download cosh. Please install curl and try again."
+  echo "Error: 'curl' is required to download morpheus. Please install curl and try again."
   exit 1
 fi
 
@@ -75,7 +75,7 @@ else
       linux) OS="linux" ;;
       darwin) OS="darwin" ;;
       mingw*|msys*|cygwin*) OS="win32" ;;
-      *) echo "Error: Unsupported OS. cosh supports Linux, macOS, and Windows."; exit 1 ;;
+      *) echo "Error: Unsupported OS. morpheus supports Linux, macOS, and Windows."; exit 1 ;;
     esac
   fi
 fi
@@ -95,7 +95,7 @@ fi
 
 # Variant note: both variants are built without the Home screen
 # (--no-default-features). "slim-embed" additionally enables the workspace
-# `embed` feature (cosh-tools/embed + fastembed) for local RAG. slim-embed is
+# `embed` feature (morpheus-tools/embed + fastembed) for local RAG. slim-embed is
 # produced for linux-x64 and win32-x64; macOS (both x64 and arm64) ships slim
 # only — ort-sys has no prebuilt ONNX Runtime for x86_64-apple-darwin, and
 # the aarch64-apple-darwin distribution (CoreML build) fails to static-link
@@ -109,18 +109,18 @@ SUFFIX="-$COSH_VARIANT"
 
 VERSION="${COSH_VERSION#v}"
 if [ "$OS" = "win32" ]; then
-  FILE="cosh-v${VERSION}-${OS}-${ARCH}${SUFFIX}.zip"
+  FILE="morpheus-v${VERSION}-${OS}-${ARCH}${SUFFIX}.zip"
   EXTRACT_CMD="unzip"
-  BINARY="cosh.exe"
+  BINARY="morpheus.exe"
 else
-  FILE="cosh-v${VERSION}-${OS}-${ARCH}${SUFFIX}.tar.gz"
+  FILE="morpheus-v${VERSION}-${OS}-${ARCH}${SUFFIX}.tar.gz"
   EXTRACT_CMD="tar"
-  BINARY="cosh"
+  BINARY="morpheus"
 fi
 
 DOWNLOAD_URL="https://github.com/$REPO/releases/download/$COSH_VERSION/$FILE"
 
-echo "Downloading cosh $COSH_VERSION ($COSH_VARIANT variant) for $OS-$ARCH..."
+echo "Downloading morpheus $COSH_VERSION ($COSH_VARIANT variant) for $OS-$ARCH..."
 if ! curl -sLf "$DOWNLOAD_URL" --output "$FILE"; then
   echo "Error: Failed to download $DOWNLOAD_URL"
   echo ""
@@ -141,8 +141,8 @@ fi
 rm "$FILE"
 
 EXTRACT_DIR="$TMP_DIR"
-if [ "$OS" = "win32" ] && [ -d "$TMP_DIR/cosh-package" ]; then
-  EXTRACT_DIR="$TMP_DIR/cosh-package"
+if [ "$OS" = "win32" ] && [ -d "$TMP_DIR/morpheus-package" ]; then
+  EXTRACT_DIR="$TMP_DIR/morpheus-package"
 fi
 
 if [ ! -f "$EXTRACT_DIR/$BINARY" ]; then
@@ -150,13 +150,13 @@ if [ ! -f "$EXTRACT_DIR/$BINARY" ]; then
   exit 1
 fi
 
-chmod +x "$EXTRACT_DIR/$BINARY" "$EXTRACT_DIR/cosh-uninstall" 2>/dev/null || true
+chmod +x "$EXTRACT_DIR/$BINARY" "$EXTRACT_DIR/morpheus-uninstall" 2>/dev/null || true
 
 if [ ! -d "$COSH_BIN_DIR" ]; then
   mkdir -p "$COSH_BIN_DIR"
 fi
 
-echo "Installing cosh to $COSH_BIN_DIR/"
+echo "Installing morpheus to $COSH_BIN_DIR/"
 if [ -f "$COSH_BIN_DIR/$OUT_FILE" ]; then
   mv "$COSH_BIN_DIR/$OUT_FILE" "$COSH_BIN_DIR/$OUT_FILE.old"
   if ! mv "$EXTRACT_DIR/$BINARY" "$COSH_BIN_DIR/$OUT_FILE"; then
@@ -171,8 +171,8 @@ fi
 
 # The standalone uninstaller ships next to the main binary (cosh::uninstall
 # deletes BOTH images from the same directory).
-if [ -f "$EXTRACT_DIR/cosh-uninstall" ]; then
-  mv -f "$EXTRACT_DIR/cosh-uninstall" "$COSH_BIN_DIR/cosh-uninstall"
+if [ -f "$EXTRACT_DIR/morpheus-uninstall" ]; then
+  mv -f "$EXTRACT_DIR/morpheus-uninstall" "$COSH_BIN_DIR/morpheus-uninstall"
 fi
 
 if [ "$OS" = "win32" ]; then
@@ -186,7 +186,7 @@ fi
 # Check PATH
 if [[ ":$PATH:" != *":$COSH_BIN_DIR:"* ]]; then
   echo ""
-  echo "Warning: cosh installed, but $COSH_BIN_DIR is not in your PATH."
+  echo "Warning: morpheus installed, but $COSH_BIN_DIR is not in your PATH."
   echo ""
   SHELL_NAME=$(basename "$SHELL")
   echo "Add it by running:"
@@ -195,6 +195,6 @@ if [[ ":$PATH:" != *":$COSH_BIN_DIR:"* ]]; then
   echo ""
 fi
 
-echo "cosh $COSH_VERSION installed successfully at $COSH_BIN_DIR/$OUT_FILE"
+echo "morpheus $COSH_VERSION installed successfully at $COSH_BIN_DIR/$OUT_FILE"
 echo ""
-echo "Run it with: cosh"
+echo "Run it with: morpheus"

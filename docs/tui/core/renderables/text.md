@@ -62,10 +62,10 @@ Word wrap keeps words intact, breaking only when a word doesn't fit;
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::renderables::text::TextRenderable;
-use cosh_tui::core::lib::styled_text::{StyledText, TextChunk, string_to_styled_text};
-use cosh_tui::core::lib::rgba::RGBA;
-use cosh_tui::core::utils::{TextAttributeOptions, create_text_attributes};
+use morpheus_tui::core::renderables::text::TextRenderable;
+use morpheus_tui::core::lib::styled_text::{StyledText, TextChunk, string_to_styled_text};
+use morpheus_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::utils::{TextAttributeOptions, create_text_attributes};
 
 let mut text = TextRenderable::new(Some(StyledText {
     chunks: vec![
@@ -79,7 +79,7 @@ let mut text = TextRenderable::new(Some(StyledText {
         },
     ],
 }));
-text.set_wrap_mode(cosh_tui::core::renderables::text::WrapMode::Word);
+text.set_wrap_mode(morpheus_tui::core::renderables::text::WrapMode::Word);
 
 // text.render_self(&mut buf, area);
 ```

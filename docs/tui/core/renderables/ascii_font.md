@@ -33,7 +33,7 @@ to a multi-row bitmap font.
 ## Example
 
 ```rust,ignore
-use cosh_tui::core::renderables::ascii_font::ASCIIFontRenderable;
+use morpheus_tui::core::renderables::ascii_font::ASCIIFontRenderable;
 
 let mut logo = ASCIIFontRenderable::new(
     Some("COSH".into()),

@@ -39,7 +39,7 @@ injects the implementation** — typically tree-sitter backed. `None` means
 no node begins on line N (e.g. a lone closing delimiter), or the resolved
 subtree has a syntax error.
 
-> **Host wiring note:** nothing in cosh-sdk wires a resolver by default —
+> **Host wiring note:** nothing in morpheus-sdk wires a resolver by default —
 > `Patcher::new(fs, store, None)` runs without block support, and a
 > `replace block N:` then fails with `\`replace block N:\` is not available
 > here (no tree-sitter block resolver is configured). Use \`replace N..M:\`
