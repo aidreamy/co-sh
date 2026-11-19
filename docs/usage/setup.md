@@ -324,6 +324,9 @@ list (denying every origin of that kind).
 Each `contacts` entry is a phone number in international format or an account
 id (`@lid` included); the `+`, spaces, punctuation and `@server` suffix are
 ignored, so `+55 (11) 91234-5678` and `5511912345678` are the same contact.
+WhatsApp routes some direct chats by LID instead of phone number; those are
+matched against the phone number WhatsApp reports for the chat, so an entry
+written as a number still authorizes its LID-routed conversation.
 Each `groups` entry is the group id (`120363…@g.us`) or just its digits. An
 empty list denies that origin kind entirely.
 

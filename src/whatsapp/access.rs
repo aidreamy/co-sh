@@ -31,6 +31,12 @@ impl Access {
     /// message must match its chat's allowlist by kind — direct chats
     /// against `contacts`, groups against `groups`. Chat kinds the policy
     /// does not model are never allowed.
+    ///
+    /// A direct chat is matched on both of its address forms: WhatsApp now
+    /// routes some of them by LID, so a contact the owner wrote as a phone
+    /// number arrives as `…@lid` and only [`IncomingMessage::sender_alt`]
+    /// carries the number. Groups match on the group id alone — their
+    /// `sender_alt` names a participant, not the group.
     #[must_use]
     pub fn allows(&self, message: &IncomingMessage) -> bool {
         if message.from_me {
@@ -41,10 +47,17 @@ impl Access {
             ChatKind::Group => &self.policy.groups,
             _ => return false,
         };
-        let chat = identity(message.chat.as_str());
+        let mut ids = vec![identity(message.chat.as_str())];
+        if message.chat_kind == ChatKind::Direct
+            && let Some(alt) = &message.sender_alt
+        {
+            ids.push(identity(alt.as_str()));
+        }
         allowed
             .iter()
-            .any(|entry| !entry.trim().is_empty() && identity(entry) == chat)
+            .filter(|entry| !entry.trim().is_empty())
+            .map(|entry| identity(entry))
+            .any(|entry| ids.contains(&entry))
     }
 }
 
@@ -81,6 +94,7 @@ mod tests {
                 id: chat.clone(),
                 name: None,
             },
+            sender_alt: None,
             chat,
             from_me,
             timestamp: Utc::now(),
@@ -119,6 +133,39 @@ mod tests {
         // A group message from that same contact is a group rule, not a
         // contact rule.
         assert!(!access.allows(&message("120363012345678901@g.us", false)));
+    }
+
+    /// A direct chat WhatsApp routes by LID: the phone number the owner wrote
+    /// is not in the chat id, only in the alternate form the engine attaches.
+    #[test]
+    fn a_contact_allows_the_lid_routed_chat_of_that_number() {
+        let access = policy(&["55 42 8889-5786"], &[]);
+        let mut lid = message("42121264402678@lid", false);
+        lid.sender_alt = Some(ChatId::parse("554288895786@s.whatsapp.net").expect("alt id"));
+        assert!(access.allows(&lid));
+
+        // The LID of another account is still denied.
+        let mut other = message("42121264409999@lid", false);
+        other.sender_alt = Some(ChatId::parse("5511912345678@s.whatsapp.net").expect("alt id"));
+        assert!(!access.allows(&other));
+
+        // And the same chat without the alternate form has nothing to match.
+        assert!(!access.allows(&message("42121264402678@lid", false)));
+    }
+
+    /// A group's alternate form names a participant, so it must never let a
+    /// contact rule (or a mismatched group id) admit the group.
+    #[test]
+    fn a_groups_alternate_form_does_not_admit_it() {
+        let access = policy(&["554288895786"], &["120363012345678901"]);
+        let mut group = message("120363012345678901@g.us", false);
+        group.sender_alt = Some(ChatId::parse("554288895786@s.whatsapp.net").expect("alt id"));
+        // Allowed by the group id, never by the participant's number.
+        assert!(access.allows(&group));
+
+        let mut stranger = message("120363099999999999@g.us", false);
+        stranger.sender_alt = Some(ChatId::parse("554288895786@s.whatsapp.net").expect("alt id"));
+        assert!(!access.allows(&stranger));
     }
 
     #[test]
