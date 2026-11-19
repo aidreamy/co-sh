@@ -1012,6 +1012,13 @@ impl App {
                             Some(crate::routes::settings::SettingsAction::OpenSkillsInput) => {
                                 self.open_skills_input();
                             }
+                            Some(
+                                crate::routes::settings::SettingsAction::OpenWhatsAppListInput {
+                                    list,
+                                },
+                            ) => {
+                                self.open_whatsapp_list_input(list);
+                            }
                             #[cfg(feature = "onnx")]
                             Some(
                                 crate::routes::settings::SettingsAction::OpenCheckupModelDialog,

@@ -3,7 +3,7 @@ use super::super::providers::{is_valid_local_url, save_provider_api_key};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::layout::Rect;
 
-use crate::ui::dialogs::DialogType;
+use crate::ui::dialogs::{DialogType, WhatsAppList};
 use crate::util::field_selection::DragSelection;
 
 impl App {
@@ -17,6 +17,7 @@ impl App {
                         | DialogType::CacheTtlInput { .. }
                         | DialogType::EditorInput { .. }
                         | DialogType::SkillsInput { .. }
+                        | DialogType::WhatsAppListInput { .. }
                         | DialogType::CheckupMinConfidenceInput { .. }
                         | DialogType::RenameSession { .. },
                 )
@@ -68,6 +69,7 @@ impl App {
                     | DialogType::CacheTtlInput { cursor_pos, .. }
                     | DialogType::EditorInput { cursor_pos, .. }
                     | DialogType::SkillsInput { cursor_pos, .. }
+                    | DialogType::WhatsAppListInput { cursor_pos, .. }
                     | DialogType::CheckupMinConfidenceInput { cursor_pos, .. }
                     | DialogType::RenameSession { cursor_pos, .. } = &mut d.dialog_type
                     && *cursor_pos > 0
@@ -89,6 +91,7 @@ impl App {
                     }
                     | DialogType::EditorInput { input, cursor_pos }
                     | DialogType::SkillsInput { input, cursor_pos }
+                    | DialogType::WhatsAppListInput { input, cursor_pos, .. }
                     | DialogType::CheckupMinConfidenceInput {
                         input, cursor_pos, ..
                     }
@@ -108,6 +111,7 @@ impl App {
                     | DialogType::CacheTtlInput { cursor_pos, .. }
                     | DialogType::EditorInput { cursor_pos, .. }
                     | DialogType::SkillsInput { cursor_pos, .. }
+                    | DialogType::WhatsAppListInput { cursor_pos, .. }
                     | DialogType::RenameSession { cursor_pos, .. } = &mut d.dialog_type
                 {
                     *cursor_pos = 0;
@@ -127,6 +131,7 @@ impl App {
                     }
                     | DialogType::EditorInput { input, cursor_pos }
                     | DialogType::SkillsInput { input, cursor_pos }
+                    | DialogType::WhatsAppListInput { input, cursor_pos, .. }
                     | DialogType::CheckupMinConfidenceInput {
                         input, cursor_pos, ..
                     }
@@ -151,6 +156,7 @@ impl App {
                     }
                     | DialogType::EditorInput { input, cursor_pos }
                     | DialogType::SkillsInput { input, cursor_pos }
+                    | DialogType::WhatsAppListInput { input, cursor_pos, .. }
                     | DialogType::CheckupMinConfidenceInput {
                         input, cursor_pos, ..
                     }
@@ -177,6 +183,7 @@ impl App {
                     }
                     | DialogType::EditorInput { input, cursor_pos }
                     | DialogType::SkillsInput { input, cursor_pos }
+                    | DialogType::WhatsAppListInput { input, cursor_pos, .. }
                     | DialogType::CheckupMinConfidenceInput {
                         input, cursor_pos, ..
                     }
@@ -204,6 +211,7 @@ impl App {
                     }
                     | DialogType::EditorInput { input, cursor_pos }
                     | DialogType::SkillsInput { input, cursor_pos }
+                    | DialogType::WhatsAppListInput { input, cursor_pos, .. }
                     | DialogType::CheckupMinConfidenceInput {
                         input, cursor_pos, ..
                     }
@@ -1180,6 +1188,22 @@ impl App {
         });
     }
 
+    /// Open the comma-separated allowlist input box (Settings → WhatsApp),
+    /// prefilled with the configured entries. Blank clears the list, which
+    /// denies that origin kind entirely.
+    pub(in crate::app) fn open_whatsapp_list_input(&mut self, list: WhatsAppList) {
+        let entries = match list {
+            WhatsAppList::Contacts => &self.setup.whatsapp.contacts,
+            WhatsAppList::Groups => &self.setup.whatsapp.groups,
+        };
+        let input = entries.join(", ");
+        self.dialog.show(DialogType::WhatsAppListInput {
+            list,
+            cursor_pos: input.len(),
+            input,
+        });
+    }
+
     /// Perform the save for the current text input dialog (API key → keyring,
     /// local URL → setup.json). Returns `true` when the input was accepted.
     pub(in crate::app) fn save_text_input_dialog(&mut self) -> bool {
@@ -1295,6 +1319,23 @@ impl App {
                 // auto-detected fallback chain. Launch failures stay silent
                 // by design, so there is nothing to validate here.
                 self.setup.editor = input.trim().to_string();
+                self.setup.save();
+                true
+            }
+            DialogType::WhatsAppListInput { list, input, .. } => {
+                // Comma-separated entries, stored exactly as typed: the
+                // matcher ignores `@server`, `+`, spaces and punctuation, so
+                // normalizing here would only lose what the user wrote.
+                let entries = input
+                    .split(',')
+                    .map(str::trim)
+                    .filter(|entry| !entry.is_empty())
+                    .map(String::from)
+                    .collect();
+                match list {
+                    WhatsAppList::Contacts => self.setup.whatsapp.contacts = entries,
+                    WhatsAppList::Groups => self.setup.whatsapp.groups = entries,
+                }
                 self.setup.save();
                 true
             }

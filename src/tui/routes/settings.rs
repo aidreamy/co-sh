@@ -20,6 +20,7 @@ use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 use cosh_tui::core::types::MouseEvent;
 
 use crate::theme::{Theme, rgba_color};
+use crate::ui::dialogs::WhatsAppList;
 use crate::util::list_selection::ListSelection;
 use cosh::setup::{HookEntry, Setup};
 
@@ -93,6 +94,9 @@ enum SwitchAction {
     Persist,
     /// Flip `setup.effective_context` (full window vs reduced budget).
     EffectiveContext,
+    /// Flip `setup.whatsapp.self_chat`, the default-on origin of the
+    /// WhatsApp allowlist.
+    WhatsAppSelfChat,
 }
 
 #[derive(PartialEq, Eq)]
@@ -104,6 +108,9 @@ enum ChoiceInput {
     Editor,
     /// Skill-directories input (`setup.skills.dirs`).
     Skills,
+    /// Comma-separated WhatsApp allowlist (`setup.whatsapp.contacts` /
+    /// `setup.whatsapp.groups`).
+    WhatsAppAllowlist(WhatsAppList),
     /// Checkup model picker (`setup.decision.model`: english | multilingual
     /// | typed-decisions — custom checkpoints stay in setup.json).
     #[cfg(feature = "onnx")]
@@ -249,6 +256,34 @@ const INTEGRATIONS: SettingsSection = SettingsSection {
     ],
 };
 
+// Who may reach the agent over the `cosh whatsapp` channel. Kept in its own
+// box because the three knobs are one policy (`setup.json` → `whatsapp`):
+// the self-chat switch plus the two allowlists, all of which only matter to
+// that channel.
+const WHATSAPP: SettingsSection = SettingsSection {
+    title: "WhatsApp",
+    items: &[
+        SettingsItem {
+            id: "whatsapp_self_chat",
+            label: "Self-chat",
+            description: "Answer messages the account sends to its own chat (on by default)",
+            kind: SettingKind::Switch(SwitchAction::WhatsAppSelfChat),
+        },
+        SettingsItem {
+            id: "whatsapp_contacts",
+            label: "Allowed contacts",
+            description: "One-to-one contacts that may use the agent (comma-separated)",
+            kind: SettingKind::Choice(ChoiceInput::WhatsAppAllowlist(WhatsAppList::Contacts)),
+        },
+        SettingsItem {
+            id: "whatsapp_groups",
+            label: "Allowed groups",
+            description: "Groups that may use the agent (comma-separated ids)",
+            kind: SettingKind::Choice(ChoiceInput::WhatsAppAllowlist(WhatsAppList::Groups)),
+        },
+    ],
+};
+
 const GENERAL: SettingsSection = SettingsSection {
     title: "General",
     items: &[SettingsItem {
@@ -265,6 +300,7 @@ fn sections() -> &'static [SettingsSection] {
         MODELS_AND_CACHING,
         ENVIRONMENT,
         INTEGRATIONS,
+        WHATSAPP,
         GENERAL,
     ]
 }
@@ -311,6 +347,10 @@ fn cache_choice_value(id: &str, setup: &Setup) -> Option<String> {
         } else {
             truncate(&setup.skills.dirs.join(":"), COMMAND_PREVIEW_LEN * 2)
         }),
+        // The allowlists can grow long, so the row carries the count of
+        // allowed origins instead of a truncated list.
+        "whatsapp_contacts" => Some(allowlist_summary(&setup.whatsapp.contacts)),
+        "whatsapp_groups" => Some(allowlist_summary(&setup.whatsapp.groups)),
         #[cfg(feature = "onnx")]
         // The row renders "label: value" instead of the ✔/✗ switch, so the
         // value carries BOTH the audit state and the checkpoint identity.
@@ -345,7 +385,17 @@ fn is_enabled(item: &SettingsItem, setup: &Setup) -> bool {
         // its ON/OFF state is the switch itself.
         SettingKind::Switch(SwitchAction::Persist) => setup.decision.termination.enabled,
         SettingKind::Switch(SwitchAction::EffectiveContext) => setup.effective_context,
+        SettingKind::Switch(SwitchAction::WhatsAppSelfChat) => setup.whatsapp.self_chat,
         _ => false,
+    }
+}
+
+/// Value row text for a `setup.json` → `whatsapp` allowlist.
+fn allowlist_summary(entries: &[String]) -> String {
+    match entries.len() {
+        0 => "none".into(),
+        1 => "1 allowed".into(),
+        len => format!("{len} allowed"),
     }
 }
 
@@ -917,6 +967,12 @@ pub enum SettingsAction {
     /// Open the skill-directories input box (Settings → Skill directories;
     /// setup.json `skills.dirs`). Blank = the `~/.skills` default.
     OpenSkillsInput,
+    /// Open the comma-separated allowlist input box (Settings → WhatsApp;
+    /// setup.json `whatsapp.contacts` / `whatsapp.groups`). Blank clears
+    /// that list, denying every origin of that kind.
+    OpenWhatsAppListInput {
+        list: WhatsAppList,
+    },
     /// Open the checkup-model picker (`english` / `multilingual` /
     /// `typed-decisions`). Custom checkpoints stay setup.json-only.
     #[cfg(feature = "onnx")]
@@ -1150,6 +1206,9 @@ impl SettingsView {
                     SettingKind::Choice(ChoiceInput::Skills) => {
                         return Some(SettingsAction::OpenSkillsInput);
                     }
+                    SettingKind::Choice(ChoiceInput::WhatsAppAllowlist(list)) => {
+                        return Some(SettingsAction::OpenWhatsAppListInput { list: *list });
+                    }
                     #[cfg(feature = "onnx")]
                     SettingKind::Choice(ChoiceInput::CheckupModel) => {
                         return Some(SettingsAction::OpenCheckupModelDialog);
@@ -1178,6 +1237,11 @@ impl SettingsView {
                     }
                     SettingKind::Switch(SwitchAction::EffectiveContext) => {
                         setup.effective_context = !setup.effective_context;
+                        self.selection.clamp(selectable_rows(setup).len());
+                        return Some(SettingsAction::ToggleSaved);
+                    }
+                    SettingKind::Switch(SwitchAction::WhatsAppSelfChat) => {
+                        setup.whatsapp.self_chat = !setup.whatsapp.self_chat;
                         self.selection.clamp(selectable_rows(setup).len());
                         return Some(SettingsAction::ToggleSaved);
                     }
@@ -2183,6 +2247,9 @@ mod tests {
                 SettingsRow::AddAcpAgent,
                 cat("custom_providers"),
                 SettingsRow::AddProvider,
+                cat("whatsapp_self_chat"),
+                cat("whatsapp_contacts"),
+                cat("whatsapp_groups"),
                 cat("telemetry"),
             ])
         );
@@ -2221,6 +2288,9 @@ mod tests {
                 SettingsRow::AddAcpAgent,
                 cat("custom_providers"),
                 SettingsRow::AddProvider,
+                cat("whatsapp_self_chat"),
+                cat("whatsapp_contacts"),
+                cat("whatsapp_groups"),
                 cat("telemetry"),
             ])
         );
@@ -2598,6 +2668,90 @@ mod tests {
         );
     }
 
+    /// The WhatsApp section mirrors `setup.json` → `whatsapp`: the
+    /// self-chat switch flips in place, and each allowlist row opens the
+    /// comma-separated input instead of mutating anything on activation.
+    #[test]
+    fn whatsapp_section_toggles_and_opens_the_allowlists() {
+        let mut setup = Setup::default();
+        let mut view = SettingsView::new();
+        let row = |setup: &Setup, id: &str| {
+            selectable_rows(setup)
+                .iter()
+                .position(
+                    |r| matches!(r, SettingsRow::Category(x) if *x == catalog_index(id)),
+                )
+                .unwrap_or_else(|| panic!("{id} category row exists"))
+        };
+
+        // Self-chat is the safe default and toggles in place.
+        assert!(is_enabled(
+            item_at(catalog_index("whatsapp_self_chat")),
+            &setup
+        ));
+        view.selection.selected_index = row(&setup, "whatsapp_self_chat");
+        assert_eq!(
+            view.activate_selected(&mut setup),
+            Some(SettingsAction::ToggleSaved)
+        );
+        assert!(!setup.whatsapp.self_chat);
+        assert!(!is_enabled(
+            item_at(catalog_index("whatsapp_self_chat")),
+            &setup
+        ));
+
+        // Both allowlists open the input; activation never mutates them.
+        view.selection.selected_index = row(&setup, "whatsapp_contacts");
+        assert_eq!(
+            view.activate_selected(&mut setup),
+            Some(SettingsAction::OpenWhatsAppListInput {
+                list: WhatsAppList::Contacts
+            })
+        );
+        view.selection.selected_index = row(&setup, "whatsapp_groups");
+        assert_eq!(
+            view.activate_selected(&mut setup),
+            Some(SettingsAction::OpenWhatsAppListInput {
+                list: WhatsAppList::Groups
+            })
+        );
+        assert!(setup.whatsapp.contacts.is_empty());
+        assert!(setup.whatsapp.groups.is_empty());
+
+        // The rows render "label: count" at the switch rows' indent.
+        setup.whatsapp.contacts = vec!["5511912345678".into()];
+        setup.whatsapp.groups = vec![
+            "120363012345678901@g.us".into(),
+            "120363099999999999@g.us".into(),
+        ];
+        assert_eq!(
+            cache_choice_value("whatsapp_contacts", &setup),
+            Some("1 allowed".to_string())
+        );
+        assert_eq!(
+            cache_choice_value("whatsapp_groups", &setup),
+            Some("2 allowed".to_string())
+        );
+        let theme = test_theme();
+        let area = Rect::new(0, 0, 120, 40);
+        let mut buf = Buffer::empty(area);
+        view.render(&mut buf, area, &theme, &setup);
+        let all: String = (area.y..area.bottom())
+            .map(|y| {
+                (area.x..area.right())
+                    .map(|x| {
+                        buf.cell((x, y))
+                            .map(|c| c.symbol().to_string())
+                            .unwrap_or_default()
+                    })
+                    .collect::<String>()
+            })
+            .collect::<String>();
+        assert!(all.contains("Allowed contacts: 1 allowed"));
+        assert!(all.contains("Allowed groups: 2 allowed"));
+        assert!(!all.contains("✗ Allowed contacts"));
+    }
+
     #[test]
     fn activating_hook_rows_requests_the_registration_box() {
         let mut setup = setup_with_hooks(true, &[("block rm", "exit 2")]);
@@ -2880,9 +3034,10 @@ mod tests {
     fn narrow_width_wraps_descriptions_instead_of_clipping() {
         let theme = test_theme();
         // Tall enough that even the last section (General) is on screen:
-        // the section contours add two border rows plus a blank per group.
-        let area = Rect::new(0, 0, 60, 64);
+        // the viewport is sized from the layout itself, so adding a section
+        // never clips the bottom box.
         let setup = Setup::default();
+        let area = Rect::new(0, 0, 60, content_height(&setup, 60) + 2);
         let mut view = SettingsView::new();
         let mut buf = Buffer::empty(area);
         view.render(&mut buf, area, &theme, &setup);
@@ -2937,8 +3092,8 @@ mod tests {
     #[test]
     fn section_contours_are_fully_closed() {
         let theme = test_theme();
-        let area = Rect::new(0, 0, 80, 64);
         let setup = setup_with_hooks(true, &[("block rm", "exit 2")]);
+        let area = Rect::new(0, 0, 80, content_height(&setup, 80) + 2);
         let mut view = SettingsView::new();
         let mut buf = Buffer::empty(area);
         view.render(&mut buf, area, &theme, &setup);

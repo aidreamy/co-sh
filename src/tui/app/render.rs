@@ -1156,18 +1156,20 @@ impl App {
             // to go stale). Written back into the instance the render below
             // reads; a non-ApiKeyInput stack top simply keeps `false`.
             if let Some(d) = self.dialog.current_mut() {
-                d.login_hover = matches!(
-                    &d.dialog_type,
+                let hover = match &d.dialog_type {
                     DialogType::ApiKeyInput {
                         device_login: true,
+                        input,
                         ..
-                    }
-                ) && crate::ui::dialogs::api_key_login_button_area(area)
-                    .is_some_and(|r| {
-                        self.last_mouse_x >= r.x
-                            && self.last_mouse_x < r.right()
-                            && self.last_mouse_y == r.y
-                    });
+                    } => crate::ui::dialogs::api_key_login_button_area(area, input)
+                        .is_some_and(|r| {
+                            self.last_mouse_x >= r.x
+                                && self.last_mouse_x < r.right()
+                                && self.last_mouse_y == r.y
+                        }),
+                    _ => false,
+                };
+                d.login_hover = hover;
             }
             self.dialog.render(buf, area, &self.theme, now);
             // The /agents picker renders above every modal panel (a

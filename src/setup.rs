@@ -32,6 +32,10 @@ pub struct Setup {
     pub cache: Cache,
     /// Skill-discovery configuration (Settings screen).
     pub skills: SkillsConfig,
+    /// Who may use the agent over WhatsApp (`cosh whatsapp`). Defaults to
+    /// the owner's own self-chat only; contacts and groups must be listed
+    /// explicitly.
+    pub whatsapp: WhatsAppConfig,
     /// Decision-model configuration (Settings screen; `setup.json` →
     /// `model_decision`). The section names what it configures — the
     /// resident decision model and its audited decisions — explicitly, for
@@ -101,6 +105,7 @@ impl Default for Setup {
             mode: Mode::default(),
             cache: Cache::default(),
             skills: SkillsConfig::default(),
+            whatsapp: WhatsAppConfig::default(),
             decision: DecisionConfig::default(),
             lsp: true,
             mcp: McpConfig::default(),
@@ -632,6 +637,37 @@ pub struct SkillsConfig {
     pub include: Vec<String>,
 }
 
+/// Who may use the agent over WhatsApp (`setup.json` → `whatsapp`).
+///
+/// The section is a plain allowlist, one field per origin kind, so a new
+/// rule is a new field rather than a new mechanism. The default is the most
+/// restrictive one: only the account's own "Message yourself" chat reaches
+/// the agent, and no contact or group does until it is named here.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct WhatsAppConfig {
+    /// Answer messages the account sends to its own chat (the self-chat).
+    pub self_chat: bool,
+    /// Direct-chat contacts allowed to use the agent. An entry is a phone
+    /// number in international format or an account id (LID included); the
+    /// `@server` suffix, spaces, `+` and punctuation are ignored, so
+    /// `5511912345678` and `+55 (11) 91234-5678` both match the same chat.
+    pub contacts: Vec<String>,
+    /// Groups allowed to use the agent: the group id (`120363…@g.us`) or
+    /// just its digits.
+    pub groups: Vec<String>,
+}
+
+impl Default for WhatsAppConfig {
+    fn default() -> Self {
+        Self {
+            self_chat: true,
+            contacts: Vec::new(),
+            groups: Vec::new(),
+        }
+    }
+}
+
 /// One user-registered ACP sub-agent harness (Settings → Integrations →
 /// ACP agents; `setup.json` → `acp_agents`). The name is what the model
 /// sees in the `subagent_call` tool's agent enum; the launch command uses
@@ -1139,6 +1175,9 @@ impl Setup {
         if section_differs(&self.skills, &baseline.skills) {
             merged.skills = self.skills.clone();
         }
+        if section_differs(&self.whatsapp, &baseline.whatsapp) {
+            merged.whatsapp = self.whatsapp.clone();
+        }
         if section_differs(&self.decision, &baseline.decision) {
             merged.decision = self.decision.clone();
         }
@@ -1641,6 +1680,34 @@ mod tests {
         assert_eq!(
             loaded.skills.resolved_dirs_with(None),
             vec!["/opt/skills".to_string()]
+        );
+    }
+
+    /// The WhatsApp section: a legacy file without it loads as the most
+    /// restrictive policy (self-chat only, no contacts, no groups), and a
+    /// configured allowlist round-trips unchanged.
+    #[test]
+    fn whatsapp_access_defaults_to_self_chat_only_and_roundtrips() {
+        let legacy: Setup = serde_json::from_str("{}").unwrap();
+        assert!(legacy.whatsapp.self_chat);
+        assert!(legacy.whatsapp.contacts.is_empty());
+        assert!(legacy.whatsapp.groups.is_empty());
+
+        let mut setup = Setup::default();
+        setup.whatsapp.self_chat = false;
+        setup.whatsapp.contacts = vec!["5511912345678".into()];
+        setup.whatsapp.groups = vec!["120363012345678901@g.us".into()];
+        let json = serde_json::to_string_pretty(&setup).unwrap();
+        assert!(
+            json.contains(r#""whatsapp""#),
+            "the section persists under its name, got: {json}"
+        );
+        let loaded: Setup = serde_json::from_str(&json).unwrap();
+        assert!(!loaded.whatsapp.self_chat);
+        assert_eq!(loaded.whatsapp.contacts, vec!["5511912345678".to_string()]);
+        assert_eq!(
+            loaded.whatsapp.groups,
+            vec!["120363012345678901@g.us".to_string()]
         );
     }
 

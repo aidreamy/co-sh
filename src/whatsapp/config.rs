@@ -17,6 +17,8 @@ use crate::harness::{ContextManagerState, Mode};
 use crate::mcp::McpConfig;
 use crate::setup::{Setup, SkillsConfig};
 
+use super::access::Access;
+
 /// Everything needed to assemble a chat's harness, with the caller's
 /// per-chat differences (mode, context, cache key) kept out.
 #[derive(Clone)]
@@ -39,6 +41,8 @@ pub struct RuntimeConfig {
     /// The mode a fresh chat starts in — the user's last global selection,
     /// exactly like the TUI restores it.
     pub initial_mode: Mode,
+    /// Who may reach the agent (`setup.json` → `whatsapp`).
+    pub access: Access,
     #[cfg(feature = "onnx")]
     pub decision: crate::setup::DecisionConfig,
 }
@@ -135,6 +139,7 @@ impl RuntimeConfig {
             openai_cache_retention: setup.openai_cache_retention().map(String::from),
             disabled_tools: load_disabled_tools(setup, cwd),
             initial_mode: setup.persisted_mode().unwrap_or(Mode::Build),
+            access: Access::new(setup.whatsapp.clone()),
             #[cfg(feature = "onnx")]
             decision: setup.decision.clone(),
         }
