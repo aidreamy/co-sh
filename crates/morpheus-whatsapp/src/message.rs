@@ -292,6 +292,12 @@ pub struct IncomingMessage {
     pub chat_kind: ChatKind,
     /// Who wrote it.
     pub sender: Sender,
+    /// The sender's other address form, when the engine delivered both: a
+    /// chat addressed by LID carries the sender's phone-number JID here, and a
+    /// chat addressed by phone number carries the LID. `None` when the stanza
+    /// supplied a single form.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender_alt: Option<ChatId>,
     /// Whether the message was sent by this account.
     pub from_me: bool,
     /// Message timestamp.
@@ -329,6 +335,7 @@ impl IncomingMessage {
                 id: ChatId::from_jid(&info.source.sender),
                 name,
             },
+            sender_alt: info.source.sender_alt.as_ref().map(ChatId::from_jid),
             from_me: info.source.is_from_me,
             timestamp: info.timestamp,
             content: content_of(message),
@@ -676,7 +683,25 @@ mod tests {
         assert_eq!(message.chat_kind, ChatKind::Direct);
         assert_eq!(message.id, "ABC123");
         assert_eq!(message.sender.name.as_deref(), Some("Ana"));
+        assert_eq!(message.sender_alt, None);
         assert!(!message.from_me);
+    }
+
+    /// A LID-routed direct chat keeps the phone-number form the engine read
+    /// from the stanza, so policy code can recognize a contact the owner
+    /// wrote as a number.
+    #[test]
+    fn the_alternate_address_form_survives_normalization() {
+        let mut info = info("42121264402678@lid", "42121264402678@lid", false);
+        info.source.sender_alt = Some(Jid::from_str("554288895786@s.whatsapp.net").expect("pn jid"));
+
+        let message = IncomingMessage::from_engine(&text("hello"), &info);
+
+        assert_eq!(message.chat.as_str(), "42121264402678@lid");
+        assert_eq!(
+            message.sender_alt.as_ref().map(ChatId::as_str),
+            Some("554288895786@s.whatsapp.net")
+        );
     }
 
     #[test]

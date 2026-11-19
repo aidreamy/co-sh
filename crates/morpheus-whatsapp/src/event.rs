@@ -503,6 +503,7 @@ mod tests {
                 id: chat,
                 name: None,
             },
+            sender_alt: None,
             from_me: false,
             timestamp: chrono::Utc::now(),
             content: MessageContent::Text("hi".to_string()),

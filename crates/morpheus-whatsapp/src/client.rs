@@ -502,6 +502,7 @@ mod tests {
                 id: ChatId::parse(chat).expect("sender id"),
                 name: None,
             },
+            sender_alt: None,
             from_me: false,
             timestamp: Utc::now(),
             content,

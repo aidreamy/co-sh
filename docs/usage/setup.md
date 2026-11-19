@@ -50,6 +50,7 @@ sessions and caches; it does not change the location of `setup.json`.
 | `mcp` | `/settings` → Integrations | External MCP servers |
 | `editor` | `/settings` → Environment | Editor opened by the file explorer |
 | `telemetry` | `/settings` → General | Anonymous usage telemetry |
+| `whatsapp` | `/settings` → WhatsApp | Who may use the agent over `cosh whatsapp` |
 
 ## `appearance`
 
@@ -293,6 +294,44 @@ defaults to `30000` (30 seconds). HTTP credentials entered as a literal key
 are stored in the OS keyring, not in `setup.json`; entering `$VAR` stores the
 environment-variable name in `api_key_env`. Stdio credentials belong in that
 server's `transport.env`.
+
+## `whatsapp`
+
+Access control for `cosh whatsapp`. The default is the most restrictive
+policy: only the account's own **self-chat** ("Message yourself") reaches the
+agent. No contact and no group is answered until it is listed here.
+
+| Field | Default | What it controls |
+|---|---:|---|
+| `self_chat` | `true` | Answer messages the account sends to its own chat. |
+| `contacts` | `[]` | One-to-one contacts allowed to use the agent. |
+| `groups` | `[]` | Groups allowed to use the agent. |
+
+```json
+{
+  "whatsapp": {
+    "self_chat": true,
+    "contacts": ["5511912345678"],
+    "groups": ["120363012345678901@g.us"]
+  }
+}
+```
+
+The same three knobs are editable from `/settings` → WhatsApp; the list
+inputs take comma-separated entries, and saving an empty box clears that
+list (denying every origin of that kind).
+
+Each `contacts` entry is a phone number in international format or an account
+id (`@lid` included); the `+`, spaces, punctuation and `@server` suffix are
+ignored, so `+55 (11) 91234-5678` and `5511912345678` are the same contact.
+WhatsApp routes some direct chats by LID instead of phone number; those are
+matched against the phone number WhatsApp reports for the chat, so an entry
+written as a number still authorizes its LID-routed conversation.
+Each `groups` entry is the group id (`120363…@g.us`) or just its digits. An
+empty list denies that origin kind entirely.
+
+A message from an origin that is not allowed is logged and never answered:
+the sender gets no reply, and the agent never starts a turn for that chat.
 
 ## Environment values that affect setup
 

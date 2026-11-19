@@ -10,7 +10,10 @@ use aiface::connector::ChatMessage;
 use aiface::connector::ConnectorError;
 use morpheus_sdk::extract_action::{ExtractAction, StreamAction, ToolCallData};
 
-use super::{CONTEXT_WINDOW_MARKER, Harness, INTERRUPTED_MARKER, StreamEvent, ToolCallMode};
+use super::{
+    CONTEXT_WINDOW_MARKER, Harness, IMAGE_UNSUPPORTED_MARKER, INTERRUPTED_MARKER, StreamEvent,
+    ToolCallMode,
+};
 
 impl Harness {
     /// Stream a chat completion using a proper messages array (native tool-call
@@ -37,8 +40,20 @@ impl Harness {
         // previous attempt's thinking into this one's context item.
         self.last_finish_reason = None;
         self.last_stream_unfinished = false;
+        // Typed-classification slot: reset per attempt, like the truncation
+        // signal — a stale error from a previous stream must never drive this
+        // attempt's recovery decision.
+        self.last_connector_error = None;
         self.pending_thinking_blocks.clear();
         self.attempt_reasoning.clear();
+
+        // A queued TYPED error takes precedence over the scripted response: it
+        // rides the same classification the real connector path uses, so the
+        // recovery policies see the exact variant a provider would produce.
+        #[cfg(test)]
+        if let Some(error) = self.mock_connector_error_queue.pop_front() {
+            return Err(self.classify_connector_error(error));
+        }
 
         #[cfg(test)]
         if let Some(response) = self.mock_stream_queue.pop_front() {
@@ -138,20 +153,7 @@ impl Harness {
                     Ok(s) => s,
                     Err(e) => {
                         log::debug!("stream_chat_with_messages CONNECTOR_ERR={e}");
-                        // A context-window overflow must reach the retry loop
-                        // as the identity marker (with the window size stashed)
-                        // so it is never confused with a generic error.
-                        return Err(match e {
-                            ConnectorError::ContextWindowExceeded {
-                                window_tokens, ..
-                            } => {
-                                if let Some(window) = window_tokens {
-                                    self.remember_error_window(window);
-                                }
-                                CONTEXT_WINDOW_MARKER.to_string()
-                            }
-                            other => other.to_string(),
-                        });
+                        return Err(self.classify_connector_error(e));
                     }
                 }
             }
@@ -194,17 +196,18 @@ impl Harness {
 
             let chunk = {
                 let poll = tokio::select! {
-                    chunk = stream.next() => chunk.map(|c| c.map_err(|e| {
-                        // log::debug!("stream_chat_with_messages STREAM_ERR={e}");
-                        e.to_string()
-                    })),
+                    chunk = stream.next() => chunk,
                     () = tokio::time::sleep(Duration::from_millis(50)) => {
                         continue;
                     }
                 };
                 match poll {
                     Some(Ok(c)) => c,
-                    Some(Err(e)) => return Err(e),
+                    // Mid-stream failures are typed too (a provider's SSE
+                    // error frame can be the image rejection on backends that
+                    // validate after the stream opened), so they take the SAME
+                    // classification path as the connect-time error.
+                    Some(Err(e)) => return Err(self.classify_connector_error(e)),
                     None => break,
                 }
             };
@@ -287,6 +290,32 @@ impl Harness {
         // log::debug!("stream_chat_with_messages DONE total_tokens={token_count}");
         self.emit_usage(&mut stream).await;
         Ok("done".into())
+    }
+
+    /// Turn a typed connector error into the string the loop compares, while
+    /// preserving the classification the two recovery policies need.
+    ///
+    /// The loop matches identity MARKERS for the recoverable cases (the same
+    /// contract [`CONTEXT_WINDOW_MARKER`] and [`INTERRUPTED_MARKER`] follow)
+    /// and keeps the typed error in [`Harness::last_connector_error`] so the
+    /// transient-retry policy can ask aiface's own `is_retryable_error`
+    /// instead of re-deriving a taxonomy from text.
+    fn classify_connector_error(&mut self, error: ConnectorError) -> String {
+        let message = match &error {
+            ConnectorError::ContextWindowExceeded { window_tokens, .. } => {
+                if let Some(window) = *window_tokens {
+                    self.remember_error_window(window);
+                }
+                CONTEXT_WINDOW_MARKER.to_string()
+            }
+            // A positive, in-body statement that the model cannot read
+            // images. Only aiface's strict classifier produces this variant;
+            // a bare 400 never lands here.
+            e if e.is_image_input_unsupported() => IMAGE_UNSUPPORTED_MARKER.to_string(),
+            other => other.to_string(),
+        };
+        self.last_connector_error = Some(error);
+        message
     }
 
     /// Dispatch one stream chunk to the correct tool-call path, honoring the

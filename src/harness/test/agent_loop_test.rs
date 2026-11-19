@@ -2700,3 +2700,207 @@ async fn a_healthy_single_text_turn_still_ends_naturally() {
         "a healthy turn must not consume a nudge"
     );
 }
+
+// ── Multimodal capability gating ────────────────────────────────────
+// The provider catalogs (`Connector::is_vlm`) and aiface's strict
+// `ImageInputUnsupported` classifier are the ONLY sources allowed to remove a
+// vision-dependent tool, and a bare 400 must never do it. These tests drive
+// the real classifier (`classify_http`) through the mock connector-error queue.
+
+#[tokio::test]
+async fn image_rejection_learns_the_verdict_drops_images_and_retries() {
+    use aiface::connector::{ConnectorError, ImageBlock};
+
+    let mut h = Harness::new_test()
+        // A REAL provider-style body: aiface classifies it as
+        // ImageInputUnsupported (status 400 + image topic + modality marker).
+        .with_mock_connector_error(ConnectorError::classify_http(
+            400,
+            "This API supports text input only. This conversation contains an image.".to_string(),
+        ))
+        .with_mock_stream(Ok(vec!["recovered without the image"]));
+
+    let image = ImageBlock::png(&[0x89, b'P', b'N', b'G']);
+    h.context_manager.set_user_images(vec![image.clone()]);
+    h.context_manager
+        .add_tool_result_with_images("call-1", "screenshot 10x10", false, vec![image]);
+
+    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+    let (_answer_tx, answer_rx) = tokio::sync::mpsc::unbounded_channel();
+    let (_perm_tx, perm_rx) = tokio::sync::mpsc::unbounded_channel();
+    let stop_signal = Arc::new(AtomicBool::new(false));
+    h.run_agent_loop("look at this", tx, answer_rx, perm_rx, stop_signal)
+        .await;
+
+    let events = pump_terminal_events(rx).await;
+
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, HarnessEvent::Done { .. })),
+        "the retried request must succeed instead of aborting the turn, events={events:?}"
+    );
+    assert!(
+        !events
+            .iter()
+            .any(|e| matches!(e, HarnessEvent::Error { .. })),
+        "a recovered image rejection is not a terminal error, events={events:?}"
+    );
+    assert!(
+        events.iter().any(|e| matches!(
+            e,
+            HarnessEvent::Toast {
+                variant: super::super::events::ToastVariant::Warning,
+                ..
+            }
+        )),
+        "the user must be told the images were removed, events={events:?}"
+    );
+    assert_eq!(
+        h.conversation_image_count(),
+        0,
+        "the retried request must carry no images"
+    );
+    assert!(
+        h.is_tool_omitted("computer_screenshot"),
+        "vision-dependent tools stay omitted for the process lifetime"
+    );
+}
+
+#[tokio::test]
+async fn a_generic_400_never_gates_vision_tools() {
+    use aiface::connector::ConnectorError;
+
+    let mut h = Harness::new_test()
+        // A 400 with an unrelated body: NOT an image rejection, so the
+        // classifier returns a plain HttpError and nothing may be gated.
+        .with_mock_connector_error(ConnectorError::classify_http(
+            400,
+            r#"{"error":{"message":"invalid tool arguments"}}"#.to_string(),
+        ));
+
+    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+    let (_answer_tx, answer_rx) = tokio::sync::mpsc::unbounded_channel();
+    let (_perm_tx, perm_rx) = tokio::sync::mpsc::unbounded_channel();
+    let stop_signal = Arc::new(AtomicBool::new(false));
+    h.run_agent_loop("do something", tx, answer_rx, perm_rx, stop_signal)
+        .await;
+
+    let events = pump_terminal_events(rx).await;
+
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, HarnessEvent::Error { .. })),
+        "a non-retryable 400 terminates the turn, events={events:?}"
+    );
+    assert!(
+        !h.is_tool_omitted("computer_screenshot"),
+        "an ambiguous 400 must never strip a capable model's vision tools"
+    );
+}
+
+#[tokio::test]
+async fn a_transient_failure_is_retried_instead_of_ending_the_turn() {
+    use aiface::connector::ConnectorError;
+
+    let mut h = Harness::new_test()
+        .with_mock_connector_error(ConnectorError::classify_http(
+            503,
+            "upstream unavailable".to_string(),
+        ))
+        .with_mock_stream(Ok(vec!["second attempt works"]));
+
+    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+    let (_answer_tx, answer_rx) = tokio::sync::mpsc::unbounded_channel();
+    let (_perm_tx, perm_rx) = tokio::sync::mpsc::unbounded_channel();
+    let stop_signal = Arc::new(AtomicBool::new(false));
+    h.run_agent_loop("hello", tx, answer_rx, perm_rx, stop_signal)
+        .await;
+
+    let events = pump_terminal_events(rx).await;
+
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, HarnessEvent::Done { .. })),
+        "the transient failure must not end the turn, events={events:?}"
+    );
+    assert!(
+        events.iter().any(|e| matches!(
+            e,
+            HarnessEvent::Token { text } if text.as_str() == "second attempt works"
+        )),
+        "the retried response must reach the TUI, events={events:?}"
+    );
+    assert!(
+        !events
+            .iter()
+            .any(|e| matches!(e, HarnessEvent::Error { .. })),
+        "no terminal error after a successful retry, events={events:?}"
+    );
+}
+
+#[tokio::test]
+async fn transient_retries_are_bounded() {
+    use aiface::connector::ConnectorError;
+
+    // Budget + 1 failures: the last one must surface as a terminal error
+    // instead of looping forever.
+    let mut h = Harness::new_test();
+    let budget = Harness::loop_retry_budget_for_test();
+    for _ in 0..=budget {
+        h = h.with_mock_connector_error(ConnectorError::classify_http(
+            503,
+            "still down".to_string(),
+        ));
+    }
+
+    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+    let (_answer_tx, answer_rx) = tokio::sync::mpsc::unbounded_channel();
+    let (_perm_tx, perm_rx) = tokio::sync::mpsc::unbounded_channel();
+    let stop_signal = Arc::new(AtomicBool::new(false));
+    h.run_agent_loop("hello", tx, answer_rx, perm_rx, stop_signal)
+        .await;
+
+    let events = pump_terminal_events(rx).await;
+
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, HarnessEvent::Error { .. })),
+        "the exhausted retry budget must end the turn visibly, events={events:?}"
+    );
+    let toasts = events
+        .iter()
+        .filter(|e| matches!(e, HarnessEvent::Toast { .. }))
+        .count();
+    assert_eq!(
+        toasts, budget as usize,
+        "one informational toast per retry, events={events:?}"
+    );
+}
+
+#[tokio::test]
+async fn a_capability_verdict_never_discards_the_users_own_disabled_tools() {
+    let mut h = Harness::new_test().with_user_disabled_tools(["bash_run"]);
+    assert!(!h.is_tool_omitted("computer_screenshot"));
+
+    assert!(
+        h.learn_image_unsupported_for_test(),
+        "the first observation is new"
+    );
+
+    assert!(
+        h.is_tool_omitted("computer_screenshot"),
+        "the capability gate applies"
+    );
+    assert!(
+        h.user_disabled_tools().contains("bash_run"),
+        "the user's set is kept separate from the capability gate"
+    );
+    assert!(
+        h.is_tool_omitted("bash_run"),
+        "the effective set still carries the user's choice"
+    );
+}

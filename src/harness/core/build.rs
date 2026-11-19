@@ -21,6 +21,7 @@ use super::{
 impl Harness {
     #[must_use]
     pub fn new(connector: Connector, cwd: &str, disabled_tools: HashSet<String>) -> Self {
+        let user_disabled_tools = disabled_tools.clone();
         let mut cosh_tools = CoshTools::new(cwd);
         // Interpolate the internal-sub-agent note into the `subagent_call`
         // tool description BEFORE the header is built: omitting `agent`
@@ -54,6 +55,8 @@ impl Harness {
             tool_call_synthetic: 0,
             context_manager: ContextManager::new(MAX_CONTEXT_TOKENS),
             disabled_tools,
+            user_disabled_tools,
+            last_connector_error: None,
             tool_failure_count: 0,
             tool_extraction_failure_count: 0,
             last_failed_raw: String::new(),
@@ -116,8 +119,17 @@ impl Harness {
             #[cfg(test)]
             mock_stream_resets: VecDeque::new(),
             #[cfg(test)]
+            loop_retry_delay: Some(std::time::Duration::ZERO),
+            #[cfg(test)]
+            mock_connector_error_queue: VecDeque::new(),
+            #[cfg(test)]
             test_tools: Vec::new(),
         };
+        // Apply the ACTIVE model's capability gates before anything reads
+        // `disabled_tools` (the header is rendered by the caller right after
+        // construction): a model the catalogs positively describe as
+        // text-only never sees the vision-dependent tools at all.
+        harness.refresh_tool_omissions();
         harness.install_summary_annotator();
         // The /agents coworker tool is registered ONLY when coworkers exist: with
         // no agents bound to the session the harness — and its header —

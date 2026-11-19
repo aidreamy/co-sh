@@ -14,6 +14,14 @@
 //! cannot loop. The reply keeps the chat id it arrived with (see the crate
 //! docs).
 //!
+//! # Who may use the agent
+//!
+//! `setup.json` → `whatsapp` is an allowlist, checked after `is_prompt` and
+//! before the message reaches a session (see [`access`]). The default is the
+//! self-chat only: no contact and no group is answered until it is named in
+//! `contacts` or `groups`. A denied message is logged and never answered, so
+//! an unauthorized sender learns nothing about the agent.
+//!
 //! # Architecture
 //!
 //! ```text
@@ -42,6 +50,9 @@
 //!   harness and carries the model-facing context forward in memory.
 //! - **`agent.rs`** serializes prompts per chat and filters traffic the
 //!   agent should not answer (echoes, broadcasts, channels, reactions).
+//! - **`access.rs`** owns the authorization policy (`setup.json` →
+//!   `whatsapp`): which chats and which one-to-one contacts may reach the
+//!   agent at all.
 //!
 //! # Commands
 //!
@@ -57,6 +68,7 @@
 //! surface, so the session denies them and tells the user in the reply.
 //! `/mode yolo` is the explicit opt-in to run tools unattended.
 
+mod access;
 mod agent;
 mod commands;
 mod config;
@@ -130,7 +142,9 @@ pub async fn run() -> i32 {
     println!("Waiting for a pairing code…");
     println!();
 
-    let agent = Arc::new(WhatsAppAgent::new(RuntimeConfig::load(&cwd)));
+    let runtime = RuntimeConfig::load(&cwd);
+    let access = runtime.access.clone();
+    let agent = Arc::new(WhatsAppAgent::new(runtime));
     // At most one automatic recovery: if a fresh store is reported dead too,
     // something else is wrong and looping would spin forever.
     let mut repaired = false;
@@ -171,8 +185,8 @@ pub async fn run() -> i32 {
                 Event::Connected => {
                     connected = true;
                     println!(
-                        "Connected. Message this number or another contact — the agent answers \
-                         both. `/help` lists the commands."
+                        "Connected. Message your own chat (`/help` lists the commands). Contacts \
+                         and groups are answered only when allowed in setup.json → whatsapp."
                     );
                     flush_stdout();
                 }
@@ -220,6 +234,20 @@ pub async fn run() -> i32 {
                         is_prompt
                     );
                     if !is_prompt {
+                        continue;
+                    }
+                    // Authorization is separate from routing: a prompt from a
+                    // chat the owner did not allow is dropped before a slot or
+                    // a session is involved, and without a reply (see
+                    // `access.rs`).
+                    if !access.allows(&message) {
+                        log::warn!(
+                            "cosh whatsapp: message {} from {} in {} is not allowed by \
+                             setup.json → whatsapp; ignored",
+                            message.id,
+                            message.sender.id,
+                            message.chat
+                        );
                         continue;
                     }
                     let Some(permit) = Arc::clone(&slots).try_acquire_owned().ok() else {

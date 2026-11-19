@@ -7,6 +7,7 @@ use ratatui::style::{Color, Modifier, Style};
 
 use cosh::ModelEntry;
 use morpheus_tui::core::lib::rgba::RGBA;
+use morpheus_tui::core::lib::unicode_util::{graphemes_with_width, str_display_width, word_wrap_spans};
 use morpheus_tui::core::renderable::Renderable;
 use morpheus_tui::core::renderables::r#box::BoxRenderable;
 use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType};
@@ -446,6 +447,37 @@ pub enum DeviceLoginPhase {
     Authorizing { url: String, user_code: String },
 }
 
+/// Which `setup.json` → `whatsapp` allowlist a
+/// [`DialogType::WhatsAppListInput`] edits. The kind travels with the
+/// dialog so render and save agree on the title and the target field.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WhatsAppList {
+    /// One-to-one contacts (`whatsapp.contacts`).
+    Contacts,
+    /// Groups (`whatsapp.groups`).
+    Groups,
+}
+
+impl WhatsAppList {
+    /// Dialog title naming the list being edited.
+    pub fn title(self) -> &'static str {
+        match self {
+            Self::Contacts => "WhatsApp allowed contacts",
+            Self::Groups => "WhatsApp allowed groups",
+        }
+    }
+
+    /// Hint shown above the input: the shape of ONE entry for this list
+    /// (a phone number for contacts, a group id for groups), then how to
+    /// write several. Kept short enough to fit the box width uncut.
+    pub fn hint(self) -> &'static str {
+        match self {
+            Self::Contacts => "e.g. +55 11 91234-5678, comma-separated",
+            Self::Groups => "e.g. 120363012345678901@g.us, comma-separated",
+        }
+    }
+}
+
 #[derive(Clone)]
 pub enum DialogType {
     Alert {
@@ -587,6 +619,14 @@ pub enum DialogType {
     /// types colon-separated source directories for the `skills_*` tools
     /// (~ expands to $HOME) or leaves it blank to fall back to `~/.skills`.
     SkillsInput {
+        input: String,
+        cursor_pos: usize,
+    },
+    /// One `setup.json` → `whatsapp` allowlist (Settings → WhatsApp),
+    /// comma-separated. Blank clears the list, which denies every origin of
+    /// that kind (self-chat stays governed by its own switch).
+    WhatsAppListInput {
+        list: WhatsAppList,
         input: String,
         cursor_pos: usize,
     },
@@ -867,6 +907,16 @@ impl std::fmt::Debug for DialogType {
                 .finish(),
             Self::SkillsInput { input, cursor_pos } => f
                 .debug_struct("SkillsInput")
+                .field("input", input)
+                .field("cursor_pos", cursor_pos)
+                .finish(),
+            Self::WhatsAppListInput {
+                list,
+                input,
+                cursor_pos,
+            } => f
+                .debug_struct("WhatsAppListInput")
+                .field("list", list)
                 .field("input", input)
                 .field("cursor_pos", cursor_pos)
                 .finish(),
@@ -1576,22 +1626,19 @@ impl DialogState {
                     }
                 }
             }
-            DialogType::ApiKeyInput { .. } => {
+            DialogType::ApiKeyInput { input, .. } => {
                 // Same box geometry as render (`render_text_input_dialog`):
                 // the Login button lives on the box's bottom row, right-aligned.
-                let dialog_w = 50u16.min(area.width.saturating_sub(8)).max(30);
-                let dialog_h = 7;
-                let dialog_x = area.x + area.width.saturating_sub(dialog_w) / 2;
-                let dialog_y = area.y + area.height.saturating_sub(dialog_h) / 2;
+                let box_rect = text_input_dialog_box(area, input, true);
 
-                if x < dialog_x
-                    || x >= dialog_x + dialog_w
-                    || y_click < dialog_y
-                    || y_click >= dialog_y + dialog_h
+                if x < box_rect.x
+                    || x >= box_rect.x + box_rect.width
+                    || y_click < box_rect.y
+                    || y_click >= box_rect.y + box_rect.height
                 {
                     return DialogAction::Dismissed;
                 }
-                if api_key_login_button_area(area)
+                if api_key_login_button_area(area, input)
                     .is_some_and(|r| x >= r.x && x < r.right() && y_click == r.y)
                 {
                     return DialogAction::Login;
@@ -1603,7 +1650,7 @@ impl DialogState {
                 // outside the box → dismiss; on the code row → copy it (the
                 // dialog stack has no drag-selection machinery, so
                 // click-to-copy is the affordance); elsewhere → inert.
-                let box_rect = text_input_dialog_box(area);
+                let box_rect = input_dialog_box(area, 1);
                 if x < box_rect.x
                     || x >= box_rect.x + box_rect.width
                     || y_click < box_rect.y
@@ -1618,21 +1665,21 @@ impl DialogState {
                 }
                 DialogAction::Consumed
             }
-            DialogType::LocalUrlInput { .. }
-            | DialogType::CacheTtlInput { .. }
-            | DialogType::EditorInput { .. }
-            | DialogType::SkillsInput { .. }
-            | DialogType::CheckupMinConfidenceInput { .. } => {
-                // Click outside the dialog box → dismiss
-                let dialog_w = 50u16.min(area.width.saturating_sub(8)).max(30);
-                let dialog_h = 7;
-                let dialog_x = area.x + area.width.saturating_sub(dialog_w) / 2;
-                let dialog_y = area.y + area.height.saturating_sub(dialog_h) / 2;
+            DialogType::LocalUrlInput { input, .. }
+            | DialogType::CacheTtlInput { input, .. }
+            | DialogType::EditorInput { input, .. }
+            | DialogType::SkillsInput { input, .. }
+            | DialogType::WhatsAppListInput { input, .. }
+            | DialogType::CheckupMinConfidenceInput { input, .. } => {
+                // Click outside the dialog box → dismiss. The box grows with
+                // its wrapped input, so its rect comes from the same helper
+                // the render uses.
+                let box_rect = text_input_dialog_box(area, input, false);
 
-                if x < dialog_x
-                    || x >= dialog_x + dialog_w
-                    || y_click < dialog_y
-                    || y_click >= dialog_y + dialog_h
+                if x < box_rect.x
+                    || x >= box_rect.x + box_rect.width
+                    || y_click < box_rect.y
+                    || y_click >= box_rect.y + box_rect.height
                 {
                     return DialogAction::Dismissed;
                 }
@@ -2293,7 +2340,7 @@ impl DialogState {
                 // The Login button (device-OAuth providers only): rendered
                 // inside the box's bottom row, right-aligned — the same
                 // hover-swap styling the footer's update button uses.
-                if *device_login && let Some(button) = api_key_login_button_area(area) {
+                if *device_login && let Some(button) = api_key_login_button_area(area, input) {
                     draw_api_key_login_button(buf, button, theme, instance.login_hover);
                 }
             }
@@ -2302,7 +2349,7 @@ impl DialogState {
                 // replaced): the box IS the sign-in display — code + URL
                 // where the input row used to be, the gateway offer box's
                 // "box becomes the device code" mechanic.
-                let box_rect = text_input_dialog_box(area);
+                let box_rect = input_dialog_box(area, 1);
                 let bg_color = rgba_color(theme.background_panel);
                 clear_dialog_surface(buf, box_rect, bg_color);
                 draw_rounded_border(buf, box_rect, rgba_color(theme.border_active));
@@ -2422,6 +2469,24 @@ impl DialogState {
                     &instance.cursor,
                     "Skill directories",
                     "colon-separated paths (~ = $HOME) — empty: ~/.skills",
+                    false,
+                    input,
+                    *cursor_pos,
+                );
+            }
+            DialogType::WhatsAppListInput {
+                list,
+                input,
+                cursor_pos,
+            } => {
+                render_text_input_dialog(
+                    buf,
+                    area,
+                    theme,
+                    now,
+                    &instance.cursor,
+                    list.title(),
+                    list.hint(),
                     false,
                     input,
                     *cursor_pos,
@@ -3737,18 +3802,86 @@ impl DialogState {
 /// local URL, device sign-in): ONE source for render, the mouse hit-test
 /// and the Login-button placement so the three can never drift. Mirrors
 /// the sizing `render_text_input_dialog` has always used.
-fn text_input_dialog_box(area: Rect) -> Rect {
-    let dialog_w = 50u16.min(area.width.saturating_sub(8)).max(30);
+/// Width of the single-input box: 50 columns, clamped to the available area
+/// and never below the 30 its title and hint rows need.
+fn input_dialog_width(area: Rect) -> u16 {
+    50u16.min(area.width.saturating_sub(8)).max(30)
+}
+
+/// Input rows the box may show: it grows with the input, but only until it
+/// nearly fills the viewport. Past that the input scrolls instead, so the box
+/// can never grow past the visible screen. The 8 left over are the box's own
+/// chrome (two borders, title, subtitle, the blank rows above and below) plus
+/// a cell of breathing room at each edge.
+fn input_dialog_max_rows(area: Rect) -> u16 {
+    area.height.saturating_sub(8).max(1)
+}
+
+/// First visible input row: the window ends on the caret's row, so once the
+/// box stops growing the newest text stays in view and the older rows scroll
+/// off the top.
+fn text_input_first_row(caret_row: usize, rows: usize, max_rows: u16) -> usize {
+    let visible = rows.min(max_rows.max(1) as usize).max(1);
+    caret_row.saturating_sub(visible - 1)
+}
+
+/// The single-input box with `rows` input rows: top border, title, subtitle,
+/// blank, the input rows, blank and the bottom border. More rows than the
+/// viewport allows are scrolled, not drawn, so the box height is capped at
+/// [`input_dialog_max_rows`].
+fn input_dialog_box(area: Rect, rows: u16) -> Rect {
+    let dialog_w = input_dialog_width(area);
+    let dialog_h = 6 + rows.min(input_dialog_max_rows(area));
     let dialog_x = area.x + area.width.saturating_sub(dialog_w) / 2;
-    let dialog_y = area.y + area.height.saturating_sub(7) / 2;
-    Rect::new(dialog_x, dialog_y, dialog_w, 7)
+    let dialog_y = area.y + area.height.saturating_sub(dialog_h) / 2;
+    Rect::new(dialog_x, dialog_y, dialog_w, dialog_h)
+}
+
+/// What the input rows show: masked entries become one `*` per character,
+/// everything else is drawn verbatim.
+fn text_input_display(input: &str, masked: bool) -> String {
+    if masked {
+        input.chars().map(|_| '*').collect()
+    } else {
+        input.to_string()
+    }
+}
+
+/// Row and column of the caret inside the wrapped input: the last row whose
+/// source offset is at or before `caret`, and the display width of that row's
+/// prefix. Clamped to the row, since the wrapper drops whitespace at a fold
+/// when the row is already full, and that position then belongs to the row's
+/// end.
+fn wrapped_caret(rows: &[(String, usize)], display: &str, caret: usize) -> (usize, u16) {
+    let mut caret_row = 0usize;
+    let mut caret_col = 0u16;
+    for (row, (line, start)) in rows.iter().enumerate() {
+        if *start > caret {
+            break;
+        }
+        caret_row = row;
+        let prefix = &display[*start..caret.min(display.len())];
+        caret_col = (str_display_width(prefix) as u16).min(str_display_width(line) as u16);
+    }
+    (caret_row, caret_col)
+}
+
+/// The single-input box sized to its input. The height follows the wrapped
+/// rows, so render, the click-outside test and the Login button all read the
+/// same rect: a long value grows the box downward instead of running past the
+/// border. Wrapping goes through the project's shared [`word_wrap_spans`]:
+/// whole tokens stay on a row, and only a token wider than a row is split.
+fn text_input_dialog_box(area: Rect, input: &str, masked: bool) -> Rect {
+    let content_w = input_dialog_width(area).saturating_sub(4);
+    let rows = word_wrap_spans(&text_input_display(input, masked), content_w).len() as u16;
+    input_dialog_box(area, rows)
 }
 
 /// The API-key dialog's Login button: the box's bottom interior row,
 /// right-aligned against the border. `None` when the box is too narrow to
 /// host the button without crowding the input row.
-pub fn api_key_login_button_area(area: Rect) -> Option<Rect> {
-    let box_rect = text_input_dialog_box(area);
+pub fn api_key_login_button_area(area: Rect, input: &str) -> Option<Rect> {
+    let box_rect = text_input_dialog_box(area, input, true);
     const LABEL: &str = "Login";
     // One cell of padding on each side of the label.
     let button_w = LABEL.len() as u16 + 2;
@@ -3758,7 +3891,13 @@ pub fn api_key_login_button_area(area: Rect) -> Option<Rect> {
         return None;
     }
     let button_x = box_rect.x + box_rect.width.saturating_sub(button_w + 2);
-    Some(Rect::new(button_x, box_rect.y + 5, button_w, 1))
+    // Bottom interior row, whatever the (input-driven) box height is.
+    Some(Rect::new(
+        button_x,
+        box_rect.y + box_rect.height.saturating_sub(2),
+        button_w,
+        1,
+    ))
 }
 
 /// Draw the API-key dialog's Login button: the label in the muted color at
@@ -3808,31 +3947,26 @@ fn render_text_input_dialog(
     input: &str,
     cursor_pos: usize,
 ) {
-    let dialog_w = 50u16.min(area.width.saturating_sub(8)).max(30);
-    let dialog_h = 7;
-    let dialog_x = area.x + area.width.saturating_sub(dialog_w) / 2;
-    let dialog_y = area.y + area.height.saturating_sub(dialog_h) / 2;
-    let _dialog_area = Rect::new(dialog_x, dialog_y, dialog_w, dialog_h);
+    // Wrap once, from the box's own content width, then size the box from
+    // the rows that came out: the painted text and the height can never
+    // disagree.
+    let content_w = input_dialog_width(area).saturating_sub(4);
+    let display = text_input_display(input, masked);
+    let wrapped = word_wrap_spans(&display, content_w);
+    let box_rect = input_dialog_box(area, wrapped.len() as u16);
+    let dialog_x = box_rect.x;
+    let dialog_y = box_rect.y;
 
     // Fill background with the LEFT PANEL color — the modal box reads as
     // the same surface layer as the sidebar (the hook registration form
     // already follows this rule).
     let bg_color = rgba_color(theme.background_panel);
-    clear_dialog_surface(
-        buf,
-        Rect::new(dialog_x, dialog_y, dialog_w, dialog_h),
-        bg_color,
-    );
+    clear_dialog_surface(buf, box_rect, bg_color);
 
-    draw_rounded_border(
-        buf,
-        Rect::new(dialog_x, dialog_y, dialog_w, dialog_h),
-        rgba_color(theme.border_active),
-    );
+    draw_rounded_border(buf, box_rect, rgba_color(theme.border_active));
 
     // Content area
     let content_x = dialog_x + 2;
-    let content_w = dialog_w.saturating_sub(4);
 
     // Title
     draw_text_line_compact(
@@ -3856,45 +3990,80 @@ fn render_text_input_dialog(
         Style::default().fg(rgba_color(theme.text_muted)),
     );
 
-    // Input field (blinking cursor at cursor_pos) — same surface as the
-    // box itself (the left panel color), never the old element color.
+    // Input rows (blinking cursor at cursor_pos) — same surface as the box
+    // itself (the left panel color), never the old element color. The text is
+    // wrapped by the same call that sized the box, so nothing is ever drawn
+    // past the border.
     let input_x = content_x;
     let input_y = dialog_y + 4;
     let bg_element = bg_color;
 
-    // Clear input field background
-    for cx in input_x..input_x + content_w {
-        if let Some(cell) = buf.cell_mut((cx, input_y)) {
-            cell.set_char(' ');
-            cell.set_style(Style::default().bg(bg_element));
-        }
-    }
+    // Caret geometry: the wrapped row holding `cursor_pos` and the display
+    // column inside it. Each row starts at its first kept grapheme, so the
+    // caret belongs to the last row starting at or before it. A masked char
+    // is one column whatever the source char's byte length, so the caret
+    // travels through the character count.
+    let caret_at = input.floor_char_boundary(cursor_pos.min(input.len()));
+    let caret = if masked {
+        input[..caret_at].chars().count()
+    } else {
+        caret_at
+    };
+    let (caret_row, caret_col) = wrapped_caret(&wrapped, &display, caret);
+
+    // Visible window at the box's capped height: it follows the caret, so the
+    // rows above scroll out as new ones arrive.
+    let max_rows = input_dialog_max_rows(area);
+    let first_row = text_input_first_row(caret_row, wrapped.len(), max_rows);
+    let visible_rows = (wrapped.len() as u16).min(max_rows).max(1) as usize;
 
     // Cursor's terminal_focused is synced from app.rs before render
     let cursor_state = cursor.current_state(now);
 
-    let display_chars: Vec<char> = if masked {
-        input.chars().map(|_| '*').collect()
-    } else {
-        input.chars().collect()
-    };
-
-    // Draw each character (masked for keys, plain for URLs)
-    for (i, ch) in display_chars.iter().enumerate() {
-        let cx = input_x + i as u16;
-        if cx >= input_x + content_w {
-            break;
+    for (row, (line, _)) in wrapped
+        .iter()
+        .enumerate()
+        .skip(first_row)
+        .take(visible_rows)
+    {
+        let row_y = input_y + (row - first_row) as u16;
+        // Repaint the whole row first: a short last row must not keep glyphs
+        // from the previous frame.
+        for cx in input_x..input_x + content_w {
+            if let Some(cell) = buf.cell_mut((cx, row_y)) {
+                cell.set_char(' ');
+                cell.set_style(Style::default().bg(bg_element));
+            }
         }
-        if let Some(cell) = buf.cell_mut((cx, input_y)) {
-            cell.set_char(*ch);
-            cell.set_style(Style::default().fg(rgba_color(theme.text)).bg(bg_element));
+        // Grapheme-wise, so a wide (CJK / emoji) glyph lands on its two
+        // columns and the next one does not overwrite its second half.
+        let mut cx = input_x;
+        for (grapheme, w) in graphemes_with_width(line) {
+            if cx + w > input_x + content_w {
+                break;
+            }
+            if let Some(cell) = buf.cell_mut((cx, row_y)) {
+                if grapheme.len() == 1 {
+                    cell.set_char(grapheme.chars().next().unwrap_or(' '));
+                } else {
+                    cell.set_symbol(grapheme);
+                }
+                cell.set_style(Style::default().fg(rgba_color(theme.text)).bg(bg_element));
+            }
+            for dx in 1..w {
+                if let Some(cell) = buf.cell_mut((cx + dx, row_y)) {
+                    cell.set_diff_option(CellDiffOption::Skip);
+                }
+            }
+            cx += w;
         }
     }
 
     // Draw cursor at cursor_pos
-    let cursor_x = input_x + cursor_pos as u16;
+    let cursor_x = input_x + caret_col;
+    let cursor_y = input_y + (caret_row - first_row) as u16;
     if cursor_x < input_x + content_w
-        && let Some(cell) = buf.cell_mut((cursor_x, input_y))
+        && let Some(cell) = buf.cell_mut((cursor_x, cursor_y))
     {
         // Transparent style: the glyph under the caret stays visible.
         paint_cursor_cell(
@@ -5033,5 +5202,81 @@ mod theme_list_swatch_tests {
         let action = state.handle_mouse(&mouse(MouseEventType::Up, 56, 13), area, &theme);
         assert_eq!(action, DialogAction::Confirmed);
         assert_eq!(state.current().unwrap().selected, 1);
+    }
+
+    /// A long comma-separated allowlist must wrap, never split an entry, and
+    /// grow the box by one row per wrapped line.
+    #[test]
+    fn a_long_allowlist_wraps_whole_entries_and_grows_the_box() {
+        let area = Rect::new(0, 0, 40, 24);
+        let input = "+5511999999999, +5511888888888, +5511777777777";
+        let box_rect = text_input_dialog_box(area, input, false);
+        let content_w = box_rect.width.saturating_sub(4);
+        let rows = word_wrap_spans(input, content_w);
+
+        assert!(rows.len() > 1, "the list must wrap, got {rows:?}");
+        assert_eq!(box_rect.height, 6 + rows.len() as u16);
+        for (line, _) in &rows {
+            assert!(
+                str_display_width(line) <= content_w as usize,
+                "{line:?} exceeds the {content_w}-column content area"
+            );
+        }
+        // Every entry stays whole: no phone number is cut across rows.
+        for number in ["+5511999999999", "+5511888888888", "+5511777777777"] {
+            assert!(
+                rows.iter().any(|(line, _)| line.contains(number)),
+                "{number} was split across rows: {rows:?}"
+            );
+        }
+    }
+
+    /// Past the viewport limit the box stops growing and the input window
+    /// follows the caret, so the newest rows stay visible.
+    #[test]
+    fn a_long_input_caps_the_box_and_scrolls_to_the_newest_rows() {
+        let area = Rect::new(0, 0, 40, 20);
+        let input = (0..40)
+            .map(|n| format!("+55119999999{n:02}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let box_rect = text_input_dialog_box(area, &input, false);
+        let max_rows = input_dialog_max_rows(area);
+        let rows = word_wrap_spans(&input, box_rect.width - 4);
+
+        assert!(rows.len() as u16 > max_rows, "the input must need scrolling");
+        assert_eq!(box_rect.height, 6 + max_rows);
+        assert!(box_rect.height <= area.height);
+
+        // The window ends on the caret's row: the last row is visible and the
+        // window is exactly the rows the box can show.
+        let first = text_input_first_row(rows.len() - 1, rows.len(), max_rows);
+        assert_eq!(first + max_rows as usize, rows.len());
+
+        // A caret still inside the window keeps the window at the top.
+        assert_eq!(text_input_first_row(0, rows.len(), max_rows), 0);
+        assert_eq!(text_input_first_row(3, rows.len(), max_rows), 0);
+    }
+
+    /// The caret travels with the text: the end of a long input lands on the
+    /// last wrapped row, and a row boundary lands on its first column.
+    #[test]
+    fn the_caret_follows_the_wrapped_rows() {
+        let display = "+5511999999999, +5511888888888, +5511777777777";
+        let rows = word_wrap_spans(display, 28);
+        assert_eq!(rows.len(), 3, "expected three wrapped rows: {rows:?}");
+
+        assert_eq!(wrapped_caret(&rows, display, 0), (0, 0));
+        assert_eq!(
+            wrapped_caret(&rows, display, display.len()),
+            (2, str_display_width(&rows[2].0) as u16)
+        );
+        // Row 1 starts at the first glyph of the next entry, so the caret on
+        // that offset opens row 1 at column zero.
+        assert_eq!(rows[1].1, rows[0].1 + rows[0].0.len());
+        assert_eq!(wrapped_caret(&rows, display, rows[1].1), (1, 0));
+        assert_eq!(wrapped_caret(&rows, display, rows[1].1 + 1), (1, 1));
+        // A caret inside row 0 keeps that row's own column.
+        assert_eq!(wrapped_caret(&rows, display, 14), (0, 14));
     }
 }

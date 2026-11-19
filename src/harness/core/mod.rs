@@ -44,6 +44,7 @@ mod types;
 
 mod agent_loop;
 mod build;
+mod capabilities;
 #[cfg(test)]
 #[path = "../test/checkpoint_output.rs"]
 mod checkpoint_output;
@@ -89,8 +90,8 @@ pub use tool_catalog::HarnessTool;
 use tool_catalog::{PromptSystem, build_lsp, default_harness_tools};
 
 pub(crate) use limits::{
-    CONTEXT_WINDOW_MARKER, INTERRUPTED_MARKER, ITERATION_RENEWALS, MAX_ITERATIONS,
-    SUBAGENT_BLOCKED_TOOLS,
+    CONTEXT_WINDOW_MARKER, IMAGE_UNSUPPORTED_MARKER, INTERRUPTED_MARKER, ITERATION_RENEWALS,
+    MAX_ITERATIONS, SUBAGENT_BLOCKED_TOOLS,
 };
 // Test-only: the veto-budget pin counts against this bound (the lib itself
 // reads it from `limits::` directly), so the re-export must not exist in a
@@ -207,9 +208,17 @@ pub struct Harness {
     /// manager's single token budget.
     pub context_manager: ContextManager,
 
-    /// Tools explicitly disabled by the user via the Internal Tools screen.
-    /// These are excluded from both the prompt header and the extractor.
+    /// The EFFECTIVE omission set every surface reads (prompt header, native
+    /// tool definitions, extractor and dispatch): the user's own disabled
+    /// tools plus the ACTIVE model's capability gates (see
+    /// [`capabilities::Harness::refresh_tool_omissions`]).
     disabled_tools: HashSet<String>,
+
+    /// Tools explicitly disabled by the user via the Internal Tools screen —
+    /// the source of truth [`Self::disabled_tools`] is derived from, kept
+    /// separately so a capability recompute (fallback switch, learned
+    /// verdict) never discards the user's choices.
+    user_disabled_tools: HashSet<String>,
 
     /// How many consecutive tool calls have failed so far.
     /// Reset to 0 on the first successful dispatch.
@@ -221,6 +230,15 @@ pub struct Harness {
 
     /// Raw JSON of the last failed tool call attempt, for correction feedback.
     last_failed_raw: String,
+
+    /// The TYPED connector error of the last failed stream attempt, when the
+    /// failure came from the connector itself. `stream_chat_with_messages`
+    /// reports errors as strings (the loop compares marker constants, and the
+    /// TUI renders plain text), which would erase the classification the
+    /// resilience policy needs — `is_retryable_error` and
+    /// `is_image_input_unsupported` only exist on the typed enum. Cleared at
+    /// every stream start and taken by the loop's error handling.
+    last_connector_error: Option<aiface::connector::ConnectorError>,
 
     /// `finish_reason` of the most recently completed stream (e.g. `"stop"`,
     /// `"length"`). `"length"` means the provider cut the response at
@@ -396,6 +414,18 @@ pub struct Harness {
     /// the same discard-then-restart flow the SDK's mid-stream retry emits.
     #[cfg(test)]
     pub(crate) mock_stream_resets: VecDeque<bool>,
+    /// Test-only queue of TYPED connector errors, consumed one per mock
+    /// stream BEFORE the scripted string response: lets a test drive the real
+    /// classification (`is_image_input_unsupported`, `is_retryable_error`)
+    /// and recovery policies without a provider.
+    #[cfg(test)]
+    mock_connector_error_queue: VecDeque<aiface::connector::ConnectorError>,
+    /// Test-only backoff override for the loop-level retry of transient
+    /// connector failures. The production pacing is aiface's own
+    /// `retry_delay`/`jittered` (5s → 10s); a test sets this to zero so the
+    /// retry contract is exercised without sleeping.
+    #[cfg(test)]
+    loop_retry_delay: Option<std::time::Duration>,
     #[cfg(test)]
     pub(crate) test_tools: Vec<ToolSchema>,
 }

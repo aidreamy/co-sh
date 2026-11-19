@@ -544,6 +544,13 @@ pub struct ContextManager {
     /// [`Self::build_messages`]. Cleared per run; a restored session starts
     /// empty.
     pub user_images: Vec<aiface::connector::ImageBlock>,
+    /// Whether the ACTIVE model accepts image input. `true` by default
+    /// (capability unknown or present); the harness clears it only when the
+    /// model is PROVEN text-only (catalog statement or a provider's typed
+    /// rejection), so a resumed session whose history still carries
+    /// screenshot PNGs never re-sends them to a model that cannot read them.
+    /// Transport-only, like `user_images`: flipping it never edits history.
+    vision_enabled: bool,
 }
 
 /// Build a plain assistant text message (no tool calls).
@@ -653,6 +660,7 @@ impl ContextManager {
             manual_compaction: false,
             last_tool_set: None,
             user_images: Vec::new(),
+            vision_enabled: true,
         }
     }
 
@@ -809,6 +817,52 @@ impl ContextManager {
     /// persisted or compacted.
     pub fn set_user_images(&mut self, images: Vec<aiface::connector::ImageBlock>) {
         self.user_images = images;
+    }
+
+    /// Tell the manager whether the active model can read images.
+    ///
+    /// Governs ONLY the transport projection: with `false`, [`Self::build_messages`]
+    /// renders tool results without their inline PNGs (keeping the text and
+    /// stating that the picture was omitted) and attaches no prompt images.
+    /// History stays untouched, so switching back to a vision model restores
+    /// the images without a re-capture.
+    pub fn set_vision_enabled(&mut self, enabled: bool) {
+        self.vision_enabled = enabled;
+    }
+
+    /// How many image blocks the model-facing view currently carries
+    /// (test-only: the production loop never needs to count them).
+    #[cfg(test)]
+    pub fn image_count(&self) -> usize {
+        self.user_images.len()
+            + self
+                .items
+                .iter()
+                .map(|item| match item {
+                    ContextItem::ToolResult { images, .. } => images.len(),
+                    _ => 0,
+                })
+                .sum::<usize>()
+    }
+
+    /// Drop every image from the CURRENT model-facing view: the prompt images
+    /// of this turn and the inline PNGs of every tool result.
+    ///
+    /// Used when the provider rejected a request with a typed image-unsupported
+    /// error and the loop is about to re-send it: retrying the same request is
+    /// pointless while the conversation still carries images, and the captured
+    /// text payload of a screenshot (geometry, legend, saved path) survives.
+    /// Returns how many image blocks were dropped.
+    pub fn drop_images(&mut self) -> usize {
+        let mut dropped = self.user_images.len();
+        self.user_images.clear();
+        for item in &mut self.items {
+            if let ContextItem::ToolResult { images, .. } = item {
+                dropped += images.len();
+                images.clear();
+            }
+        }
+        dropped
     }
 
     /// Convenience: add a user prompt and attach images to it.
@@ -1957,6 +2011,20 @@ impl ContextManager {
                         messages.push(tool_result_message(call_id, &masked_tool_result(*id)));
                     } else if images.is_empty() {
                         messages.push(tool_result_message(call_id, content));
+                    } else if !self.vision_enabled {
+                        // Text-only model: its own capability gate omitted the
+                        // capture tool, but history can still hold an earlier
+                        // screenshot (a resumed session, a fallback switch).
+                        // Sending the PNG would be rejected for the WHOLE
+                        // request, so the result degrades to its text payload
+                        // plus an explicit note that the picture was withheld.
+                        messages.push(tool_result_message(
+                            call_id,
+                            &format!(
+                                "{content}\n[image omitted: the active model does \
+                                 not accept image input]"
+                            ),
+                        ));
                     } else {
                         // Multimodal channel: a screenshot result carries its
                         // PNG inline (base64 ImageBlocks) next to the text
@@ -2055,7 +2123,8 @@ impl ContextManager {
         }
         // Attach any transport-only images of the current user turn to the
         // trailing user message (the model-facing home of a prompt image).
-        if !self.user_images.is_empty()
+        if self.vision_enabled
+            && !self.user_images.is_empty()
             && let Some(last) = messages.last_mut()
             && last.role == "user"
         {
