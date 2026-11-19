@@ -644,7 +644,9 @@ pub enum DialogType {
         base_url: String,
         /// Family as the user typed it (`openai-compatible` today).
         family: String,
-        /// Active field: 0 name · 1 base URL · 2 family.
+        /// Optional model name to leave selected for use.
+        model: String,
+        /// Active field: 0 name · 1 base URL · 2 family · 3 model.
         field: usize,
         cursor_pos: usize,
         /// Mouse drag selection on the active field; same kernel as the
@@ -907,6 +909,7 @@ impl std::fmt::Debug for DialogType {
                 name,
                 base_url,
                 family,
+                model,
                 field,
                 cursor_pos,
                 selection,
@@ -916,6 +919,7 @@ impl std::fmt::Debug for DialogType {
                 .field("name", name)
                 .field("base_url", base_url)
                 .field("family", family)
+                .field("model", model)
                 .field("field", field)
                 .field("cursor_pos", cursor_pos)
                 .field("selection", selection)
@@ -1711,12 +1715,13 @@ impl DialogState {
                 name,
                 base_url,
                 family,
+                model,
                 field,
                 cursor_pos,
                 selection,
                 ..
             } => {
-                let values = [name.as_str(), base_url.as_str(), family.as_str()];
+                let values = [name.as_str(), base_url.as_str(), family.as_str(), model.as_str()];
                 focus_form_field(
                     area,
                     x,
@@ -2562,6 +2567,7 @@ impl DialogState {
                 name,
                 base_url,
                 family,
+                model,
                 field,
                 cursor_pos,
                 selection,
@@ -2571,7 +2577,7 @@ impl DialogState {
                 } else {
                     "Add provider"
                 };
-                let values = [name.as_str(), base_url.as_str(), family.as_str()];
+                let values = [name.as_str(), base_url.as_str(), family.as_str(), model.as_str()];
                 render_form_panel(
                     buf,
                     area,
@@ -3940,7 +3946,8 @@ fn provider_field_label(field: usize) -> &'static str {
     match field {
         0 => "Name",
         1 => "Base URL",
-        _ => "Family",
+        2 => "Family",
+        _ => "Model",
     }
 }
 
@@ -3948,7 +3955,8 @@ fn provider_field_hint(field: usize) -> &'static str {
     match field {
         0 => "single word · the id the model picker and routing use",
         1 => "e.g. https://api.company.com/v1",
-        _ => "openai-compatible (only family supported today)",
+        2 => "openai-compatible (only family supported today)",
+        _ => "optional · model name to leave selected for use",
     }
 }
 
@@ -3958,7 +3966,8 @@ fn provider_field_placeholder(field: usize) -> &'static str {
     match field {
         0 => "e.g. company-proxy",
         1 => "e.g. https://litellm.corp:4000/v1",
-        _ => "openai-compatible",
+        2 => "openai-compatible",
+        _ => "e.g. gpt-4o",
     }
 }
 
@@ -4109,7 +4118,7 @@ pub(crate) fn dialog_panel_demand(dialog: Option<&DialogType>) -> usize {
             provider_field_label,
             provider_field_hint,
             provider_field_placeholder,
-            3,
+            4,
         ),
         _ => 0,
     }

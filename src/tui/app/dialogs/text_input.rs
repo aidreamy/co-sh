@@ -292,11 +292,12 @@ impl App {
                 name,
                 base_url,
                 family,
+                model,
                 field,
                 cursor_pos,
                 selection,
                 ..
-            } => match [name, base_url, family].into_iter().nth(*field) {
+            } => match [name, base_url, family, model].into_iter().nth(*field) {
                 Some(line) => (line, cursor_pos, selection, *field),
                 None => return,
             },
@@ -369,10 +370,11 @@ impl App {
                     name,
                     base_url,
                     family,
+                    model,
                     field,
                     selection,
                     ..
-                } => [name, base_url, family].get(*field).copied().map(|line| {
+                } => [name, base_url, family, model].get(*field).copied().map(|line| {
                     selection
                         .as_ref()
                         .and_then(|sel| sel.slice_of(*field, line))
@@ -461,9 +463,10 @@ impl App {
                     name,
                     base_url,
                     family,
+                    model,
                     ..
                 } => {
-                    let values = [name.as_str(), base_url.as_str(), family.as_str()];
+                    let values = [name.as_str(), base_url.as_str(), family.as_str(), model.as_str()];
                     let demand = dialog_panel_demand(Some(&d.dialog_type));
                     form_panel_hit_field(area, demand, &values, x, y)
                         .and_then(|(f, ci)| ci.map(|c| (f, byte_at_char(values[f], c))))
@@ -586,10 +589,11 @@ impl App {
                     name,
                     base_url,
                     family,
+                    model,
                     selection: Some(sel),
                     ..
                 } => {
-                    let values = [name.as_str(), base_url.as_str(), family.as_str()];
+                    let values = [name.as_str(), base_url.as_str(), family.as_str(), model.as_str()];
                     values.get(sel.field()).map(|_| {
                         (
                             sel.field(),
@@ -696,10 +700,11 @@ impl App {
                     name,
                     base_url,
                     family,
+                    model,
                     field,
                     selection,
                     ..
-                } => [name, base_url, family]
+                } => [name, base_url, family, model]
                     .get(*field)
                     .copied()
                     .and_then(|line| {
@@ -827,12 +832,13 @@ impl App {
                             name,
                             base_url,
                             family,
+                            model,
                             field,
                             cursor_pos,
                             selection,
                             ..
                         } => drive_form_edit(
-                            [name, base_url, family],
+                            [name, base_url, family, model],
                             field,
                             cursor_pos,
                             selection,
@@ -879,11 +885,13 @@ impl App {
             name,
             base_url,
             family,
+            model,
             ..
         } = &d.dialog_type
         else {
             return false;
         };
+        let model = model.clone();
         let entry = match crate::routes::settings::validate_custom_provider(
             name,
             base_url,
@@ -922,6 +930,7 @@ impl App {
             self.toast_form_error("Provider not saved", error);
             return false;
         }
+        let saved_provider_name = entry.name.clone();
         // Published (the call above already swapped the process registry).
         match editing {
             Some(i) if *i < self.setup.custom_providers.len() => {
@@ -935,7 +944,16 @@ impl App {
                 self.setup.set_custom_providers(providers);
             }
         }
-        self.setup.save();
+        if !model.trim().is_empty() {
+            let provider = saved_provider_name.clone();
+            let model = model.trim().to_string();
+            self.set_llm_model(model.clone(), provider.clone(), None);
+            self.setup.set_model_selection(&provider, &model, None);
+            self.record_model_on_current_session();
+            if let Some(session) = self.state.current_session() {
+                self.session_store.save_session_async(session);
+            }
+        }
         self.toast_form_success(
             "Provider saved",
             "The endpoint is offered in the model picker on the next agent loop.".to_string(),
@@ -946,7 +964,7 @@ impl App {
     /// Open the custom provider registration box: blank for creation,
     /// prefilled with the current values when editing the entry at `index`.
     pub(in crate::app) fn open_provider_form(&mut self, index: Option<usize>) {
-        let (editing, name, base_url, family) = index
+        let (editing, name, base_url, family, model) = index
             .and_then(|i| self.setup.custom_providers.get(i))
             .map_or(
                 (
@@ -956,13 +974,20 @@ impl App {
                     cosh::setup::CustomProviderFamily::default()
                         .label()
                         .to_string(),
+                    String::new(),
                 ),
                 |entry| {
+                    let model = if self.setup.model.provider == entry.name {
+                        self.setup.model.model.clone()
+                    } else {
+                        String::new()
+                    };
                     (
                         Some(index.expect("entry exists implies index")),
                         entry.name.clone(),
                         entry.base_url.clone(),
                         entry.family.label().to_string(),
+                        model,
                     )
                 },
             );
@@ -971,6 +996,7 @@ impl App {
             name,
             base_url,
             family,
+            model,
             field: 0,
             cursor_pos: 0,
             selection: None,
