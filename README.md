@@ -1,15 +1,15 @@
-# co-sh
+# Morpheus
 
 **English** | [Português](./docs/readme/README.pt-BR.md) | [Español](./docs/readme/README.es.md) | [Русский](./docs/readme/README.ru.md) | [中文](./docs/readme/README.zh-CN.md) | [日本語](./docs/readme/README.ja.md)
 
 > [!WARNING]
 > **WhatsApp is under development.** The WhatsApp feature (`morpheus-whatsapp`) is still experimental and is **not recommended for use** yet.
 
-Cosh is a general-purpose coding agent for the terminal, with software engineering tools and *computer tools* that let it interact with graphical applications.
+Morpheus is a general-purpose coding agent for the terminal, with software engineering tools and *computer tools* that let it interact with graphical applications.
 
-## Why co-sh?
+## Why Morpheus?
 
-co-sh isn't meant to replace established coding agents — it's designed to work alongside them as an orchestration layer. Here's why you might want to use it:
+Morpheus isn't meant to replace established coding agents — it's designed to work alongside them as an orchestration layer. Here's why you might want to use it:
 
 - **Multi-agent collaboration** — Run different state-of-the-art agents (Claude, Gemini, Codex, Cline, etc.) directly within the same TUI, creating a shared workspace where they can communicate and collaborate through a single interface.
 - **Experimentation-friendly** — Perfect for developers who like trying different agents and combining their strengths rather than committing to a single ecosystem.
@@ -19,9 +19,9 @@ co-sh isn't meant to replace established coding agents — it's designed to work
 
 ## How it differs from other TUI orchestrators
 
-co-sh stands out from other terminal-based agent orchestrators in several key ways:
+Morpheus stands out from other terminal-based agent orchestrators in several key ways:
 
-| Feature | co-sh | Other TUI Orchestrators |
+| Feature | Morpheus | Other TUI Orchestrators |
 |---------|-------|------------------------|
 | **Multi-agent split panes** | Run multiple external agents simultaneously in split panes, each with its own session, model, and optional git worktree | Typically single-agent focused or require switching contexts |
 | **Computer tools via accessibility tree** | Reads and operates graphical interfaces through structured representation, falling back to screenshots only when needed | Usually rely on screenshots or lack GUI interaction entirely |

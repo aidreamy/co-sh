@@ -42,7 +42,7 @@ async fn fetch_url(url: &str) -> Result<String, String> {
 
     let try_local = || async {
         let client = reqwest::Client::builder()
-            .user_agent("Cosh/0.1")
+            .user_agent("Morpheus/0.1")
             .build()
             .map_err(|e| e.to_string())?;
         let html = client

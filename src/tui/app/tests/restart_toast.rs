@@ -34,7 +34,7 @@ async fn telemetry_toggle_fires_restart_toast() {
         .as_ref()
         .expect("a restart reminder toast must be shown");
     assert_eq!(
-        toast.message, "Restart cosh for this to take effect.",
+        toast.message, "Restart morpheus for this to take effect.",
         "the generic restart message must be shown verbatim"
     );
     assert_eq!(toast.duration_ms, 10_000, "the toast lasts 10 seconds");

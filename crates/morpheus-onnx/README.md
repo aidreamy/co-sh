@@ -3,9 +3,9 @@
 [![Crates.io](https://img.shields.io/crates/v/morpheus-onnx.svg)](https://crates.io/crates/morpheus-onnx)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/aidreamy/co-sh/blob/main/LICENSE)
 
-ONNX decision-engine crate for [cosh](https://github.com/aidreamy/co-sh) — a coding agent for the terminal. A Rust port of the laya "System 1" decision engine core.
+ONNX decision-engine crate for [Morpheus](https://github.com/aidreamy/co-sh) — a coding agent for the terminal. A Rust port of the laya "System 1" decision engine core.
 
-`morpheus-onnx` runs small ONNX decision models on CPU (`ort` + HuggingFace `tokenizers` — no torch, no CUDA) and answers structured questions (`choice` / `score` / `noul`) against a JSON state, with calibrated confidence numbers. In the cosh workspace it is gated behind the `onnx` feature so the main binary never links ONNX Runtime unless you opt in.
+`morpheus-onnx` runs small ONNX decision models on CPU (`ort` + HuggingFace `tokenizers` — no torch, no CUDA) and answers structured questions (`choice` / `score` / `noul`) against a JSON state, with calibrated confidence numbers. In the Morpheus workspace it is gated behind the `onnx` feature so the main binary never links ONNX Runtime unless you opt in.
 
 ## Highlights
 

@@ -1,15 +1,15 @@
-# co-sh
+# Morpheus
 
 [English](../../README.md) | **Português** | [Español](./README.es.md) | [Русский](./README.ru.md) | [中文](./README.zh-CN.md) | [日本語](./README.ja.md)
 
 > [!WARNING]
 > **O WhatsApp está em desenvolvimento.** A funcionalidade de WhatsApp (`morpheus-whatsapp`) ainda é experimental e **não é recomendada para uso**.
 
-Cosh é um coding agent de propósito geral para o terminal, com ferramentas de engenharia de software e *computer tools* que permitem interagir com aplicações gráficas.
+Morpheus é um coding agent de propósito geral para o terminal, com ferramentas de engenharia de software e *computer tools* que permitem interagir com aplicações gráficas.
 
-## Por que co-sh?
+## Por que Morpheus?
 
-co-sh não pretende substituir os coding agents consolidados — foi projetado para trabalhar ao lado deles como uma camada de orquestração. Veja por que você pode querer usá-lo:
+Morpheus não pretende substituir os coding agents consolidados — foi projetado para trabalhar ao lado deles como uma camada de orquestração. Veja por que você pode querer usá-lo:
 
 - **Colaboração multi-agente** — Rode diferentes agentes de ponta (Claude, Gemini, Codex, Cline, etc.) diretamente na mesma TUI, criando um workspace compartilhado onde eles podem se comunicar e colaborar por uma única interface.
 - **Amigável à experimentação** — Perfeito para desenvolvedores que gostam de testar agentes diferentes e combinar seus pontos fortes em vez de se prender a um único ecossistema.
@@ -19,9 +19,9 @@ co-sh não pretende substituir os coding agents consolidados — foi projetado p
 
 ## Como se diferencia de outros orquestradores TUI
 
-O co-sh se destaca de outros orquestradores de agentes baseados em terminal em vários pontos-chave:
+O Morpheus se destaca de outros orquestradores de agentes baseados em terminal em vários pontos-chave:
 
-| Recurso | co-sh | Outros orquestradores TUI |
+| Recurso | Morpheus | Outros orquestradores TUI |
 |---------|-------|---------------------------|
 | **Painéis divididos multi-agente** | Rode vários agentes externos ao mesmo tempo em painéis divididos, cada um com sua própria sessão, modelo e git worktree opcional | Geralmente focados em um único agente ou exigem alternar de contexto |
 | **Computer tools via accessibility tree** | Lê e opera interfaces gráficas por meio de uma representação estruturada, recorrendo a screenshots só quando necessário | Costumam depender de screenshots ou não têm interação com GUI |
@@ -35,7 +35,7 @@ Destaques:
 - **Modo multi-agente (`/agents`)** — rode agentes externos (Gemini, Claude, Codex, Cline, …) junto com o agente principal em panes divididas, todos alcançáveis pelo mesmo prompt. Cada agente mantém sua própria sessão, modelo e git worktree opcional, e o agente principal os coordena — despachando tarefas e coletando relatórios como um time.
 - **Computer tools via accessibility tree** — o agente lê e opera interfaces gráficas por uma representação estruturada e compacta, e só recorre a screenshots como fallback. Menos imagens processadas, menos tokens consumidos.
 - **TUI construída do zero em Rust** (Ratatui), inspirada na UX do OpenCode. Configuração de providers, modelos e modos de operação direto na interface — quase zero configuração manual.
-- **Crates independentes** — as ferramentas de desenvolvimento vivem em crates desacoplados da aplicação, reutilizáveis como bibliotecas fora do Cosh.
+- **Crates independentes** — as ferramentas de desenvolvimento vivem em crates desacoplados da aplicação, reutilizáveis como bibliotecas fora do Morpheus.
 
 ## Instalação
 
@@ -57,7 +57,7 @@ irm https://raw.githubusercontent.com/aidreamy/co-sh/main/download.ps1 | iex
 
 Variáveis opcionais: `COSH_BIN_DIR` (diretório de instalação), `COSH_VERSION` (versão específica) e `COSH_VARIANT` (`slim`, padrão, ou `slim-embed`, com RAG local via fastembed). No PowerShell, defina-as como `$env:COSH_VERSION = "v0.1.0"` antes de executar o comando.
 
-Depois de instalar, rode `cosh` no terminal. Se o diretório de instalação não estiver no seu `PATH`, o próprio script mostra o comando para adicioná-lo. Qualquer dificuldade na instalação, abra uma issue — ficarei feliz em ajudar!
+Depois de instalar, rode `morpheus` no terminal. Se o diretório de instalação não estiver no seu `PATH`, o próprio script mostra o comando para adicioná-lo. Qualquer dificuldade na instalação, abra uma issue — ficarei feliz em ajudar!
 
 ## Crates
 

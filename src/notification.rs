@@ -7,21 +7,21 @@
 //! If the terminal IS focused, no notification fires (the user is already
 //! looking at the terminal).
 //!
-//! The cosh logo icon is embedded in the binary at compile time and extracted
+//! The app logo icon is embedded in the binary at compile time and extracted
 //! to a cache directory on first use, so the notification always shows the
-//! cosh branding regardless of platform.
+//! consistent branding regardless of platform.
 
 use notify_rust::Notification;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
-/// Cached path to the extracted cosh icon PNG.
+/// Cached path to the extracted app icon PNG.
 static ICON_PATH: OnceLock<PathBuf> = OnceLock::new();
 
-/// Raw PNG bytes of the cosh logo icon (128×128), embedded at compile time.
+/// Raw PNG bytes of the app logo icon (128×128), embedded at compile time.
 const ICON_BYTES: &[u8] = include_bytes!("../assets/cosh-icon.png");
 
-/// Return the path to the cosh icon, extracting it from the binary on first
+/// Return the path to the app icon, extracting it from the binary on first
 /// call.  The icon is written to an XDG-compliant cache directory
 /// (`~/.cache/cosh/cosh-icon.png`) so it persists across runs.
 fn icon_path() -> &'static PathBuf {
@@ -65,10 +65,10 @@ pub fn notify(terminal_focused: bool, title: &str, message: &str) {
     let mut notification = Notification::new();
     notification.summary(title);
     notification.body(message);
-    notification.appname("Cosh");
+    notification.appname("Morpheus");
     notification.timeout(notify_rust::Timeout::Milliseconds(8000));
 
-    // Attach the cosh logo icon when available.  On Linux (freedesktop) this
+    // Attach the app logo icon when available.  On Linux (freedesktop) this
     // renders the PNG directly in the notification bubble; on macOS/Windows
     // the parameter is largely ignored (those platforms use the app bundle /
     // pinned-tile icon instead).
@@ -85,14 +85,14 @@ pub fn notify_loop_ended(terminal_focused: bool, title: &str, message: &str) {
 
 /// Convenience wrapper: send a "Done" notification.
 pub fn notify_done(terminal_focused: bool) {
-    notify_loop_ended(terminal_focused, "Cosh Ready", "The agent loop finished.");
+    notify_loop_ended(terminal_focused, "Morpheus Ready", "The agent loop finished.");
 }
 
 /// Convenience wrapper: send a "Stopped" notification.
 pub fn notify_stopped(terminal_focused: bool) {
     notify_loop_ended(
         terminal_focused,
-        "Cosh Interrupted",
+        "Morpheus Interrupted",
         "The agent loop was stopped.",
     );
 }
@@ -118,7 +118,7 @@ fn truncate_description(description: &str) -> String {
 pub fn notify_permission(terminal_focused: bool, tool: &str, description: &str) {
     notify(
         terminal_focused,
-        "Cosh Needs Approval",
+        "Morpheus Needs Approval",
         &format!(
             "Permission requested for `{tool}`.\n{}",
             truncate_description(description)
@@ -131,7 +131,7 @@ pub fn notify_permission(terminal_focused: bool, tool: &str, description: &str) 
 pub fn notify_question(terminal_focused: bool) {
     notify(
         terminal_focused,
-        "Cosh Question",
+        "Morpheus Question",
         "The agent is waiting for your answer.",
     );
 }

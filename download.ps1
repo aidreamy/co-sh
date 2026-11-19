@@ -1,6 +1,6 @@
-# Cosh CLI Install Script for Windows PowerShell
+# Morpheus CLI Install Script for Windows PowerShell
 #
-# Downloads the latest Cosh CLI binary from GitHub releases and installs it.
+# Downloads the latest Morpheus CLI binary from GitHub releases and installs it.
 #
 # Supported OS: Windows
 # Supported Architectures: x86_64 (x64)

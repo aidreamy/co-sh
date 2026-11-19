@@ -1,12 +1,12 @@
 # Setup reference
 
-This is the complete reference for Cosh's `setup.json`. It is intentionally
+This is the complete reference for Morpheus's `setup.json`. It is intentionally
 short: use the TUI first, and edit the file directly only when you need a
 precise or advanced configuration.
 
 ## Start in the TUI
 
-The distributed **slim** Cosh starts directly in a session. It has no Home
+The distributed **slim** Morpheus starts directly in a session. It has no Home
 screen. Type these commands in the chat input and press Enter:
 
 | Command | Opens |
@@ -24,8 +24,8 @@ keys, press Enter to edit, and Esc to go back.
 ## Where the file lives
 
 On Unix, the default path is `~/.config/cosh/setup.json`. On other platforms,
-Cosh uses the operating system's application configuration directory. Set
-`COSH_CONFIG_DIR` to use another directory; Cosh then reads and writes
+Morpheus uses the operating system's application configuration directory. Set
+`COSH_CONFIG_DIR` to use another directory; Morpheus then reads and writes
 `<that-directory>/setup.json`.
 
 The file is JSON. Missing fields use their defaults. A missing or invalid file
@@ -50,7 +50,7 @@ sessions and caches; it does not change the location of `setup.json`.
 | `mcp` | `/settings` → Integrations | External MCP servers |
 | `editor` | `/settings` → Environment | Editor opened by the file explorer |
 | `telemetry` | `/settings` → General | Anonymous usage telemetry |
-| `whatsapp` | `/settings` → WhatsApp | Who may use the agent over `cosh whatsapp` |
+| `whatsapp` | `/settings` → WhatsApp | Who may use the agent over `morpheus whatsapp` |
 
 ## `appearance`
 
@@ -68,12 +68,12 @@ boolean fields.
 
 | Field | Default | What it controls |
 |---|---:|---|
-| `tool_call_mode` | `"native"` | `native` sends structured tool calls; `inline` sends JSON text that Cosh parses. Change with `/toolcall`. |
+| `tool_call_mode` | `"native"` | `native` sends structured tool calls; `inline` sends JSON text that Morpheus parses. Change with `/toolcall`. |
 | `disabled` | `[]` | Tool names hidden from the model. Manage them with `/tools` → Internal Tools. |
 
 ## `routing`
 
-All chains are ordered: Cosh tries the first entry, then the next one.
+All chains are ordered: Morpheus tries the first entry, then the next one.
 
 | Field | Default | What it controls |
 |---|---:|---|
@@ -155,7 +155,7 @@ Example:
 }
 ```
 
-API keys for regular providers are not `setup.json` settings: Cosh obtains
+API keys for regular providers are not `setup.json` settings: Morpheus obtains
 them from the OS keyring and/or provider-specific environment variables.
 
 ## `model` and `mode`
@@ -177,7 +177,7 @@ shortcut (Tab); the selected mode is saved automatically.
 
 Configure these in `/settings` → Models & caching. The input accepts blank,
 minutes, `45m`, `1h`, or `1h30m`, up to 24 hours. The stored values are wishes
-in minutes; Cosh maps them to the API values that each provider supports.
+in minutes; Morpheus maps them to the API values that each provider supports.
 
 | Field | Default | What it controls |
 |---|---:|---|
@@ -229,7 +229,7 @@ is file-only:
 ```
 
 `COSH_ONNX_HUB_REPO` overrides `model_decision.hub.repo`. The legacy top-level
-name `checkup` is still accepted when reading, but Cosh writes
+name `checkup` is still accepted when reading, but Morpheus writes
 `model_decision`.
 
 ## `lsp`, `mcp`, `editor`, and `telemetry`
@@ -248,7 +248,7 @@ enabled by default; disabling it skips it at startup.
 | Field | What it controls |
 |---|---|
 | `name` | Unique name shown in the TUI and used for runtime state. |
-| `enabled` | Whether Cosh connects to the server at startup. |
+| `enabled` | Whether Morpheus connects to the server at startup. |
 | `transport.type` | `stdio` for a local process or `http` for a remote server. |
 | `stdio.command`, `args` | Executable and arguments for the local process. |
 | `stdio.env`, `cwd` | Environment variables and optional working directory for that process. |
@@ -297,7 +297,7 @@ server's `transport.env`.
 
 ## `whatsapp`
 
-Access control for `cosh whatsapp`. The default is the most restrictive
+Access control for `morpheus whatsapp`. The default is the most restrictive
 policy: only the account's own **self-chat** ("Message yourself") reaches the
 agent. No contact and no group is answered until it is listed here.
 
@@ -347,6 +347,6 @@ These are convenience inputs, not additional JSON fields:
 | `COSH_TELEMETRY` | Runtime telemetry override. |
 | `COSH_ONNX_HUB_REPO` | ONNX mirror override in ONNX builds. |
 
-For normal use, configure through the TUI and let Cosh write the file. Edit
+For normal use, configure through the TUI and let Morpheus write the file. Edit
 `setup.json` directly for `skills` filters, custom decision checkpoints,
 advanced routing, or automation that must be reproducible.

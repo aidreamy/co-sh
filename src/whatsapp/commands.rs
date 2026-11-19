@@ -160,7 +160,7 @@ impl IncomingCommand {
 /// The `/help` body.
 #[must_use]
 pub fn help_text() -> String {
-    let mut text = String::from("*cosh on WhatsApp*\n\nCommands (case-insensitive):\n");
+    let mut text = String::from("*Morpheus on WhatsApp*\n\nCommands (case-insensitive):\n");
     for command in COMMANDS {
         text.push_str(&format!("• {} — {}\n", command.usage, command.summary));
     }

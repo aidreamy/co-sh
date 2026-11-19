@@ -72,7 +72,7 @@ async fn debug_rs_trafilatura_pokemon() {
 
     // Download raw content
     let client = reqwest::Client::builder()
-        .user_agent("Cosh/0.1")
+        .user_agent("Morpheus/0.1")
         .build()
         .unwrap();
     let raw = client.get(url).send().await.unwrap();
@@ -133,7 +133,7 @@ async fn debug_rs_trafilatura_html() {
     println!("URL: {url}");
 
     let client = reqwest::Client::builder()
-        .user_agent("Cosh/0.1")
+        .user_agent("Morpheus/0.1")
         .build()
         .unwrap();
     let raw = client.get(url).send().await.unwrap();

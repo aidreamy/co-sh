@@ -1025,7 +1025,7 @@ impl App {
             use crate::ui::toast::{ToastOptions, ToastVariant};
             self.toast_state.show(ToastOptions {
                 title: Some("Switch session".into()),
-                message: "This session is already open in another cosh process.".into(),
+                message: "This session is already open in another morpheus process.".into(),
                 variant: ToastVariant::Warning,
                 duration_ms: 4000,
             });

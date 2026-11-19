@@ -443,7 +443,7 @@ async fn dialog_mid_burst_lands_paste_instead_of_dropping() {
     // A modal opens mid-burst (exactly what Ctrl+C does: show the quit
     // confirm). The very next key must NOT discard the pending paste.
     app.dialog.show(crate::ui::dialogs::DialogType::Confirm {
-        message: "Quit cosh?".into(),
+        message: "Quit morpheus?".into(),
     });
     app.process_key_event(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::NONE))
         .unwrap();
@@ -598,7 +598,7 @@ async fn modal_sovereignty_disarms_the_coalescer() {
         app.process_key_event(evt).unwrap();
     }
     app.dialog.show(crate::ui::dialogs::DialogType::Confirm {
-        message: "Quit cosh?".into(),
+        message: "Quit morpheus?".into(),
     });
     // Text key while the modal is up: flushes, then falls through to the
     // sovereign gate — which must swallow it (prompt must NOT receive 'x').

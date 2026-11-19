@@ -1,6 +1,6 @@
 [package]
 categories = ["development-tools"]
-description = "Memory/recall crate for cosh - coding agent for the terminal"
+description = "Memory/recall crate for Morpheus - coding agent for the terminal"
 keywords = ["ai", "coding", "terminal", "agent"]
 license = "Apache-2.0"
 readme = "README.md"

@@ -3,7 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/morpheus-tui.svg)](https://crates.io/crates/morpheus-tui)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/aidreamy/co-sh/blob/main/LICENSE)
 
-TUI crate for [cosh](https://github.com/aidreamy/co-sh) — a coding agent for the terminal.
+TUI crate for [Morpheus](https://github.com/aidreamy/co-sh) — a coding agent for the terminal.
 
 `morpheus-tui` provides two layers for building rich terminal interfaces with [Ratatui](https://crates.io/crates/ratatui): `core` — a widget/renderable library (styled text, markdown, diffs, inputs, layout, colors) that renders into a `ratatui::buffer::Buffer` — and `solid` — a SolidJS-inspired reactive layer with a component catalogue, slots and a reconciler. The crate performs no terminal I/O: your app owns the event loop, and every widget implements a single `Renderable` trait that paints into a buffer.
 

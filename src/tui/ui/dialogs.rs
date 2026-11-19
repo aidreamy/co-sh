@@ -123,7 +123,7 @@ const SHORTCUTS: &[ShortcutLine] = &[
     ShortcutLine::Key("Ctrl+P", "Toggle right panel"),
     ShortcutLine::Key(
         "Ctrl+C",
-        "Copy selection / clear prompt (focused) / Quit cosh?",
+        "Copy selection / clear prompt (focused) / Quit morpheus?",
     ),
     ShortcutLine::Key("Ctrl+T", "Toggle thinking (show/hide reasoning)"),
     ShortcutLine::Key("Ctrl+D", "Toggle tool details (show/hide completed)"),

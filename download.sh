@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -eu
 
-# Cosh CLI Install Script
+# Morpheus CLI Install Script
 #
-# Downloads the latest Cosh CLI binary from GitHub releases and installs it.
+# Downloads the latest Morpheus CLI binary from GitHub releases and installs it.
 #
 # Supported OS: Linux, macOS (darwin), Windows (MSYS2/Git Bash/WSL)
 # Supported Architectures: x86_64 (x64), arm64/aarch64 (arm64)

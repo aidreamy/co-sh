@@ -77,7 +77,7 @@ fn draw_text(buf: &mut Buffer, text: &str, x: u16, y: u16, max_w: u16, style: St
 }
 
 /// Paint a whole row blank (keeping the given background style). The app
-/// draws its left-aligned "~$co-sh" header at the top row, and `render_background`
+/// draws its left-aligned "~$morpheus" header at the top row, and `render_background`
 /// only tints cells without clearing their glyph, so we must blank the title
 /// row or the logo would bleed through the panel.
 fn clear_row(buf: &mut Buffer, x: u16, y: u16, width: u16, style: Style) {

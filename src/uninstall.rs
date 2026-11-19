@@ -36,7 +36,7 @@ use crate::telemetry::schema::EventType;
 /// The single, direct uninstall question. Deliberately bare: no reason
 /// suggestions, no multiple choice — the user types freely or presses Enter.
 const REASON_PROMPT: &str = concat!(
-    "Before cosh is removed, would you tell us why you are uninstalling?\n",
+    "Before Morpheus is removed, would you tell us why you are uninstalling?\n",
     "(optional — press Enter to skip)\n> "
 );
 
@@ -144,13 +144,13 @@ fn report_dry_run(reason: Option<&str>) {
 
     // Profile directories.
     if let Some(dirs) = project_dirs() {
-        say("  - remove the cosh profile directories:");
+        say("  - remove the Morpheus profile directories:");
         for dir in [dirs.config_dir(), dirs.cache_dir(), dirs.data_dir()] {
             let state = if dir.exists() { "exists" } else { "absent " };
             say(format!("        [{state}] {}", dir.display()).as_str());
         }
     } else {
-        say("  - remove the cosh profile directories (location undeterminable)");
+        say("  - remove the Morpheus profile directories (location undeterminable)");
     }
 
     // Keyring credentials: READ-ONLY check (get_password), never delete.

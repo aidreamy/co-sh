@@ -138,7 +138,7 @@ pub fn is_update_available(current_version: &str, tag: &str) -> bool {
 pub async fn fetch_latest_tag() -> Option<LatestRelease> {
     let url = format!("https://api.github.com/repos/{REPO}/releases/latest");
     let client = reqwest::Client::builder()
-        .user_agent(concat!("cosh/", env!("CARGO_PKG_VERSION")))
+        .user_agent(concat!("morpheus/", env!("CARGO_PKG_VERSION")))
         .timeout(std::time::Duration::from_secs(10))
         .build()
         .ok()?;

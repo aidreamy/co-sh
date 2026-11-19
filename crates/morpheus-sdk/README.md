@@ -3,9 +3,9 @@
 [![Crates.io](https://img.shields.io/crates/v/morpheus-sdk.svg)](https://crates.io/crates/morpheus-sdk)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/aidreamy/co-sh/blob/main/LICENSE)
 
-SDK crate for [cosh](https://github.com/aidreamy/co-sh) — a coding agent for the terminal.
+SDK crate for [Morpheus](https://github.com/aidreamy/co-sh) — a coding agent for the terminal.
 
-`morpheus-sdk` consolidates the building blocks of a coding agent into a single library: a unified LLM provider client, tolerant tool-call extraction, a content-hash file patch format with session rollback, an embedded LSP client stack, and AST/code intelligence over 60+ languages. It is a plain library with no dependency on the cosh app — you can build your own agent on it alone.
+`morpheus-sdk` consolidates the building blocks of a coding agent into a single library: a unified LLM provider client, tolerant tool-call extraction, a content-hash file patch format with session rollback, an embedded LSP client stack, and AST/code intelligence over 60+ languages. It is a plain library with no dependency on the Morpheus app — you can build your own agent on it alone.
 
 ## Highlights
 

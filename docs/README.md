@@ -1,12 +1,12 @@
 # Project documentation
 
-This directory documents Cosh's public crates and user-facing behavior.
+This directory documents Morpheus's public crates and user-facing behavior.
 
 ## Documentation map
 
 | Area | Directory | Scope |
 |---|---|---|
-| Entry points | [`usage`](usage/README.md) and [`readme`](readme/README.pt-BR.md) | Installing and using Cosh |
+| Entry points | [`usage`](usage/README.md) and [`readme`](readme/README.pt-BR.md) | Installing and using Morpheus |
 | SDK | [`sdk`](sdk) | Connectors, tool-call extraction, patching, rollback, search, parsing and LSP |
 | Tools | [`tools`](tools) | Filesystem, shell, search, web, desktop, skills, plans, questions and subagents |
 | TUI | [`tui`](tui) | Core renderables, layout, terminal utilities and the Solid layer |

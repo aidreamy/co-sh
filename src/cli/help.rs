@@ -65,7 +65,7 @@ const COMMAND_ROWS: &[Row] = &[
 ];
 
 const OVERVIEW: Page = Page {
-    title: "co-sh",
+    title: "morpheus",
     sections: &[
         Section {
             title: "Usage",
@@ -475,7 +475,7 @@ mod tests {
             "-v, --version",
             "-h, --help",
             "--check-keyring",
-            "co-sh",
+            "morpheus",
             VERSION,
         ] {
             assert!(page.contains(needle), "the overview is missing {needle:?}");
@@ -492,7 +492,7 @@ mod tests {
         }
         // Title + version on the first row, Usage on the second, and the two
         // Usage rows on the third and fourth, so no empty row is left over.
-        assert!(lines[1].contains("co-sh"));
+        assert!(lines[1].contains("morpheus"));
         assert!(lines[1].contains(&format!("v{VERSION}")));
         assert!(lines[2].contains("Usage"));
         assert!(lines[3].contains("morpheus [options]"));

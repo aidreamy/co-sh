@@ -1,6 +1,6 @@
 # Lifecycle Hooks
 
-Cosh lets you run custom shell commands **before** every tool call (PreToolUse) and **after** every successful tool call (PostToolUse). You can block dangerous operations, auto-approve safe ones, rewrite tool arguments, or inject extra context into tool results.
+Morpheus lets you run custom shell commands **before** every tool call (PreToolUse) and **after** every successful tool call (PostToolUse). You can block dangerous operations, auto-approve safe ones, rewrite tool arguments, or inject extra context into tool results.
 
 Hooks are configured in `~/.config/cosh/setup.json` under the `hooks` section.
 
@@ -44,7 +44,7 @@ PreToolUse hooks run **before** dispatching a tool call. They can block, allow, 
 
 ### How it works
 
-1. Before dispatching a tool call, Cosh finds all hooks whose `matcher` matches the tool name.
+1. Before dispatching a tool call, Morpheus finds all hooks whose `matcher` matches the tool name.
 2. Each matching hook runs via `sh -c "<command>"` in parallel.
 3. The tool name and input are available via:
    - **stdin**: JSON payload `{"event":"PreToolUse","tool_name":"bash_run","tool_input":{...}}`
@@ -83,7 +83,7 @@ PostToolUse hooks run **after** a successful tool execution and **before** the r
 
 ### How it works
 
-1. After a tool call succeeds, Cosh finds all PostToolUse hooks whose `matcher` matches the tool name.
+1. After a tool call succeeds, Morpheus finds all PostToolUse hooks whose `matcher` matches the tool name.
 2. Each matching hook runs via `sh -c "<command>"` in parallel.
 3. The tool name, input, and **output** are available via:
    - **stdin**: JSON payload `{"event":"PostToolUse","tool_name":"bash_run","tool_input":{...},"tool_output":"..."}`

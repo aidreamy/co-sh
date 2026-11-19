@@ -47,8 +47,8 @@ impl Config {
         }
     }
 
-    /// Default store location next to the cosh data directory:
-    /// `<cosh data dir>/whatsapp/device.db`.
+    /// Default store location next to the Morpheus data directory:
+    /// `<Morpheus data dir>/whatsapp/device.db`.
     ///
     /// Returns `None` when the platform cannot name a data directory (for
     /// example when `HOME` is unset), in which case callers should pass an
@@ -61,7 +61,7 @@ impl Config {
     /// The name contacts see for this companion ("push name").
     ///
     /// Defaults to the engine's own default when unset; set it to make the
-    /// agent recognizable (e.g. `"cosh"`).
+    /// agent recognizable (e.g. `"Morpheus"`).
     pub fn with_push_name(mut self, name: impl Into<String>) -> Self {
         self.push_name = Some(name.into());
         self
@@ -144,11 +144,11 @@ mod tests {
     #[test]
     fn builders_override_defaults() {
         let config = Config::new("device.db")
-            .with_push_name("cosh")
+            .with_push_name("Morpheus")
             .with_history_sync(true)
             .with_pairing_code("15551234567");
 
-        assert_eq!(config.push_name(), Some("cosh"));
+        assert_eq!(config.push_name(), Some("Morpheus"));
         assert!(!config.skips_history_sync());
         assert_eq!(
             config.pairing(),

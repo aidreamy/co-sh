@@ -1,13 +1,13 @@
 //! Who may use the agent over WhatsApp.
 //!
-//! `WhatsApp::is_prompt` (in the `cosh-whatsapp` crate) decides what is a
+//! `WhatsApp::is_prompt` (in the `morpheus-whatsapp` crate) decides what is a
 //! conversation at all — it drops echoes, broadcasts, channels and protocol
 //! chatter. This module decides the separate question: whether the account
 //! owner authorized that conversation to reach the agent. The policy is
 //! read from `setup.json` → `whatsapp` and fails closed: until a contact or
 //! group is listed there, only the owner's own self-chat is answered.
 
-use cosh_whatsapp::{ChatKind, IncomingMessage};
+use morpheus_whatsapp::{ChatKind, IncomingMessage};
 
 use crate::setup::WhatsAppConfig;
 
@@ -81,7 +81,7 @@ mod tests {
     use chrono::Utc;
 
     use super::*;
-    use cosh_whatsapp::{ChatId, MessageContent, Sender};
+    use morpheus_whatsapp::{ChatId, MessageContent, Sender};
 
     const OWNER: &str = "5511999999999";
 

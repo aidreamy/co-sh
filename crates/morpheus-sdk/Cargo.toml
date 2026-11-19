@@ -1,6 +1,6 @@
 [package]
 categories = ["command-line-utilities"]
-description = "SDK crate for cosh - coding agent for the terminal"
+description = "SDK crate for Morpheus - coding agent for the terminal"
 edition = "2024"
 keywords = ["terminal", "cli"]
 license = "Apache-2.0"
@@ -45,7 +45,7 @@ tree-sitter-kotlin = { version = "1.6", package = "willbooster-tree-sitter-kotli
 
 # ast::* — ast-grep structural matching (vendored from oh-my-pi pi-ast/pi-natives).
 # Versions mirror the upstream workspace. `tree-sitter` is unified on the
-# ast-grep line (0.25): the runtime crate links a single native lib, so cosh's
+# ast-grep line (0.25): the runtime crate links a single native lib, so Morpheus's
 # own `tree_sitter` module and ast-grep must share one version.
 ast-grep-core = { version = "0.39", default-features = false, features = ["tree-sitter"] }
 phf = { version = "0.13", features = ["macros"] }

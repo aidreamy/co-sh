@@ -1,6 +1,6 @@
 [package]
 categories = ["development-tools"]
-description = "TUI crate for cosh - coding agent for the terminal"
+description = "TUI crate for Morpheus - coding agent for the terminal"
 keywords = ["ai", "coding", "terminal", "agent"]
 license = "Apache-2.0"
 name = "morpheus-tui"

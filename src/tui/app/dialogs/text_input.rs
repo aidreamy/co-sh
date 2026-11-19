@@ -1492,7 +1492,7 @@ impl App {
         use crate::ui::toast::{ToastOptions, ToastVariant};
         self.toast_state.show(ToastOptions {
             title: Some(title.into()),
-            message: "Restart cosh for this to take effect.".into(),
+            message: "Restart morpheus for this to take effect.".into(),
             variant: ToastVariant::Info,
             duration_ms: 10_000,
         });

@@ -35,7 +35,7 @@ async fn main() {
     let invocation = match cli::parse(std::env::args_os().skip(1)) {
         Ok(invocation) => invocation,
         Err(error) => {
-            eprintln!("cosh: {error}");
+            eprintln!("morpheus: {error}");
             eprintln!("Run `morpheus --help` for usage.");
             std::process::exit(2);
         }
@@ -68,7 +68,7 @@ async fn main() {
 fn prepare_plain_command(scope: &str) {
     dotenv().ok();
     if let Err(reason) = cosh::util::logger::try_init(scope) {
-        eprintln!("cosh: logging disabled: {reason}");
+        eprintln!("morpheus: logging disabled: {reason}");
     }
 }
 
@@ -87,7 +87,7 @@ async fn run_tui(options: cli::LaunchOptions) {
     let startup_session = match cli::resume::resolve(&options) {
         Ok(session) => session,
         Err(error) => {
-            eprintln!("cosh: {error}");
+            eprintln!("morpheus: {error}");
             std::process::exit(1);
         }
     };
@@ -102,7 +102,7 @@ async fn run_tui(options: cli::LaunchOptions) {
         && !app.open_session_at_startup(&session_id)
     {
         eprintln!(
-            "cosh: session {session_id} is already open in another cosh process — starting a new session."
+            "morpheus: session {session_id} is already open in another morpheus process — starting a new session."
         );
     }
     app.show_welcome_toast();
@@ -140,7 +140,7 @@ fn check_keyring() {
         rows.push((provider.to_string(), env, keyring));
     }
 
-    println!("cosh keyring status");
+    println!("morpheus keyring status");
     println!(
         "  dbus : {:?}",
         std::env::var("DBUS_SESSION_BUS_ADDRESS")

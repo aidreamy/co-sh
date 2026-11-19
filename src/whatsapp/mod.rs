@@ -1,7 +1,7 @@
 //! The WhatsApp interface: `morpheus whatsapp`.
 //!
 //! Links this machine to a personal WhatsApp account as a companion device
-//! and answers the linked conversations with the cosh agent. There is no
+//! and answers the linked conversations with the Morpheus agent. There is no
 //! TUI: startup prints the pairing QR code, and after pairing the terminal
 //! only reports lifecycle events while messages are handled in the
 //! background.
@@ -136,7 +136,7 @@ pub async fn run() -> i32 {
         .and_then(|path| path.to_str().map(String::from))
         .unwrap_or_else(|| ".".to_string());
 
-    println!("cosh — WhatsApp interface");
+    println!("Morpheus — WhatsApp interface");
     println!("Device store: {}", store_path.display());
     println!("Working directory: {cwd}");
     println!("Waiting for a pairing code…");
@@ -150,7 +150,7 @@ pub async fn run() -> i32 {
     let mut repaired = false;
 
     loop {
-        let config = Config::new(store_path.clone()).with_push_name("cosh");
+        let config = Config::new(store_path.clone()).with_push_name("Morpheus");
         let (whatsapp, mut events) = match WhatsApp::connect(config).await {
             Ok(link) => link,
             Err(error) => {
@@ -242,7 +242,7 @@ pub async fn run() -> i32 {
                     // `access.rs`).
                     if !access.allows(&message) {
                         log::warn!(
-                            "cosh whatsapp: message {} from {} in {} is not allowed by \
+                            "morpheus whatsapp: message {} from {} in {} is not allowed by \
                              setup.json → whatsapp; ignored",
                             message.id,
                             message.sender.id,

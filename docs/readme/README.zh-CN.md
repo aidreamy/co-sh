@@ -1,15 +1,15 @@
-# co-sh
+# Morpheus
 
 [English](../../README.md) | [Português](./README.pt-BR.md) | [Español](./README.es.md) | [Русский](./README.ru.md) | **中文** | [日本語](./README.ja.md)
 
 > [!WARNING]
 > **WhatsApp 功能仍在开发中。** WhatsApp 功能（`morpheus-whatsapp`）仍处于实验阶段，**暂不推荐使用**。
 
-Cosh 是一个运行在终端中的通用编码智能体（coding agent），除软件工程工具外，还配备了 *computer tools*，使其能够与图形应用程序交互。
+Morpheus 是一个运行在终端中的通用编码智能体（coding agent），除软件工程工具外，还配备了 *computer tools*，使其能够与图形应用程序交互。
 
-## 为什么选择 co-sh？
+## 为什么选择 Morpheus？
 
-co-sh 并不打算取代成熟的 coding agent —— 它的定位是作为编排层与它们协同工作。以下是使用它的理由：
+Morpheus 并不打算取代成熟的 coding agent —— 它的定位是作为编排层与它们协同工作。以下是使用它的理由：
 
 - **多智能体协作** — 在同一 TUI 中直接运行不同的前沿智能体（Claude、Gemini、Codex、Cline 等），打造共享工作区，让它们通过单一界面进行沟通与协作。
 - **适合实验** — 非常适合喜欢尝试不同智能体并融合各自优势，而不是绑定单一生态的开发者。
@@ -19,9 +19,9 @@ co-sh 并不打算取代成熟的 coding agent —— 它的定位是作为编�
 
 ## 与其他 TUI 编排器的区别
 
-co-sh 在几个关键方面区别于其他基于终端的智能体编排器：
+Morpheus 在几个关键方面区别于其他基于终端的智能体编排器：
 
-| 特性 | co-sh | 其他 TUI 编排器 |
+| 特性 | Morpheus | 其他 TUI 编排器 |
 |------|-------|-----------------|
 | **多智能体分屏** | 在分屏窗格中同时运行多个外部智能体，每个都有自己的会话、模型和可选的 git worktree | 通常聚焦单一智能体，或需要切换上下文 |
 | **基于 accessibility tree 的 computer tools** | 通过结构化表示读取并操作图形界面，仅在必要时回退到截图 | 通常依赖截图，或完全缺少 GUI 交互能力 |
@@ -35,7 +35,7 @@ co-sh 在几个关键方面区别于其他基于终端的智能体编排器：
 - **多智能体模式（`/agents`）** — 让外部智能体（Gemini、Claude、Codex、Cline 等）与主智能体一起在分屏窗格中运行，全部可以通过同一个提示词触达。每个智能体保留自己的会话、模型和可选的 git worktree，由主智能体统一协调 — 像一个团队一样分派任务、收集报告。
 - **基于 accessibility tree 的 computer tools** — 智能体通过结构化、紧凑的表示形式读取并操作图形界面，仅在必要时才回退到截图。处理的图像更少，消耗的 token 更少。
 - **用 Rust 从零构建的 TUI**（Ratatui），交互设计受 OpenCode 启发。Provider、模型和运行模式都可以直接在界面中配置 — 几乎零手动配置。
-- **独立的 crates** — 开发工具被拆分为与应用解耦的 crates，可以作为库在 Cosh 之外复用。
+- **独立的 crates** — 开发工具被拆分为与应用解耦的 crates，可以作为库在 Morpheus 之外复用。
 
 ## 安装
 
@@ -57,7 +57,7 @@ irm https://raw.githubusercontent.com/aidreamy/co-sh/main/download.ps1 | iex
 
 可选变量：`COSH_BIN_DIR`（安装目录）、`COSH_VERSION`（指定版本）和 `COSH_VARIANT`（`slim` 为默认，或 `slim-embed`，含基于 fastembed 的本地 RAG）。在 PowerShell 中，请在运行命令前将它们设置为 `$env:COSH_VERSION = "v0.1.0"`。
 
-安装完成后，在终端运行 `cosh`。如果安装目录不在你的 `PATH` 中，脚本会自动输出添加它的命令。安装过程中遇到任何问题，请提交 issue — 我很乐意帮忙！
+安装完成后，在终端运行 `morpheus`。如果安装目录不在你的 `PATH` 中，脚本会自动输出添加它的命令。安装过程中遇到任何问题，请提交 issue — 我很乐意帮忙！
 
 ## Crates
 

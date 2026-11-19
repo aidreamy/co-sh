@@ -15,7 +15,7 @@ fn click(app: &mut App, column: u16, row: u16) {
     app.handle_mouse_event(evt(CKind::Up(CBtn::Left))).unwrap();
 }
 
-/// Regression: clicking "Yes" on the Ctrl+C "Quit cosh?" confirm while the
+    /// Regression: clicking "Yes" on the Ctrl+C "Quit morpheus?" confirm while the
 /// slash menu is open must quit the app. At 80x24 the confirm box is centered
 /// at dialog_x=25, dialog_y=8; the options row is dialog_y+4=12 and "Yes"
 /// spans x=35..38 (opts_x = 25 + (30-9)/2 = 35).
@@ -36,7 +36,7 @@ async fn confirm_quit_yes_click_quits_even_with_slash_menu_open() {
     // Show the quit confirm exactly like the Ctrl+C handler does.
     app.pending_delete = None;
     app.dialog.show(crate::ui::dialogs::DialogType::Confirm {
-        message: "Quit cosh?".into(),
+        message: "Quit morpheus?".into(),
     });
     if let Some(d) = app.dialog.current_mut() {
         d.selected = 1; // default is "No" (see the Ctrl+C handler)
@@ -81,7 +81,7 @@ async fn confirm_quit_yes_click_in_session_with_live_slash_menu() {
     // Ctrl+C: show the quit confirm (mirrors the key handler).
     app.pending_delete = None;
     app.dialog.show(crate::ui::dialogs::DialogType::Confirm {
-        message: "Quit cosh?".into(),
+        message: "Quit morpheus?".into(),
     });
     if let Some(d) = app.dialog.current_mut() {
         d.selected = 1;

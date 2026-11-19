@@ -3,9 +3,9 @@
 [![Crates.io](https://img.shields.io/crates/v/morpheus-tools.svg)](https://crates.io/crates/morpheus-tools)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/aidreamy/co-sh/blob/main/LICENSE)
 
-Tools crate for [cosh](https://github.com/aidreamy/co-sh) — a coding agent for the terminal.
+Tools crate for [Morpheus](https://github.com/aidreamy/co-sh) — a coding agent for the terminal.
 
-`morpheus-tools` implements every tool the cosh agent harness exposes to the LLM: filesystem operations, bash execution, search, LSP, web, desktop control, skills, subagents, planning, and structured user questions. Each tool is a self-contained async builder API plus an [MCP-schema](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) tool description, so the crate can be used standalone in your own agent — the same tools the cosh app registers.
+`morpheus-tools` implements every tool the Morpheus agent harness exposes to the LLM: filesystem operations, bash execution, search, LSP, web, desktop control, skills, subagents, planning, and structured user questions. Each tool is a self-contained async builder API plus an [MCP-schema](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) tool description, so the crate can be used standalone in your own agent — the same tools the Morpheus app registers.
 
 ## Highlights
 

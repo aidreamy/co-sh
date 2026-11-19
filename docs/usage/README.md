@@ -1,8 +1,8 @@
-# Cosh Usage Documentation
+# Morpheus Usage Documentation
 
-This directory contains user-facing documentation for Cosh features.
+This directory contains user-facing documentation for Morpheus features.
 
-Unlike the other `docs/` directories (which document implementation details for developers), these guides explain **how to use** Cosh as an end user.
+Unlike the other `docs/` directories (which document implementation details for developers), these guides explain **how to use** Morpheus as an end user.
 
 ## Available Guides
 

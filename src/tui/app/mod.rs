@@ -1024,7 +1024,7 @@ impl App {
         let _ = std::fs::create_dir_all(marker.parent().unwrap_or(&marker));
         let _ = std::fs::write(&marker, b"");
         self.toast_state.show(ToastOptions {
-            title: Some("cosh".to_string()),
+            title: Some("morpheus".to_string()),
             message: "Welcome!".to_string(),
             variant: ToastVariant::Info,
             duration_ms: 5000,
@@ -1611,7 +1611,7 @@ impl App {
     ///
     /// The editor temporarily takes over the terminal: raw mode, mouse
     /// capture and the alternate screen are torn down before spawning and
-    /// re-established afterwards, so Cosh resumes in exactly the state it
+    /// re-established afterwards, so Morpheus resumes in exactly the state it
     /// had. When no editor can be launched (or the handover fails) this
     /// silently does nothing — the explorer remains useful for navigation.
     fn open_file_in_editor(&mut self, path: &std::path::Path) {

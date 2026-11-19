@@ -492,7 +492,7 @@ async fn click_on_a_session_locked_elsewhere_shows_a_toast_that_survives_the_tit
         app.toast_state
             .current
             .as_ref()
-            .is_some_and(|t| t.message.contains("already open in another cosh process")),
+            .is_some_and(|t| t.message.contains("already open in another morpheus process")),
         "the refusal must surface as a toast, got {:?}",
         app.toast_state.current
     );
@@ -505,7 +505,7 @@ async fn click_on_a_session_locked_elsewhere_shows_a_toast_that_survives_the_tit
         app.toast_state
             .current
             .as_ref()
-            .is_some_and(|t| t.message.contains("already open in another cosh process")),
+            .is_some_and(|t| t.message.contains("already open in another morpheus process")),
         "the block toast must survive the hover tooltip, got {:?}",
         app.toast_state.current
     );

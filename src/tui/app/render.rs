@@ -1079,7 +1079,7 @@ impl App {
                 }
             }
             // The slash menu renders first so modal dialogs (e.g. the Ctrl+C
-            // "Quit cosh?" confirm) always paint on top of it — the menu is
+            // "Quit morpheus?" confirm) always paint on top of it — the menu is
             // inline chrome, the dialog is a modal overlay that owns the
             // whole input surface while visible (sovereign keys + mouse).
             // Its borders and selection follow the current harness mode's

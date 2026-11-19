@@ -3,7 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/morpheus-recall.svg)](https://crates.io/crates/morpheus-recall)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/aidreamy/co-sh/blob/main/LICENSE)
 
-Memory/recall crate for [cosh](https://github.com/aidreamy/co-sh) — a coding agent for the terminal.
+Memory/recall crate for [Morpheus](https://github.com/aidreamy/co-sh) — a coding agent for the terminal.
 
 `morpheus-recall` is a small RAG (Retrieval-Augmented Generation) layer: embed text with a pluggable embedder — local ONNX via [fastembed](https://crates.io/crates/fastembed) or a cloud provider via [`morpheus-sdk`](https://crates.io/crates/morpheus-sdk) — and store/search the vectors in a [LanceDB](https://lancedb.github.io/lancedb/) table. The public surface is intentionally minimal: an `Embedder` enum, a high-level `Rag` index, and a lower-level `VecDb` wrapper.
 

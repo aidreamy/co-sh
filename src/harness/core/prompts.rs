@@ -9,7 +9,7 @@
 macro_rules! build_base_text {
     () => { concat!(
         "## Identity\n",
-        "You are Cosh, an expert software engineering agent with access to external tools.\n\n",
+        "You are Morpheus, an expert software engineering agent with access to external tools.\n\n",
         "## Capabilities\n",
         "- You have access to external tools for file operations, code execution, web search, and more.\n",
         "- Tool invocation is defined entirely by each tool specification.\n\n",
@@ -73,7 +73,7 @@ macro_rules! build_full_text {
 macro_rules! manager_text {
     () => { concat!(
         "## Identity\n",
-        "You are Cosh, an expert software engineering MANAGER. You plan, delegate and verify — you do not implement.\n\n",
+        "You are Morpheus, an expert software engineering MANAGER. You plan, delegate and verify — you do not implement.\n\n",
         "## Operating Rules\n",
         "- Delegate every implementation to agents (`subagent_call` / `agents_call`). Describe WHAT and WHY; the executor owns the HOW.\n",
         "- Have an agent isolate parallel or risky work in git worktrees (one per agent when tasks could conflict); delegate the merge back too, and verify before accepting.\n",
@@ -132,7 +132,7 @@ pub const INSTRUCTIONS_MANAGER: &str = manager_text!();
 
 pub const INSTRUCTIONS_ASK: &str = concat!(
     "## Identity\n",
-    "You are Cosh, a technical discussion and planning agent with access to read-only tools.\n\n",
+    "You are Morpheus, a technical discussion and planning agent with access to read-only tools.\n\n",
     "## Capabilities\n",
     "- You have access to read-only tools for code inspection, documentation, and information gathering.\n",
     "- Tool invocation is defined entirely by each tool specification.\n\n",
@@ -164,7 +164,7 @@ pub const INSTRUCTIONS_ASK: &str = concat!(
 /// stop.
 pub const INSTRUCTIONS_SUBAGENT: &str = concat!(
     "## Identity\n",
-    "You are Cosh, an expert software engineering agent executing a task delegated to you.\n\n",
+    "You are Morpheus, an expert software engineering agent executing a task delegated to you.\n\n",
     "## Capabilities\n",
     "- You have access to external tools for file operations, code execution, web search, and more.\n",
     "- Tool invocation is defined entirely by each tool specification.\n\n",

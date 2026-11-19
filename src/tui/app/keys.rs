@@ -55,7 +55,7 @@ impl App {
             // and every panel must not react to any key until the user
             // decides. Left/Right/Enter/Esc drive the dialog; any other key
             // is swallowed. (Without this gate a "/"-open slash menu used to
-            // steal Enter from the "Quit cosh?" confirm and run a command.)
+            // steal Enter from the "Quit morpheus?" confirm and run a command.)
             if self.is_confirm_dialog_visible() {
                 self.handle_confirm_dialog_key(key.code);
                 return Ok(false);
@@ -371,7 +371,7 @@ impl App {
                 // second press on an empty draft; "Yes" in the confirm then
                 // quits while the loop runs by explicit choice.
                 self.dialog.show(DialogType::Confirm {
-                    message: "Quit cosh?".into(),
+                    message: "Quit morpheus?".into(),
                 });
                 if let Some(d) = self.dialog.current_mut() {
                     d.selected = 1;
@@ -1798,7 +1798,7 @@ impl App {
                         // would strand the user.
                         self.pending_delete = None;
                         self.dialog.show(DialogType::Confirm {
-                            message: "Quit cosh?".into(),
+                            message: "Quit morpheus?".into(),
                         });
                         if let Some(d) = self.dialog.current_mut() {
                             d.selected = 1;

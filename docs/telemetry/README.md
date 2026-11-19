@@ -1,8 +1,8 @@
-# Cosh Telemetry
+# Morpheus Telemetry
 
 ## In one sentence
 
-Cosh telemetry exists to measure product health and aggregated usage. It
+Morpheus telemetry exists to measure product health and aggregated usage. It
 **does not read or send conversations**: prompts, model responses, messages,
 file contents, and tool inputs and outputs are not part of the events sent.
 
@@ -33,7 +33,7 @@ does not send an answer.
 
 This is the only free-text field typed by the user in the current schema, and
 it is not chat content. It is still user-provided text. Therefore, the
-accurate statement is: **Cosh does not collect chat data; apart from optional
+accurate statement is: **Morpheus does not collect chat data; apart from optional
 uninstall feedback, telemetry does not send free-form user text**.
 
 ## Why this data exists
@@ -104,7 +104,7 @@ Every valid event has a small set of technical metadata:
 | Field | Content | Protection |
 |---|---|---|
 | `schema_version` | Format version | Validated by the client and at send time |
-| `app_version` | Cosh version | Numeric version shape only |
+| `app_version` | Morpheus version | Numeric version shape only |
 | `install_id` | Persistent random UUIDv4 per installation | Not derived from a user, hostname, MAC address, or network address |
 | `client_event_id` | Random UUIDv4 for the event | Deduplication, not identity |
 | `event_type` | Closed event type | Known enum |
@@ -135,10 +135,10 @@ closed**: losing a metric is preferable to transmitting an unexpected value.
 ## Where data is stored
 
 While waiting to be sent, events are kept locally in a JSONL queue inside
-Cosh's data directory:
+Morpheus's data directory:
 
 ```text
-<Cosh data directory>/telemetry/telemetry-events.jsonl
+<Morpheus data directory>/telemetry/telemetry-events.jsonl
 ```
 
 On Unix, this normally corresponds to
@@ -177,7 +177,7 @@ The transport:
 
 Without valid ingest configuration, nothing leaves the machine: events remain
 in the local queue until they expire or are removed by the normal queue
-limits. The destination is an HTTPS ingest endpoint configured by the Cosh
+limits. The destination is an HTTPS ingest endpoint configured by Morpheus
 distribution; the client uses a publishable key, not an administrative
 secret.
 
