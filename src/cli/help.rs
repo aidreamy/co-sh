@@ -1,9 +1,9 @@
 //! The `--help` pages.
 //!
-//! Every page renders inside one frame: the logo's "O" in the top-right
-//! corner with the running version beside it, a title row on the left, one
-//! section per concern, and a footer with the repository. Colours
-//! come from [`Palette`], so the page carries the user's own theme.
+//! Every page renders inside one frame: a title row carrying the running
+//! version on the left, one section per concern, and a footer with the
+//! repository. Colours come from [`Palette`], so the page carries the user's
+//! own theme.
 //!
 //! The layout is plain text first — padding is computed on the visible width,
 //! then fragments are painted — so a monochrome terminal gets the exact same
@@ -11,7 +11,6 @@
 
 use crate::cli::VERSION;
 use crate::cli::style::{Palette, display_width};
-use crate::logo::{O_GLYPH, O_GLYPH_W};
 
 /// Width reserved for the left column of an item row.
 const LABEL_WIDTH: usize = 23;
@@ -292,70 +291,20 @@ impl Page {
 
         out.push_str(&format!("{}\n", palette.border(&format!("┌{rule}┐"))));
 
-        // Brand mark: the logo's "O" in the top-right corner. The title carries
-        // the running version where "terminal coding agent" used to be, and the
-        // first section ("Usage") plus its rows fill the mark's remaining lines
-        // so no empty row is left over.
         let version = format!("v{VERSION}");
-        let mark_indent = inner.saturating_sub(O_GLYPH_W);
         let title_line = format!("{} · {}", self.title, version);
         let title_line_width = display_width(&title_line);
-        let title_line_pad = " ".repeat(mark_indent.saturating_sub(title_line_width));
-        let first_heading = self.sections.first().map(|s| s.title).unwrap_or("");
-        let heading_width = display_width(first_heading);
-        let heading_pad = " ".repeat(mark_indent.saturating_sub(heading_width));
-        // Inline text for the first section's first two rows (Prose only).
-        let first_inline: Vec<Option<String>> = self
-            .sections
-            .first()
-            .map(|s| {
-                s.rows
-                    .iter()
-                    .map(|r| match r {
-                        Row::Prose(t) => Some(format!("{}{}", " ".repeat(ROW_INDENT), t)),
-                        _ => None,
-                    })
-                    .collect()
-            })
-            .unwrap_or_default();
-        for (index, row) in O_GLYPH.iter().enumerate() {
-            let left = match index {
-                0 => format!(
-                    "{}{}",
-                    palette.title(&title_line),
-                    title_line_pad
-                ),
-                1 => format!("{}{}", palette.heading(first_heading), heading_pad),
-                2 => first_inline
-                    .first()
-                    .and_then(|o| o.as_ref())
-                    .map(|t| {
-                        format!("{}{}", palette.body(t), " ".repeat(mark_indent.saturating_sub(display_width(t))))
-                    })
-                    .unwrap_or_else(|| " ".repeat(mark_indent)),
-                3 => first_inline
-                    .get(1)
-                    .and_then(|o| o.as_ref())
-                    .map(|t| {
-                        format!("{}{}", palette.body(t), " ".repeat(mark_indent.saturating_sub(display_width(t))))
-                    })
-                    .unwrap_or_else(|| " ".repeat(mark_indent)),
-                _ => " ".repeat(mark_indent),
-            };
-            out.push_str(&framed(
-                palette,
-                &format!("{left}{}", palette.title(row)),
-                inner,
-                inner,
-            ));
-        }
+        out.push_str(&framed(
+            palette,
+            &palette.title(&title_line),
+            title_line_width,
+            inner,
+        ));
 
         for (index, section) in self.sections.iter().enumerate() {
-            if index == 0 {
-                // Heading and rows already drawn inside the mark block.
-                continue;
+            if index > 0 {
+                out.push_str(&framed(palette, "", 0, inner));
             }
-            out.push_str(&framed(palette, "", 0, inner));
             out.push_str(&framed(
                 palette,
                 &palette.heading(section.title),
@@ -534,17 +483,12 @@ mod tests {
     }
 
     #[test]
-    fn the_logo_mark_sits_in_the_top_right_corner() {
+    fn the_help_has_no_logo_mark_and_stays_compact() {
         let page = plain(None);
         let lines: Vec<&str> = page.lines().collect();
-        // The first four rows inside the frame are the O, flush against the
-        // right border, with the version on its left.
-        for (index, row) in O_GLYPH.iter().enumerate() {
-            let line = lines[index + 1];
-            assert!(
-                line.contains(row.trim_end()) && line.trim_end().ends_with('│'),
-                "row {index} does not carry the mark: {line:?}"
-            );
+        // No leftover mark glyph anywhere on the page.
+        for row in [" ▄███▄ ", "█▌ ▅ ▐█", "█▌ ▀ ▐█", " ▀███▀ "] {
+            assert!(!page.contains(row), "page still carries the logo mark: {row:?}");
         }
         // Title + version on the first row, Usage on the second, and the two
         // Usage rows on the third and fourth, so no empty row is left over.
