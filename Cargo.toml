@@ -16,6 +16,15 @@ cloud = ["morpheus-recall/cloud"]
 # (`ort`/`tokenizers`) out of the dependency graph. Without it the binary
 # never links ONNX Runtime and the harness compiles the Checkup trait only.
 onnx = ["dep:morpheus-onnx"]
+# Local voice output (`src/speak`). Gates `sherpa-onnx`, which statically
+# links ONNX Runtime, out of the default build for the same reason `onnx`
+# exists: a plain build must not carry the runtime.
+speak = ["dep:sherpa-onnx"]
+# The advanced text frontend: `piper-phonemize` (espeak-ng) phonemizes in
+# Rust for the Kokoro languages sherpa-onnx ships no lexicon for (pt-br,
+# es, fr, ...). That crate is GPL-3.0-or-later, so it is opt-in and the
+# default build stays Apache-2.0-only.
+speak-phonemize = ["speak", "dep:piper-phonemize"]
 
 [package]
 description = "..."
@@ -43,6 +52,17 @@ path = "crates/morpheus-onnx"
 version = "0.1.5"
 optional = true
 
+# Kokoro TTS through sherpa-onnx's safe Rust API. Default features link a
+# prebuilt static sherpa-onnx archive (downloaded by its build script).
+[dependencies.sherpa-onnx]
+version = "2.0.2"
+optional = true
+
+# External phonemizer for the `speak-phonemize` feature. GPL-3.0-or-later.
+[dependencies.piper-phonemize]
+version = "1.5.9"
+optional = true
+
 [dependencies.morpheus-tui]
 path = "crates/morpheus-tui"
 version = "0.1.6"
@@ -68,6 +88,14 @@ path = "src/bin/morpheus_uninstall.rs"
 [[bin]]
 name = "highlight-demo"
 path = "src/bin/highlight_demo.rs"
+
+# Manual voice harness for `src/speak` (`cargo speak pt-br -t "..."`). It
+# needs the phonemizer: only English and Chinese have a lexicon in the Kokoro
+# bundles, and the other seven languages go through espeak-ng.
+[[bin]]
+name = "speak"
+path = "src/bin/speak.rs"
+required-features = ["speak-phonemize"]
 
 # The decision daemon, gated on the same feature as the ONNX runtime: the
 # daemon exists only when the model does, and without `onnx` the binary is

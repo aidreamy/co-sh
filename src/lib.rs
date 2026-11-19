@@ -9,6 +9,10 @@ pub mod mcp;
 pub mod notification;
 pub mod session;
 pub mod setup;
+/// Local voice output (Kokoro TTS through sherpa-onnx). Gated behind the
+/// `speak` feature: sherpa-onnx statically links ONNX Runtime.
+#[cfg(feature = "speak")]
+pub mod speak;
 pub mod telemetry;
 pub mod types;
 pub mod uninstall;
