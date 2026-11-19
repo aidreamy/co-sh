@@ -1,11 +1,16 @@
-//! Local voice output: Kokoro text-to-speech through `sherpa-onnx`.
+//! Local voice output: text-to-speech through `sherpa-onnx`, one backend per
+//! model family.
 //!
-//! The module owns one loaded Kokoro model and turns text into playable audio
-//! without leaving the machine. Everything native lives in `sherpa-onnx`: this
-//! module resolves the bundle files, validates the configuration, picks the
-//! speaker and delegates synthesis. The only code written by hand is the small
-//! amount sherpa-onnx's API does not cover — the stopwatch-free playback
-//! handoff and the optional external phonemizer.
+//! The module owns one loaded model and turns text into playable audio
+//! without leaving the machine. Everything native lives in the backend:
+//! `sherpa-onnx` resolves the model files and synthesizes, while this module
+//! keeps the parts that do not depend on a model — the speaker catalog, the
+//! stopwatch-free playback handoff and the optional external phonemizer.
+//!
+//! [`Backend`] selects the model family and carries its own settings;
+//! [`Speak`] dispatches to it and works the same for every backend. Adding a
+//! model family means a new file under `backend/`, one enum variant and one
+//! match arm — see the `backend` module docs.
 //!
 //! # Enabling
 //!
@@ -75,11 +80,12 @@
 //!
 //! `Speak` is `Send + Sync` and one instance can serve several worker
 //! threads; loading it is the expensive step, so keep it alive. `Speech` is
-//! an owned `Vec<f32>` (sherpa-onnx's `GeneratedAudio` handle is neither
+//! an owned `Vec<f32>` (a backend's `GeneratedAudio` handle is neither
 //! `Send` nor `Sync`), safe to hand to a playback thread. `Speech::play` and
 //! `Speak::speak` block until the audio finishes, so call them off the TUI
 //! event loop.
 
+mod backend;
 mod config;
 mod engine;
 #[cfg(feature = "speak-phonemize")]
@@ -87,8 +93,7 @@ mod phonemize;
 mod player;
 mod voice;
 
-pub use config::{
-    DEFAULT_MODEL_DIR_NAME, MODEL_DIR_ENV, Phonemizer, SpeakConfig, SpeakError, default_model_dir,
-};
+pub use backend::{Backend, DEFAULT_MODEL_DIR_NAME, KokoroConfig, MODEL_DIR_ENV, default_model_dir};
+pub use config::{Phonemizer, SpeakConfig, SpeakError};
 pub use engine::{Speak, Speech};
 pub use voice::{Voice, find as find_voice};

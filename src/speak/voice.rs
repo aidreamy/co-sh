@@ -4,7 +4,10 @@
 //! only exposes a numeric `sid`. These tables are the published name-to-id
 //! maps for the two multilingual bundles, so a caller can ask for
 //! `"af_maple"` instead of remembering that it is speaker 0. The catalog is
-//! selected by the speaker count the loaded model reports.
+//! selected by the bundle directory name; when the directory was renamed the
+//! speaker count the loaded model reports is the fallback.
+
+use std::path::Path;
 
 /// One Kokoro speaker.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -652,15 +655,27 @@ pub const V1_1: &[Voice] = &[
     },
 ];
 
-/// The catalog for a model reporting `num_speakers` speakers.
+/// The catalog for the bundle in `model_dir`.
 ///
-/// Empty when the model is not one of the bundles listed above: the ids are
-/// still usable directly through [`SpeakConfig::voice`], only the names are
-/// unknown.
+/// The directory name wins (`...v1_0` / `...v1_1`, int8 suffixes included)
+/// and keeps the answer correct even when a renamed or trimmed bundle reports
+/// an unexpected speaker count. For any other name the count decides. Empty
+/// when neither matches: the ids are still usable directly through
+/// [`SpeakConfig::voice`], only the names are unknown.
 ///
 /// [`SpeakConfig::voice`]: super::SpeakConfig::voice
 #[must_use]
-pub fn catalog(num_speakers: u32) -> &'static [Voice] {
+pub fn catalog(model_dir: &Path, num_speakers: u32) -> &'static [Voice] {
+    let name = model_dir
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or_default();
+    if name.contains("v1_1") {
+        return V1_1;
+    }
+    if name.contains("v1_0") {
+        return V1_0;
+    }
     match num_speakers {
         // The v1.0 documentation counts 53 speakers but publishes ids 0-53
         // (54 entries), so accept both counts.
@@ -699,9 +714,19 @@ mod tests {
     fn catalogs_are_complete_and_dense() {
         assert_well_formed(V1_0, 54);
         assert_well_formed(V1_1, 103);
-        assert_eq!(catalog(54).len(), 54);
-        assert_eq!(catalog(103).len(), 103);
-        assert!(catalog(7).is_empty());
+    }
+
+    #[test]
+    fn the_bundle_name_selects_the_catalog() {
+        assert_eq!(
+            catalog(Path::new("kokoro-multi-lang-v1_0"), 103).len(),
+            54,
+            "the directory name wins over the reported count"
+        );
+        assert_eq!(catalog(Path::new("kokoro-int8-multi-lang-v1_1"), 54).len(), 103);
+        assert_eq!(catalog(Path::new("some-model"), 54).len(), 54);
+        assert_eq!(catalog(Path::new("some-model"), 103).len(), 103);
+        assert!(catalog(Path::new("some-model"), 7).is_empty());
     }
 
     #[test]

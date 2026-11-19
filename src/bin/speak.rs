@@ -19,7 +19,9 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Instant;
 
-use cosh::speak::{MODEL_DIR_ENV, Phonemizer, Speak, SpeakConfig, Voice, default_model_dir};
+use cosh::speak::{
+    Backend, KokoroConfig, MODEL_DIR_ENV, Phonemizer, Speak, SpeakConfig, Voice, default_model_dir,
+};
 
 /// The bundle this harness uses by default. It is the only one shipping a
 /// voice for all nine languages; the v1.1 bundle is the Chinese + English
@@ -188,7 +190,10 @@ fn run() -> Result<(), String> {
             lang: lang.to_string(),
         });
     let config = SpeakConfig {
-        model_dir: model_dir(&args),
+        backend: Backend::Kokoro(KokoroConfig {
+            model_dir: model_dir(&args),
+            ..KokoroConfig::default()
+        }),
         speed: args.speed,
         phonemizer,
         ..SpeakConfig::default()
