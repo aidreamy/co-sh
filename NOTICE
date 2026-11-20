@@ -1,11 +1,11 @@
-cosh
+morpheus
 Copyright (c) 2026 Diego Zaluski
 
-This software is licensed under the Apache License, Version 2.0.
+This software is licensed under the GPL, Version 3
 See the LICENSE file for the full license text.
 
 If you fork or redistribute this project, you must preserve the
 copyright and attribution notices contained in this NOTICE file.
 
 Original project:
-https://github.com/aidreamy/co-sh
+https://github.com/aidreamy/morpheus
