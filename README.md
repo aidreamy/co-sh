@@ -2,7 +2,7 @@
 
 **English** | [Português](./docs/readme/README.pt-BR.md) | [Español](./docs/readme/README.es.md) | [Русский](./docs/readme/README.ru.md) | [中文](./docs/readme/README.zh-CN.md) | [日本語](./docs/readme/README.ja.md)
 
-<img width="2000" height="1099" alt="image(2)" src="https://github.com/user-attachments/assets/3f4f4876-8bba-4bed-a198-eb5dea51a80b" />
+<img width="1910" height="1064" alt="image(3)" src="https://github.com/user-attachments/assets/a80fcff1-068a-44f8-b43d-3e7d7697ecd6" />
 
 > [!WARNING]
 > **WhatsApp is under development.** The WhatsApp feature (`morpheus-whatsapp`) is still experimental and is **not recommended for use** yet.
