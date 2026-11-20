@@ -37,7 +37,7 @@ use super::Harness;
 /// Cache namespace the provider catalogs live in (the same one
 /// `discover_context_window` and `refresh_pricing_catalog` use).
 #[cfg(not(test))]
-const CATALOG_CACHE_DIR: Option<&str> = Some("cosh/cache");
+const CATALOG_CACHE_DIR: Option<&str> = Some("morpheus/cache");
 
 /// Tools that exist to feed images back to the model, and are therefore
 /// omitted for a model proven text-only.
@@ -131,7 +131,11 @@ impl Harness {
         let text_only = vision_unsupported(&self.connector);
         let mut effective = self.user_disabled_tools.clone();
         if text_only {
-            effective.extend(VISION_DEPENDENT_TOOLS.iter().map(|name| (*name).to_string()));
+            effective.extend(
+                VISION_DEPENDENT_TOOLS
+                    .iter()
+                    .map(|name| (*name).to_string()),
+            );
         }
         self.disabled_tools = effective;
         // The transport projection follows the same verdict: a resumed

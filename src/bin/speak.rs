@@ -19,7 +19,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Instant;
 
-use cosh::speak::{
+use morpheus::speak::{
     Backend, KokoroConfig, MODEL_DIR_ENV, Phonemizer, Speak, SpeakConfig, Voice, default_model_dir,
 };
 
@@ -41,8 +41,8 @@ Options:
                          voice of the language
   -s, --speed <FACTOR>   pace, 1.0 natural and >1 faster (default 1.0)
   -o, --out <FILE>       write a WAV file instead of playing it
-      --model-dir <DIR>  Kokoro bundle; defaults to $COSH_KOKORO_MODEL_DIR or
-                         <cache>/cosh/models/kokoro-multi-lang-v1_0 (the only
+      --model-dir <DIR>  Kokoro bundle; defaults to $MORPHEUS_KOKORO_MODEL_DIR or
+                         <cache>/morpheus/models/kokoro-multi-lang-v1_0 (the only
                          bundle with a voice in every language)
   -l, --list             list the supported languages
       --voices           list this model's voices for the language
@@ -406,7 +406,7 @@ fn pick_voice(speak: &Speak, language: &Language, requested: Option<&str>) -> Re
 }
 
 /// Where the harness looks for the model: `--model-dir`, then
-/// `$COSH_KOKORO_MODEL_DIR`, then the multilingual v1.0 bundle next to the
+/// `$MORPHEUS_KOKORO_MODEL_DIR`, then the multilingual v1.0 bundle next to the
 /// library's default location.
 fn model_dir(args: &Args) -> PathBuf {
     if let Some(dir) = &args.model_dir {

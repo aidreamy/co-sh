@@ -1,9 +1,9 @@
 use super::{App, HOME_LOCK, isolate_home};
-use cosh::harness::HarnessEvent;
 use crossterm::event::{
     KeyCode, KeyEvent, KeyModifiers, MouseButton as CBtn, MouseEvent as CMouse,
     MouseEventKind as CKind,
 };
+use morpheus::harness::HarnessEvent;
 
 fn mouse(kind: CKind, x: u16, y: u16) -> CMouse {
     CMouse {
@@ -25,7 +25,7 @@ async fn correction_failure_keeps_the_original_prompt() {
     app.prompt_correction_spinner = Some(crate::component::any_spinner::AnySpinner::new(
         "",
         &app.theme,
-        cosh::setup::SpinnerStyle::Bass,
+        morpheus::setup::SpinnerStyle::Bass,
     ));
 
     app.event_tx
@@ -126,7 +126,7 @@ async fn esc_cancels_the_in_flight_correction_and_keeps_the_draft() {
     app.prompt_correction_spinner = Some(crate::component::any_spinner::AnySpinner::new(
         "",
         &app.theme,
-        cosh::setup::SpinnerStyle::Bass,
+        morpheus::setup::SpinnerStyle::Bass,
     ));
 
     app.process_key_event(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE))

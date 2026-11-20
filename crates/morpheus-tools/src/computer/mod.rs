@@ -532,7 +532,7 @@ impl Computer {
                         "save_path": {
                             "type": "string",
                             "minLength": 1,
-                            "description": "File path to ALSO write the PNG bytes to (workpapers, a before/after diff, an artifact to hand a user). Relative paths resolve against cosh's working directory. Parent directories are created; the output echoes `saved_to`. The image still travels inline."
+                            "description": "File path to ALSO write the PNG bytes to (workpapers, a before/after diff, an artifact to hand a user). Relative paths resolve against morpheus's working directory. Parent directories are created; the output echoes `saved_to`. The image still travels inline."
                         }
                     },
                     "allOf": [

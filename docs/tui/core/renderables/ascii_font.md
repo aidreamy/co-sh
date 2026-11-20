@@ -36,7 +36,7 @@ to a multi-row bitmap font.
 use morpheus_tui::core::renderables::ascii_font::ASCIIFontRenderable;
 
 let mut logo = ASCIIFontRenderable::new(
-    Some("COSH".into()),
+    Some("MORPHEUS".into()),
     Some("tiny".into()),
     Some("#22c55e".into()),
 );

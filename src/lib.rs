@@ -25,5 +25,5 @@ pub mod util;
 #[cfg(feature = "onnx")]
 pub mod weights;
 pub mod whatsapp;
-pub use morpheus_tools::{bash, fs, plan, skills, web};
 pub use harness::events::ModelEntry;
+pub use morpheus_tools::{bash, fs, plan, skills, web};

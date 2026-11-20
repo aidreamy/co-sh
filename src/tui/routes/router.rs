@@ -2,7 +2,7 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
 
-use cosh::ModelEntry;
+use morpheus::ModelEntry;
 use morpheus_tui::core::types::MouseEvent;
 
 use crate::component::search_bar::SearchBar;
@@ -1939,7 +1939,10 @@ mod tests {
 
         // ACP agents are ordered installed-first with no filter involved.
         let agents = view.acp_agents_ordered();
-        assert_eq!(agents.len(), morpheus_tools::subagent::acp::ACP_AGENTS.len());
+        assert_eq!(
+            agents.len(),
+            morpheus_tools::subagent::acp::ACP_AGENTS.len()
+        );
     }
 
     #[test]

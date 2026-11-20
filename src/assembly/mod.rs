@@ -1,7 +1,7 @@
 //! THE harness assembly.
 //!
 //! One place builds every loop-bearing [`Harness`]: the main agent loop and
-//! the `/agents` cosh pane both assemble through [`assemble`] — the same
+//! the `/agents` morpheus pane both assemble through [`assemble`] — the same
 //! connector resolution, the same prompt-cache headers, the same MCP boot,
 //! the same RAG wiring, the same effective-context budget and the same
 //! skills — with the caller's differences declared as explicit parameters
@@ -37,7 +37,7 @@ use crate::harness::Mode;
 use crate::harness::queued_input::QueuedInput;
 
 /// Everything one agent-loop assembly needs, decided by the caller. The
-/// main loop fills it from the user's live config; the cosh pane fills it
+/// main loop fills it from the user's live config; the morpheus pane fills it
 /// from the same config plus its own session identity.
 pub struct HarnessAssembly {
     /// Primary provider (the session's own route, or the auto-rotation
@@ -174,7 +174,7 @@ fn build_connector(a: &HarnessAssembly) -> Result<(Connector, Vec<(String, Strin
                         && let Some(resolved) = aiface::connector::resolve_reasoning_effort(
                             fb_model,
                             r,
-                            Some("cosh/cache"),
+                            Some("morpheus/cache"),
                         )
                     {
                         c = c.with_reasoning_effort(resolved);
@@ -211,7 +211,7 @@ fn build_connector(a: &HarnessAssembly) -> Result<(Connector, Vec<(String, Strin
         let effective = a
             .model
             .as_deref()
-            .and_then(|m| aiface::connector::resolve_reasoning_effort(m, r, Some("cosh/cache")))
+            .and_then(|m| aiface::connector::resolve_reasoning_effort(m, r, Some("morpheus/cache")))
             .unwrap_or_else(|| r.clone());
         with_model.with_reasoning_effort(effective)
     } else {
@@ -262,7 +262,7 @@ pub async fn assemble(
 
     // The decision-model audit seam (`harness::checkup`), attached over
     // the SHARED decision daemon: the model (graph + ORT session) is
-    // resident in one daemon process every cosh instance talks to,
+    // resident in one daemon process every morpheus instance talks to,
     // instead of one per-process resident per open app. The daemon loads
     // the model on the first decide (with its own retry window), so
     // assembly never blocks on a load; any daemon failure is a
@@ -402,8 +402,7 @@ pub async fn assemble(
 /// transport tasks must outlive individual turns — a per-turn runtime
 /// would kill them (and, via `kill_on_drop`, the server processes) the
 /// moment a turn ends.
-pub static AGENT_RUNTIME: std::sync::OnceLock<tokio::runtime::Runtime> =
-    std::sync::OnceLock::new();
+pub static AGENT_RUNTIME: std::sync::OnceLock<tokio::runtime::Runtime> = std::sync::OnceLock::new();
 
 /// The shared process-wide runtime accessor: every loop-bearing assembly
 /// runs on THIS runtime (see [`AGENT_RUNTIME`] for why — LSP and MCP

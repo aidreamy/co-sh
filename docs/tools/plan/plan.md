@@ -3,7 +3,7 @@
 `plan` is a small state machine for long-running tasks. It keeps a structured
 TODO list — a flat list of tasks with statuses and dependencies — that the
 agent rewrites as work progresses, instead of losing the plan in conversation
-history. It is the one cosh tool that is fully **stateful**: the list lives on
+history. It is the one morpheus tool that is fully **stateful**: the list lives on
 a single in-memory structure that the harness owns and mirrors into the
 model's context.
 
@@ -19,7 +19,7 @@ the model the current plan (see [the protected context
 block](#the-harness-and-the-protected-context-block)), so a read would be
 redundant.
 
-The design mirrors the other cosh modules: the public surface is a
+The design mirrors the other morpheus modules: the public surface is a
 builder-style wrapper — [`Plan`](#the-plan-wrapper) — that holds the list and
 exposes one stateful method, plus the **pure free function** (`todo_write`)
 that produces the new list from the submitted one; the wrapper is a thin

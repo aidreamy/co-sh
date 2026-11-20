@@ -20,7 +20,7 @@ use crate::speak::engine::Speech;
 use crate::speak::voice::{self, Voice};
 
 /// Environment variable that overrides [`default_model_dir`].
-pub const MODEL_DIR_ENV: &str = "COSH_KOKORO_MODEL_DIR";
+pub const MODEL_DIR_ENV: &str = "MORPHEUS_KOKORO_MODEL_DIR";
 
 /// Bundle name of the recommended Kokoro model: v1.1, Chinese + English,
 /// 103 speakers. The v1.0 bundle (54 speakers) loads through the same code;
@@ -28,8 +28,8 @@ pub const MODEL_DIR_ENV: &str = "COSH_KOKORO_MODEL_DIR";
 pub const DEFAULT_MODEL_DIR_NAME: &str = "kokoro-multi-lang-v1_1";
 
 /// Where the Kokoro bundle is expected when no explicit directory is given:
-/// `$COSH_KOKORO_MODEL_DIR` when set, otherwise
-/// `<user cache>/cosh/models/kokoro-multi-lang-v1_1`.
+/// `$MORPHEUS_KOKORO_MODEL_DIR` when set, otherwise
+/// `<user cache>/morpheus/models/kokoro-multi-lang-v1_1`.
 #[must_use]
 pub fn default_model_dir() -> PathBuf {
     if let Some(dir) = env::var_os(MODEL_DIR_ENV).filter(|value| !value.is_empty()) {
@@ -175,10 +175,7 @@ impl BackendEngine for KokoroEngine {
             .tts
             .generate_with_config(&text, &generation, Some(callback))
             .ok_or(SpeakError::NoAudio)?;
-        let speech = Speech::new(
-            audio.samples().to_vec(),
-            audio.sample_rate().max(0) as u32,
-        );
+        let speech = Speech::new(audio.samples().to_vec(), audio.sample_rate().max(0) as u32);
         if speech.samples().is_empty() {
             return Err(SpeakError::NoAudio);
         }

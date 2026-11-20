@@ -435,7 +435,10 @@ fn call_hook(
             let _ = tx.send((outcome, timed_ctx));
         })
         .map_err(|e| {
-            Error::Runtime(format!("morpheus-onnx: could not start the hook thread: {}", e))
+            Error::Runtime(format!(
+                "morpheus-onnx: could not start the hook thread: {}",
+                e
+            ))
         })?;
     match rx.recv_timeout(std::time::Duration::from_secs_f64(timeout)) {
         Ok((outcome, timed_ctx)) => {

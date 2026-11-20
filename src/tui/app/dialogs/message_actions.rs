@@ -260,10 +260,10 @@ impl App {
     /// so the dialog hands over the user-echo ordinal and the entry index;
     /// TWO routes answer for them, chosen by what backs the pane:
     ///
-    /// - a MANAGER pane has a cosh session in the store — the clicked prompt
+    /// - a MANAGER pane has a morpheus session in the store — the clicked prompt
     ///   resolves to one of its messages and `run_pane_session_action` runs
     ///   the store's branch machinery (a real truncation);
-    /// - an ACP pane has no cosh session (its `session_id` is the agent's),
+    /// - an ACP pane has no morpheus session (its `session_id` is the agent's),
     ///   so `run_pane_timeline_action` runs the actions over the timeline.
     pub(in crate::app) fn run_pane_message_action(
         &mut self,
@@ -331,15 +331,15 @@ impl App {
         };
         // Pane kinds differ in what backs their conversation:
         //
-        // - the MANAGER (cosh) pane owns a real cosh session in the store,
+        // - the MANAGER (morpheus) pane owns a real morpheus session in the store,
         //   whose context snapshot IS the agent's memory — Revert/Fork run
         //   the store's own branch machinery (and really truncate what the
         //   next turn sends);
-        // - an ACP pane has no cosh session at all (its `session_id` is the
+        // - an ACP pane has no morpheus session at all (its `session_id` is the
         //   AGENT's id, not a store id) and the protocol offers no way to
         //   truncate the agent's history. Those actions run on the pane's
         //   local timeline instead (`run_pane_timeline_action`): Fork
-        //   branches a new cosh session from the transcript prefix, Revert
+        //   branches a new morpheus session from the transcript prefix, Revert
         //   truncates the transcript and restarts the agent session.
         let store_session = if agent == crate::routes::session::agents_split::MANAGER_LABEL {
             match session_id.as_deref() {
@@ -387,7 +387,7 @@ impl App {
         }
     }
 
-    /// Revert/Fork on a pane with NO cosh store session (an ACP pane): the
+    /// Revert/Fork on a pane with NO morpheus store session (an ACP pane): the
     /// pane's own timeline is the transcript.
     ///
     /// Revert drops the clicked prompt and everything after it from the
@@ -395,7 +395,7 @@ impl App {
     /// no truncate, so the honest equivalent is a fresh session on the next
     /// turn, primed with the kept prefix (the rewind handoff).
     ///
-    /// Fork branches a new cosh session from the transcript prefix (prose
+    /// Fork branches a new morpheus session from the transcript prefix (prose
     /// only: user prompts and agent replies, one context item each, so the
     /// store records the boundaries the branch resolves) and opens it in the
     /// MAIN view — the pane keeps its own conversation untouched.
@@ -449,7 +449,7 @@ impl App {
                 let forked = crate::types::Session {
                     id: claimed_id.clone(),
                     // An ACP pane has no session title of its own; the agent's
-                    // own name is the closest label (the cosh pane's fork
+                    // own name is the closest label (the morpheus pane's fork
                     // reuses its session title instead).
                     title: format!("{agent} (fork)"),
                     messages,
@@ -652,7 +652,7 @@ impl App {
         };
         // Every USER echo is a prompt the pane can be rewound to, on BOTH
         // pane kinds: the manager pane runs the store's branch machinery over
-        // its own cosh session, and an ACP pane runs them over its local
+        // its own morpheus session, and an ACP pane runs them over its local
         // timeline (`run_pane_message_action` picks the path). An
         // `agents_call` input still offers Copy only — it is the other
         // agent's prompt, not one of the user's.
@@ -860,7 +860,7 @@ impl App {
     }
 
     /// Show a freshly created fork on the VISIBLE screen, shared by BOTH
-    /// fork routes (the cosh pane's store branch and the ACP pane's timeline
+    /// fork routes (the morpheus pane's store branch and the ACP pane's timeline
     /// prefix) so the hand-off cannot drift between them.
     ///
     /// The action fired FROM the /agents split, and switching the session
@@ -978,7 +978,7 @@ fn resolve_pane_message(
     Some((message.id.clone(), idx))
 }
 
-/// The pane's transcript prefix as a forked cosh conversation: one message
+/// The pane's transcript prefix as a forked morpheus conversation: one message
 /// and one context item per PROSE entry (user prompts, `agents_call`
 /// inputs, agent replies). Thoughts, tool rows and plans are skipped — they
 /// are not model-facing conversation, and keeping the two lists 1:1 is what
@@ -988,11 +988,11 @@ fn pane_timeline_prefix(
     through: usize,
 ) -> (
     Vec<crate::types::Message>,
-    cosh::harness::context::ContextManagerState,
+    morpheus::harness::context::ContextManagerState,
 ) {
     use crate::routes::session::right_panel::types::SubagentTimelineEntry;
     use crate::types::{Message, MessageRole, Part, TextPart};
-    use cosh::harness::context::{ContextItem, ContextManagerState};
+    use morpheus::harness::context::{ContextItem, ContextManagerState};
 
     let mut messages: Vec<Message> = Vec::new();
     let mut items: std::collections::VecDeque<ContextItem> = std::collections::VecDeque::new();

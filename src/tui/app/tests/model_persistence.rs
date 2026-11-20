@@ -19,8 +19,8 @@ async fn summarizer_selection_and_cancel_never_change_the_agent_model() {
         loading: false,
     });
     app.event_tx
-        .send(cosh::harness::HarnessEvent::ModelsLoaded {
-            models: vec![cosh::ModelEntry {
+        .send(morpheus::harness::HarnessEvent::ModelsLoaded {
+            models: vec![morpheus::ModelEntry {
                 provider: "summary-provider".into(),
                 model: "summary-model".into(),
             }],
@@ -56,7 +56,7 @@ async fn summarizer_selection_and_cancel_never_change_the_agent_model() {
     assert_eq!(app.llm_config.reasoning.as_deref(), Some("high"));
     assert_eq!(serde_json::to_value(&app.setup.model).unwrap(), original);
     assert_eq!(
-        cosh::setup::Setup::load().routing.summarization_models[0].model,
+        morpheus::setup::Setup::load().routing.summarization_models[0].model,
         "summary-model"
     );
 }
@@ -110,8 +110,8 @@ async fn models_loaded_updates_model_list_beneath_reasoning_dialog() {
         current: String::new(),
     });
     app.event_tx
-        .send(cosh::harness::HarnessEvent::ModelsLoaded {
-            models: vec![cosh::ModelEntry {
+        .send(morpheus::harness::HarnessEvent::ModelsLoaded {
+            models: vec![morpheus::ModelEntry {
                 provider: "summary-provider".into(),
                 model: "summary-model".into(),
             }],
@@ -154,7 +154,7 @@ async fn models_loaded_with_no_models_stops_the_spinner() {
     let mut app = App::new("/tmp".into());
     app.open_model_dialog();
     app.event_tx
-        .send(cosh::harness::HarnessEvent::ModelsLoaded {
+        .send(morpheus::harness::HarnessEvent::ModelsLoaded {
             models: vec![],
             current: String::new(),
         })
@@ -179,7 +179,7 @@ async fn manual_compaction_resolves_only_explicit_summary_models_or_the_auto_cha
     let mut app = App::new("/tmp".into());
     app.llm_config.model = Some("explicit-agent".into());
     assert!(app.manual_summarization_models().is_empty());
-    app.router_view.fallbacks = vec![cosh::setup::FallbackEntry {
+    app.router_view.fallbacks = vec![morpheus::setup::FallbackEntry {
         provider: "local".into(),
         model: "auto-choice".into(),
     }];
@@ -188,7 +188,7 @@ async fn manual_compaction_resolves_only_explicit_summary_models_or_the_auto_cha
         app.manual_summarization_models(),
         vec![("local".into(), "auto-choice".into())]
     );
-    app.setup.routing.summarization_models = vec![cosh::setup::FallbackEntry {
+    app.setup.routing.summarization_models = vec![morpheus::setup::FallbackEntry {
         provider: "chosen".into(),
         model: "summary".into(),
     }];
@@ -220,13 +220,14 @@ async fn global_model_loads_applies_and_overwrites() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
     // isolate_home wipes the scratch dir first, so write AFTER it runs.
-    // Seed via the SAME resolution path the app uses: COSH_CONFIG_DIR now
+    // Seed via the SAME resolution path the app uses: MORPHEUS_CONFIG_DIR now
     // points at the scratch config dir (pre-fix, this test wrote to
-    // `$TEMP/.../.config/cosh` while the app read `%APPDATA%\cosh` — the
+    // `$TEMP/.../.config/morpheus` while the app read `%APPDATA%\morpheus` — the
     // developer's REAL setup — so the assertion compared against live user
     // state and failed wherever it differed).
     let cfg = {
-        let dir = std::env::var("COSH_CONFIG_DIR").expect("isolate_home sets COSH_CONFIG_DIR");
+        let dir =
+            std::env::var("MORPHEUS_CONFIG_DIR").expect("isolate_home sets MORPHEUS_CONFIG_DIR");
         std::path::PathBuf::from(dir)
     };
     std::fs::create_dir_all(&cfg).unwrap();
@@ -396,7 +397,7 @@ async fn model_dialog_cancel_and_reasoning_esc_do_not_persist() {
     app.model_dialog_original = Some("gpt-oss-120b".to_string());
     app.reasoning_dialog_original = Some("low".to_string());
     app.dialog.show(DialogType::ModelList {
-        models: vec![cosh::ModelEntry {
+        models: vec![morpheus::ModelEntry {
             provider: "groq".to_string(),
             model: "gpt-oss-120b".to_string(),
         }],
@@ -517,33 +518,33 @@ async fn persisted_auto_selection_survives_the_credential_gate() {
     );
 }
 
-// ── Per-pane model selection (the /agents split's cosh panes) ───────────
+// ── Per-pane model selection (the /agents split's morpheus panes) ───────────
 
 use crate::routes::session::agents_split::AgentsSplitState;
 
-/// Build an app with a live split of `count` cosh (manager) panes, pane 0
+/// Build an app with a live split of `count` morpheus (manager) panes, pane 0
 /// focused. The split is the plain reflection of the picker the real flow
 /// produces (`AgentPaneRef::Name` panes, no bound sessions yet).
-fn app_with_cosh_panes(count: usize) -> App {
+fn app_with_morpheus_panes(count: usize) -> App {
     let mut app = App::new("/tmp".into());
     // A main session exists (the split lives inside one; `/new` would tear
     // the split down, so it is created BEFORE the split attaches).
     app.run_slash_command(&new_cmd());
     let panes = (0..count)
-        .map(|_| crate::types::AgentPaneRef::Name("cosh".into()))
+        .map(|_| crate::types::AgentPaneRef::Name("morpheus".into()))
         .collect();
     app.agents_split = Some(AgentsSplitState::new(panes));
     app
 }
 
-/// A `/models` pick on a focused cosh pane must scope to THAT pane: the
+/// A `/models` pick on a focused morpheus pane must scope to THAT pane: the
 /// pane's own selection is committed while pane B, the global config, the
 /// persisted global slot and the main session all stay untouched.
 #[tokio::test]
 async fn pane_model_pick_scopes_to_the_pane() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    let mut app = app_with_cosh_panes(2);
+    let mut app = app_with_morpheus_panes(2);
     app.llm_config.provider = "global-provider".into();
     app.llm_config.model = Some("global-model".into());
     app.llm_config.reasoning = Some("high".into());
@@ -595,7 +596,7 @@ async fn pane_model_pick_scopes_to_the_pane() {
 async fn main_model_change_leaves_existing_panes_alone() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    let mut app = app_with_cosh_panes(2);
+    let mut app = app_with_morpheus_panes(2);
     app.llm_config.provider = "global-provider".into();
     app.llm_config.model = Some("global-model".into());
     app.llm_config.reasoning = Some("high".into());
@@ -629,11 +630,11 @@ async fn main_model_change_leaves_existing_panes_alone() {
 async fn pane_model_persists_in_the_session_markers() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    let mut app = app_with_cosh_panes(1);
+    let mut app = app_with_morpheus_panes(1);
     app.llm_config.provider = "global-provider".into();
     app.llm_config.model = Some("global-model".into());
 
-    // Bind the pane to a real cosh session (the shell a first turn mints).
+    // Bind the pane to a real morpheus session (the shell a first turn mints).
     let session_id = crate::session::store::generate_session_id();
     app.session_store.save_session(&crate::types::Session {
         id: session_id.clone(),
@@ -672,7 +673,7 @@ async fn pane_model_persists_in_the_session_markers() {
     // A restarted pane carries no in-memory selection: the session markers
     // take precedence over the global config, exactly like the main
     // session's markers do.
-    let mut restarted = crate::routes::session::agents_split::AgentPane::new("cosh".into());
+    let mut restarted = crate::routes::session::agents_split::AgentPane::new("morpheus".into());
     restarted.session_id = Some(session_id);
     let route = app.manager_pane_model_selection(&restarted).unwrap();
     assert_eq!(route.model, "auto");
@@ -683,13 +684,13 @@ async fn pane_model_persists_in_the_session_markers() {
     assert!(app.manager_pane_model_selection(&restarted).is_none());
 }
 
-/// The routing contract: `/models` on a focused cosh pane opens the
+/// The routing contract: `/models` on a focused morpheus pane opens the
 /// PANE-scoped picker; the same command with no pane focused stays global.
 #[tokio::test]
-async fn slash_models_on_a_focused_cosh_pane_opens_the_pane_picker() {
+async fn slash_models_on_a_focused_morpheus_pane_opens_the_pane_picker() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    let mut app = app_with_cosh_panes(1);
+    let mut app = app_with_morpheus_panes(1);
     let models_cmd = crate::ui::slash_menu::SlashCommand {
         name: "models".into(),
         desc: String::new(),
@@ -709,7 +710,7 @@ async fn slash_models_on_a_focused_cosh_pane_opens_the_pane_picker() {
     assert!(app.is_model_dialog_visible());
     app.restore_model_dialog();
 
-    // Focused cosh pane: the pane's own picker.
+    // Focused morpheus pane: the pane's own picker.
     app.agents_split.as_mut().unwrap().focused = Some(0);
     crate::app::agents_dispatch::route_agent_slash_command(&mut app, &models_cmd);
     assert_eq!(app.pane_model_edit, Some(0));
@@ -740,7 +741,7 @@ async fn slash_models_on_a_focused_cosh_pane_opens_the_pane_picker() {
 async fn pane_model_pick_shows_on_the_prompt_badge() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    let mut app = app_with_cosh_panes(2);
+    let mut app = app_with_morpheus_panes(2);
     app.llm_config.provider = "global-provider".into();
     app.llm_config.model = Some("global-model".into());
 
@@ -771,7 +772,7 @@ async fn pane_model_pick_shows_on_the_prompt_badge() {
 async fn hydrated_manager_pane_shows_the_session_model_on_the_badge() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    let mut app = app_with_cosh_panes(1);
+    let mut app = app_with_morpheus_panes(1);
     app.llm_config.provider = "global-provider".into();
     app.llm_config.model = Some("global-model".into());
 

@@ -4,7 +4,7 @@
 //! The harness used to keep the loaded model in process-wide statics so a
 //! per-turn assembly would not reload a ~1.3 GB graph on every message. The
 //! daemon is the generalization of that: one process owns the residency,
-//! every cosh instance shares it, and the registry below is its only copy —
+//! every morpheus instance shares it, and the registry below is its only copy —
 //! the same one-resident-at-a-time contract, the same 60s retry window on a
 //! failed load, the same "last store wins" tolerance for racing loads.
 
@@ -183,7 +183,7 @@ mod tests {
     fn broken_kind() -> Kind {
         Kind::Custom {
             repo: std::env::temp_dir()
-                .join("cosh-registry-test-empty")
+                .join("morpheus-registry-test-empty")
                 .display()
                 .to_string(),
             subfolder: None,
@@ -192,7 +192,7 @@ mod tests {
 
     #[test]
     fn failed_load_throttles_retries_within_the_window() {
-        let dir = std::env::temp_dir().join("cosh-registry-test-empty");
+        let dir = std::env::temp_dir().join("morpheus-registry-test-empty");
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let kind = broken_kind();

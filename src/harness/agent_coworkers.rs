@@ -40,7 +40,7 @@
 //!   delivered later by the requester's loop drain, [`take_ready_deliveries`]).
 //!
 //! Requests are tagged with their REQUESTER (`main` loop or the `manager`
-//! loop running in a cosh coworker) so a background report is drained only by
+//! loop running in a morpheus coworker) so a background report is drained only by
 //! the loop that asked for it — the two loops never run concurrently (the
 //! `/agents` gate refuses to open while the main loop works, and the main
 //! submit path routes into the split while it is open), but a delivery can
@@ -51,7 +51,7 @@ use std::sync::{Mutex, OnceLock};
 
 /// The top-level agent loop (the normal chat session) as a requester tag.
 pub const MAIN: &str = "main";
-/// The manager loop (the `cosh` coworker's own cosh session — the app's own
+/// The manager loop (the `morpheus` coworker's own morpheus session — the app's own
 /// coworker, at any split position) as a requester tag.
 pub const MANAGER: &str = "manager";
 
@@ -61,7 +61,7 @@ pub struct AgentCoworkerDescriptor {
     /// The addressable id: the agent CLI name, or `name#k` when the split
     /// runs several coworkers of the same CLI (same disambiguation the right
     /// panel's mirrors use). The manager coworker is addressable like every
-    /// other agent, under `"cosh"` (or `"cosh#k"` among several).
+    /// other agent, under `"morpheus"` (or `"morpheus#k"` among several).
     pub id: String,
     /// The coworker's IDENTITY — the `AgentPane::id` the TUI stamped at coworker
     /// creation (monotonic, never recycled; `0` reserved for "never
@@ -75,7 +75,7 @@ pub struct AgentCoworkerDescriptor {
     pub coworker_id: u64,
     /// The agent CLI backing the coworker (`"claude"`, `"kilo"`, …).
     pub agent: String,
-    /// Whether this coworker runs THIS app's own manager loop (a `cosh` coworker).
+    /// Whether this coworker runs THIS app's own manager loop (a `morpheus` coworker).
     /// Manager coworkers can never free themselves while a peer manager waits on
     /// them, so `agents_call` gates `Wait` calls between them (see
     /// [`enqueue`]); background calls stay allowed.
@@ -202,7 +202,7 @@ impl AgentCoworkerTurnEnd {
 
     /// Parse the wire spelling. Total by design (see the type docs).
     ///
-    /// Accepts BOTH vocabularies that reach this type: the cosh-coworker one
+    /// Accepts BOTH vocabularies that reach this type: the morpheus-coworker one
     /// ([`Self::as_str`]) and the ACP `StopReason` one the external agents
     /// report (`crates/morpheus-tools/src/subagent/acp.rs`, `stop_reason_str`).
     /// The ACP side matters as much as the local one — external coworkers are
@@ -491,8 +491,8 @@ fn registry() -> &'static Mutex<RegistryState> {
 ///
 /// The wording addresses the coworker the requester MEANT — "the pane you
 /// addressed as '<label>'" — never the label as an identity, because a
-/// positional label is recyclable: `cosh#2` may still exist in the CURRENT
-/// set as a DIFFERENT coworker object, and a bare "the pane you addressed as 'cosh#2' is gone"
+/// positional label is recyclable: `morpheus#2` may still exist in the CURRENT
+/// set as a DIFFERENT coworker object, and a bare "the pane you addressed as 'morpheus#2' is gone"
 /// would leave the requester arguing with itself about whether its
 /// address is still valid (Issue 3 review note). The CURRENT addressable
 /// set rides along so the agent can re-address `agents_call` immediately
@@ -514,7 +514,7 @@ fn removal_error(removed_label: &str, known: &[String]) -> String {
 ///
 /// The reconciliation is keyed on the descriptors' IDENTITY
 /// ([`AgentCoworkerDescriptor::coworker_id`]), never on the positional label: removing a
-/// coworker renumbers its later siblings' labels (`cosh#2` can become `cosh#1`),
+/// coworker renumbers its later siblings' labels (`morpheus#2` can become `morpheus#1`),
 /// and the OLD code — which diffed by label — judged a recycled label "still
 /// alive" and let a dead coworker's queue/serving survive under it, to be served
 /// by the WRONG coworker (Issue 3 misdelivery). Three outcomes per old label:
@@ -740,7 +740,7 @@ pub fn has_coworkers() -> bool {
 ///
 /// An unknown coworker id (the model guessed a name that is not bound — the
 /// error names the known ids so the model can correct itself). Also a
-/// `Wait` call from a manager (`MANAGER`) loop to a cosh coworker: see the
+/// `Wait` call from a manager (`MANAGER`) loop to a morpheus coworker: see the
 /// mutual-deadlock guard below.
 pub fn enqueue(
     coworker: &str,
@@ -760,9 +760,9 @@ pub fn enqueue(
             "no pane '{coworker}' in this session's /agents split; known panes: {known:?}"
         ));
     };
-    // Mutual-deadlock guard: a cosh coworker runs a MANAGER loop, and a manager
+    // Mutual-deadlock guard: a morpheus coworker runs a MANAGER loop, and a manager
     // turn cannot end while it waits on another coworker. A `Wait` call between
-    // cosh coworkers can therefore deadlock (self on the same id, or two managers
+    // morpheus coworkers can therefore deadlock (self on the same id, or two managers
     // on each other's coworker: both turns stay busy, `serve_agents_pane_queues`
     // skips running coworkers, and no turn ever reaches `complete_request`).
     // Background calls are non-blocking and safe — they are the intended
@@ -774,7 +774,7 @@ pub fn enqueue(
     // external CLI's turn ends on its own and frees the waiter.
     if requester == MANAGER && target_is_manager && mode == ReplyMode::Wait {
         return Err(format!(
-            "`agents_call` to the cosh pane '{coworker}' cannot block: cosh panes run manager \
+            "`agents_call` to the morpheus pane '{coworker}' cannot block: morpheus panes run manager \
              loops, and a manager turn cannot finish while waiting on a peer coworker — two of \
              them waiting on each other would deadlock. Re-run with \
              `run_in_background: true`: the report then arrives as an [automated notification]."
@@ -1411,14 +1411,14 @@ fn claim_redirect(coworker_id: u64, end: AgentCoworkerTurnEnd) -> u32 {
 /// the requester's loop drain on a later turn.
 ///
 /// The TARGET rule is uniform: every coworker in the set is addressable, the
-/// cosh (`is_manager`) ones included — a cosh coworker runs a real agent session
+/// morpheus (`is_manager`) ones included — a morpheus coworker runs a real agent session
 /// with its own cwd, so isolating one is a legitimate ask exactly like
 /// isolating a `claude` coworker, and it is the supremacy check (a
 /// User-assigned binding always opens the user's permission box) plus the
 /// coworker-stripping (`with_own_coworker_id` removes this tool from every coworker
-/// loop) that keep the user in charge. The old blanket refusal of cosh coworkers
+/// loop) that keep the user in charge. The old blanket refusal of morpheus coworkers
 /// made `/worktree` the ONLY way to isolate them, which is exactly the
-/// asymmetry that read as "the command is missing for cosh panes".
+/// asymmetry that read as "the command is missing for morpheus panes".
 ///
 /// # Errors
 ///
@@ -1551,7 +1551,7 @@ pub fn enqueue_compact_op(coworker: &str, requester: &'static str) -> Result<Str
     if !is_manager {
         return Err(format!(
             "pane '{coworker}' runs an external agent — its context is owned by its own CLI \
-             and cannot be compacted from here. Only cosh coworkers (this app's own \
+             and cannot be compacted from here. Only morpheus coworkers (this app's own \
              sessions) are compactable."
         ));
     }
@@ -1753,12 +1753,23 @@ fn would_create_cycle(tasks: &[Task], deps: &[u64]) -> bool {
     // if deps contain duplicates of an existing id that already depends back.
     // Generic DFS over existing graph to ensure it is acyclic (it should be).
     use std::collections::HashSet;
-    fn dfs(tasks: &[Task], node: u64, visiting: &mut HashSet<u64>, visited: &mut HashSet<u64>) -> bool {
-        if visited.contains(&node) { return false; }
-        if !visiting.insert(node) { return true; } // cycle
+    fn dfs(
+        tasks: &[Task],
+        node: u64,
+        visiting: &mut HashSet<u64>,
+        visited: &mut HashSet<u64>,
+    ) -> bool {
+        if visited.contains(&node) {
+            return false;
+        }
+        if !visiting.insert(node) {
+            return true;
+        } // cycle
         if let Some(t) = tasks.iter().find(|t| t.id == node) {
             for d in &t.deps {
-                if dfs(tasks, *d, visiting, visited) { return true; }
+                if dfs(tasks, *d, visiting, visited) {
+                    return true;
+                }
             }
         }
         visiting.remove(&node);
@@ -1776,12 +1787,18 @@ fn would_create_cycle(tasks: &[Task], deps: &[u64]) -> bool {
     // cannot happen, but reject duplicate deps defensively.
     let mut seen = HashSet::new();
     for d in deps {
-        if !seen.insert(*d) { return true; }
+        if !seen.insert(*d) {
+            return true;
+        }
     }
     false
 }
 
-pub fn task_create(title: &str, description: Option<String>, deps: Vec<u64>) -> Result<u64, String> {
+pub fn task_create(
+    title: &str,
+    description: Option<String>,
+    deps: Vec<u64>,
+) -> Result<u64, String> {
     if title.trim().is_empty() {
         return Err("task title must not be empty".to_string());
     }
@@ -1829,7 +1846,6 @@ pub fn task_create(title: &str, description: Option<String>, deps: Vec<u64>) -> 
     Ok(id)
 }
 
-
 /// Atomic update with caller authorization (used by panes). `caller` is
 /// `Some(coworker id)` for a pane; `None` for the coordinator (unrestricted).
 pub fn task_update_for(
@@ -1856,7 +1872,11 @@ pub fn task_update_for(
         if !state.coworkers.iter().any(|p| p.id == *c) {
             return Err(format!("unknown caller '{}'", c));
         }
-        let caller_id = state.coworkers.iter().find(|x| x.id == *c).map(|x| x.coworker_id);
+        let caller_id = state
+            .coworkers
+            .iter()
+            .find(|x| x.id == *c)
+            .map(|x| x.coworker_id);
         if let Some(owner_id) = state.tasks[idx].owner_id {
             if let Some(cid) = caller_id {
                 if owner_id != cid {
@@ -1875,22 +1895,34 @@ pub fn task_update_for(
                 return Err("panes may only mark a task completed".to_string());
             }
             if state.tasks[idx].status != TaskStatus::InProgress {
-                return Err(format!("task #{task_id} must be in_progress before completion"));
+                return Err(format!(
+                    "task #{task_id} must be in_progress before completion"
+                ));
             }
         }
     }
     if let Some(s) = status {
         if s != TaskStatus::Pending && s != TaskStatus::Blocked {
             let deps_done = state.tasks[idx].deps.iter().all(|d| {
-                state.tasks.iter().find(|x| x.id == *d).map(|x| x.status == TaskStatus::Completed).unwrap_or(false)
+                state
+                    .tasks
+                    .iter()
+                    .find(|x| x.id == *d)
+                    .map(|x| x.status == TaskStatus::Completed)
+                    .unwrap_or(false)
             });
             if !deps_done {
                 return Err(format!("task #{task_id} has unmet dependencies"));
             }
         }
         // Panes cannot complete unless currently in progress.
-        if caller.is_some() && s == TaskStatus::Completed && state.tasks[idx].status != TaskStatus::InProgress {
-            return Err(format!("task #{task_id} must be in_progress before completion"));
+        if caller.is_some()
+            && s == TaskStatus::Completed
+            && state.tasks[idx].status != TaskStatus::InProgress
+        {
+            return Err(format!(
+                "task #{task_id} must be in_progress before completion"
+            ));
         }
         state.tasks[idx].status = s;
         if matches!(s, TaskStatus::Pending | TaskStatus::Blocked) {
@@ -1921,17 +1953,22 @@ pub fn task_update_for(
             state.tasks[idx].owner_id = None;
             state.tasks[idx].owner_is_coordinator = true;
         } else {
-            state.tasks[idx].owner_id = state.coworkers.iter().find(|c| c.id == o).map(|c| c.coworker_id);
+            state.tasks[idx].owner_id = state
+                .coworkers
+                .iter()
+                .find(|c| c.id == o)
+                .map(|c| c.coworker_id);
             state.tasks[idx].owner_is_coordinator = false;
         }
     }
     recompute_blocked(&mut state);
     let new_status = state.tasks[idx].status;
-    Ok(format!("Updated task #{} -> {}", task_id, new_status.as_str()))
+    Ok(format!(
+        "Updated task #{} -> {}",
+        task_id,
+        new_status.as_str()
+    ))
 }
-
-
-
 
 pub fn task_list() -> Vec<Task> {
     registry()
@@ -2035,11 +2072,22 @@ pub fn context_block() -> Option<String> {
         for t in tasks
             .iter()
             .filter(|t| !matches!(t.status, TaskStatus::Completed))
-            .chain(tasks.iter().filter(|t| matches!(t.status, TaskStatus::Completed)))
+            .chain(
+                tasks
+                    .iter()
+                    .filter(|t| matches!(t.status, TaskStatus::Completed)),
+            )
             .take(5)
         {
             let owner = t.owner.as_deref().unwrap_or("unclaimed");
-            let _ = writeln!(block, "- #{} — {} — {} — owner: {}", t.id, t.status.as_str(), t.title, owner);
+            let _ = writeln!(
+                block,
+                "- #{} — {} — {} — owner: {}",
+                t.id,
+                t.status.as_str(),
+                t.title,
+                owner
+            );
         }
         block.push('\n');
     }
@@ -2097,7 +2145,14 @@ pub fn peer_block(own_id: &str) -> Option<String> {
         block.push_str("\n## Task Board (claim with agents_task_claim)\n");
         for t in open {
             let owner = t.owner.as_deref().unwrap_or("unclaimed");
-            let _ = writeln!(block, "- #{} — {} — {} — owner: {}", t.id, t.status.as_str(), t.title, owner);
+            let _ = writeln!(
+                block,
+                "- #{} — {} — {} — owner: {}",
+                t.id,
+                t.status.as_str(),
+                t.title,
+                owner
+            );
         }
         block.push('\n');
     }
@@ -2217,8 +2272,8 @@ pub fn agents_call_tool() -> super::core::HarnessTool {
 }
 
 /// The `agents_worktree` harness tool, built against the CURRENT coworker set:
-/// the same addressable ids `agents_call` speaks, the cosh (`is_manager`)
-/// coworkers INCLUDED — a cosh coworker runs a real agent session with its own cwd,
+/// the same addressable ids `agents_call` speaks, the morpheus (`is_manager`)
+/// coworkers INCLUDED — a morpheus coworker runs a real agent session with its own cwd,
 /// so the agent may ask to isolate it exactly like any other coworker, and the
 /// user keeps the final word through the session permission box (Allow /
 /// Allow Once / Deny) a User-assigned binding always opens. Registered ONLY
@@ -2242,7 +2297,7 @@ pub fn agents_worktree_tool() -> super::core::HarnessTool {
              ## Rules\n\
              - `name` (required on `assign`): the branch to check out. Its slug also names the \
              worktree directory. Collisions auto-suffix (`-2`, `-3`, …).\n\
-             - NO path parameter: the worktree location is cosh's temp root — the user picks \
+             - NO path parameter: the worktree location is morpheus's temp root — the user picks \
              explicit locations via their own `/worktree` command, never you.\n\
              - The coworker (and you) learn the new cwd automatically before the coworker's next task: \
              include this in your delegation message when you assign one.\n\
@@ -2298,7 +2353,7 @@ pub fn agents_compact_tool() -> super::core::HarnessTool {
              `coworker` is the addressable coworker id ({pane_list}).\n\n\
              The coworker's turn must be finished (it runs between the coworker's turns, \
              exactly like the user's own /compact on that session): a busy coworker \
-             refuses the call. Only cosh coworkers (this app's own manager sessions) \
+             refuses the call. Only morpheus coworkers (this app's own manager sessions) \
              are compactable — an external agent owns its own context.\n\n\
              ## When to use\n\n\
              - The coworker reports a heavy context (long transcript, repeated large \
@@ -2320,8 +2375,6 @@ pub fn agents_compact_tool() -> super::core::HarnessTool {
         }),
     }
 }
-
-
 
 #[must_use]
 pub fn agents_task_create_tool() -> super::core::HarnessTool {
@@ -2417,9 +2470,9 @@ mod tests {
             id: id.to_string(),
             coworker_id,
             agent: agent.to_string(),
-            // `cosh` is the app's manager label; the production sync sets the
+            // `morpheus` is the app's manager label; the production sync sets the
             // flag from the manager-coworker label, mirrored here for the tests.
-            is_manager: agent == "cosh",
+            is_manager: agent == "morpheus",
             bound,
             worktree: None,
             model: None,
@@ -2433,7 +2486,7 @@ mod tests {
             id: id.to_string(),
             coworker_id,
             agent: agent.to_string(),
-            is_manager: agent == "cosh",
+            is_manager: agent == "morpheus",
             bound: false,
             worktree: None,
             model: None,
@@ -2453,17 +2506,17 @@ mod tests {
     fn compact_op_parks_fifo_and_delivers_to_its_requester() {
         let _g = lock();
         set_coworkers(vec![
-            coworker("cosh", "cosh", true),
+            coworker("morpheus", "morpheus", true),
             coworker("claude", "claude", false),
         ]);
-        let op1 = enqueue_compact_op("cosh", MAIN).expect("parks");
-        let op2 = enqueue_compact_op("cosh", MANAGER).expect("parks");
+        let op1 = enqueue_compact_op("morpheus", MAIN).expect("parks");
+        let op2 = enqueue_compact_op("morpheus", MANAGER).expect("parks");
         assert_ne!(op1, op2, "ids are unique");
         // FIFO across requesters.
         assert_eq!(peek_compact_op().unwrap().id, op1);
         let popped = pop_compact_op().expect("the head");
         assert_eq!(popped.id, op1);
-        assert_eq!(popped.coworker, "cosh");
+        assert_eq!(popped.coworker, "morpheus");
         assert_eq!(popped.requester, MAIN);
         complete_compact_op(&popped, Ok("pane compacted".to_string()));
         let drained = take_ready_deliveries(MAIN);
@@ -2486,18 +2539,18 @@ mod tests {
         assert!(take_ready_deliveries(MAIN).is_empty(), "MAIN unaffected");
     }
 
-    /// The compaction ask only ever targets a cosh coworker: an unknown id is
+    /// The compaction ask only ever targets a morpheus coworker: an unknown id is
     /// refused with the known set, and an ACP coworker is refused because its
     /// external CLI owns its context.
     #[test]
     fn compact_op_validation_refuses_unknown_and_acp_targets() {
         let _g = lock();
         set_coworkers(vec![
-            coworker("cosh", "cosh", true),
+            coworker("morpheus", "morpheus", true),
             coworker("claude", "claude", false),
         ]);
         let err = enqueue_compact_op("ghost", MAIN).unwrap_err();
-        assert!(err.contains("ghost") && err.contains("cosh"), "{err}");
+        assert!(err.contains("ghost") && err.contains("morpheus"), "{err}");
         assert!(peek_compact_op().is_none(), "refusals park nothing");
         let acp = enqueue_compact_op("claude", MAIN).unwrap_err();
         assert!(
@@ -2506,8 +2559,8 @@ mod tests {
         );
         assert!(peek_compact_op().is_none(), "refusals park nothing");
         assert!(
-            enqueue_compact_op("cosh", MAIN).is_ok(),
-            "a cosh pane parks"
+            enqueue_compact_op("morpheus", MAIN).is_ok(),
+            "a morpheus pane parks"
         );
     }
 
@@ -2517,9 +2570,9 @@ mod tests {
     #[test]
     fn a_parked_compact_op_is_outstanding_until_its_outcome_is_delivered() {
         let _g = lock();
-        set_coworkers(vec![coworker("cosh", "cosh", true)]);
+        set_coworkers(vec![coworker("morpheus", "morpheus", true)]);
         assert!(!has_outstanding_requests(MAIN), "nothing to wait for yet");
-        let op_id = enqueue_compact_op("cosh", MAIN).expect("parks");
+        let op_id = enqueue_compact_op("morpheus", MAIN).expect("parks");
         assert!(
             has_outstanding_requests(MAIN),
             "the parked op's outcome is still owed to this loop"
@@ -2546,10 +2599,10 @@ mod tests {
     #[test]
     fn a_compact_op_of_a_removed_pane_never_executes_on_a_recycled_label() {
         let _g = lock();
-        set_coworkers(vec![with_identity("cosh", "cosh", 601)]);
-        let op = enqueue_compact_op("cosh", MAIN).expect("parks");
-        // The cosh coworker dies; a fresh ACP coworker takes the recycled label.
-        set_coworkers(vec![with_identity("cosh", "claude", 999)]);
+        set_coworkers(vec![with_identity("morpheus", "morpheus", 601)]);
+        let op = enqueue_compact_op("morpheus", MAIN).expect("parks");
+        // The morpheus coworker dies; a fresh ACP coworker takes the recycled label.
+        set_coworkers(vec![with_identity("morpheus", "claude", 999)]);
         assert!(peek_compact_op().is_none(), "the dead pane's op is gone");
         let deliveries = take_ready_deliveries(MAIN);
         assert_eq!(deliveries.len(), 1);
@@ -2560,7 +2613,13 @@ mod tests {
             "the delivery carries the identity"
         );
         assert!(deliveries[0].output.is_err());
-        assert!(deliveries[0].output.clone().unwrap_err().contains("cosh"));
+        assert!(
+            deliveries[0]
+                .output
+                .clone()
+                .unwrap_err()
+                .contains("morpheus")
+        );
     }
 
     /// A compaction in flight is exclusive per coworker: a second ask for the
@@ -2571,20 +2630,20 @@ mod tests {
     fn a_second_compact_of_a_pane_in_flight_fails_fast() {
         let _g = lock();
         set_coworkers(vec![
-            coworker("cosh", "cosh", true),
-            coworker("dev", "cosh", true),
+            coworker("morpheus", "morpheus", true),
+            coworker("dev", "morpheus", true),
         ]);
-        let op = enqueue_compact_op("cosh", MAIN).expect("parks");
+        let op = enqueue_compact_op("morpheus", MAIN).expect("parks");
         let popped = pop_compact_op().expect("the parked op");
         assert_eq!(popped.id, op);
         assert!(
             coworker_is_compacting(popped.coworker_id),
             "popped = in flight, the guard must be set"
         );
-        let dup = enqueue_compact_op("cosh", MAIN).unwrap_err();
+        let dup = enqueue_compact_op("morpheus", MAIN).unwrap_err();
         assert!(dup.contains("already being compacted"), "{dup}");
         assert!(peek_compact_op().is_none(), "a duplicate parks nothing");
-        // Another coworker compacts freely while cosh is in flight.
+        // Another coworker compacts freely while morpheus is in flight.
         assert!(enqueue_compact_op("dev", MAIN).is_ok());
         // The outcome clears the guard: the coworker may be asked again.
         complete_compact_op(&popped, Ok("compacted".to_string()));
@@ -2592,7 +2651,7 @@ mod tests {
             !coworker_is_compacting(popped.coworker_id),
             "the guard clears with the outcome"
         );
-        assert!(enqueue_compact_op("cosh", MAIN).is_ok());
+        assert!(enqueue_compact_op("morpheus", MAIN).is_ok());
     }
 
     /// The compaction outcome note must not be able to impersonate harness
@@ -2600,7 +2659,7 @@ mod tests {
     #[test]
     fn a_compact_outcome_cannot_fake_a_system_reminder() {
         let delivery = AgentCoworkerDelivery {
-            coworker: "cosh".to_string(),
+            coworker: "morpheus".to_string(),
             coworker_id: 1,
             request_id: "cp-op-1".to_string(),
             requester: MAIN,
@@ -2777,18 +2836,23 @@ mod tests {
     fn worktree_op_validation_refuses_unknown_and_bad_names() {
         let _g = lock();
         set_coworkers(vec![
-            coworker("cosh", "cosh", true),
+            coworker("morpheus", "morpheus", true),
             coworker("claude", "claude", false),
         ]);
         // Unknown coworker: the error names the known ids.
         let err = enqueue_worktree_op("ghost", WorktreeAction::Clear, None, MAIN).unwrap_err();
         assert!(err.contains("ghost") && err.contains("claude"), "{err}");
-        // A cosh (manager) coworker IS an address: the tool covers every coworker kind
+        // A morpheus (manager) coworker IS an address: the tool covers every coworker kind
         // now — isolating one is the same ask as isolating a `claude` coworker,
         // and the User-assigned confirmation box is what protects the user's
         // own binding. The ask parks.
-        let id = enqueue_worktree_op("cosh", WorktreeAction::Assign, Some("cosh-iso"), MAIN)
-            .expect("a cosh pane is addressable");
+        let id = enqueue_worktree_op(
+            "morpheus",
+            WorktreeAction::Assign,
+            Some("morpheus-iso"),
+            MAIN,
+        )
+        .expect("a morpheus pane is addressable");
         assert_eq!(peek_worktree_op().expect("parked").id, id);
         // Drain it so the later "refusals park nothing" assertion is about
         // refusals only.
@@ -2985,58 +3049,61 @@ mod tests {
         }
     }
 
-    /// A manager `Wait` call to another cosh coworker is refused (mutual-deadlock
+    /// A manager `Wait` call to another morpheus coworker is refused (mutual-deadlock
     /// guard) and points at background mode; the same call in background is
     /// accepted — the intended planner/implementer coordination path.
     #[test]
-    fn manager_wait_to_a_cosh_pane_is_refused_but_background_is_allowed() {
+    fn manager_wait_to_a_morpheus_pane_is_refused_but_background_is_allowed() {
         let _g = lock();
         set_coworkers(vec![
-            coworker("cosh#1", "cosh", false),
-            coworker("cosh#2", "cosh", false),
+            coworker("morpheus#1", "morpheus", false),
+            coworker("morpheus#2", "morpheus", false),
         ]);
-        let err = match enqueue("cosh#2", "plan", MANAGER, ReplyMode::Wait) {
+        let err = match enqueue("morpheus#2", "plan", MANAGER, ReplyMode::Wait) {
             Err(error) => error,
-            Ok(_) => panic!("cosh→cosh wait must be refused"),
+            Ok(_) => panic!("morpheus→morpheus wait must be refused"),
         };
         assert!(err.contains("cannot block"), "{err}");
         assert!(err.contains("run_in_background"), "suggests the fix: {err}");
 
-        let handle = enqueue("cosh#2", "plan", MANAGER, ReplyMode::Background)
-            .expect("background cosh→cosh is the supported path");
+        let handle = enqueue("morpheus#2", "plan", MANAGER, ReplyMode::Background)
+            .expect("background morpheus→morpheus is the supported path");
         assert!(handle.receiver.is_none(), "background carries no receiver");
-        assert!(pop_next_request("cosh#2").is_some(), "queued and servable");
+        assert!(
+            pop_next_request("morpheus#2").is_some(),
+            "queued and servable"
+        );
 
         // The reverse direction must behave identically: the guard is about
-        // the cosh↔cosh pair, not the specific ids or ordering.
-        let reverse = match enqueue("cosh#1", "plan", MANAGER, ReplyMode::Wait) {
+        // the morpheus↔morpheus pair, not the specific ids or ordering.
+        let reverse = match enqueue("morpheus#1", "plan", MANAGER, ReplyMode::Wait) {
             Err(error) => error,
-            Ok(_) => panic!("cosh#2→cosh#1 wait must be refused too"),
+            Ok(_) => panic!("morpheus#2→morpheus#1 wait must be refused too"),
         };
         assert!(reverse.contains("cannot block"), "{reverse}");
         assert!(
-            enqueue("cosh#1", "plan", MANAGER, ReplyMode::Background).is_ok(),
-            "background cosh#2→cosh#1 is the supported path"
+            enqueue("morpheus#1", "plan", MANAGER, ReplyMode::Background).is_ok(),
+            "background morpheus#2→morpheus#1 is the supported path"
         );
     }
 
-    /// The guard is about cosh→cosh only: a manager may still `Wait` on an ACP
-    /// coworker (its turn ends on its own), and the MAIN loop may `Wait` on a cosh
+    /// The guard is about morpheus→morpheus only: a manager may still `Wait` on an ACP
+    /// coworker (its turn ends on its own), and the MAIN loop may `Wait` on a morpheus
     /// coworker (the main loop is not a coworker and cannot be the one blocking it).
     #[test]
-    fn manager_wait_to_an_acp_pane_and_main_wait_to_cosh_stay_allowed() {
+    fn manager_wait_to_an_acp_pane_and_main_wait_to_morpheus_stay_allowed() {
         let _g = lock();
         set_coworkers(vec![
             coworker("claude", "claude", false),
-            coworker("cosh", "cosh", false),
+            coworker("morpheus", "morpheus", false),
         ]);
         assert!(
             enqueue("claude", "review", MANAGER, ReplyMode::Wait).is_ok(),
             "manager → ACP wait is safe"
         );
         assert!(
-            enqueue("cosh", "coordinate", MAIN, ReplyMode::Wait).is_ok(),
-            "main → cosh wait is safe"
+            enqueue("morpheus", "coordinate", MAIN, ReplyMode::Wait).is_ok(),
+            "main → morpheus wait is safe"
         );
     }
 
@@ -3049,21 +3116,21 @@ mod tests {
     #[test]
     fn pop_next_request_fails_an_orphaned_serving_entry() {
         let _g = lock();
-        set_coworkers(vec![coworker("cosh#1", "cosh", false)]);
-        let lost = enqueue("cosh#1", "lost turn", MAIN, ReplyMode::Wait).unwrap();
+        set_coworkers(vec![coworker("morpheus#1", "morpheus", false)]);
+        let lost = enqueue("morpheus#1", "lost turn", MAIN, ReplyMode::Wait).unwrap();
         let lost_rx = lost.receiver.expect("receiver");
-        assert!(pop_next_request("cosh#1").is_some(), "dispatched");
+        assert!(pop_next_request("morpheus#1").is_some(), "dispatched");
         // The turn died BEFORE its completion: the serving entry survives.
         // The App pops again for the coworker's NEXT request — the orphaned
         // wait fails, and the new request takes the serving slot.
-        let next = enqueue("cosh#1", "next turn", MAIN, ReplyMode::Wait).unwrap();
+        let next = enqueue("morpheus#1", "next turn", MAIN, ReplyMode::Wait).unwrap();
         let next_rx = next.receiver.expect("receiver");
-        let popped = pop_next_request("cosh#1").expect("next queued request");
+        let popped = pop_next_request("morpheus#1").expect("next queued request");
         assert_eq!(popped.text, "next turn");
         let answer = block_on(async move { lost_rx.await.expect("sender alive") });
         assert_eq!(
             answer.output,
-            Err("pane 'cosh#1' orphaned the request: its turn never completed".to_string()),
+            Err("pane 'morpheus#1' orphaned the request: its turn never completed".to_string()),
             "the orphaned turn's wait is failed by the next pop"
         );
         assert!(
@@ -3072,7 +3139,7 @@ mod tests {
         );
         assert_eq!(
             complete_request(
-                "cosh#1",
+                "morpheus#1",
                 AgentCoworkerReport::new(Ok("done".to_string()), AgentCoworkerTurnEnd::EndTurn)
             ),
             Some(MAIN)
@@ -3089,15 +3156,18 @@ mod tests {
     #[test]
     fn fail_serving_releases_the_in_flight_wait() {
         let _g = lock();
-        set_coworkers(vec![coworker("cosh#1", "cosh", false)]);
-        let handle = enqueue("cosh#1", "in flight", MAIN, ReplyMode::Wait).unwrap();
+        set_coworkers(vec![coworker("morpheus#1", "morpheus", false)]);
+        let handle = enqueue("morpheus#1", "in flight", MAIN, ReplyMode::Wait).unwrap();
         let rx = handle.receiver.expect("receiver");
-        assert!(pop_next_request("cosh#1").is_some(), "dispatched");
+        assert!(pop_next_request("morpheus#1").is_some(), "dispatched");
         assert!(
             has_outstanding_requests(MAIN),
             "the wait is outstanding while served"
         );
-        fail_serving("cosh#1", "the pane's set was replaced or torn down".into());
+        fail_serving(
+            "morpheus#1",
+            "the pane's set was replaced or torn down".into(),
+        );
         let answer = block_on(async move { rx.await.expect("sender alive") });
         assert_eq!(
             answer.output,
@@ -3108,7 +3178,7 @@ mod tests {
             "no outstanding requests survive the failure"
         );
         // A second failure is a no-op: the entry is gone.
-        fail_serving("cosh#1", "again".into());
+        fail_serving("morpheus#1", "again".into());
         assert!(!has_outstanding_requests(MAIN));
     }
 
@@ -3347,7 +3417,7 @@ mod tests {
     /// at each consumer.
     /// The ACP `StopReason` spellings reach the SAME type as the local ones,
     /// and its truncation shapes must not read as a conclusion: an external
-    /// agent that ran out of tokens has, like a narrating cosh coworker, text
+    /// agent that ran out of tokens has, like a narrating morpheus coworker, text
     /// that may describe work it never got to do.
     #[test]
     fn the_acp_stop_reasons_map_onto_the_same_vocabulary() {
@@ -3641,33 +3711,33 @@ mod tests {
     // ── Issue 3: the registry reconciles by IDENTITY, never by the ──
     // ── recyclable positional label.                              ──
 
-    /// THE misdelivery: three cosh coworkers (`cosh#1/2/3`), the middle one
-    /// removed. The OLD code diffed by label: `cosh#2` "survived" (the
+    /// THE misdelivery: three morpheus coworkers (`morpheus#1/2/3`), the middle one
+    /// removed. The OLD code diffed by label: `morpheus#2` "survived" (the
     /// survivor's new label) and its queue was served by the WRONG coworker.
     /// With the identity diff the dead identity's queue FAILS with the
     /// actionable error, the survivors' queues survive — the later sibling
-    /// re-keyed from its old `cosh#3` label to the freed `cosh#2` one.
+    /// re-keyed from its old `morpheus#3` label to the freed `morpheus#2` one.
     #[test]
     fn a_removed_panes_queue_fails_and_survivors_rekey_across_renumbering() {
         let _g = lock();
         // Identities 101/102/103 — the TUI's monotonic stamps.
         set_coworkers(vec![
-            with_identity("cosh#1", "cosh", 101),
-            with_identity("cosh#2", "cosh", 102),
-            with_identity("cosh#3", "cosh", 103),
+            with_identity("morpheus#1", "morpheus", 101),
+            with_identity("morpheus#2", "morpheus", 102),
+            with_identity("morpheus#3", "morpheus", 103),
         ]);
-        let to_101 = enqueue("cosh#1", "for one", MAIN, ReplyMode::Wait).unwrap();
-        let to_102 = enqueue("cosh#2", "for two", MAIN, ReplyMode::Wait).unwrap();
+        let to_101 = enqueue("morpheus#1", "for one", MAIN, ReplyMode::Wait).unwrap();
+        let to_102 = enqueue("morpheus#2", "for two", MAIN, ReplyMode::Wait).unwrap();
         let rx_102 = to_102.receiver.expect("wait carries a receiver");
-        let to_103 = enqueue("cosh#3", "for three", MAIN, ReplyMode::Wait).unwrap();
+        let to_103 = enqueue("morpheus#3", "for three", MAIN, ReplyMode::Wait).unwrap();
         assert_eq!(to_101.coworker_id, 101);
         assert_eq!(to_102.coworker_id, 102);
         assert_eq!(to_103.coworker_id, 103);
 
-        // Remove the MIDDLE coworker: the survivor 103 renumbers to `cosh#2`.
+        // Remove the MIDDLE coworker: the survivor 103 renumbers to `morpheus#2`.
         set_coworkers(vec![
-            with_identity("cosh#1", "cosh", 101),
-            with_identity("cosh#2", "cosh", 103),
+            with_identity("morpheus#1", "morpheus", 101),
+            with_identity("morpheus#2", "morpheus", 103),
         ]);
 
         // The dead coworker's request is ABORTED, addressed to the requester
@@ -3675,19 +3745,19 @@ mod tests {
         let answer = block_on(async move { rx_102.await.expect("sender alive") });
         let error = answer.output.expect_err("the dead pane's wait fails");
         assert!(
-            error.contains("the pane you addressed as 'cosh#2' is gone"),
+            error.contains("the pane you addressed as 'morpheus#2' is gone"),
             "{error}"
         );
         assert!(error.contains("re-address agents_call"), "{error}");
-        assert!(error.contains("cosh#1"), "{error}");
+        assert!(error.contains("morpheus#1"), "{error}");
 
         // The survivors' traffic is intact: 101 keeps its label AND queue;
         // 103's queue moved with it to the freed label.
-        assert!(has_queued_request("cosh#1"), "101's queue survived");
-        let served_101 = pop_next_request("cosh#1").expect("101's request");
+        assert!(has_queued_request("morpheus#1"), "101's queue survived");
+        let served_101 = pop_next_request("morpheus#1").expect("101's request");
         assert_eq!(served_101.text, "for one");
         assert_eq!(served_101.coworker_id, 101);
-        let served_103 = pop_next_request("cosh#2").expect("103's request re-keyed");
+        let served_103 = pop_next_request("morpheus#2").expect("103's request re-keyed");
         assert_eq!(served_103.text, "for three");
         assert_eq!(served_103.coworker_id, 103, "the request belongs to 103");
         assert!(

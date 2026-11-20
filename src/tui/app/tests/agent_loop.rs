@@ -131,7 +131,7 @@ async fn loop_end_orphaned_next_request_becomes_first_next_loop_candidate() {
 async fn mid_stream_reset_never_eats_the_previous_iteration_transcript() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
 
     let mut app = App::new("/tmp".to_string());
     let id = crate::session::store::generate_session_id();
@@ -394,7 +394,7 @@ async fn resuming_with_a_ctx_file_stays_silent() {
     // empty-but-present snapshot is deliberate: RECORD PRESENCE is the
     // authority — a decodable context means it is whatever the harness
     // last persisted, not a loss.
-    let state: cosh::harness::ContextManagerState = Default::default();
+    let state: morpheus::harness::ContextManagerState = Default::default();
     app.session_store
         .save_session_with_context(&app.state.current_session().unwrap().clone(), &state);
 
@@ -453,7 +453,7 @@ fn assistant_texts(app: &App) -> Vec<String> {
 /// newline stays dropped (the old guard's noise filter).
 #[tokio::test]
 async fn newline_only_stream_deltas_keep_their_line_break() {
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
     let mut app = app_with_fresh_session("stream intake");
     // Gemini-style standalone break chunks interleaved with word deltas,
     // plus the whitespace-only shapes the old guard must keep dropping.
@@ -480,7 +480,7 @@ async fn newline_only_stream_deltas_keep_their_line_break() {
 /// universal.
 #[tokio::test]
 async fn standalone_break_chunk_matches_bundled_newline_output() {
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
     let mut gemini = app_with_fresh_session("standalone breaks");
     for text in ["Hello", "\n\n", "world"] {
         gemini
@@ -517,7 +517,7 @@ async fn standalone_break_chunk_matches_bundled_newline_output() {
 /// line.
 #[tokio::test]
 async fn leading_newline_delta_neither_opens_a_bubble_nor_breaks_the_stream() {
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
     let mut app = app_with_fresh_session("leading break");
     app.event_tx
         .send(HarnessEvent::Token {
@@ -551,7 +551,7 @@ async fn leading_newline_delta_neither_opens_a_bubble_nor_breaks_the_stream() {
 async fn spinner_label_follows_agent_activity() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
 
     let mut app = App::new("/tmp".to_string());
     let id = crate::session::store::generate_session_id();
@@ -571,7 +571,7 @@ async fn spinner_label_follows_agent_activity() {
     app.agent_spinner = Some(crate::component::any_spinner::AnySpinner::new(
         crate::types::AgentActivity::Working.label(),
         &app.theme,
-        cosh::setup::SpinnerStyle::Bass,
+        morpheus::setup::SpinnerStyle::Bass,
     ));
     for _ in 0..40 {
         app.agent_spinner.as_mut().unwrap().advance();
@@ -673,7 +673,7 @@ async fn spinner_label_follows_agent_activity() {
 async fn spinner_activity_ignores_noise_deltas() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
 
     let mut app = App::new("/tmp".to_string());
     let id = crate::session::store::generate_session_id();
@@ -683,7 +683,7 @@ async fn spinner_activity_ignores_noise_deltas() {
     app.agent_spinner = Some(crate::component::any_spinner::AnySpinner::new(
         crate::types::AgentActivity::Working.label(),
         &app.theme,
-        cosh::setup::SpinnerStyle::Bass,
+        morpheus::setup::SpinnerStyle::Bass,
     ));
     for _ in 0..40 {
         app.agent_spinner.as_mut().unwrap().advance();
@@ -895,7 +895,7 @@ async fn agents_mode_right_panel_shows_the_main_agent_not_a_list() {
 async fn mirror_follows_every_visible_event_like_the_subagents() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
 
     let mut app = App::new("/tmp".to_string());
     let id = crate::session::store::generate_session_id();
@@ -1013,7 +1013,7 @@ async fn mirror_follows_every_visible_event_like_the_subagents() {
 async fn mid_stream_reset_keeps_the_thought_bubble_instead_of_blinking() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
 
     let mut app = App::new("/tmp".to_string());
     let id = crate::session::store::generate_session_id();

@@ -4,7 +4,7 @@
 //! The pane never had one: a submission aimed at a busy pane was refused with
 //! a toast, while an AGENT could already queue work for that same pane
 //! through `agents_call`. These tests pin the two user-facing queues on BOTH
-//! pane kinds (a cosh harness is steered mid-turn, an ACP agent takes its
+//! pane kinds (a morpheus harness is steered mid-turn, an ACP agent takes its
 //! next request at the prompt boundary), their degradation rules and the
 //! settling that keeps a message from being stranded when the turn it was
 //! meant to join ends first.
@@ -104,15 +104,15 @@ async fn enter_on_a_busy_acp_pane_offers_both_queues() {
     );
 }
 
-/// A cosh pane has request boundaries inside its turn, so the \"next
+/// A morpheus pane has request boundaries inside its turn, so the \"next
 /// request\" row IS offered, and the pump hands the message to the live
 /// loop's steering queue (echoing it into the pane's timeline).
 #[tokio::test]
-async fn a_cosh_pane_mid_turn_takes_the_next_request_queue() {
+async fn a_morpheus_pane_mid_turn_takes_the_next_request_queue() {
     let _home = HOME_LOCK.lock();
     isolate_home();
-    let mut app = app_with_panes(&["cosh"]);
-    let steer = cosh::harness::queued_input::QueuedInput::default();
+    let mut app = app_with_panes(&["morpheus"]);
+    let steer = morpheus::harness::queued_input::QueuedInput::default();
     {
         let split = app.agents_split.as_mut().unwrap();
         split.set_running(0, true);
@@ -153,7 +153,7 @@ async fn a_cosh_pane_mid_turn_takes_the_next_request_queue() {
 async fn a_next_request_pick_on_an_idle_pane_becomes_the_next_loop() {
     let _home = HOME_LOCK.lock();
     isolate_home();
-    let mut app = app_with_panes(&["cosh"]);
+    let mut app = app_with_panes(&["morpheus"]);
     let pane_id = app.agents_split.as_ref().unwrap().panes[0].id;
 
     app.enqueue_pane_message(pane_id, QueueTarget::NextRequest, "later".into());
@@ -173,8 +173,8 @@ async fn a_next_request_pick_on_an_idle_pane_becomes_the_next_loop() {
 async fn leftovers_return_to_the_next_request_queue() {
     let _home = HOME_LOCK.lock();
     isolate_home();
-    let mut app = app_with_panes(&["cosh"]);
-    let steer = cosh::harness::queued_input::QueuedInput::default();
+    let mut app = app_with_panes(&["morpheus"]);
+    let steer = morpheus::harness::queued_input::QueuedInput::default();
     {
         let split = app.agents_split.as_mut().unwrap();
         split.panes[0].queued.next_request.push_back("a".into());
@@ -212,7 +212,7 @@ async fn leftovers_return_to_the_next_request_queue() {
 /// An ACP pane's turn is ONE prompt, so its "next request" message cannot be
 /// injected mid-turn — it goes out at the prompt boundary, consumed by the
 /// queue service the moment that prompt completes, so the pane never sits
-/// idle between the two. This is the pane-level twin of the cosh harness
+/// idle between the two. This is the pane-level twin of the morpheus harness
 /// draining its steering handle before the next request.
 #[tokio::test]
 async fn an_acp_panes_next_request_rides_out_at_the_turn_boundary() {
@@ -321,7 +321,7 @@ async fn a_stop_recovers_the_messages_left_in_the_steering_handle() {
     let mut app = app_with_panes(&["claude"]);
     app.process_key_event(mod_key(KeyCode::Char('1'), KeyModifiers::ALT))
         .unwrap();
-    let steer = cosh::harness::queued_input::QueuedInput::default();
+    let steer = morpheus::harness::queued_input::QueuedInput::default();
     steer.push("picked for the next request".into());
     {
         let split = app.agents_split.as_mut().unwrap();

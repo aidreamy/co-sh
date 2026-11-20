@@ -57,7 +57,7 @@ fn show(label: &str, rendered: &str) {
 
 #[tokio::main]
 async fn main() {
-    let dir = std::env::temp_dir().join("cosh-bash-example");
+    let dir = std::env::temp_dir().join("morpheus-bash-example");
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("notes.txt"), "hello from cwd\n").unwrap();

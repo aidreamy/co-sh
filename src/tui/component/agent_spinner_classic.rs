@@ -1,4 +1,4 @@
-//! Animated agent spinner — the cosh classic braille spinner.
+//! Animated agent spinner — the morpheus classic braille spinner.
 //!
 //! Wraps the shared [`SPINNER_FRAMES`] braille table (`component/spinner.rs`)
 //! — the `⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏` wheel every in-app busy indicator speaks — as a

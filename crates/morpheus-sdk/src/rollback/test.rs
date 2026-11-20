@@ -12,7 +12,7 @@ static TEST_ID: AtomicU64 = AtomicU64::new(0);
 
 fn tmp(label: &str) -> String {
     let id = TEST_ID.fetch_add(1, Ordering::Relaxed);
-    format!("/tmp/cosh_rb_{label}_{id}")
+    format!("/tmp/morpheus_rb_{label}_{id}")
 }
 
 fn write(path: &str, content: &str) {
@@ -740,7 +740,7 @@ async fn restore_fails_with_clear_error_after_path_eviction() {
     // Verify that the error message is actionable when a path's history
     // has been evicted from the store.
     let evicted_path = format!(
-        "/tmp/cosh_rb_evicted_{}",
+        "/tmp/morpheus_rb_evicted_{}",
         TEST_ID.fetch_add(1, Ordering::Relaxed)
     );
     write(&evicted_path, "content before eviction\n");

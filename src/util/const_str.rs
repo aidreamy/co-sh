@@ -18,7 +18,7 @@
 /// written exactly once.
 ///
 /// ```ignore
-/// cosh::const_str_joined! {
+/// morpheus::const_str_joined! {
 ///     /// The full text.
 ///     FULL : joined [
 ///         /// First part, usable alone.

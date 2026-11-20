@@ -22,7 +22,7 @@ use morpheus_tui::core::types::MouseEvent;
 use crate::theme::{Theme, rgba_color};
 use crate::ui::dialogs::WhatsAppList;
 use crate::util::list_selection::ListSelection;
-use cosh::setup::{HookEntry, Setup};
+use morpheus::setup::{HookEntry, Setup};
 
 /// Event section keys inside `setup.json` (`hooks.events`).
 pub const PRE_TOOL_USE_EVENT: &str = "PreToolUse";
@@ -256,7 +256,7 @@ const INTEGRATIONS: SettingsSection = SettingsSection {
     ],
 };
 
-// Who may reach the agent over the `cosh whatsapp` channel. Kept in its own
+// Who may reach the agent over the `morpheus whatsapp` channel. Kept in its own
 // box because the three knobs are one policy (`setup.json` → `whatsapp`):
 // the self-chat switch plus the two allowlists, all of which only matter to
 // that channel.
@@ -289,7 +289,7 @@ const GENERAL: SettingsSection = SettingsSection {
     items: &[SettingsItem {
         id: "telemetry",
         label: "Telemetry",
-        description: "Anonymous usage aggregates; disable here or with COSH_TELEMETRY=off. Applies next launch",
+        description: "Anonymous usage aggregates; disable here or with MORPHEUS_TELEMETRY=off. Applies next launch",
         kind: SettingKind::Switch(SwitchAction::Telemetry),
     }],
 };
@@ -331,10 +331,10 @@ fn cache_choice_value(id: &str, setup: &Setup) -> Option<String> {
         } else {
             format!("{} configured", setup.routing.summarization_models.len())
         }),
-        "anthropic_cache_ttl" => Some(cosh::setup::format_cache_duration(
+        "anthropic_cache_ttl" => Some(morpheus::setup::format_cache_duration(
             setup.cache.anthropic_ttl_min,
         )),
-        "openai_cache_retention" => Some(cosh::setup::format_cache_duration(
+        "openai_cache_retention" => Some(morpheus::setup::format_cache_duration(
             setup.cache.openai_retention_min,
         )),
         "editor" => Some(if setup.editor.trim().is_empty() {
@@ -527,9 +527,9 @@ pub fn validate_hook(
 pub fn validate_acp_agent(
     name: &str,
     command: &str,
-    existing: &[cosh::setup::AcpAgentEntry],
+    existing: &[morpheus::setup::AcpAgentEntry],
     editing: Option<usize>,
-) -> Result<cosh::setup::AcpAgentEntry, String> {
+) -> Result<morpheus::setup::AcpAgentEntry, String> {
     let name = name.trim();
     if name.is_empty() {
         return Err("Name is required.".into());
@@ -556,7 +556,7 @@ pub fn validate_acp_agent(
     if command.is_empty() {
         return Err("Command is required.".into());
     }
-    Ok(cosh::setup::AcpAgentEntry {
+    Ok(morpheus::setup::AcpAgentEntry {
         name: name.to_string(),
         command: command.to_string(),
     })
@@ -573,9 +573,9 @@ pub fn validate_custom_provider(
     name: &str,
     base_url: &str,
     family: &str,
-    existing: &[cosh::setup::CustomProviderEntry],
+    existing: &[morpheus::setup::CustomProviderEntry],
     editing: Option<usize>,
-) -> Result<cosh::setup::CustomProviderEntry, String> {
+) -> Result<morpheus::setup::CustomProviderEntry, String> {
     let name = name.trim();
     if name.is_empty() {
         return Err("Name is required.".into());
@@ -595,7 +595,7 @@ pub fn validate_custom_provider(
     }
     let family = match family.trim().to_ascii_lowercase().as_str() {
         "openai-compatible" | "openai" | "openai_compatible" => {
-            cosh::setup::CustomProviderFamily::OpenAiCompatible
+            morpheus::setup::CustomProviderFamily::OpenAiCompatible
         }
         other => {
             return Err(format!(
@@ -603,7 +603,7 @@ pub fn validate_custom_provider(
             ));
         }
     };
-    Ok(cosh::setup::CustomProviderEntry {
+    Ok(morpheus::setup::CustomProviderEntry {
         name: name.to_string(),
         base_url: base_url.trim().to_string(),
         family,
@@ -880,8 +880,8 @@ fn build_layout(setup: &Setup, width: u16) -> Vec<LayoutLine> {
 
 /// One-line target preview for an MCP server row: `command args...` for
 /// stdio, the URL for HTTP.
-fn mcp_server_preview(entry: &cosh::mcp::McpServerEntry) -> String {
-    use cosh::mcp::McpTransport;
+fn mcp_server_preview(entry: &morpheus::mcp::McpServerEntry) -> String {
+    use morpheus::mcp::McpTransport;
     let target = match &entry.transport {
         McpTransport::Stdio(stdio) => {
             let mut parts = vec![stdio.command.clone()];
@@ -894,13 +894,13 @@ fn mcp_server_preview(entry: &cosh::mcp::McpServerEntry) -> String {
 }
 
 /// One-line launch preview for an ACP agent row: the registered command.
-fn acp_agent_preview(entry: &cosh::setup::AcpAgentEntry) -> String {
+fn acp_agent_preview(entry: &morpheus::setup::AcpAgentEntry) -> String {
     truncate(&entry.command, COMMAND_PREVIEW_LEN)
 }
 
 /// One-line target preview for a custom provider row: the endpoint's base
 /// URL (the family lives in the form, not the list).
-fn provider_preview(entry: &cosh::setup::CustomProviderEntry) -> String {
+fn provider_preview(entry: &morpheus::setup::CustomProviderEntry) -> String {
     truncate(&entry.base_url, COMMAND_PREVIEW_LEN)
 }
 
@@ -1706,7 +1706,8 @@ impl SettingsView {
                     // description uses, and visually distinct from the
                     // ✔/✗ toggles above. The name keeps the sub-row indent
                     // (+4) shared with the other lists and "+ Add agent".
-                    let installed = morpheus_tools::subagent::acp::custom_agent_installed(&entry.name);
+                    let installed =
+                        morpheus_tools::subagent::acp::custom_agent_installed(&entry.name);
                     let name_color = if installed { fg } else { muted };
                     // 🗑 remove glyph hugs the box's right inner edge (the
                     // summarizer rows' controls slot); name and preview are
@@ -1982,7 +1983,7 @@ mod tests {
     fn summarizer_list_reorders_edits_removes_to_default_and_scrolls_with_mouse_alignment() {
         let mut setup = Setup::default();
         setup.routing.summarization_models = (0..30)
-            .map(|index| cosh::setup::FallbackEntry {
+            .map(|index| morpheus::setup::FallbackEntry {
                 provider: "local".into(),
                 model: format!("model-{index}"),
             })
@@ -2145,7 +2146,7 @@ mod tests {
         // the row stays visible even though the block cannot be framed.
         let mut setup = Setup::default();
         setup.routing.summarization_models = (0..30)
-            .map(|index| cosh::setup::FallbackEntry {
+            .map(|index| morpheus::setup::FallbackEntry {
                 provider: "local".into(),
                 model: format!("model-{index}"),
             })
@@ -2298,9 +2299,9 @@ mod tests {
 
     fn setup_with_mcp_server(name: &str, enabled: bool) -> Setup {
         let mut setup = Setup::default();
-        setup.mcp.servers.push(cosh::mcp::McpServerEntry {
+        setup.mcp.servers.push(morpheus::mcp::McpServerEntry {
             name: name.to_string(),
-            transport: cosh::mcp::McpTransport::Stdio(cosh::mcp::StdioTransport {
+            transport: morpheus::mcp::McpTransport::Stdio(morpheus::mcp::StdioTransport {
                 command: "srv".to_string(),
                 args: vec![],
                 env: Default::default(),
@@ -2586,7 +2587,10 @@ mod tests {
             Some(SettingsAction::OpenCheckupModelDialog)
         );
         assert!(
-            matches!(setup.decision.model, cosh::setup::DecisionModel::English),
+            matches!(
+                setup.decision.model,
+                morpheus::setup::DecisionModel::English
+            ),
             "activation never mutates the setting"
         );
         assert_eq!(
@@ -2606,7 +2610,7 @@ mod tests {
         );
 
         // The values track the persisted config.
-        setup.decision.model = cosh::setup::DecisionModel::Multilingual;
+        setup.decision.model = morpheus::setup::DecisionModel::Multilingual;
         setup.decision.termination.min_confidence = 0.75;
         assert_eq!(
             cache_choice_value("checkup_model", &setup),
@@ -2678,9 +2682,7 @@ mod tests {
         let row = |setup: &Setup, id: &str| {
             selectable_rows(setup)
                 .iter()
-                .position(
-                    |r| matches!(r, SettingsRow::Category(x) if *x == catalog_index(id)),
-                )
+                .position(|r| matches!(r, SettingsRow::Category(x) if *x == catalog_index(id)))
                 .unwrap_or_else(|| panic!("{id} category row exists"))
         };
 
@@ -3047,7 +3049,7 @@ mod tests {
         let all: String = (area.y..area.bottom())
             .map(|y| format!("{}\n", line_text(&buf, area, y)))
             .collect();
-        assert!(all.contains("COSH_TELEMETRY=off"));
+        assert!(all.contains("MORPHEUS_TELEMETRY=off"));
         assert!(all.contains("Applies next launch"));
         // No drawn row overflows the terminal width.
         for y in area.y..area.bottom() {
@@ -3147,7 +3149,7 @@ mod tests {
     fn preview_screen() {
         let theme = test_theme();
         let mut setup = setup_with_hooks(true, &[("block rm", "exit 2"), ("b", "cmd b")]);
-        setup.routing.summarization_models = vec![cosh::setup::FallbackEntry {
+        setup.routing.summarization_models = vec![morpheus::setup::FallbackEntry {
             provider: "local".into(),
             model: "qwen2.5-coder:7b".into(),
         }];

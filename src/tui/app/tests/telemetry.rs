@@ -1,6 +1,6 @@
 use super::App;
-use cosh::harness::events::{HarnessEvent, LlmCompactionEvent};
-use cosh::telemetry::schema::ErrorCategory;
+use morpheus::harness::events::{HarnessEvent, LlmCompactionEvent};
+use morpheus::telemetry::schema::ErrorCategory;
 use ratatui::{Terminal, backend::TestBackend};
 
 /// Run real TUI capture points with consent both on and off. Subprocesses
@@ -11,27 +11,27 @@ async fn telemetry_tracks_tui_events_and_rendered_views() {
         module_path!(),
         "::telemetry_tracks_tui_events_and_rendered_views"
     );
-    if std::env::var("COSH_TUI_TELEMETRY_TEST").as_deref() != Ok(NAME) {
+    if std::env::var("MORPHEUS_TUI_TELEMETRY_TEST").as_deref() != Ok(NAME) {
         for enabled in ["on", "off"] {
             let root = tempfile::tempdir().unwrap();
             let output = std::process::Command::new(std::env::current_exe().unwrap())
                 // libtest names omit the crate prefix included by module_path!().
                 .args(["--exact", NAME.split_once("::").unwrap().1, "--nocapture"])
-                .env("COSH_TUI_TELEMETRY_TEST", NAME)
-                .env("COSH_TELEMETRY", enabled)
+                .env("MORPHEUS_TUI_TELEMETRY_TEST", NAME)
+                .env("MORPHEUS_TELEMETRY", enabled)
                 .env_remove("CI")
                 // Hermetic-by-construction: a non-https endpoint fails
                 // SinkConfig::validate() → flush returns Idle without a single
                 // network attempt, EVEN IF this test binary was compiled with
                 // a publishable key baked in (option_env! in the sink). The
                 // key env var is removed so no runtime override leaks either.
-                .env("COSH_TELEMETRY_ENDPOINT", "http://127.0.0.1:9/never")
-                .env_remove("COSH_TELEMETRY_PUBLISHABLE_KEY")
+                .env("MORPHEUS_TELEMETRY_ENDPOINT", "http://127.0.0.1:9/never")
+                .env_remove("MORPHEUS_TELEMETRY_PUBLISHABLE_KEY")
                 .env("HOME", root.path())
                 .env("XDG_DATA_HOME", root.path().join("data"))
                 .env("XDG_CONFIG_HOME", root.path().join("config"))
-                .env("COSH_DATA_DIR", root.path().join("data"))
-                .env("COSH_CONFIG_DIR", root.path().join("config"))
+                .env("MORPHEUS_DATA_DIR", root.path().join("data"))
+                .env("MORPHEUS_CONFIG_DIR", root.path().join("config"))
                 .output()
                 .unwrap();
             assert!(
@@ -108,7 +108,7 @@ async fn telemetry_tracks_tui_events_and_rendered_views() {
             event: LlmCompactionEvent::Finished,
         },
         HarnessEvent::CompactOnDemand {
-            outcome: cosh::harness::ManualCompactionOutcome::Compacted,
+            outcome: morpheus::harness::ManualCompactionOutcome::Compacted,
         },
         HarnessEvent::LlmCompaction {
             event: LlmCompactionEvent::Failed,

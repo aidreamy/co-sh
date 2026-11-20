@@ -21,7 +21,9 @@ use std::path::{Path, PathBuf};
 
 use ast_grep_core::source::Edit;
 use ast_grep_core::tree_sitter::LanguageExt;
-use morpheus_sdk::ast::{apply_edits, compile_search_patterns, is_supported_file, resolve_language};
+use morpheus_sdk::ast::{
+    apply_edits, compile_search_patterns, is_supported_file, resolve_language,
+};
 use morpheus_sdk::find::{FileType, GlobOptions, glob};
 use morpheus_sdk::hashline::{
     diff::structured_patch,

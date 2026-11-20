@@ -514,10 +514,10 @@ async fn clicking_multiline_user_message_opens_message_actions_without_panicking
 
 // ── Pane message actions (the /agents dispatch, commit 41ab38d) ────────
 
-/// An app with a cosh pane bound to a REAL stored session (the fork/revert
+/// An app with a morpheus pane bound to a REAL stored session (the fork/revert
 /// targets): two turns persisted through the store, the pane echoing the
 /// same timeline.
-fn app_with_cosh_pane() -> App {
+fn app_with_morpheus_pane() -> App {
     use crate::routes::session::agents_split::AgentsSplitState;
     use crate::types::{AgentPaneRef, Message, MessageRole, Part, TextPart};
     let mut app = App::new("/tmp".to_string());
@@ -562,9 +562,9 @@ fn app_with_cosh_pane() -> App {
     app.state
         .add_empty_session("main".into(), "main".into(), now);
 
-    // The split: ONE cosh pane bound to the stored session.
+    // The split: ONE morpheus pane bound to the stored session.
     let mut split = AgentsSplitState::new(vec![AgentPaneRef::Bound {
-        agent: "cosh".into(),
+        agent: "morpheus".into(),
         session_id: "pane-s".into(),
         worktree: None,
     }]);
@@ -592,7 +592,7 @@ fn app_with_cosh_pane() -> App {
 async fn pane_fork_branches_the_pane_session_not_the_main_one() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    let mut app = app_with_cosh_pane();
+    let mut app = app_with_morpheus_pane();
     // Fork the pane's SECOND user prompt (ordinal 1): action 2 = Fork.
     app.run_pane_message_action(2, 0, Some(1), 2);
     let toast = app.toast_state.current.clone();
@@ -640,7 +640,7 @@ async fn pane_fork_branches_the_pane_session_not_the_main_one() {
 async fn pane_revert_truncates_the_pane_session_and_rebuilds_the_timeline() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    let mut app = app_with_cosh_pane();
+    let mut app = app_with_morpheus_pane();
     // Revert the pane's SECOND user prompt (ordinal 1): action 0 = Revert.
     app.run_pane_message_action(0, 0, Some(1), 2);
     // The repainted pane is the receipt; no success bubble fires.
@@ -678,7 +678,7 @@ async fn pane_dialog_offers_actions_for_user_echoes_on_every_pane_kind() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
     // An ACP pane that already ran (session id = the agent's, not a store id).
-    let mut app = app_with_cosh_pane();
+    let mut app = app_with_morpheus_pane();
     let split = app.agents_split.as_mut().unwrap();
     split.panes[0].agent = "opencode".into();
     split.panes[0].session_id = Some("oc-agent-session".into());
@@ -701,7 +701,7 @@ async fn pane_dialog_offers_actions_for_user_echoes_on_every_pane_kind() {
     );
 
     // An `agents_call` input is the other agent's prompt: Copy only.
-    let mut app = app_with_cosh_pane();
+    let mut app = app_with_morpheus_pane();
     app.agents_split.as_mut().unwrap().panes[0].agent = "opencode".into();
     let call_hit = crate::routes::session::agents_split::InputBoxHit {
         span: 0..4,
@@ -718,8 +718,8 @@ async fn pane_dialog_offers_actions_for_user_echoes_on_every_pane_kind() {
     };
     assert!(!is_user_message, "an agents_call input keeps Copy-only");
 
-    // A cosh pane bound to a REAL store session keeps all three options.
-    let mut app = app_with_cosh_pane();
+    // A morpheus pane bound to a REAL store session keeps all three options.
+    let mut app = app_with_morpheus_pane();
     let hit = crate::routes::session::agents_split::InputBoxHit {
         span: 0..4,
         timeline_index: 0,
@@ -735,7 +735,7 @@ async fn pane_dialog_offers_actions_for_user_echoes_on_every_pane_kind() {
     };
     assert!(
         *is_user_message,
-        "a bound cosh pane's echo offers Revert/Fork/Copy"
+        "a bound morpheus pane's echo offers Revert/Fork/Copy"
     );
 }
 
@@ -784,7 +784,7 @@ async fn pane_fork_works_on_a_legacy_prefeature_session() {
     assert_eq!(loaded.unwrap().messages.len(), 4);
 
     let mut split = AgentsSplitState::new(vec![AgentPaneRef::Bound {
-        agent: "cosh".into(),
+        agent: "morpheus".into(),
         session_id: "legacy1".into(),
         worktree: None,
     }]);
@@ -829,7 +829,7 @@ async fn pane_fork_works_on_a_manager_session_with_tool_calls() {
     isolate_home();
     let mut app = app_with_manager_context_session();
     let mut split = AgentsSplitState::new(vec![AgentPaneRef::Bound {
-        agent: "cosh".into(),
+        agent: "morpheus".into(),
         session_id: "pane-m".into(),
         worktree: None,
     }]);
@@ -876,7 +876,7 @@ async fn pane_revert_works_on_a_manager_session_with_tool_calls() {
     isolate_home();
     let mut app = app_with_manager_context_session();
     let mut split = AgentsSplitState::new(vec![AgentPaneRef::Bound {
-        agent: "cosh".into(),
+        agent: "morpheus".into(),
         session_id: "pane-m".into(),
         worktree: None,
     }]);
@@ -925,8 +925,8 @@ async fn pane_revert_works_on_a_manager_session_with_tool_calls() {
 
 /// The manager context a real turn leaves behind: prose plus a tool call and
 /// its result (the shape that used to break the message/group invariant).
-fn manager_test_context() -> cosh::harness::context::ContextManagerState {
-    use cosh::harness::context::{ContextItem, ContextManagerState};
+fn manager_test_context() -> morpheus::harness::context::ContextManagerState {
+    use morpheus::harness::context::{ContextItem, ContextManagerState};
     ContextManagerState {
         items: vec![
             ContextItem::User {
@@ -947,7 +947,7 @@ fn manager_test_context() -> cosh::harness::context::ContextManagerState {
                 arguments: r#"{"path":"a.rs"}"#.into(),
                 thought_signature: String::new(),
                 thinking_blocks: Vec::new(),
-            reasoning: None,
+                reasoning: None,
             },
             ContextItem::ToolResult {
                 id: 4,
@@ -1031,14 +1031,14 @@ fn app_with_manager_context_session() -> App {
     app
 }
 
-/// An ACP pane has no cosh store session: Fork branches a NEW cosh session
+/// An ACP pane has no morpheus store session: Fork branches a NEW morpheus session
 /// from the pane's own transcript prefix (and it is a real conversation, not
 /// a display-only branch), while the pane keeps its agent session untouched.
 #[tokio::test]
 async fn pane_fork_on_an_acp_pane_branches_its_timeline_prefix() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    let mut app = app_with_cosh_pane();
+    let mut app = app_with_morpheus_pane();
     {
         let split = app.agents_split.as_mut().unwrap();
         split.panes[0].agent = "opencode".into();
@@ -1091,7 +1091,7 @@ async fn pane_fork_on_an_acp_pane_branches_its_timeline_prefix() {
 async fn pane_revert_on_an_acp_pane_truncates_the_timeline_and_resets_the_session() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    let mut app = app_with_cosh_pane();
+    let mut app = app_with_morpheus_pane();
     {
         let split = app.agents_split.as_mut().unwrap();
         split.panes[0].agent = "opencode".into();
@@ -1184,7 +1184,7 @@ async fn pane_action_targets_the_clicked_prompt_across_agent_call_prompts() {
     app.state.add_session(session);
 
     let mut split = AgentsSplitState::new(vec![AgentPaneRef::Bound {
-        agent: "cosh".into(),
+        agent: "morpheus".into(),
         session_id: "pane-mixed".into(),
         worktree: None,
     }]);
@@ -1234,7 +1234,7 @@ async fn pane_action_targets_the_clicked_prompt_across_agent_call_prompts() {
 #[test]
 fn manager_context_display_keeps_one_message_per_context_group() {
     use crate::types::{MessageRole, Part, ToolStatus};
-    use cosh::harness::context::{ContextItem, ContextManagerState};
+    use morpheus::harness::context::{ContextItem, ContextManagerState};
 
     let context: ContextManagerState = ContextManagerState {
         items: vec![
@@ -1256,7 +1256,7 @@ fn manager_context_display_keeps_one_message_per_context_group() {
                 arguments: r#"{"path":"a.rs"}"#.into(),
                 thought_signature: String::new(),
                 thinking_blocks: Vec::new(),
-            reasoning: None,
+                reasoning: None,
             },
             ContextItem::ToolResult {
                 id: 4,
@@ -1384,7 +1384,7 @@ async fn pane_action_refuses_an_unmatched_prompt_instead_of_guessing() {
     app.state.add_session(session);
 
     let mut split = AgentsSplitState::new(vec![AgentPaneRef::Bound {
-        agent: "cosh".into(),
+        agent: "morpheus".into(),
         session_id: "pane-ambig".into(),
         worktree: None,
     }]);
@@ -1436,7 +1436,7 @@ async fn pane_action_refuses_a_manager_session_the_store_cannot_load() {
     app.state.current_session_id = Some("main".into());
 
     let mut split = AgentsSplitState::new(vec![AgentPaneRef::Bound {
-        agent: "cosh".into(),
+        agent: "morpheus".into(),
         session_id: "session-the-store-lost".into(),
         worktree: None,
     }]);

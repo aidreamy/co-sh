@@ -391,7 +391,7 @@ fn main() {
 
     // ── 21. ASCIIFontRenderable ───────────────────────────────────────────
     let logo = ASCIIFontRenderable::new(
-        Some("COSH".into()),
+        Some("MORPHEUS".into()),
         Some("tiny".into()),
         Some("#22c55e".into()),
     );

@@ -505,7 +505,7 @@ pub(crate) fn input_value(input: &serde_json::Value, key: &str) -> Option<String
 }
 
 /// Extract a filepath from tool input, supporting opencode-style
-/// ({"filePath": "..."}), cosh flat style ({"path": "..."}, the advertised
+/// ({"filePath": "..."}), morpheus flat style ({"path": "..."}, the advertised
 /// fs_write/fs_edit shape) and the legacy batch form
 /// ({"targets": [{"path": "...", ...}]}).
 pub(crate) fn input_filepath(input: &serde_json::Value) -> Option<String> {
@@ -523,7 +523,7 @@ pub(crate) fn input_filepath(input: &serde_json::Value) -> Option<String> {
 }
 
 /// Extract content from tool input, supporting opencode-style
-/// ({"content": "..."}), cosh flat style ({"content": "..."} at the top
+/// ({"content": "..."}), morpheus flat style ({"content": "..."} at the top
 /// level, the advertised fs_write shape) and the legacy batch form
 /// ({"targets": [{"text": "...", ...}]}).
 pub(crate) fn input_content(input: &serde_json::Value) -> Option<String> {
@@ -681,7 +681,7 @@ pub(crate) fn looks_like_unified_diff(output: &str) -> bool {
 }
 
 /// Try to extract a unified diff string from a JSON tool output.
-/// Handles cosh-style `[{..., "diff": "..."}, ...]`.
+/// Handles morpheus-style `[{..., "diff": "..."}, ...]`.
 pub(crate) fn extract_diff_from_json(output: &str) -> Option<String> {
     let Ok(val) = serde_json::from_str::<serde_json::Value>(output) else {
         return None;

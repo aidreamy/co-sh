@@ -202,7 +202,7 @@ pub(super) async fn discovered_context_window(model: Option<&str>) -> Option<usi
     // models.dev / OpenRouter catalogs instead of re-fetching them.
     let window = tokio::time::timeout(
         CONTEXT_DISCOVERY_TIMEOUT,
-        discover_context_window(model, Some("cosh/cache")),
+        discover_context_window(model, Some("morpheus/cache")),
     )
     .await
     .ok()
@@ -280,12 +280,12 @@ impl Harness {
             Some(request) => request,
             None => return false,
         };
-        // Compaction accounting (file log, target `cosh::harness::context`):
+        // Compaction accounting (file log, target `morpheus::harness::context`):
         // the compaction request's own size — a summary call that re-sends
         // most of the session is itself a large bill. Logged before the
         // first summarizer attempt so trigger loops are visible.
         log::info!(
-            target: "cosh::harness::context",
+            target: "morpheus::harness::context",
             "llm compaction: prompt_bytes={} system_bytes={}",
             request.prompt.len(),
             request.system.len(),

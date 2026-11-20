@@ -19,11 +19,11 @@ use std::sync::OnceLock;
 static ICON_PATH: OnceLock<PathBuf> = OnceLock::new();
 
 /// Raw PNG bytes of the app logo icon (128×128), embedded at compile time.
-const ICON_BYTES: &[u8] = include_bytes!("../assets/cosh-icon.png");
+const ICON_BYTES: &[u8] = include_bytes!("../assets/morpheus-icon.png");
 
 /// Return the path to the app icon, extracting it from the binary on first
 /// call.  The icon is written to an XDG-compliant cache directory
-/// (`~/.cache/morpheus/cosh-icon.png`) so it persists across runs.
+/// (`~/.cache/morpheus/morpheus-icon.png`) so it persists across runs.
 fn icon_path() -> &'static PathBuf {
     ICON_PATH.get_or_init(|| {
         let dir = directories::BaseDirs::new()
@@ -33,7 +33,7 @@ fn icon_path() -> &'static PathBuf {
                 p.push("morpheus-cache");
                 p
             });
-        let path = dir.join("cosh-icon.png");
+        let path = dir.join("morpheus-icon.png");
         // (Re)write the icon when it is missing OR when the embedded bytes
         // changed (e.g. a newer build ships a different logo). Comparing
         // bytes avoids stale cached icons from previous versions.
@@ -85,7 +85,11 @@ pub fn notify_loop_ended(terminal_focused: bool, title: &str, message: &str) {
 
 /// Convenience wrapper: send a "Done" notification.
 pub fn notify_done(terminal_focused: bool) {
-    notify_loop_ended(terminal_focused, "Morpheus Ready", "The agent loop finished.");
+    notify_loop_ended(
+        terminal_focused,
+        "Morpheus Ready",
+        "The agent loop finished.",
+    );
 }
 
 /// Convenience wrapper: send a "Stopped" notification.

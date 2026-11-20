@@ -24,14 +24,14 @@ impl App {
     /// in the chat, `Finished`/`Failed` freezes it.
     pub(super) fn handle_llm_compaction_event(
         &mut self,
-        event: cosh::harness::events::LlmCompactionEvent,
+        event: morpheus::harness::events::LlmCompactionEvent,
     ) {
         use crate::types::{CompactionPart, CompactionPhase, Message, MessageRole, Part};
         let Some(session) = self.state.current_session_mut() else {
             return;
         };
         match event {
-            cosh::harness::events::LlmCompactionEvent::Started => {
+            morpheus::harness::events::LlmCompactionEvent::Started => {
                 if self.telemetry.enabled() {
                     self.session_telemetry.record_message();
                 }
@@ -49,21 +49,21 @@ impl App {
                     model: None,
                 });
             }
-            cosh::harness::events::LlmCompactionEvent::Progress {
+            morpheus::harness::events::LlmCompactionEvent::Progress {
                 phase,
                 completed,
                 total,
             } => {
                 let label = match phase {
-                    cosh::harness::events::LlmCompactionPhase::Mapping => "Mapping segments",
-                    cosh::harness::events::LlmCompactionPhase::SequentialFallback => {
+                    morpheus::harness::events::LlmCompactionPhase::Mapping => "Mapping segments",
+                    morpheus::harness::events::LlmCompactionPhase::SequentialFallback => {
                         "Mapping sequentially"
                     }
-                    cosh::harness::events::LlmCompactionPhase::Reducing => "Reducing summaries",
-                    cosh::harness::events::LlmCompactionPhase::Validating => {
+                    morpheus::harness::events::LlmCompactionPhase::Reducing => "Reducing summaries",
+                    morpheus::harness::events::LlmCompactionPhase::Validating => {
                         "Validating checkpoint"
                     }
-                    cosh::harness::events::LlmCompactionPhase::Correcting => {
+                    morpheus::harness::events::LlmCompactionPhase::Correcting => {
                         "Correcting checkpoint"
                     }
                 };
@@ -83,7 +83,7 @@ impl App {
                     };
                 }
             }
-            cosh::harness::events::LlmCompactionEvent::OutputStarted => {
+            morpheus::harness::events::LlmCompactionEvent::OutputStarted => {
                 if let Some(crate::types::Part::Compaction(part)) = session
                     .messages
                     .iter_mut()
@@ -96,8 +96,8 @@ impl App {
                     part.text.clear();
                 }
             }
-            cosh::harness::events::LlmCompactionEvent::Finished
-            | cosh::harness::events::LlmCompactionEvent::Failed => {
+            morpheus::harness::events::LlmCompactionEvent::Finished
+            | morpheus::harness::events::LlmCompactionEvent::Failed => {
                 Self::finalize_compaction_line(session);
             }
         }

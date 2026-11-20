@@ -1,12 +1,12 @@
-//! The shared SEARCHABLE LIST DIALOG component — the cosh-standard picker
+//! The shared SEARCHABLE LIST DIALOG component — the morpheus-standard picker
 //! box (`/models`, the theme list) extracted from `ui::dialogs` so every
 //! list dialog renders, scrolls and filters ONE way.
 //!
-//! The component owns the three behaviors every cosh list box shares:
+//! The component owns the three behaviors every morpheus list box shares:
 //!
 //! 1. **Filter** ([`FilterState`]) — the "Search" line: chars append,
 //!    Backspace pops, every change resets the selection to the first row
-//!    and lights the shared [`Cursor`]. Matching is the cosh convention
+//!    and lights the shared [`Cursor`]. Matching is the morpheus convention
 //!    (case-insensitive `contains`, checked per row by the OWNER — the
 //!    component never sees the row source).
 //! 2. **Cursor-follow scroll** ([`ListBoxLayout::scroll_offset_for`]) —
@@ -23,7 +23,7 @@
 //! The component is RENDER-BY-GEOMETRY, not render-by-content: the caller
 //! maps its own data model onto [`ListRow`]s (grouped models with provider
 //! headers, flat config values …) and keeps ownership of what confirming
-//! one does; the component paints the cosh-standard box chrome (borderless
+//! one does; the component paints the morpheus-standard box chrome (borderless
 //! `background_element` surface, bold title + right-aligned `esc`, Search
 //! line, rows from `y+3`) and all the geometry. No list dialog may
 //! re-implement this arithmetic a second time.
@@ -214,7 +214,7 @@ impl FilterState {
     }
 
     /// Append one character and reset the selection to the first row —
-    /// a fresh filter must keep the cosh behavior.
+    /// a fresh filter must keep the morpheus behavior.
     pub fn push_char(&mut self, ch: char) {
         self.filter.push(ch);
         self.selected = 0;
@@ -229,7 +229,7 @@ impl FilterState {
     }
 
     /// Case-insensitive `contains` match of `haystack` against the filter —
-    /// the cosh filter convention, shared by the model and theme pickers.
+    /// the morpheus filter convention, shared by the model and theme pickers.
     #[must_use]
     pub fn matches(&self, haystack: &str) -> bool {
         matches_filter(&self.filter, haystack)
@@ -394,7 +394,7 @@ pub fn pop_filter(filter: &mut String, selected: &mut usize, cursor: &mut Cursor
     cursor.note_activity();
 }
 
-/// The cosh filter convention, free-standing: case-insensitive `contains`
+/// The morpheus filter convention, free-standing: case-insensitive `contains`
 /// (an empty filter matches everything). [`FilterState::matches`] delegates
 /// here; dialog arms that match several fields (model name + provider,
 /// config value id + display name) call it per field and OR the results.
@@ -685,7 +685,7 @@ pub fn render_rows(
 }
 
 /// Black-on-primary when the primary fill is bright, white otherwise — the
-/// selection contrast rule every cosh highlight follows.
+/// selection contrast rule every morpheus highlight follows.
 #[must_use]
 pub fn selected_foreground(primary: RGBA) -> Color {
     let (r, g, b, _) = primary.to_ints();

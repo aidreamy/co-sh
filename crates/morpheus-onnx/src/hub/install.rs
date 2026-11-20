@@ -344,9 +344,12 @@ pub fn install(req: InstallRequest<'_>) -> Result<InstalledCheckpoint> {
         None => hf_hub::Repo::new(req.repo.to_string(), hf_hub::RepoType::Model),
     };
     let repo_api = api.repo(base);
-    let info = repo_api
-        .info()
-        .map_err(|e| Error::Runtime(format!("morpheus-onnx: could not resolve {}: {}", req.repo, e)))?;
+    let info = repo_api.info().map_err(|e| {
+        Error::Runtime(format!(
+            "morpheus-onnx: could not resolve {}: {}",
+            req.repo, e
+        ))
+    })?;
     // Pin every download to the revision the listing came from, so a stale
     // `refs/main` pointer cannot mix files from two revisions.
     let pinned = api.repo(hf_hub::Repo::with_revision(

@@ -228,7 +228,7 @@ pub fn normalize_path(path: &Path, root: &Path) -> PathBuf {
 /// so both sides are compared on equal footing.
 ///
 /// Besides the project root and the explicit allowlist, paths under the
-/// harness scratch directory (`<OS temp>/cosh`, where truncated tool-output
+/// harness scratch directory (`<OS temp>/morpheus`, where truncated tool-output
 /// logs live) are allowed: the OS temp dir is ephemeral scratch by definition,
 /// and blocking it would break the agent's ability to read its own logs back.
 /// The blocklist always takes priority, so even scratch paths can be denied.

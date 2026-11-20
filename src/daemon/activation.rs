@@ -9,7 +9,7 @@
 //!    install step) and poll until the socket appears or the activation
 //!    window closes.
 //!
-//! Two cosh processes racing into step 2 resolve by **the bind being the
+//! Two morpheus processes racing into step 2 resolve by **the bind being the
 //! lock**: the loser's `bind` gets `EADDRINUSE` and falls through to
 //! connecting, which is the only correct outcome for both.
 //!

@@ -322,7 +322,7 @@ mod tests {
 
     #[test]
     fn unknown_agents_resolve_to_none() {
-        assert!(palette_for("cosh").is_none());
+        assert!(palette_for("morpheus").is_none());
         assert!(palette_for("definitely-not-an-agent").is_none());
         assert!(palette_for("").is_none());
     }
@@ -434,7 +434,7 @@ mod tests {
         // Everything else passes through unchanged (ids ARE the brands:
         // claude, kilo, codex, goose, devin, gemini, cline).
         assert_eq!(display_name("claude"), "claude");
-        assert_eq!(display_name("cosh"), "cosh");
+        assert_eq!(display_name("morpheus"), "morpheus");
         assert_eq!(display_name(""), "");
     }
 

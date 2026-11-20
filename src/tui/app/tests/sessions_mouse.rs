@@ -470,7 +470,7 @@ async fn click_on_a_session_locked_elsewhere_shows_a_toast_that_survives_the_tit
     app.state.session_summaries[0].title_generated = true;
     app.state.session_summaries[0].title = "LLM generated title".into();
 
-    // A foreign cosh process holds the session open: an independent store
+    // A foreign morpheus process holds the session open: an independent store
     // claiming the same session id takes the kernel lock on the same
     // session-{id}.lock file, so the app's own claim must fail.
     let foreign = crate::session::store::SessionStore::new();
@@ -489,10 +489,9 @@ async fn click_on_a_session_locked_elsewhere_shows_a_toast_that_survives_the_tit
         "a session open in another process must not open here"
     );
     assert!(
-        app.toast_state
-            .current
-            .as_ref()
-            .is_some_and(|t| t.message.contains("already open in another morpheus process")),
+        app.toast_state.current.as_ref().is_some_and(|t| t
+            .message
+            .contains("already open in another morpheus process")),
         "the refusal must surface as a toast, got {:?}",
         app.toast_state.current
     );
@@ -502,10 +501,9 @@ async fn click_on_a_session_locked_elsewhere_shows_a_toast_that_survives_the_tit
     let mut terminal = Terminal::new(TestBackend::new(100, 30)).unwrap();
     terminal.draw(|f| app.render(f, 0.016)).unwrap();
     assert!(
-        app.toast_state
-            .current
-            .as_ref()
-            .is_some_and(|t| t.message.contains("already open in another morpheus process")),
+        app.toast_state.current.as_ref().is_some_and(|t| t
+            .message
+            .contains("already open in another morpheus process")),
         "the block toast must survive the hover tooltip, got {:?}",
         app.toast_state.current
     );

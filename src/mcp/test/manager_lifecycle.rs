@@ -14,7 +14,7 @@ use super::super::types::ServerStatus;
 use super::manager_support::{CatalogServer, attach, attach_server, http_entry};
 
 #[test]
-fn stderr_log_path_is_sanitized_and_inside_temp_cosh_log() {
+fn stderr_log_path_is_sanitized_and_inside_temp_morpheus_log() {
     let path = stderr_log_path("my server/v2");
     let expected_dir = crate::harness::truncate::scratch_log_dir().join("log");
     assert_eq!(path.parent(), Some(expected_dir.as_path()));

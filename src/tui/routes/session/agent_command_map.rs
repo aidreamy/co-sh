@@ -1,12 +1,12 @@
 //! Client-side mapping between an agent's OWN slash-command names and the
-//! cosh-standardized UI they open.
+//! morpheus-standardized UI they open.
 //!
 //! A harness publishes its commands through ACP
 //! (`available_commands_update`) with ITS OWN spellings — `/models` on one,
 //! `/model` on another, `/llm` on a third — and the slash menu shows those
 //! names verbatim. What gets standardized is what happens AFTER the user
 //! picks one: equivalent commands across harnesses open the SAME kind of
-//! cosh box (the model list, the provider list …),
+//! morpheus box (the model list, the provider list …),
 //! filled with that agent's own ACP config options.
 //!
 //! Three buckets, resolved by [`resolve`]:
@@ -28,7 +28,7 @@
 // The matching vocabulary lives in the coordinator (the layer that decides
 // which model a turn runs with); re-exported here so the menu maps and the
 // turn's pick resolution share ONE rule.
-pub use cosh::coordinator::turn::{ConfigTarget, match_option};
+pub use morpheus::coordinator::turn::{ConfigTarget, match_option};
 
 /// One mapped command group: every harness spelling that means the same
 /// thing, plus the standardized box it opens.
@@ -105,7 +105,7 @@ pub const BLOCKED_COMMANDS: &[&str] = &[
 pub const AGENT_BLOCKED_OVERRIDES: &[(&str, &[&str])] = &[
     // claude-code publishes its own `/agents` through ACP stamped
     // "(removed)" — the harness retired it, and offering it would both run
-    // a dead command and collide with cosh's own `/agents` spelling.
+    // a dead command and collide with morpheus's own `/agents` spelling.
     ("claude", &["agents"]),
 ];
 
@@ -118,11 +118,11 @@ pub const AGENT_BLOCKED_OVERRIDES: &[(&str, &[&str])] = &[
 /// spellings (claude publishes `code`/`plan`, opencode `build`/`plan`, …),
 /// so a mode whose label carries one of the stems counts as the
 /// equivalent. The first entry whose stems match the agent's mode wins, in
-/// this list order; a cosh mode with no entry binds nothing (the agent
+/// this list order; a morpheus mode with no entry binds nothing (the agent
 /// keeps its own current mode — the same omission the Command mode in the
 /// split rides).
 struct ModeMatch {
-    mode: cosh::harness::Mode,
+    mode: morpheus::harness::Mode,
     /// Substring stems matched against the agent's normalized mode label.
     stems: &'static [&'static str],
 }
@@ -130,13 +130,13 @@ struct ModeMatch {
 const MODE_MATCHES: &[ModeMatch] = &[
     // Build: the working mode — write/edit tools at full effect.
     ModeMatch {
-        mode: cosh::harness::Mode::Build,
+        mode: morpheus::harness::Mode::Build,
         stems: &["build", "code", "write", "edit", "agent", "work"],
     },
     // Ask: read-and-reason, no modifications — most harnesses call this
     // "plan" (plan mode is exactly read-only analysis before the work).
     ModeMatch {
-        mode: cosh::harness::Mode::Ask,
+        mode: morpheus::harness::Mode::Ask,
         stems: &["plan", "ask", "read", "discuss", "chat"],
     },
     // Yolo: NOT mapped, deliberately. The split already runs every pane
@@ -156,7 +156,7 @@ const MODE_MATCHES: &[ModeMatch] = &[
 /// Command mode's omission inside the split.
 #[must_use]
 pub fn map_mode_to_agent(
-    mode: cosh::harness::Mode,
+    mode: morpheus::harness::Mode,
     modes: &[morpheus_tools::subagent::events::AgentSessionMode],
 ) -> Option<String> {
     let entry = MODE_MATCHES.iter().find(|m| m.mode == mode)?;
@@ -277,12 +277,12 @@ pub fn resolve(name: &str) -> Option<&'static CommandGroup> {
 /// provider, mode — reach the client as session config OPTIONS
 /// (`session/new` / `session/resume` payloads and `config_option_update`s),
 /// with no slash command advertising them at all. Reasoning effort is NOT
-/// synthesized here: it follows the cosh model-picker flow — a SECOND box
+/// synthesized here: it follows the morpheus model-picker flow — a SECOND box
 /// opened after the model pick (see the app's config confirm), and it
 /// simply never appears for agents without a controllable level.
 /// So for every mapped group whose config option the pane actually holds,
 /// the menu synthesizes the group's entry (the group id as the name — the
-/// one spelling cosh standardizes on — and the group's one-liner). The box
+/// one spelling morpheus standardizes on — and the group's one-liner). The box
 /// that opens is the SAME standardized box a published command would have
 /// opened, bound to the pane's own option.
 ///
@@ -325,7 +325,7 @@ mod tests {
         assert_eq!(resolve("provider").unwrap().id, "provider");
         assert_eq!(resolve("PROVIDERS").unwrap().id, "provider");
         assert_eq!(resolve("modes").unwrap().id, "mode");
-        // Reasoning is NOT a mapped group anymore: the cosh flow chains the
+        // Reasoning is NOT a mapped group anymore: the morpheus flow chains the
         // level sub-box after the model pick instead of its own entry — the
         // spellings resolve to nothing (direct passthrough), like any
         // unknown command.

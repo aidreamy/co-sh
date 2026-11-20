@@ -104,18 +104,18 @@ pub(crate) fn agent_mode_color(
     theme: &Theme,
     agent_colors: &AgentColors,
     unique_agents: &[String],
-    mode: cosh::harness::Mode,
+    mode: morpheus::harness::Mode,
 ) -> RGBA {
     match mode {
-        // A theme-level override wins (obsidian: disabled tone, cosh: muted
+        // A theme-level override wins (obsidian: disabled tone, morpheus: muted
         // periwinkle); otherwise the per-agent "build" color, as before.
-        cosh::harness::Mode::Build => theme
+        morpheus::harness::Mode::Build => theme
             .mode_build
             .unwrap_or_else(|| agent_colors.get("build", unique_agents)),
-        cosh::harness::Mode::Ask => theme.info,
-        cosh::harness::Mode::Yolo => theme.warning,
-        cosh::harness::Mode::Command => theme.success,
-        cosh::harness::Mode::Manager => agent_colors.get("manager", unique_agents),
+        morpheus::harness::Mode::Ask => theme.info,
+        morpheus::harness::Mode::Yolo => theme.warning,
+        morpheus::harness::Mode::Command => theme.success,
+        morpheus::harness::Mode::Manager => agent_colors.get("manager", unique_agents),
     }
 }
 
@@ -1282,11 +1282,11 @@ impl PromptView {
         let footer_y = cap_y + CAP_H;
 
         let agent_name = match state.mode {
-            cosh::harness::Mode::Build => "build",
-            cosh::harness::Mode::Ask => "ask",
-            cosh::harness::Mode::Yolo => "yolo",
-            cosh::harness::Mode::Command => "command",
-            cosh::harness::Mode::Manager => "manager",
+            morpheus::harness::Mode::Build => "build",
+            morpheus::harness::Mode::Ask => "ask",
+            morpheus::harness::Mode::Yolo => "yolo",
+            morpheus::harness::Mode::Command => "command",
+            morpheus::harness::Mode::Manager => "manager",
         };
 
         let agent_color = agent_mode_color(theme, agent_colors, unique_agents, state.mode);
@@ -1769,7 +1769,14 @@ impl PromptView {
                 let x0 = area.x + 3 + (visible as u16) * step;
                 let text = format!("+{overflow}");
                 if x0 < area.right() && preview_y < area.bottom() {
-                    draw_text_line(buf, &text, x0, preview_y, area.right().saturating_sub(x0), err_style);
+                    draw_text_line(
+                        buf,
+                        &text,
+                        x0,
+                        preview_y,
+                        area.right().saturating_sub(x0),
+                        err_style,
+                    );
                 }
             }
         }
@@ -2572,15 +2579,15 @@ mod tests {
 
         // Opaque themes keep the visual intent: the `▀` blend band is still
         // painted as the smooth gradient between box fill and background.
-        let cosh = registry.default_theme();
+        let morpheus = registry.default_theme();
         let mut opaque_view = PromptView::new();
         let mut buf = Buffer::empty(area);
         opaque_view.render(
             &mut buf,
             area,
             &state,
-            cosh,
-            &AgentColors::from_theme(cosh),
+            morpheus,
+            &AgentColors::from_theme(morpheus),
             &[],
             SystemTime::now(),
             "",

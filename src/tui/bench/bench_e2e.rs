@@ -17,7 +17,7 @@
 use ratatui::{Terminal, backend::TestBackend};
 
 use super::App;
-use cosh::harness::HarnessEvent;
+use morpheus::harness::HarnessEvent;
 
 const W: u16 = 160;
 const H: u16 = 48;
@@ -102,8 +102,8 @@ fn shell_out(lines: usize) -> String {
 /// (one user/assistant/tool-call/tool-result round per iteration), so
 /// `ContextSnapshot`/`Done` events measure the real cost of moving the context
 /// through the UI thread and serializing it — not an empty `Default::default()`.
-pub(crate) fn realistic_context(rounds: usize) -> cosh::harness::context::ContextManagerState {
-    use cosh::harness::context::{ContextItem, ContextManagerState};
+pub(crate) fn realistic_context(rounds: usize) -> morpheus::harness::context::ContextManagerState {
+    use morpheus::harness::context::{ContextItem, ContextManagerState};
     let mut items = Vec::with_capacity(rounds * 4);
     let mut next_id = 1u64;
     for r in 0..rounds {

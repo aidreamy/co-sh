@@ -203,13 +203,13 @@ impl RuntimeConfig {
 
 /// The disabled-tool set for this project, with the same scope semantics as
 /// the TUI: `setup.json` when the user chose the global scope, otherwise
-/// `<cwd>/.cosh-tools.json` (falling back to the legacy global list until
+/// `<cwd>/.morpheus-tools.json` (falling back to the legacy global list until
 /// the project saves one of its own).
 fn load_disabled_tools(setup: &Setup, cwd: &str) -> HashSet<String> {
     if setup.tools.is_global() {
         return setup.tools.disabled.iter().cloned().collect();
     }
-    match std::fs::read_to_string(Path::new(cwd).join(".cosh-tools.json")) {
+    match std::fs::read_to_string(Path::new(cwd).join(".morpheus-tools.json")) {
         Ok(text) => parse_project_tools(&text),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
             setup.tools.disabled.iter().cloned().collect()

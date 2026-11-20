@@ -11,7 +11,7 @@ use crate::component::search_bar::SearchBar;
 use crate::theme::{Theme, rgba_color};
 use crate::util::draw::draw_text_line;
 use crate::util::list_selection::ListSelection;
-use cosh::setup::Setup;
+use morpheus::setup::Setup;
 
 /// A provider entry shown in the ADD Provider list. Local providers
 /// (ollama, llamacpp, …) are configured with a base URL; cloud providers with

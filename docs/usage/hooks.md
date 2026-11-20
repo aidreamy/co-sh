@@ -2,11 +2,11 @@
 
 Morpheus lets you run custom shell commands **before** every tool call (PreToolUse) and **after** every successful tool call (PostToolUse). You can block dangerous operations, auto-approve safe ones, rewrite tool arguments, or inject extra context into tool results.
 
-Hooks are configured in `~/.config/cosh/setup.json` under the `hooks` section.
+Hooks are configured in `~/.config/morpheus/setup.json` under the `hooks` section.
 
 ## Configuration
 
-Open `~/.config/cosh/setup.json` and add a `hooks` block:
+Open `~/.config/morpheus/setup.json` and add a `hooks` block:
 
 ```json
 {
@@ -15,14 +15,14 @@ Open `~/.config/cosh/setup.json` and add a `hooks` block:
       {
         "name": "Block dangerous bash",
         "matcher": "bash_run",
-        "command": "if echo \"$COSH_TOOL_NAME\" | grep -q 'rm -rf'; then echo '{\"decision\": \"deny\", \"reason\": \"rm -rf is not allowed\"}'; exit 2; fi"
+        "command": "if echo \"$MORPHEUS_TOOL_NAME\" | grep -q 'rm -rf'; then echo '{\"decision\": \"deny\", \"reason\": \"rm -rf is not allowed\"}'; exit 2; fi"
       }
     ],
     "PostToolUse": [
       {
         "name": "Log file writes",
         "matcher": "fs_write",
-        "command": "echo '{\"context\": \"File write completed: \" $COSH_TOOL_NAME}'"
+        "command": "echo '{\"context\": \"File write completed: \" $MORPHEUS_TOOL_NAME}'"
       }
     ]
   }
@@ -48,7 +48,7 @@ PreToolUse hooks run **before** dispatching a tool call. They can block, allow, 
 2. Each matching hook runs via `sh -c "<command>"` in parallel.
 3. The tool name and input are available via:
    - **stdin**: JSON payload `{"event":"PreToolUse","tool_name":"bash_run","tool_input":{...}}`
-   - **env vars**: `COSH_EVENT`, `COSH_TOOL_NAME`
+   - **env vars**: `MORPHEUS_EVENT`, `MORPHEUS_TOOL_NAME`
 4. The hook's exit code and stdout determine the outcome.
 5. Results from all hooks are aggregated (deny wins over allow, halt is sticky).
 
@@ -87,7 +87,7 @@ PostToolUse hooks run **after** a successful tool execution and **before** the r
 2. Each matching hook runs via `sh -c "<command>"` in parallel.
 3. The tool name, input, and **output** are available via:
    - **stdin**: JSON payload `{"event":"PostToolUse","tool_name":"bash_run","tool_input":{...},"tool_output":"..."}`
-   - **env vars**: `COSH_EVENT`, `COSH_TOOL_NAME`
+   - **env vars**: `MORPHEUS_EVENT`, `MORPHEUS_TOOL_NAME`
 4. Results from all hooks are aggregated.
 
 ### Key differences from PreToolUse
@@ -125,7 +125,7 @@ PostToolUse hooks run **after** a successful tool execution and **before** the r
       {
         "name": "No destructive commands",
         "matcher": "bash_run",
-        "command": "if echo \"$COSH_TOOL_NAME\" | grep -qE 'rm -rf|mkfs|dd if='; then exit 2; fi; echo '{\"decision\": \"allow\"}'"
+        "command": "if echo \"$MORPHEUS_TOOL_NAME\" | grep -qE 'rm -rf|mkfs|dd if='; then exit 2; fi; echo '{\"decision\": \"allow\"}'"
       }
     ]
   }
@@ -157,7 +157,7 @@ PostToolUse hooks run **after** a successful tool execution and **before** the r
       {
         "name": "Add --color=never to grep",
         "matcher": "find_grep",
-        "command": "echo '{\"updated_input\": {\"command\": \"--color=never $COSH_TOOL_NAME\"}}'"
+        "command": "echo '{\"updated_input\": {\"command\": \"--color=never $MORPHEUS_TOOL_NAME\"}}'"
       }
     ]
   }
@@ -173,7 +173,7 @@ PostToolUse hooks run **after** a successful tool execution and **before** the r
       {
         "name": "Emergency stop",
         "matcher": ".*",
-        "command": "if [ -f /tmp/cosh-halt ]; then echo 'HALTED' >&2; exit 49; fi"
+        "command": "if [ -f /tmp/morpheus-halt ]; then echo 'HALTED' >&2; exit 49; fi"
       }
     ]
   }

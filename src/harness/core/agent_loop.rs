@@ -276,12 +276,12 @@ impl Harness {
         // Route reasoning/thinking tokens to the TUI as they stream in.
         self.reasoning_tx = Some(tx.clone());
 
-        // Pass the event tx to CoshTools for streaming tool output (e.g. bash)
-        if let Some(ref mut cosh) = self.cosh_tools {
-            cosh.set_event_tx(tx.clone());
+        // Pass the event tx to MorpheusTools for streaming tool output (e.g. bash)
+        if let Some(ref mut morpheus) = self.morpheus_tools {
+            morpheus.set_event_tx(tx.clone());
             // Phase 5: share the stop flag so a running `subagent_call`
             // honours ESC via an ACP `session/cancel` notification.
-            cosh.set_stop_signal(stop_signal.clone());
+            morpheus.set_stop_signal(stop_signal.clone());
         }
 
         log::debug!(
@@ -340,13 +340,13 @@ impl Harness {
 
         // Rehydrate before dispatch. Restoring a point with no recorded plan
         // must clear an existing tool projection, not resurrect future work.
-        if let Some(cosh) = &self.cosh_tools
+        if let Some(morpheus) = &self.morpheus_tools
             && let Some(list) = self
                 .context_manager
                 .take_restored_todo_list()
                 .or_else(|| self.context_manager.todo_list().cloned())
         {
-            cosh.restore_todo_list(list);
+            morpheus.restore_todo_list(list);
         }
         // Mirror the tools' current TODO list into the dedicated protected
         // TODO block (a plan may already exist from a previous loop) so the
@@ -517,12 +517,12 @@ impl Harness {
             // context (see `as_nested`).
             //
             // Single-main-loop assumption: the registry is process-wide and
-            // every non-nested loop drains it. cosh runs one top-level agent
+            // every non-nested loop drains it. morpheus runs one top-level agent
             // loop per process, so ownership is unambiguous; if two
             // top-level loops ever run concurrently, a notification can land
             // in the other session's context — revisit then (e.g. an
             // owner-session tag on each task).
-            // The manager loop (the /agents split's cosh coworker) must not drain
+            // The manager loop (the /agents split's morpheus coworker) must not drain
             // the TOP-LEVEL background registry either: those notifications
             // belong to the main chat loop's context (the same rule a
             // nested loop obeys — the requester tag keeps the streams
@@ -581,7 +581,7 @@ impl Harness {
                 let _ = tx.send(HarnessEvent::BeginAssistant);
                 let messages = self.context_manager.build_messages(&current_input);
                 let tokens_before_attempt = self.context_manager.display_info().total_tokens;
-                // Wire-side accounting (file log, target `cosh::harness`):
+                // Wire-side accounting (file log, target `morpheus::harness`):
                 // the request's message count and the total serialized size
                 // of the messages array + system prompt — the closest cheap
                 // proxy for what the provider actually bills. The
@@ -589,7 +589,7 @@ impl Harness {
                 // separately so a runaway nudge ("continue with...") is
                 // visible at a glance.
                 log::info!(
-                    target: "cosh::harness",
+                    target: "morpheus::harness",
                     "request wire: iteration={} messages={} system_bytes={} steering_bytes={} est_total_bytes={}",
                     iteration,
                     messages.len(),
@@ -668,13 +668,9 @@ impl Harness {
                     image_recoveries += 1;
                     self.learn_image_unsupported();
                     let dropped = self.context_manager.drop_images();
-                    let model = self
-                        .connector
-                        .effective_model()
-                        .unwrap_or("?")
-                        .to_string();
+                    let model = self.connector.effective_model().unwrap_or("?").to_string();
                     log::info!(
-                        target: "cosh::harness",
+                        target: "morpheus::harness",
                         "image input unsupported by {model}: dropped {dropped} image(s); \
                          vision-dependent tools omitted for the process lifetime"
                     );
@@ -859,7 +855,7 @@ impl Harness {
                             // reasoning knob drops the effort entirely.
                             if let Some(effort) = self.connector.reasoning_effort()
                                 && let Some(resolved) =
-                                    resolve_reasoning_effort(&model, effort, Some("cosh/cache"))
+                                    resolve_reasoning_effort(&model, effort, Some("morpheus/cache"))
                             {
                                 c = c.with_reasoning_effort(resolved);
                             }
@@ -1082,7 +1078,7 @@ impl Harness {
                              work was still progressing; the limit was renewed \
                              ({iteration_renewals_left} renewal(s) left)."
                         );
-                        log::warn!(target: "cosh::harness", "guard: {message}");
+                        log::warn!(target: "morpheus::harness", "guard: {message}");
                         let _ = tx.send(HarnessEvent::Toast {
                             message,
                             variant: ToastVariant::Warning,
@@ -1096,7 +1092,7 @@ impl Harness {
                         // dropping every still-queued tool call.
                         let dropped = self.tool_issuer.len();
                         log::warn!(
-                            target: "cosh::harness",
+                            target: "morpheus::harness",
                             "guard stop: MAX_ITERATIONS={MAX_ITERATIONS} reached (stuck={stuck}) — dropping {dropped} queued tool call(s)"
                         );
                         let verdict = self.review_guard_stop("max-iterations");
@@ -1191,7 +1187,9 @@ impl Harness {
                             // TUI can badge it. On error the model gets a
                             // ToolError and can fix + retry (no dialog shown).
                             let normalized =
-                                morpheus_tools::question::Question::validate_and_normalize(&q_input);
+                                morpheus_tools::question::Question::validate_and_normalize(
+                                    &q_input,
+                                );
                             let questions = match normalized {
                                 Ok(qs) => qs,
                                 Err(e) => {
@@ -1410,14 +1408,14 @@ impl Harness {
 
                     // Permission check
                     // Before dispatching, check if the tool needs user approval.
-                    // This only applies to cosh tools (fs_read, bash_run, etc.)
+                    // This only applies to morpheus tools (fs_read, bash_run, etc.)
                     // MCP server tools are passed through unchecked.
                     let perm_check = check_tool_permission(
                         info.as_ref().map_or("?", |(_, n, _)| n.as_str()),
                         info.as_ref()
                             .map_or(&serde_json::Value::Null, |(_, _, a)| a),
                         self.mode,
-                        self.cosh_tools
+                        self.morpheus_tools
                             .as_ref()
                             .map(|ct| ct.project_root().as_path()),
                     );
@@ -1590,7 +1588,7 @@ impl Harness {
                                                         &serde_json::Value::Null,
                                                         |(_, _, a)| a,
                                                     ),
-                                                    &mut self.cosh_tools,
+                                                    &mut self.morpheus_tools,
                                                 );
                                                 // Proceed with dispatch
                                             }
@@ -1617,7 +1615,7 @@ impl Harness {
                                                         &serde_json::Value::Null,
                                                         |(_, _, a)| a,
                                                     ),
-                                                    &mut self.cosh_tools,
+                                                    &mut self.morpheus_tools,
                                                 );
                                             }
                                             super::guardrails::PermissionAction::Deny => {
@@ -1709,10 +1707,10 @@ impl Harness {
                         // window's input with ITS OWN traffic even when
                         // several sub-agents run in parallel.
                         self.active_call_ref = dispatch_call_ref.clone();
-                        // The Tier-1 dispatcher (CoshTools) reads the SAME
+                        // The Tier-1 dispatcher (MorpheusTools) reads the SAME
                         // identity to stamp its sub-agent streams/reports.
-                        if let Some(cosh) = self.cosh_tools.as_ref() {
-                            cosh.set_active_call_ref(dispatch_call_ref.clone());
+                        if let Some(morpheus) = self.morpheus_tools.as_ref() {
+                            morpheus.set_active_call_ref(dispatch_call_ref.clone());
                         }
                         let dispatch_fut = self.dispatch_next();
                         tokio::pin!(dispatch_fut);
@@ -1745,16 +1743,16 @@ impl Harness {
                     // allowlist in BOTH success and error cases — we never want
                     // AllowOnce paths to leak into future calls.
                     if !allow_once_paths.is_empty()
-                        && let Some(cosh) = self.cosh_tools.as_mut()
+                        && let Some(morpheus) = self.morpheus_tools.as_mut()
                     {
                         for p in &allow_once_paths {
                             match allow_once_tool.as_str() {
                                 "fs_read" | "fs_write" | "fs_edit" | "fs_edit_lines"
                                 | "fs_ast_edit" | "fs_rollback" => {
-                                    cosh.remove_fs_allowlist_path(p);
+                                    morpheus.remove_fs_allowlist_path(p);
                                 }
                                 "find_glob" | "find_grep" => {
-                                    cosh.remove_find_allowlist_path(p);
+                                    morpheus.remove_find_allowlist_path(p);
                                 }
                                 _ => {}
                             }
@@ -1953,7 +1951,7 @@ impl Harness {
                         // VISIBILITY: with no checkup attached the audit is
                         // None and logs nothing — surface the stop.
                         log::warn!(
-                            target: "cosh::harness",
+                            target: "morpheus::harness",
                             "guard stop: MAX_ITERATIONS={MAX_ITERATIONS} reached while every tool call failed validation"
                         );
                         let _ = tx.send(HarnessEvent::Toast {
@@ -2008,7 +2006,7 @@ impl Harness {
                         // VISIBILITY: with no checkup attached the audit is
                         // None and logs nothing — surface the stop.
                         log::warn!(
-                            target: "cosh::harness",
+                            target: "morpheus::harness",
                             "guard stop: MAX_ITERATIONS={MAX_ITERATIONS} reached while the turn never reached a completion"
                         );
                         let _ = tx.send(HarnessEvent::Toast {
@@ -2044,7 +2042,7 @@ impl Harness {
                     }
                     // log::debug!("run_agent_loop TRUNCATED (finish reason {reason}) — continuing");
                     log::info!(
-                        target: "cosh::harness",
+                        target: "morpheus::harness",
                         "continuation: truncated-stream retry (finish reason {reason}) — full context will be re-sent with a cut-off nudge"
                     );
                     current_input = "Your previous response was cut off before completion. \
@@ -2126,7 +2124,7 @@ impl Harness {
                     // completions terminates instead of looping to
                     // MAX_ITERATIONS — but that argument is about an
                     // UNBOUNDED continuation, not about this one: a `/agents`
-                    // cosh coworker (or the internal sub-agent) has a requester
+                    // morpheus coworker (or the internal sub-agent) has a requester
                     // blocked on its report and `stop_agent_loop` is blocked
                     // for it, so a stop nobody asked for is by definition
                     // improper. `resume_pane_turn` re-sends the context with
@@ -2477,7 +2475,7 @@ impl Harness {
     fn add_paths_to_allowlist(
         tool_name: &str,
         args: &serde_json::Value,
-        cosh_tools: &mut Option<super::tools::CoshTools>,
+        morpheus_tools: &mut Option<super::tools::MorpheusTools>,
     ) {
         let paths: Vec<std::path::PathBuf> =
             super::guardrails::extract_paths_from_args(tool_name, args)
@@ -2489,17 +2487,17 @@ impl Harness {
             return;
         }
 
-        if let Some(cosh) = cosh_tools.as_mut() {
+        if let Some(morpheus) = morpheus_tools.as_mut() {
             for p in &paths {
                 match tool_name {
                     "fs_read" | "fs_write" | "fs_edit" | "fs_edit_lines" | "fs_ast_edit"
                     | "fs_rollback" => {
                         log::debug!("add_paths_to_allowlist fs allowed: {:?}", p);
-                        cosh.add_fs_allowlist_path(p.clone());
+                        morpheus.add_fs_allowlist_path(p.clone());
                     }
                     "find_glob" | "find_grep" => {
                         log::debug!("add_paths_to_allowlist find allowed: {:?}", p);
-                        cosh.add_find_allowlist_path(p.clone());
+                        morpheus.add_find_allowlist_path(p.clone());
                     }
                     _ => {}
                 }

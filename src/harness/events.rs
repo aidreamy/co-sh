@@ -72,9 +72,9 @@ pub enum HarnessEvent {
     /// Emitted from the agent loop as LSP state changes. Rendered as colored
     /// language tags (one per active server); `available` tells the TUI
     /// whether LSP is configured on at all, so it can distinguish "no server
-    /// running right now" from "LSP disabled" (`COSH_LSP=off`).
+    /// running right now" from "LSP disabled" (`MORPHEUS_LSP=off`).
     LspServers {
-        /// Whether LSP is enabled (`COSH_LSP` not `off`). Independent of how
+        /// Whether LSP is enabled (`MORPHEUS_LSP` not `off`). Independent of how
         /// many servers are currently running.
         available: bool,
         /// Catalog server names currently alive (e.g. `rust-analyzer`),
@@ -147,7 +147,7 @@ pub enum HarnessEvent {
         event: morpheus_tools::subagent::events::SubagentEvent,
     },
     /// One live event of the `/agents` split-pane mode. Each pane is an
-    /// independent ACP (or nested cosh) turn driven directly by the TUI —
+    /// independent ACP (or nested morpheus) turn driven directly by the TUI —
     /// outside the agent loop's `subagent_call` dispatch — so pane index
     /// replaces `call_ref` as the routing identity: the pane's own event
     /// channel is the multiplexer the harness tool path cannot provide.
@@ -157,7 +157,7 @@ pub enum HarnessEvent {
     /// stopped turn's terminal delivery can never land in a replacement
     /// pane that merely shares the index.
     AgentsPaneEvent {
-        /// Index into `App::agents_split`'s panes (0 = the `cosh` manager pane).
+        /// Index into `App::agents_split`'s panes (0 = the `morpheus` manager pane).
         pane: usize,
         /// Stable identity of the pane object this turn was dispatched to
         /// (`AgentPane::id`). The event handler routes by THIS, not the
@@ -213,7 +213,7 @@ pub enum HarnessEvent {
         /// `end_turn`, `cancelled`, or a spawn-failure marker.
         stop_reason: String,
         /// The ACP session id to resume on the pane's next prompt (external
-        /// agents only; the nested cosh manager pane has no resumable session).
+        /// agents only; the nested morpheus manager pane has no resumable session).
         session: Option<String>,
     },
     /// A `/agents` pane's cold-restore REPLAY ended. The pane rehydrated

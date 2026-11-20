@@ -6,8 +6,10 @@ use std::path::PathBuf;
 /// process, under the OS temp dir. Tests never touch a real project tree.
 fn fixtures_root() -> &'static PathBuf {
     static ROOT: std::sync::LazyLock<PathBuf> = std::sync::LazyLock::new(|| {
-        let dir =
-            std::env::temp_dir().join(format!("cosh_fs_replace_fixtures_{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!(
+            "morpheus_fs_replace_fixtures_{}",
+            std::process::id()
+        ));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).expect("create replace fixtures root");
         dir
@@ -22,7 +24,7 @@ fn fs_auto() -> Fs {
 /// Seed a fixture file and mint its session snapshot tag. Each test uses a
 /// unique `name`; stale files from a previous run are wiped with the root.
 fn fixture(name: &str, text: &str) -> (String, String) {
-    let path = fixtures_root().join(format!("cosh_test_replace_{name}"));
+    let path = fixtures_root().join(format!("morpheus_test_replace_{name}"));
     std::fs::write(&path, text).unwrap();
     let hash = rollback::record(path.to_string_lossy().as_ref(), text).expect("snapshot recorded");
     (path.to_string_lossy().into_owned(), hash)
@@ -401,7 +403,7 @@ async fn boundary_echo_repair_that_would_alter_exact_replacement_is_rejected() {
 #[tokio::test]
 async fn file_over_snapshot_budget_gets_a_size_diagnostic() {
     let path = fixtures_root()
-        .join("cosh_test_replace_oversize")
+        .join("morpheus_test_replace_oversize")
         .to_string_lossy()
         .into_owned();
     std::fs::write(&path, "x".repeat(600 * 1024)).unwrap();
@@ -421,7 +423,7 @@ async fn chaining_works_across_path_spellings_of_the_same_file() {
     // to the same absolute path chain without an explicit file_hash.
     let root = fixtures_root().join("spellings");
     std::fs::create_dir_all(&root).unwrap();
-    let path = root.join("cosh_test_replace_spellings");
+    let path = root.join("morpheus_test_replace_spellings");
     let path = path.to_string_lossy().into_owned();
     std::fs::write(&path, "one\ntwo\n").unwrap();
     let hash = rollback::record(&path, "one\ntwo\n").unwrap();
@@ -431,7 +433,7 @@ async fn chaining_works_across_path_spellings_of_the_same_file() {
         .parent()
         .and_then(|p| p.to_str())
         .expect("fixture has a parent dir");
-    let dotted = format!("{parent}/./cosh_test_replace_spellings");
+    let dotted = format!("{parent}/./morpheus_test_replace_spellings");
     let out = run(vec![
         edit(&path, Some(&hash), "one", "1"),
         edit(&dotted, None, "two", "2"),
@@ -459,7 +461,7 @@ async fn grouped_eof_delete_with_surviving_inter_occurrence_text_is_rejected() {
 #[tokio::test]
 async fn binary_file_gets_a_binary_diagnostic() {
     let path = fixtures_root()
-        .join("cosh_test_replace_binary")
+        .join("morpheus_test_replace_binary")
         .to_string_lossy()
         .into_owned();
     std::fs::write(&path, [b'a', 0, b'b']).unwrap();

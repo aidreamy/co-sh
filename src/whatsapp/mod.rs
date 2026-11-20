@@ -287,10 +287,14 @@ pub async fn run() -> i32 {
                         match link.send_text(&message.chat, reply).await {
                             Ok(sent) => log::info!(
                                 "morpheus whatsapp: send_text ok id={} to={}",
-                                sent.id, sent.to
+                                sent.id,
+                                sent.to
                             ),
                             Err(error) => {
-                                log::warn!("morpheus whatsapp: reply to {} failed: {error}", message.chat)
+                                log::warn!(
+                                    "morpheus whatsapp: reply to {} failed: {error}",
+                                    message.chat
+                                )
                             }
                         }
                     });

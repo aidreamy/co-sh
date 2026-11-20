@@ -190,7 +190,7 @@ impl App {
         if let Some(d) = self.dialog.current_mut() {
             if let DialogType::ThemeList { filter, .. } = &mut d.dialog_type {
                 // The shared list-dialog filter edit: push + selection reset
-                // + cursor blink, one definition for every cosh list box.
+                // + cursor blink, one definition for every morpheus list box.
                 crate::component::list_dialog::push_filter(
                     filter,
                     &mut d.selected,

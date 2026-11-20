@@ -16,7 +16,7 @@ use super::context::error_catalog_window;
 use super::context::{ContextManager, MAX_CONTEXT_TOKENS, MapRequest, RunOutcome};
 use super::correction_memory::CorrectionMemory;
 use super::tools;
-use super::tools::CoshTools;
+use super::tools::MorpheusTools;
 use super::tools::Tools as _;
 use super::tools::{is_tool_disabled, write_single_tool};
 use crate::mcp::{McpConfig, McpManager};
@@ -25,12 +25,12 @@ use aiface::NativeToolCall;
 #[cfg(test)]
 use aiface::connector::ChatMessage;
 use aiface::connector::{ClaudeThinkingBlock, Connector, ToolCallMode};
+pub use guards::{todo_rerun_message, todo_rerun_open_items};
 use morpheus_sdk::extract_action::ToolCallData;
 #[cfg(test)]
 use morpheus_sdk::extract_action::ToolSchema;
 use morpheus_tools::TOOL_FORMAT;
 use morpheus_tools::lsp::Lsp;
-pub use guards::{todo_rerun_message, todo_rerun_open_items};
 use std::collections::{HashSet, VecDeque};
 use std::fmt::Write as _;
 use std::sync::Arc;
@@ -119,7 +119,7 @@ pub struct Harness {
     header_context: String,
     system_prompts: Vec<PromptSystem>,
     harness_tools: Vec<HarnessTool>,
-    cosh_tools: Option<CoshTools>,
+    morpheus_tools: Option<MorpheusTools>,
     /// Image payload drained from the last Tier-1 dispatch (a
     /// `computer_screenshot`'s PNG, as base64 `ImageBlock`s). Consumed by
     /// [`Self::push_tool_history`] when it records that dispatch's result;
@@ -179,14 +179,14 @@ pub struct Harness {
     nested: bool,
     /// Which loop this harness drives for the /agents coworker bridge
     /// ([`super::agent_coworkers::MAIN`] for the normal chat loop,
-    /// [`super::agent_coworkers::MANAGER`] for the split's cosh-coworker manager loop). Tags
+    /// [`super::agent_coworkers::MANAGER`] for the split's morpheus-coworker manager loop). Tags
     /// every `agents_call` request so a background report is drained ONLY
     /// by the loop that asked for it — the two loops never run
     /// concurrently (the `/agents` gate refuses to open while the main
     /// loop works), but a delivery can outlive its requester's turn.
     coworkers_requester: &'static str,
     /// The registry id of the /agents coworker this harness itself runs in
-    /// (`Some("cosh")`, `Some("cosh#2")`, …) when the loop IS a pane; `None`
+    /// (`Some("morpheus")`, `Some("morpheus#2")`, …) when the loop IS a pane; `None`
     /// for the MAIN chat loop, which has no coworker. `agents_call` refuses to
     /// target this id: the manager would queue a turn behind the very turn
     /// making the call, deadlocking the wait.
@@ -195,7 +195,7 @@ pub struct Harness {
     hook_runner: Option<super::hooks::HookRunner>,
 
     /// Language-server tooling for passive diagnostics injection after
-    /// fs_write/fs_edit. `None` when `COSH_LSP=off` or no runtime.
+    /// fs_write/fs_edit. `None` when `MORPHEUS_LSP=off` or no runtime.
     lsp: Option<Arc<Lsp>>,
 
     /// Monotonic counter for synthetic tool_call ids (inline JSON calls that
@@ -273,7 +273,7 @@ pub struct Harness {
     stop_nudge_budget_override: Option<u32>,
 
     /// Remaining IMPROPER-STOP resumes granted to THIS loop when the loop
-    /// owes a REPORT (a `/agents` cosh coworker, or the internal sub-agent). See
+    /// owes a REPORT (a `/agents` morpheus coworker, or the internal sub-agent). See
     /// [`super::limits::COWORKER_RESUME_BUDGET`] for why such a loop continues
     /// where a chat turn does not, and why the bound is what makes the
     /// continuation safe. Consumed only by [`Self::resume_pane_turn`]; a loop
@@ -512,26 +512,26 @@ impl Harness {
                 let _ = write!(out, "### {}\n{}\n\n", tool.name, tool.description);
             }
         }
-        if let Some(ref cosh) = self.cosh_tools {
+        if let Some(ref morpheus) = self.morpheus_tools {
             let _ = write!(out, "### System Tools\n\n");
             match self.mode {
                 // Yolo/Command dispatch without an interactive approval dialog,
                 // and Build asks per-call (the guardrail denies coordinate
                 // forms and approves the tree-grounded ones), so every mode
                 // sees the full toolset.
-                Mode::Build => cosh.write_tool_descriptions_enabled(
+                Mode::Build => morpheus.write_tool_descriptions_enabled(
                     &mut out,
                     &self.disabled_tools,
                     include_inline_schemas,
                 ),
-                Mode::Yolo | Mode::Command => cosh.write_tool_descriptions_enabled(
+                Mode::Yolo | Mode::Command => morpheus.write_tool_descriptions_enabled(
                     &mut out,
                     &self.disabled_tools,
                     include_inline_schemas,
                 ),
                 // Manager reuses the enabled writer (a deny-list filter would
                 // duplicate the tool list) and skips the write tools inline.
-                Mode::Manager => cosh
+                Mode::Manager => morpheus
                     .tool_descriptions()
                     .iter()
                     .filter(|desc| {
@@ -542,7 +542,7 @@ impl Harness {
                     .for_each(|desc| {
                         write_single_tool(&mut out, desc, include_inline_schemas);
                     }),
-                Mode::Ask => cosh.write_tool_descriptions_filtered(
+                Mode::Ask => morpheus.write_tool_descriptions_filtered(
                     &mut out,
                     &self.disabled_tools,
                     include_inline_schemas,

@@ -32,7 +32,7 @@ pub struct Setup {
     pub cache: Cache,
     /// Skill-discovery configuration (Settings screen).
     pub skills: SkillsConfig,
-    /// Who may use the agent over WhatsApp (`cosh whatsapp`). Defaults to
+    /// Who may use the agent over WhatsApp (`morpheus whatsapp`). Defaults to
     /// the owner's own self-chat only; contacts and groups must be listed
     /// explicitly.
     pub whatsapp: WhatsAppConfig,
@@ -68,7 +68,7 @@ pub struct Setup {
     pub editor: String,
     /// Telemetry consent (Settings screen toggle). DEFAULT ON (opt-out,
     /// like the industry standard): the user can disable it in Settings or
-    /// via `COSH_TELEMETRY=off`; CI environments are hard-off regardless.
+    /// via `MORPHEUS_TELEMETRY=off`; CI environments are hard-off regardless.
     /// This flag is only the USER's choice — the effective consent still
     /// goes through `Telemetry::resolve` (env override + CI hard-off).
     pub telemetry: bool,
@@ -79,7 +79,7 @@ pub struct Setup {
     pub effective_context: bool,
     /// Raw bytes of the file this struct was last loaded from (or last
     /// wrote), kept as JSON text. NOT serialized — this is the merge
-    /// baseline for [`Setup::save`]: with several cosh processes sharing one
+    /// baseline for [`Setup::save`]: with several morpheus processes sharing one
     /// config file, a save must re-read the disk, carry forward sections
     /// this process never touched, and only overwrite what actually
     /// changed here. Without it the second process's save clobbers the
@@ -239,7 +239,7 @@ pub struct Tools {
     pub tool_call_mode: String,
     /// Tool names the user has disabled (hidden from the model). Applies to
     /// the scope selected by [`Tools::scope`] — the global `setup.json` when
-    /// `"global"`, or the per-project `.cosh-tools.json` in the cwd otherwise.
+    /// `"global"`, or the per-project `.morpheus-tools.json` in the cwd otherwise.
     pub disabled: Vec<String>,
     /// Which scope `disabled` is persisted to. Default `"project"`: every
     /// new environment starts with its own tool set, so one project's
@@ -462,7 +462,7 @@ pub struct DecisionConfig {
     /// The hub mirror the weights installer downloads from. THE single
     /// application-level default for the mirror repo id: the `morpheus-onnx`
     /// crate carries no repo default — every install resolves this value
-    /// (env override `COSH_ONNX_HUB_REPO` wins over the config).
+    /// (env override `MORPHEUS_ONNX_HUB_REPO` wins over the config).
     pub hub: DecisionHub,
 }
 
@@ -491,7 +491,7 @@ impl Default for DecisionHub {
     fn default() -> Self {
         Self {
             // The application-level default mirror. Overridable per config
-            // (an org mirror) and per environment (`COSH_ONNX_HUB_REPO`).
+            // (an org mirror) and per environment (`MORPHEUS_ONNX_HUB_REPO`).
             repo: "Zaluski/laya-onnx".to_string(),
             pinned_repo: String::new(),
             pinned_revision: String::new(),
@@ -503,7 +503,7 @@ impl DecisionHub {
     /// The effective repo id: the env override wins over the config value,
     /// mirroring how the other env-backed knobs behave.
     pub fn effective_repo(&self) -> String {
-        match std::env::var("COSH_ONNX_HUB_REPO") {
+        match std::env::var("MORPHEUS_ONNX_HUB_REPO") {
             Ok(repo) if !repo.trim().is_empty() => repo.trim().to_string(),
             _ => self.repo.clone(),
         }
@@ -897,14 +897,14 @@ fn default_true() -> bool {
 
 /// Resolve the config directory path (`~/.config/morpheus/`).
 ///
-/// `COSH_CONFIG_DIR` overrides the location when set — the test harness
+/// `MORPHEUS_CONFIG_DIR` overrides the location when set — the test harness
 /// uses this because `directories::ProjectDirs` resolves through the
 /// platform's known-folders API (on Windows: `APPDATA`/`LOCALAPPDATA`),
 /// which IGNORES the `$HOME` redirect that `isolate_home()` performs. A
 /// plain `$HOME` override cannot isolate the config on Windows; an explicit
 /// path override can.
 fn config_dir() -> PathBuf {
-    if let Ok(dir) = std::env::var("COSH_CONFIG_DIR")
+    if let Ok(dir) = std::env::var("MORPHEUS_CONFIG_DIR")
         && !dir.is_empty()
     {
         return PathBuf::from(dir);
@@ -916,11 +916,11 @@ fn config_dir() -> PathBuf {
 
 /// Resolve the data directory path (`~/.local/share/morpheus/` on Unix).
 ///
-/// `COSH_DATA_DIR` overrides the location when set — same rationale as
-/// [`config_dir`]'s `COSH_CONFIG_DIR` override. Public: the TUI's session
+/// `MORPHEUS_DATA_DIR` overrides the location when set — same rationale as
+/// [`config_dir`]'s `MORPHEUS_CONFIG_DIR` override. Public: the TUI's session
 /// store and usage cache resolve their storage roots through it.
 pub fn data_dir_override() -> PathBuf {
-    if let Ok(dir) = std::env::var("COSH_DATA_DIR")
+    if let Ok(dir) = std::env::var("MORPHEUS_DATA_DIR")
         && !dir.is_empty()
     {
         return PathBuf::from(dir);
@@ -999,7 +999,7 @@ impl Setup {
     /// never configured anything", hiding the real cause.
     ///
     /// The raw file text is also kept as this instance's merge baseline for
-    /// [`Setup::save`]: with several cosh processes sharing one config
+    /// [`Setup::save`]: with several morpheus processes sharing one config
     /// file, a save must be able to tell what changed on disk since this
     /// process last read or wrote it.
     pub fn load() -> Self {
@@ -1041,7 +1041,7 @@ impl Setup {
 
     /// Persist to disk, creating the config directory if needed.
     ///
-    /// Cross-process safe (the old save was neither, which is how two cosh
+    /// Cross-process safe (the old save was neither, which is how two morpheus
     /// processes erased each other's settings):
     ///
     /// - the whole read-decide-write window holds an exclusive advisory
@@ -1344,7 +1344,7 @@ pub(crate) static CONFIG_DIR_LOCK: parking_lot::Mutex<()> = parking_lot::Mutex::
 #[cfg(test)]
 mod tests {
     /// Serializes tests that redirect the config directory: `config_dir()`
-    /// reads the process-wide environment (`COSH_CONFIG_DIR`), and cargo
+    /// reads the process-wide environment (`MORPHEUS_CONFIG_DIR`), and cargo
     /// runs test threads in parallel. Shared with every OTHER test in this
     /// crate that touches the env var (`uninstall`), so the two can never
     /// interleave each other's override.
@@ -1367,14 +1367,14 @@ mod tests {
             let dir = tempfile::tempdir().expect("scratch config dir");
             // SAFETY: ENV_LOCK serializes env mutation across tests; the
             // override is removed when the guard drops.
-            unsafe { std::env::set_var("COSH_CONFIG_DIR", dir.path()) };
+            unsafe { std::env::set_var("MORPHEUS_CONFIG_DIR", dir.path()) };
             Self { _dir: dir }
         }
     }
 
     impl Drop for IsolatedConfig {
         fn drop(&mut self) {
-            unsafe { std::env::remove_var("COSH_CONFIG_DIR") };
+            unsafe { std::env::remove_var("MORPHEUS_CONFIG_DIR") };
         }
     }
 
@@ -1439,7 +1439,7 @@ mod tests {
         assert_eq!(parsed.cache.openai_retention_min, 0);
         // Telemetry is DEFAULT-ON (opt-out, industry standard): absent
         // field, empty file and corrupt file all resolve to ON. Users who
-        // want out flip the Settings toggle or set COSH_TELEMETRY=off.
+        // want out flip the Settings toggle or set MORPHEUS_TELEMETRY=off.
         assert!(parsed.telemetry);
         // Effective context is DEFAULT-OFF: the full window is used.
         assert!(!parsed.effective_context);
@@ -1815,7 +1815,7 @@ mod tests {
 
     // ── Cross-process persistence (the settings-vanishing regression) ──────
 
-    /// REGRESSION (settings vanishing across processes): two cosh processes
+    /// REGRESSION (settings vanishing across processes): two morpheus processes
     /// share one setup.json. B changes the theme and saves; A — still
     /// holding its own older in-memory copy — then changes the model and
     /// saves. The old save wrote A's WHOLE in-memory struct, erasing B's

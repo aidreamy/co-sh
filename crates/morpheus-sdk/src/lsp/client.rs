@@ -365,7 +365,7 @@ impl LanguageServer {
             "processId": std::process::id(),
             "rootPath": self.inner.root_path.display().to_string(),
             "rootUri": root_uri.as_str(),
-            "clientInfo": { "name": "cosh" },
+            "clientInfo": { "name": "morpheus" },
             "initializationOptions": self.inner.initialization_options,
             "workspaceFolders": [{
                 "uri": root_uri.as_str(),

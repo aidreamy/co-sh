@@ -269,11 +269,11 @@ impl ChatSession {
 
         if self.config.disabled_tools.contains("bash_run") {
             return "Shell commands are disabled in your tool settings (`bash_run` is off). \
-                    Re-enable it in `.cosh-tools.json` or `setup.json` to use command mode."
+                    Re-enable it in `.morpheus-tools.json` or `setup.json` to use command mode."
                 .to_string();
         }
 
-        let tools = crate::harness::CoshTools::new(&self.config.cwd);
+        let tools = crate::harness::MorpheusTools::new(&self.config.cwd);
         match tools
             .dispatch("bash_run", serde_json::json!({ "command": command }))
             .await

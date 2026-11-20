@@ -714,7 +714,7 @@ fn render_bash_section(
 
 /// Render the subagent LIST (one entry per subagent session):
 /// `<agent> <description> <tool> <spinner>`, oldest first. Each entry is
-/// WRAPPED to the section width with cosh's standard `wrap_chars` word
+/// WRAPPED to the section width with morpheus's standard `wrap_chars` word
 /// wrap — a long description breaks onto continuation rows so the tool
 /// name and spinner stay inside the visible area. The selected entry is
 /// highlighted (selection band + accent fg); running entries animate the
@@ -2327,7 +2327,7 @@ mod tests {
         let theme = test_theme();
         let mut state = RightPanelState::new();
         state.subagent_rebuild_interval = std::time::Duration::ZERO;
-        state.start_pty("subagent: cosh".to_string(), None);
+        state.start_pty("subagent: morpheus".to_string(), None);
         state.update_subagent_activity(
             &SubagentEvent::ToolCall {
                 id: "c1".to_string(),

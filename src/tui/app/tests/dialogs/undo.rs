@@ -226,15 +226,15 @@ async fn acp_undo_removes_the_dropped_turn_from_the_painted_pane() {
     );
 }
 
-/// The manager (cosh) pane keeps the NATIVE store-backed list: its
-/// conversation is a real cosh session, so a focused manager pane must never
+/// The manager (morpheus) pane keeps the NATIVE store-backed list: its
+/// conversation is a real morpheus session, so a focused manager pane must never
 /// be routed to the ACP checkpoint path.
 #[tokio::test]
 async fn undo_on_a_manager_pane_uses_the_store_backed_list() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
     let mut app = App::new("/tmp".to_string());
-    let mut split = AgentsSplitState::new(vec![AgentPaneRef::Name("cosh".to_string())]);
+    let mut split = AgentsSplitState::new(vec![AgentPaneRef::Name("morpheus".to_string())]);
     split.echo_turn_input(0, "manager prompt", true);
     split.focused = Some(0);
     app.agents_split = Some(split);
@@ -275,7 +275,7 @@ async fn acp_undo_refuses_while_the_pane_is_running() {
 }
 
 /// `/undo` must be DISCOVERABLE in an ACP pane's menu (its source is the
-/// harness's own command list, which never carries cosh commands).
+/// harness's own command list, which never carries morpheus commands).
 #[test]
 fn the_acp_pane_menu_lists_undo() {
     let mut split = AgentsSplitState::new(vec![AgentPaneRef::Name("opencode".to_string())]);
@@ -293,12 +293,12 @@ fn the_acp_pane_menu_lists_undo() {
 /// the session cwd (the isolated work silently going to the main tree).
 #[tokio::test]
 async fn a_rewound_pane_keeps_its_worktree_pin_on_disk() {
-    use cosh::git::worktree::{AssignedBy, PaneWorktree};
+    use morpheus::git::worktree::{AssignedBy, PaneWorktree};
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
     let pin = PaneWorktree {
-        path: "/tmp/cosh-worktrees/fix-undo".into(),
+        path: "/tmp/morpheus-worktrees/fix-undo".into(),
         branch: "fix-undo".to_string(),
         name: "fix-undo".to_string(),
         assigned_by: AssignedBy::User,

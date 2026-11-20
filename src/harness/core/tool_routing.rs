@@ -278,9 +278,9 @@ impl Harness {
             ));
         }
 
-        // Cosh tools — filtered by mode so the native API only exposes
+        // Morpheus tools — filtered by mode so the native API only exposes
         // tools the model is allowed to call in the current mode.
-        if let Some(ref cosh) = self.cosh_tools {
+        if let Some(ref morpheus) = self.morpheus_tools {
             let descriptions: Vec<serde_json::Value> = match self.mode {
                 Mode::Build => {
                     // All tools minus disabled: every mode sees the full
@@ -288,7 +288,8 @@ impl Harness {
                     // computer_screenshot are gated per-call by the guardrail
                     // (denied in Build with guidance toward the tree-grounded
                     // forms), not by hiding the tool.
-                    cosh.tool_descriptions()
+                    morpheus
+                        .tool_descriptions()
                         .into_iter()
                         .filter(|desc| {
                             let name = desc["name"].as_str().unwrap_or_default();
@@ -302,7 +303,8 @@ impl Harness {
                     // registration so the model never even sees a schema for
                     // a tool it cannot call (defense in depth with the
                     // guardrail denial).
-                    cosh.tool_descriptions()
+                    morpheus
+                        .tool_descriptions()
                         .into_iter()
                         .filter(|desc| {
                             let name = desc["name"].as_str().unwrap_or_default();
@@ -313,7 +315,7 @@ impl Harness {
                 }
                 Mode::Ask => {
                     // Only read-only / planning tools
-                    cosh.tool_descriptions_filtered(&self.disabled_tools)
+                    morpheus.tool_descriptions_filtered(&self.disabled_tools)
                 }
             };
 
@@ -348,8 +350,8 @@ impl Harness {
     /// and after every `plan_*` dispatch so the block always reflects the
     /// authoritative `Plan` state.
     pub(super) fn sync_todo_context(&mut self) {
-        if let Some(cosh) = &self.cosh_tools {
-            let list = cosh.todo_list();
+        if let Some(morpheus) = &self.morpheus_tools {
+            let list = morpheus.todo_list();
             self.context_manager.set_todo_list(list);
         }
     }
@@ -397,17 +399,17 @@ impl Harness {
     /// The tool's input schema, from the same mode-filtered, disabled-aware
     /// set the model was registered with (never a hidden tool's schema).
     pub(super) fn schema_input(&self, tool_name: &str) -> Option<serde_json::Value> {
-        if let Some(cosh) = &self.cosh_tools {
+        if let Some(morpheus) = &self.morpheus_tools {
             let schemas = match self.mode {
                 Mode::Build | Mode::Yolo | Mode::Command => {
-                    cosh.schemas_enabled(&self.disabled_tools)
+                    morpheus.schemas_enabled(&self.disabled_tools)
                 }
-                Mode::Manager => cosh
+                Mode::Manager => morpheus
                     .schemas_enabled(&self.disabled_tools)
                     .into_iter()
                     .filter(|schema| !is_manager_restricted(&schema.name))
                     .collect(),
-                Mode::Ask => cosh.schemas_filtered(&self.disabled_tools),
+                Mode::Ask => morpheus.schemas_filtered(&self.disabled_tools),
             };
             for schema in schemas {
                 if schema.name == tool_name {

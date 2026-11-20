@@ -44,7 +44,7 @@ impl Harness {
         disabled.extend(SUBAGENT_BLOCKED_TOOLS.iter().map(|t| t.to_string()));
 
         let cwd = self
-            .cosh_tools
+            .morpheus_tools
             .as_ref()
             .map(|c| c.project_root().to_string_lossy().to_string())
             .unwrap_or_else(|| ".".to_string());
@@ -52,8 +52,8 @@ impl Harness {
         let fallbacks = self.fallbacks.clone();
         let summarization_models = self.summarization_models.clone();
         let local_base_urls = self.local_base_urls.clone();
-        let parent_skills = self.cosh_tools.as_ref().map(|c| c.skills());
-        let parent_tx = self.cosh_tools.as_ref().and_then(|c| c.event_tx());
+        let parent_skills = self.morpheus_tools.as_ref().map(|c| c.skills());
+        let parent_tx = self.morpheus_tools.as_ref().and_then(|c| c.event_tx());
         let stop_signal = self
             .stop_signal
             .clone()
@@ -154,44 +154,43 @@ impl Harness {
                             if Harness::forward_nested_accounting(&event, bridge_tx.as_ref()) {
                                 continue;
                             }
-                            let subagent_events: Vec<morpheus_tools::subagent::events::SubagentEvent> =
-                                match event {
-                                    super::events::HarnessEvent::Token { text } => {
-                                        vec![InternalEventBridge::message(text)]
+                            let subagent_events: Vec<
+                                morpheus_tools::subagent::events::SubagentEvent,
+                            > = match event {
+                                super::events::HarnessEvent::Token { text } => {
+                                    vec![InternalEventBridge::message(text)]
+                                }
+                                super::events::HarnessEvent::Reasoning { text } => {
+                                    vec![InternalEventBridge::thought(text)]
+                                }
+                                super::events::HarnessEvent::ToolCall { tool, input, .. } => {
+                                    let mut events = vec![internal.tool_call(&tool, &input)];
+                                    if tool == "plan_todo_write"
+                                        && let Some(plan) =
+                                            InternalEventBridge::plan_from_todo_write(&input)
+                                    {
+                                        events.push(plan);
                                     }
-                                    super::events::HarnessEvent::Reasoning { text } => {
-                                        vec![InternalEventBridge::thought(text)]
-                                    }
-                                    super::events::HarnessEvent::ToolCall {
-                                        tool, input, ..
-                                    } => {
-                                        let mut events = vec![internal.tool_call(&tool, &input)];
-                                        if tool == "plan_todo_write"
-                                            && let Some(plan) =
-                                                InternalEventBridge::plan_from_todo_write(&input)
-                                        {
-                                            events.push(plan);
-                                        }
-                                        events
-                                    }
-                                    super::events::HarnessEvent::ToolResult { output, .. } => {
-                                        internal.tool_result(&output).into_iter().collect()
-                                    }
-                                    super::events::HarnessEvent::ToolError { error, .. } => {
-                                        internal.tool_error(&error).into_iter().collect()
-                                    }
-                                    super::events::HarnessEvent::ContextInfo { info } => {
-                                        vec![InternalEventBridge::usage(
-                                            info.total_tokens,
-                                            info.max_tokens,
-                                        )]
-                                    }
-                                    super::events::HarnessEvent::Error { message, .. } => {
-                                        *err_capture.lock().unwrap() = Some(message);
-                                        Vec::new()
-                                    }
-                                    _ => Vec::new(),
-                                };
+                                    events
+                                }
+                                super::events::HarnessEvent::ToolResult { output, .. } => {
+                                    internal.tool_result(&output).into_iter().collect()
+                                }
+                                super::events::HarnessEvent::ToolError { error, .. } => {
+                                    internal.tool_error(&error).into_iter().collect()
+                                }
+                                super::events::HarnessEvent::ContextInfo { info } => {
+                                    vec![InternalEventBridge::usage(
+                                        info.total_tokens,
+                                        info.max_tokens,
+                                    )]
+                                }
+                                super::events::HarnessEvent::Error { message, .. } => {
+                                    *err_capture.lock().unwrap() = Some(message);
+                                    Vec::new()
+                                }
+                                _ => Vec::new(),
+                            };
                             if let Some(tx) = &bridge_tx {
                                 for event in subagent_events {
                                     let _ = tx.send(super::events::HarnessEvent::SubagentEvent {

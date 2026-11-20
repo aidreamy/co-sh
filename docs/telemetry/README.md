@@ -142,7 +142,7 @@ Morpheus's data directory:
 ```
 
 On Unix, this normally corresponds to
-`~/.local/share/cosh/telemetry/telemetry-events.jsonl`. The directory is
+`~/.local/share/morpheus/telemetry/telemetry-events.jsonl`. The directory is
 created with owner-only permissions when the platform provides that control.
 
 The queue is limited to 512 KiB and 2,000 events. An individual event larger
@@ -191,8 +191,8 @@ Telemetry is enabled by default, but it is opt-out. The effective decision
 follows this order:
 
 1. `CI` permanently disables telemetry for that process;
-2. `COSH_TELEMETRY=off`, `0`, or `false` disables it;
-3. `COSH_TELEMETRY=on`, `1`, or `true` enables it;
+2. `MORPHEUS_TELEMETRY=off`, `0`, or `false` disables it;
+3. `MORPHEUS_TELEMETRY=on`, `1`, or `true` enables it;
 4. without an override, the persisted user preference applies.
 
 The TUI exposes this preference at `/settings` → **General** → **Telemetry**.

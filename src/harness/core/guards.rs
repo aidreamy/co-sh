@@ -98,7 +98,7 @@ impl Harness {
     /// - the internal sub-agent (`as_nested`): its ONLY deliverable is the
     ///   final report text (`stop_agent_loop` is blocked for it, see
     ///   [`super::limits::SUBAGENT_BLOCKED_TOOLS`]);
-    /// - the `/agents` cosh coworker (`with_own_coworker_id`): a requester is
+    /// - the `/agents` morpheus coworker (`with_own_coworker_id`): a requester is
     ///   BLOCKED on its report, and the coworker ROLE has no `stop_agent_loop`
     ///   (stripped by role in `core::build`).
     ///

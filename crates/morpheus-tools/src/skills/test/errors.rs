@@ -7,7 +7,7 @@ fn invalid_source_directory_returns_error() {
     let result = execute(&SkillSchema {
         action: SkillAction::List,
         sources: vec![SkillSource::Directory {
-            path: "/tmp/nonexistent_cosh_skills_test".into(),
+            path: "/tmp/nonexistent_morpheus_skills_test".into(),
         }],
         skill_name: None,
         asset_path: None,

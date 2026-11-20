@@ -15,7 +15,8 @@ fn new_cmd() -> crate::ui::slash_menu::SlashCommand {
 /// that redirect `$HOME` through `isolate_home` hit the scratch copy).
 fn marker_path() -> std::path::PathBuf {
     let dirs = directories::BaseDirs::new().expect("home dirs resolve");
-    dirs.data_local_dir().join("morpheus/gateway-recommendation")
+    dirs.data_local_dir()
+        .join("morpheus/gateway-recommendation")
 }
 
 fn write_marker(answer: &str) {

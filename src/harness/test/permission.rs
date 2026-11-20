@@ -180,8 +180,8 @@ fn ask_mode_denies_fs_rollback() {
 #[test]
 fn ask_mode_fs_read_outside_cwd_needs_approval() {
     // fs_read targeting an absolute path outside root → NeedsApproval
-    let tmp_root = std::env::temp_dir().join("cosh_test_ask_fs_root");
-    let outside = std::env::temp_dir().join("cosh_test_ask_fs_outside.txt");
+    let tmp_root = std::env::temp_dir().join("morpheus_test_ask_fs_root");
+    let outside = std::env::temp_dir().join("morpheus_test_ask_fs_outside.txt");
     let _ = std::fs::create_dir_all(&tmp_root);
     let _ = std::fs::write(&outside, b"test");
 
@@ -220,8 +220,8 @@ fn ask_mode_fs_read_inside_cwd_is_allowed() {
 #[test]
 fn ask_mode_find_glob_outside_cwd_needs_approval() {
     // find_glob with absolute path outside root → NeedsApproval
-    let tmp_root = std::env::temp_dir().join("cosh_test_ask_fg_root");
-    let outside = std::env::temp_dir().join("cosh_test_ask_fg_outside");
+    let tmp_root = std::env::temp_dir().join("morpheus_test_ask_fg_root");
+    let outside = std::env::temp_dir().join("morpheus_test_ask_fg_outside");
     let _ = std::fs::create_dir_all(&tmp_root);
     let _ = std::fs::create_dir_all(&outside);
 
@@ -462,7 +462,7 @@ fn computer_screenshot_save_path_asks_outside_project_root() {
     // platform (the temp dir is never inside a workspace root): the
     // literal `C:/…` spelling of earlier drafts is only absolute on
     // Windows, so a Linux run silently let it through.
-    let outside = std::env::temp_dir().join("cosh_outside_root_shot.png");
+    let outside = std::env::temp_dir().join("morpheus_outside_root_shot.png");
     let args = serde_json::json!({ "save_path": outside.to_str().unwrap() });
     let result = check_tool_permission("computer_screenshot", &args, Mode::Ask, Some(dir.path()));
     assert!(
@@ -487,7 +487,7 @@ fn computer_screenshot_save_path_asks_outside_project_root() {
 
     // No project root known AT ALL (e.g. a session without a workspace):
     // the defensive default asks for even a plausible path.
-    let outside_any = std::env::temp_dir().join("cosh_any_tmp_shot.png");
+    let outside_any = std::env::temp_dir().join("morpheus_any_tmp_shot.png");
     let args = serde_json::json!({ "save_path": outside_any.to_str().unwrap() });
     let result = check_tool_permission("computer_screenshot", &args, Mode::Ask, None);
     assert!(
@@ -516,7 +516,7 @@ fn build_control_is_chain_aware_click_first_asks_keyboard_first_denied() {
 
     // A chain that STARTS with a keyboard step types into whatever holds
     // keyboard focus — and the approval dialog hands focus to the TUI, so
-    // the text would land in the cosh input box (observed in the field).
+    // the text would land in the morpheus input box (observed in the field).
     // Deny with guidance toward the click-first pattern.
     let keyboard_first = serde_json::json!({ "key": "enter" });
     let result = check_tool_permission("computer_control", &keyboard_first, Mode::Build, None);
@@ -581,7 +581,7 @@ fn build_act_is_chain_aware_element_first_asks_keyboard_first_denied() {
         "selector": "menu_item[name='Rename']",
         "then": {
             "wait": 600,
-            "then": { "text": "cosh-test", "then": { "key": "enter" } }
+            "then": { "text": "morpheus-test", "then": { "key": "enter" } }
         }
     });
     let result = check_tool_permission("computer_act", &element_first, Mode::Build, None);
@@ -599,7 +599,7 @@ fn build_act_is_chain_aware_element_first_asks_keyboard_first_denied() {
     }
 
     // A chain that types but never touches an element sends the text into
-    // whatever holds keyboard focus after the approval dialog — the cosh
+    // whatever holds keyboard focus after the approval dialog — the morpheus
     // input box (observed in the field). Deny with guidance toward the
     // element-first pattern (and the click fallback via computer_control).
     let keyboard_first = serde_json::json!({ "key": "enter" });
@@ -779,8 +779,8 @@ fn build_subagent_needs_approval() {
 
 #[test]
 fn build_fs_read_outside_cwd_needs_approval() {
-    let tmp_root = std::env::temp_dir().join("cosh_test_perm_fs_root");
-    let outside_file = std::env::temp_dir().join("cosh_test_perm_fs_outside.txt");
+    let tmp_root = std::env::temp_dir().join("morpheus_test_perm_fs_root");
+    let outside_file = std::env::temp_dir().join("morpheus_test_perm_fs_outside.txt");
     let _ = std::fs::create_dir_all(&tmp_root);
     let _ = std::fs::write(&outside_file, b"test");
 
@@ -800,12 +800,12 @@ fn build_fs_read_outside_cwd_needs_approval() {
 
 #[test]
 fn build_fs_read_scratch_log_is_allowed_without_approval() {
-    // Truncated-output logs live under <temp>/cosh — reading them back is part
+    // Truncated-output logs live under <temp>/morpheus — reading them back is part
     // of the truncation contract and must never trigger the approval dialog.
-    let tmp_root = std::env::temp_dir().join("cosh_test_perm_scratch_root");
+    let tmp_root = std::env::temp_dir().join("morpheus_test_perm_scratch_root");
     let scratch_dir = std::env::temp_dir().join("morpheus");
     let _ = std::fs::create_dir_all(&scratch_dir);
-    let log = scratch_dir.join("cosh_test_perm_scratch.log");
+    let log = scratch_dir.join("morpheus_test_perm_scratch.log");
     let _ = std::fs::write(&log, b"truncated middle content");
 
     let args = serde_json::json!({
@@ -841,8 +841,8 @@ fn build_fs_read_inside_cwd_is_allowed() {
 
 #[test]
 fn build_find_glob_outside_cwd_needs_approval() {
-    let tmp_root = std::env::temp_dir().join("cosh_test_perm_fg_root");
-    let outside_dir = std::env::temp_dir().join("cosh_test_perm_fg_outside");
+    let tmp_root = std::env::temp_dir().join("morpheus_test_perm_fg_root");
+    let outside_dir = std::env::temp_dir().join("morpheus_test_perm_fg_outside");
     let _ = std::fs::create_dir_all(&tmp_root);
     let _ = std::fs::create_dir_all(&outside_dir);
 
@@ -881,8 +881,8 @@ fn build_find_glob_inside_cwd_is_allowed() {
 
 #[test]
 fn build_find_grep_outside_cwd_needs_approval() {
-    let tmp_root = std::env::temp_dir().join("cosh_test_perm_gr_root");
-    let outside_dir = std::env::temp_dir().join("cosh_test_perm_gr_outside");
+    let tmp_root = std::env::temp_dir().join("morpheus_test_perm_gr_root");
+    let outside_dir = std::env::temp_dir().join("morpheus_test_perm_gr_outside");
     let _ = std::fs::create_dir_all(&tmp_root);
     let _ = std::fs::create_dir_all(&outside_dir);
 
@@ -926,8 +926,8 @@ fn build_find_grep_inside_cwd_is_allowed() {
 // multi-target syntax: the guard never parses a bespoke string.
 #[test]
 fn build_find_grep_paths_array_outside_cwd_needs_approval() {
-    let tmp_root = std::env::temp_dir().join("cosh_test_perm_gr_paths_root");
-    let outside_dir = std::env::temp_dir().join("cosh_test_perm_gr_paths_outside");
+    let tmp_root = std::env::temp_dir().join("morpheus_test_perm_gr_paths_root");
+    let outside_dir = std::env::temp_dir().join("morpheus_test_perm_gr_paths_outside");
     let _ = std::fs::create_dir_all(&tmp_root);
     let _ = std::fs::create_dir_all(&outside_dir);
 
@@ -973,8 +973,8 @@ fn build_find_grep_paths_array_inside_cwd_is_allowed() {
 // guard must see every target, and one outside-root entry triggers approval.
 #[test]
 fn build_find_glob_paths_array_outside_cwd_needs_approval() {
-    let tmp_root = std::env::temp_dir().join("cosh_test_perm_gl_paths_root");
-    let outside_dir = std::env::temp_dir().join("cosh_test_perm_gl_paths_outside");
+    let tmp_root = std::env::temp_dir().join("morpheus_test_perm_gl_paths_root");
+    let outside_dir = std::env::temp_dir().join("morpheus_test_perm_gl_paths_outside");
     let _ = std::fs::create_dir_all(&tmp_root);
     let _ = std::fs::create_dir_all(&outside_dir);
 

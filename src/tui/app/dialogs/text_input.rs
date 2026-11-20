@@ -91,7 +91,9 @@ impl App {
                     }
                     | DialogType::EditorInput { input, cursor_pos }
                     | DialogType::SkillsInput { input, cursor_pos }
-                    | DialogType::WhatsAppListInput { input, cursor_pos, .. }
+                    | DialogType::WhatsAppListInput {
+                        input, cursor_pos, ..
+                    }
                     | DialogType::CheckupMinConfidenceInput {
                         input, cursor_pos, ..
                     }
@@ -131,7 +133,9 @@ impl App {
                     }
                     | DialogType::EditorInput { input, cursor_pos }
                     | DialogType::SkillsInput { input, cursor_pos }
-                    | DialogType::WhatsAppListInput { input, cursor_pos, .. }
+                    | DialogType::WhatsAppListInput {
+                        input, cursor_pos, ..
+                    }
                     | DialogType::CheckupMinConfidenceInput {
                         input, cursor_pos, ..
                     }
@@ -156,7 +160,9 @@ impl App {
                     }
                     | DialogType::EditorInput { input, cursor_pos }
                     | DialogType::SkillsInput { input, cursor_pos }
-                    | DialogType::WhatsAppListInput { input, cursor_pos, .. }
+                    | DialogType::WhatsAppListInput {
+                        input, cursor_pos, ..
+                    }
                     | DialogType::CheckupMinConfidenceInput {
                         input, cursor_pos, ..
                     }
@@ -183,7 +189,9 @@ impl App {
                     }
                     | DialogType::EditorInput { input, cursor_pos }
                     | DialogType::SkillsInput { input, cursor_pos }
-                    | DialogType::WhatsAppListInput { input, cursor_pos, .. }
+                    | DialogType::WhatsAppListInput {
+                        input, cursor_pos, ..
+                    }
                     | DialogType::CheckupMinConfidenceInput {
                         input, cursor_pos, ..
                     }
@@ -211,7 +219,9 @@ impl App {
                     }
                     | DialogType::EditorInput { input, cursor_pos }
                     | DialogType::SkillsInput { input, cursor_pos }
-                    | DialogType::WhatsAppListInput { input, cursor_pos, .. }
+                    | DialogType::WhatsAppListInput {
+                        input, cursor_pos, ..
+                    }
                     | DialogType::CheckupMinConfidenceInput {
                         input, cursor_pos, ..
                     }
@@ -382,12 +392,15 @@ impl App {
                     field,
                     selection,
                     ..
-                } => [name, base_url, family, model].get(*field).copied().map(|line| {
-                    selection
-                        .as_ref()
-                        .and_then(|sel| sel.slice_of(*field, line))
-                        .unwrap_or_else(|| line.to_string())
-                }),
+                } => [name, base_url, family, model]
+                    .get(*field)
+                    .copied()
+                    .map(|line| {
+                        selection
+                            .as_ref()
+                            .and_then(|sel| sel.slice_of(*field, line))
+                            .unwrap_or_else(|| line.to_string())
+                    }),
                 _ => None,
             },
             None => None,
@@ -474,7 +487,12 @@ impl App {
                     model,
                     ..
                 } => {
-                    let values = [name.as_str(), base_url.as_str(), family.as_str(), model.as_str()];
+                    let values = [
+                        name.as_str(),
+                        base_url.as_str(),
+                        family.as_str(),
+                        model.as_str(),
+                    ];
                     let demand = dialog_panel_demand(Some(&d.dialog_type));
                     form_panel_hit_field(area, demand, &values, x, y)
                         .and_then(|(f, ci)| ci.map(|c| (f, byte_at_char(values[f], c))))
@@ -601,7 +619,12 @@ impl App {
                     selection: Some(sel),
                     ..
                 } => {
-                    let values = [name.as_str(), base_url.as_str(), family.as_str(), model.as_str()];
+                    let values = [
+                        name.as_str(),
+                        base_url.as_str(),
+                        family.as_str(),
+                        model.as_str(),
+                    ];
                     values.get(sel.field()).map(|_| {
                         (
                             sel.field(),
@@ -979,7 +1002,7 @@ impl App {
                     None,
                     String::new(),
                     String::new(),
-                    cosh::setup::CustomProviderFamily::default()
+                    morpheus::setup::CustomProviderFamily::default()
                         .label()
                         .to_string(),
                     String::new(),
@@ -1056,7 +1079,9 @@ impl App {
             .iter()
             .map(|agent| (agent.name.clone(), agent.command.clone()))
             .collect();
-        if let Err(error) = morpheus_tools::subagent::acp::register_custom_agents(&prospective_pairs) {
+        if let Err(error) =
+            morpheus_tools::subagent::acp::register_custom_agents(&prospective_pairs)
+        {
             self.toast_form_error("Agent not saved", error);
             return false;
         }
@@ -1182,7 +1207,7 @@ impl App {
             "anthropic_cache_ttl" => self.setup.cache.anthropic_ttl_min,
             _ => self.setup.cache.openai_retention_min,
         };
-        let current = cosh::setup::format_cache_duration(minutes);
+        let current = morpheus::setup::format_cache_duration(minutes);
         let input = if current == "default" {
             String::new()
         } else {
@@ -1313,7 +1338,7 @@ impl App {
                 }
             }
             DialogType::CacheTtlInput { setting, input, .. } => {
-                match cosh::setup::parse_cache_duration(input) {
+                match morpheus::setup::parse_cache_duration(input) {
                     Ok(minutes) => {
                         let minutes = minutes.unwrap_or(0);
                         match *setting {
@@ -1511,7 +1536,7 @@ impl App {
             // Purge the keyring credential too: a forgotten server must
             // not leave a live secret behind. Failures are non-fatal —
             // the entry is gone either way, and the store may be locked.
-            if let Err(err) = cosh::mcp::auth::forget_key(&name) {
+            if let Err(err) = morpheus::mcp::auth::forget_key(&name) {
                 log::warn!("keyring cleanup for removed MCP server failed: {}", err);
             }
             self.setup.save();
@@ -1583,7 +1608,7 @@ impl App {
         else {
             return false;
         };
-        let draft = match cosh::mcp::build_mcp_entry(name, endpoint, timeout, api_key) {
+        let draft = match morpheus::mcp::build_mcp_entry(name, endpoint, timeout, api_key) {
             Ok(draft) => draft,
             Err(message) => {
                 self.toast_form_error("Server not saved", message);
@@ -1610,7 +1635,7 @@ impl App {
         // safely stored, so a failed store can never leave a server that
         // connects without its key. The typed secret is dropped right after.
         if let Some(key) = &draft.secret
-            && let Err(err) = cosh::mcp::auth::store_key(&draft.entry.name, key)
+            && let Err(err) = morpheus::mcp::auth::store_key(&draft.entry.name, key)
         {
             self.toast_form_error(
                 "Server not saved",

@@ -2,7 +2,7 @@
 //!
 //! Drives the crate facade ([`morpheus_onnx::load`] -> `DecisionModel::decide`)
 //! over the shared seed-generated dataset and records per-case latency with
-//! a monotonic clock. The Python twin (`/tmp/cosh-bench/driver_py.py`) does
+//! a monotonic clock. The Python twin (`/tmp/morpheus-bench/driver_py.py`) does
 //! the same over the upstream `ONNXAgent`; `report.py` joins the two JSONL
 //! streams. Nothing here generates cases and nothing outside the `decide`
 //! span is timed -- the honesty rules (same ORT version, same graph files,
@@ -12,8 +12,8 @@
 //! Env:
 //!   PARITY_MODEL_DIR  checkpoint dir (default /tmp/laya-eval/english)
 //!   PARITY_ONNX       graph path    (default `<dir>/laya.onnx`)
-//!   PARITY_DATASET    dataset path  (default /tmp/cosh-bench/dataset.jsonl)
-//!   PARITY_OUT        output JSONL  (default /tmp/cosh-bench/results_rust.jsonl)
+//!   PARITY_DATASET    dataset path  (default /tmp/morpheus-bench/dataset.jsonl)
+//!   PARITY_OUT        output JSONL  (default /tmp/morpheus-bench/results_rust.jsonl)
 //!
 //! Args: `--round N` (default 1), `--limit K` (smoke runs: only the first K
 //! cases are timed). Rounds append to the output file; `report.py` pairs
@@ -42,10 +42,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         std::env::var("PARITY_MODEL_DIR").unwrap_or_else(|_| "/tmp/laya-eval/english".into());
     let onnx_path =
         std::env::var("PARITY_ONNX").unwrap_or_else(|_| format!("{model_dir}/laya.onnx"));
-    let dataset =
-        std::env::var("PARITY_DATASET").unwrap_or_else(|_| "/tmp/cosh-bench/dataset.jsonl".into());
-    let out =
-        std::env::var("PARITY_OUT").unwrap_or_else(|_| "/tmp/cosh-bench/results_rust.jsonl".into());
+    let dataset = std::env::var("PARITY_DATASET")
+        .unwrap_or_else(|_| "/tmp/morpheus-bench/dataset.jsonl".into());
+    let out = std::env::var("PARITY_OUT")
+        .unwrap_or_else(|_| "/tmp/morpheus-bench/results_rust.jsonl".into());
 
     // Model load: outside the clock.
     let model = load(

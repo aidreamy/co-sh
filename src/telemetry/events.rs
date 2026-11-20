@@ -557,10 +557,10 @@ pub struct UninstallPayload {
     arch: String,
     /// Whether the binary file itself was successfully removed.
     binary_removed: bool,
-    /// Whether the cosh data/config/cache directories were successfully
+    /// Whether the morpheus data/config/cache directories were successfully
     /// removed (false when any of them failed or was already gone).
     data_removed: bool,
-    /// Whether every cosh credential was removed from the OS keyring
+    /// Whether every morpheus credential was removed from the OS keyring
     /// (macOS Keychain, Windows Credential Manager, Linux Secret Service).
     keyring_removed: bool,
 }

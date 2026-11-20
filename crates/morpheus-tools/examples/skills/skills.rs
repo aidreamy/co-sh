@@ -54,7 +54,7 @@ fn show_err(label: &str, err: morpheus_tools::skills::SkillError) {
 fn main() {
     // A scratch skills directory: two glob-driven skills, one always-on
     // skill, and one skill that declares neither globs nor always_apply.
-    let dir = std::env::temp_dir().join("cosh-skills-example");
+    let dir = std::env::temp_dir().join("morpheus-skills-example");
     let _ = std::fs::remove_dir_all(&dir);
     for (name, fm, body) in [
         (

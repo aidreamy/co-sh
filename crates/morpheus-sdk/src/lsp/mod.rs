@@ -1,4 +1,4 @@
-//! Language Server Protocol engine for cosh.
+//! Language Server Protocol engine for morpheus.
 //!
 //! A compact, tokio-native LSP client stack for driving language servers from
 //! an agent process (no editor UI involved). Behavioral port of the battle-

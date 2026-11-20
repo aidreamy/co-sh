@@ -1,6 +1,6 @@
 //! Registry of known vector databases for the RAG feature.
 //!
-//! Persisted as JSON in `$DATA_DIR/cosh/rag_dbs.json`.
+//! Persisted as JSON in `$DATA_DIR/morpheus/rag_dbs.json`.
 //! Each entry stores metadata about a LanceDB database: its name, path on disk,
 //! description (user-provided), and the embedding model used.
 

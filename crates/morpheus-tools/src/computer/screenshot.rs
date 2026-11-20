@@ -152,7 +152,7 @@ pub async fn screenshot(input: &ComputerScreenshot) -> Result<ScreenshotOutput, 
         return Err(
             "computer_screenshot: `save_path` cannot be blank — give the file path \
              where the PNG bytes are written (relative paths resolve against \
-             cosh's working directory)"
+             morpheus's working directory)"
                 .into(),
         );
     }

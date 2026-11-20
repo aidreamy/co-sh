@@ -11,7 +11,7 @@ use morpheus_tools::fs::{Fs, TargetFile};
 
 #[tokio::main]
 async fn main() {
-    let project = std::env::temp_dir().join("cosh-fs-rollback-example");
+    let project = std::env::temp_dir().join("morpheus-fs-rollback-example");
     let _ = std::fs::remove_dir_all(&project);
     std::fs::create_dir_all(&project).unwrap();
 

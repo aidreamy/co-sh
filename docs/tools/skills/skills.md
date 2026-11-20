@@ -13,7 +13,7 @@ workspace so the right skills can be auto-activated.
 | [`skills_read_asset`](actions.md#read-asset) | Read one asset file from a skill's directory (path-traversal blocked). |
 | [`skills_match_skills`](actions.md#match) | Return skills whose globs match the active file paths, or that are `always_apply`. |
 
-The design matches the other cosh modules: a builder-style wrapper —
+The design matches the other morpheus modules: a builder-style wrapper —
 [`Skills`](#the-skills-wrapper) — holds the configuration, and each
 [`SkillAction`](types.md#skillaction) is a dedicated method on it. The
 configuration carries **all** policy: there are no hardcoded paths, names, or
@@ -37,7 +37,7 @@ skills.match_skills(vec!["src/main.rs".into()])?;
 ```
 
 Configure the sources and filters once, then call the operations. All four
-take no per-call configuration — like the other cosh tools, the wrapper is
+take no per-call configuration — like the other morpheus tools, the wrapper is
 the single point of setup. `Skills::default()` is `Skills::new()`.
 
 The builder methods:

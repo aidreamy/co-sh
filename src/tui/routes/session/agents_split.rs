@@ -1,5 +1,5 @@
 //! Split-view "panes" for the `/agents` route: one pane per agent the user
-//! picked (the `cosh` manager pane only when explicitly marked), laid out
+//! picked (the `morpheus` manager pane only when explicitly marked), laid out
 //! over the session area with a simple bin-packing heuristic.
 //!
 //! This module owns ONLY the pane model + layout + painting. The prompt is
@@ -48,8 +48,8 @@ use crate::theme::{Theme, blend, contrast_fg, luminance, rgba_color};
 use crate::util::text_region::{TextRegion, extract_text_in_region, text_from_cell_row};
 
 /// Display label of the manager pane when the picker marks it: the TUI's
-/// own agent. No pane carries it unless the user marked `cosh`.
-pub const MANAGER_LABEL: &str = "cosh";
+/// own agent. No pane carries it unless the user marked `morpheus`.
+pub const MANAGER_LABEL: &str = "morpheus";
 
 /// The synthesized `/worktree` slash entry, re-exported from the slash menu
 /// where the command vocabulary now lives (`worktree_entry`). Kept as a thin
@@ -135,7 +135,7 @@ pub struct PanePermissionRequest {
 /// One agent pane: identity, live activity stream and lifecycle state.
 #[derive(Debug, Clone, Default)]
 pub struct AgentPane {
-    /// Agent CLI name (`"claude"`, `"kilo"`, …). The manager pane is `"cosh"`.
+    /// Agent CLI name (`"claude"`, `"kilo"`, …). The manager pane is `"morpheus"`.
     pub agent: String,
     /// Stable identity of THIS pane object, stamped by [`AgentPane::new`]
     /// and carried unchanged by every pane-set rebuild that keeps the pane
@@ -188,10 +188,10 @@ pub struct AgentPane {
     /// still apply.
     pub picked_config_ids: Vec<String>,
     /// The pane's OWN model selection (the per-pane `/models` pick on a
-    /// focused cosh pane): the (provider, model, reasoning) triple the
+    /// focused morpheus pane): the (provider, model, reasoning) triple the
     /// pane's turns run with. `None` = never picked — the pane inherits
     /// the GLOBAL config at spawn time. A committed selection is ALSO
-    /// recorded on the pane's cosh session (the same provider/model/
+    /// recorded on the pane's morpheus session (the same provider/model/
     /// reasoning markers the main session carries), so it survives
     /// restarts through the session file the store already persists.
     pub model_selection: Option<PaneModelSelection>,
@@ -208,7 +208,7 @@ pub struct AgentPane {
     /// `agents_worktree`): the pane's effective cwd resolves from its
     /// `path` instead of the session's working directory. In-memory twin
     /// of the persisted `AgentPaneRef::Bound` field.
-    pub worktree: Option<cosh::git::worktree::PaneWorktree>,
+    pub worktree: Option<morpheus::git::worktree::PaneWorktree>,
     /// The pane's cwd MOVED since its last turn (a `/worktree add`/`exit`
     /// changed the binding): the next dispatch prepends a handoff block
     /// summarized from the pane's local timeline, so the agent keeps its
@@ -252,7 +252,7 @@ pub struct AgentPane {
     /// kind:
     ///
     /// - "next request" becomes the next request of the pane's CURRENT
-    ///   working stretch: a cosh pane's harness drains the steering handle
+    ///   working stretch: a morpheus pane's harness drains the steering handle
     ///   before that request (`serve_agents_pane_queues`' user-queue twin,
     ///   `pump_agents_pane_queued_requests`), an ACP pane — whose turn is one
     ///   prompt — takes it at the prompt boundary, the moment its turn
@@ -275,12 +275,12 @@ pub struct AgentPane {
     /// kept working behind an idle-looking pane).
     pub turn_id: u64,
     /// The steering handle into the pane's RUNNING turn — the same shared
-    /// [`cosh::harness::queued_input::QueuedInput`] the main agent's queue
+    /// [`morpheus::harness::queued_input::QueuedInput`] the main agent's queue
     /// uses, cloned into the pane's loop at dispatch. `Some` only while a
-    /// cosh pane turn is live, since only a real harness loop has request
+    /// morpheus pane turn is live, since only a real harness loop has request
     /// boundaries to drain it at; an ACP pane keeps `None` and its "next
     /// request" messages ride out at the turn boundary instead.
-    pub steer: Option<cosh::harness::queued_input::QueuedInput>,
+    pub steer: Option<morpheus::harness::queued_input::QueuedInput>,
     /// True while an on-demand snapshot probe for this pane is in flight
     /// (focus arrived with no cache): the slash menu shows its spinner row
     /// until the probe returns.
@@ -354,7 +354,7 @@ impl PaneModelSelection {
     /// rebuild hydration): the model is the picked id, the provider rides
     /// the row only when pinned (an `auto` pick leaves it empty, like an ACP
     /// pane that advertises no provider), no harness labels exist for a
-    /// cosh pane's own pick, the reasoning level passes through. Changing
+    /// morpheus pane's own pick, the reasoning level passes through. Changing
     /// the badge's provider-display rule happens HERE, not at each writer.
     pub fn to_session_info(&self) -> AgentSessionInfo {
         AgentSessionInfo {
@@ -503,7 +503,7 @@ impl AgentPane {
 /// State of the whole `/agents` split view.
 #[derive(Debug, Default)]
 pub struct AgentsSplitState {
-    /// One pane per agent in picker order. The `cosh` manager pane exists
+    /// One pane per agent in picker order. The `morpheus` manager pane exists
     /// only when the picker marked it, and only as an ordinary pane.
     pub panes: Vec<AgentPane>,
     /// The pane under the cursor AND the content-row span of the input
@@ -580,7 +580,7 @@ pub struct AgentsSplitState {
 
 impl AgentsSplitState {
     /// Build the pane set from the user's split config, in the order they
-    /// setup. NO manager insert: the `cosh` pane exists ONLY when the picker
+    /// setup. NO manager insert: the `morpheus` pane exists ONLY when the picker
     /// marked it — the split is a plain reflection of the user's choice.
     /// Each entry carries its persisted binding (`AgentPaneRef::Bound`
     /// resumes its ACP session).
@@ -1276,12 +1276,12 @@ impl AgentsSplitState {
     }
 
     /// The focused pane's slash-menu source: `None` when NO pane is
-    /// focused. The MANAGER pane (cosh itself: an ACP probe would be
+    /// focused. The MANAGER pane (morpheus itself: an ACP probe would be
     /// meaningless) serves the TUI's OWN command set plus the synthesized
-    /// cosh-side `/worktree` entry every other pane kind carries — the
+    /// morpheus-side `/worktree` entry every other pane kind carries — the
     /// command must be DISCOVERABLE everywhere, and applying it on the
     /// manager pane is honored like on any other (`apply_worktree_command`):
-    /// a bound cosh pane runs its turns in the worktree cwd.
+    /// a bound morpheus pane runs its turns in the worktree cwd.
     /// Otherwise the focused pane's
     /// entries: the group commands SYNTHESIZED from the pane's own ACP
     /// config options first (model / provider / mode — the controls
@@ -1298,16 +1298,16 @@ impl AgentsSplitState {
     pub fn slash_source(&self) -> Option<(Vec<crate::ui::slash_menu::SlashCommand>, bool)> {
         let pane = self.focused_pane()?;
         if pane.agent == MANAGER_LABEL {
-            // The manager's own set — which already ends with the cosh-side
+            // The manager's own set — which already ends with the morpheus-side
             // `/worktree` row, because that row is part of the base list
             // (the MAIN agent gets it too). Appending it here again would
             // list the command twice.
-            let entries = crate::ui::slash_menu::SlashMenu::cosh_commands();
+            let entries = crate::ui::slash_menu::SlashMenu::morpheus_commands();
             return Some((entries, false));
         }
         let agent = pane.agent.as_str();
-        // cosh's own commands, synthesized for EVERY pane kind: the worktree
-        // is a cosh-side binding and `/undo` is a cosh-side checkpoint list,
+        // morpheus's own commands, synthesized for EVERY pane kind: the worktree
+        // is a morpheus-side binding and `/undo` is a morpheus-side checkpoint list,
         // neither of them the agent's own command. Same mechanism as the
         // model/mode group entries. `/worktree` takes arguments
         // (`/worktree add …`, `/worktree exit`).
@@ -1365,7 +1365,7 @@ impl AgentsSplitState {
     /// truncated report) keeps the entry: degrades to keeping, never to
     /// losing content.
     ///
-    /// `end` ([`cosh::harness::agent_coworkers::AgentCoworkerTurnEnd`]) decides both details —
+    /// `end` ([`morpheus::harness::agent_coworkers::AgentCoworkerTurnEnd`]) decides both details —
     /// whether the transcript seals failed and whether the marker is
     /// prefixed. A `partial` report deliberately seals like a COMPLETED turn
     /// (it carries the pane's real last text, which already streamed into
@@ -1375,7 +1375,7 @@ impl AgentsSplitState {
         &mut self,
         pane: usize,
         output: &str,
-        end: cosh::harness::agent_coworkers::AgentCoworkerTurnEnd,
+        end: morpheus::harness::agent_coworkers::AgentCoworkerTurnEnd,
     ) {
         let Some(p) = self.panes.get_mut(pane) else {
             return;
@@ -1408,8 +1408,8 @@ impl AgentsSplitState {
     /// The registry id this pane is addressable under in `agents_call`: the
     /// agent CLI name, or `name#k` when THIS split runs several panes of the
     /// same CLI (the same disambiguation `pane_mirror_label` renders). The
-    /// manager pane is addressable like every other agent: a `cosh` pane's
-    /// id is `"cosh"` (or `"cosh#k"` among several `cosh` panes).
+    /// manager pane is addressable like every other agent: a `morpheus` pane's
+    /// id is `"morpheus"` (or `"morpheus#k"` among several `morpheus` panes).
     #[must_use]
     pub fn pane_registry_id(&self, pane: usize) -> Option<String> {
         // Resolve the agent FIRST: this is also the range check
@@ -1434,7 +1434,7 @@ impl AgentsSplitState {
     pub fn set_steer(
         &mut self,
         pane: usize,
-        steer: Option<cosh::harness::queued_input::QueuedInput>,
+        steer: Option<morpheus::harness::queued_input::QueuedInput>,
     ) {
         if let Some(p) = self.panes.get_mut(pane) {
             p.steer = steer;
@@ -1568,7 +1568,7 @@ impl AgentsSplitState {
 /// Compute the pane rects for `pane_count` panes inside `area`.
 ///
 /// Heuristic (documented at module level; NOT a perfect bin-packing): EVERY
-/// pane — the cosh manager pane included — is an equal participant in the tiling,
+/// pane — the morpheus manager pane included — is an equal participant in the tiling,
 /// so the manager pane's block comes out of the same area division as the agents'
 /// instead of a fixed strip:
 /// - 1 pane: the whole area.
@@ -1842,7 +1842,7 @@ fn render_pane(
     // Background fill: a whisper lighter than the theme's OWN background
     // (the lift is derived per theme in `theme.rs`, so a light theme
     // lifts off its light background too) — just enough to separate the
-    // pane from the transcript without a visible contrast edge. cosh:
+    // pane from the transcript without a visible contrast edge. morpheus:
     // background (#07070A) → #0A0A0D.
     let bg = Style::default().bg(rgba_color(theme.agents_pane_background()));
     for y in rect.y..rect.bottom() {
@@ -2396,7 +2396,7 @@ fn draw_activity_line(
             // panel's accents never dim either) — a dimmed brand over a
             // dimmed base washes the sweep out. Finished calls keep the
             // static muted text.
-            // A non-catalog agent (the `cosh` manager pane included) has no
+            // A non-catalog agent (the `morpheus` manager pane included) has no
             // brand palette: `brand_rgba` would return the very tone the
             // base uses (theme.text focused), and a sweep lerping between
             // two identical colors is mathematically invisible. Those fall
@@ -2773,7 +2773,7 @@ fn h_from(text: &str, wrap_w: u16) -> u16 {
 /// The pane header's agent name: bold, painted with the agent's OWN logo
 /// palette (`subagent::palette`) — gradient marks (Gemini's sparkle,
 /// Devin's tri-color) sweep their colors across the glyphs, single-color
-/// marks (Claude's terracotta, Kilo's acid yellow) paint solid. `cosh` and
+/// marks (Claude's terracotta, Kilo's acid yellow) paint solid. `morpheus` and
 /// agents outside the catalog keep the theme's text colors: no invented
 /// brand for the TUI's own pane. An unfocused name dims toward the element
 /// background so the focused pane reads at a glance, and a brand color too
@@ -3033,9 +3033,9 @@ mod tests {
 
     /// The `/worktree` entry is discoverable in EVERY pane kind: the ACP
     /// panes (where it is synthesized) AND the manager pane, whose menu used
-    /// to fall back to the plain cosh set and silently lose it. Applying it
+    /// to fall back to the plain morpheus set and silently lose it. Applying it
     /// is honored on the manager pane too (see `apply_worktree_command`); the
-    /// `agents_worktree` TOOL is the only layer that refuses a cosh pane.
+    /// `agents_worktree` TOOL is the only layer that refuses a morpheus pane.
     #[test]
     fn the_worktree_command_is_listed_in_every_pane_menu_including_the_manager() {
         let mut state = AgentsSplitState::new(vec![MANAGER_LABEL.into(), "claude".into()]);
@@ -3059,7 +3059,7 @@ mod tests {
             .expect("the agent pane lists /worktree");
         assert_eq!(worktree.desc, worktree_command_entry().desc);
 
-        // No focus at all: no pane list (the cosh set, unfiltered).
+        // No focus at all: no pane list (the morpheus set, unfiltered).
         state.focused = None;
         assert!(state.slash_source().is_none());
     }
@@ -3190,36 +3190,36 @@ mod tests {
 
     #[test]
     fn new_keeps_picker_order_and_never_injects_the_manager_pane() {
-        // Used to insert a forced `cosh` pane 0 — the Cosh Manager block
-        // then existed in /agents without the user ever picking cosh. The
+        // Used to insert a forced `morpheus` pane 0 — the Morpheus Manager block
+        // then existed in /agents without the user ever picking morpheus. The
         // split must be a plain reflection of the picker's marks.
         let state = AgentsSplitState::new(vec!["kilo".into(), "claude".into()]);
         assert_eq!(state.pane_count(), 2, "no manager pane appears uninvited");
         assert_eq!(state.panes[0].agent, "kilo");
         assert_eq!(state.panes[1].agent, "claude");
 
-        // An explicitly marked cosh keeps its marked position (first) and is
+        // An explicitly marked morpheus keeps its marked position (first) and is
         // NOT duplicated.
         let state = AgentsSplitState::new(vec![MANAGER_LABEL.into(), "claude".into()]);
         assert_eq!(state.pane_count(), 2);
-        assert_eq!(state.panes[0].agent, "cosh");
+        assert_eq!(state.panes[0].agent, "morpheus");
         assert_eq!(state.panes[1].agent, "claude");
-        // The cosh pane is addressable like every other agent: its registry
-        // id is `"cosh"`, not `None`.
-        assert_eq!(state.pane_registry_id(0).as_deref(), Some("cosh"));
+        // The morpheus pane is addressable like every other agent: its registry
+        // id is `"morpheus"`, not `None`.
+        assert_eq!(state.pane_registry_id(0).as_deref(), Some("morpheus"));
         assert_eq!(state.pane_registry_id(1).as_deref(), Some("claude"));
     }
 
     #[test]
-    fn cosh_panes_are_registry_addressable_with_occurrence_suffixes() {
+    fn morpheus_panes_are_registry_addressable_with_occurrence_suffixes() {
         let state = AgentsSplitState::new(vec![
             MANAGER_LABEL.into(),
             "claude".into(),
             MANAGER_LABEL.into(),
         ]);
-        assert_eq!(state.pane_registry_id(0).as_deref(), Some("cosh#1"));
+        assert_eq!(state.pane_registry_id(0).as_deref(), Some("morpheus#1"));
         assert_eq!(state.pane_registry_id(1).as_deref(), Some("claude"));
-        assert_eq!(state.pane_registry_id(2).as_deref(), Some("cosh#2"));
+        assert_eq!(state.pane_registry_id(2).as_deref(), Some("morpheus#2"));
         assert!(state.pane_registry_id(3).is_none(), "out-of-range pane");
     }
 
@@ -3344,7 +3344,7 @@ mod tests {
         state.finish_turn(
             0,
             "Tudo bem! Como\nposso ajudar hoje?",
-            cosh::harness::agent_coworkers::AgentCoworkerTurnEnd::EndTurn,
+            morpheus::harness::agent_coworkers::AgentCoworkerTurnEnd::EndTurn,
         );
 
         // The streamed entry was dropped (the report carries it) and the
@@ -3389,7 +3389,7 @@ mod tests {
         failed.finish_turn(
             0,
             "spawn failed",
-            cosh::harness::agent_coworkers::AgentCoworkerTurnEnd::Error,
+            morpheus::harness::agent_coworkers::AgentCoworkerTurnEnd::Error,
         );
         let texts: Vec<String> = failed.panes[0]
             .activity
@@ -3436,7 +3436,7 @@ mod tests {
         state.finish_turn(
             0,
             "tudo bem! como posso ajudar?",
-            cosh::harness::agent_coworkers::AgentCoworkerTurnEnd::EndTurn,
+            morpheus::harness::agent_coworkers::AgentCoworkerTurnEnd::EndTurn,
         );
         // Turn 2 (no tool call in between — the old merge crossed here).
         state.echo_turn_input(0, "qual seu nome?", true);
@@ -3449,7 +3449,7 @@ mod tests {
         state.finish_turn(
             0,
             "sou o Kilo.",
-            cosh::harness::agent_coworkers::AgentCoworkerTurnEnd::EndTurn,
+            morpheus::harness::agent_coworkers::AgentCoworkerTurnEnd::EndTurn,
         );
 
         let rows: Vec<(bool, String)> = state.panes[0]
@@ -4084,7 +4084,7 @@ mod tests {
     /// The header name sits one breathing column past the pane edge, is
     /// bold, and carries the agent's OWN brand color: Claude focused paints
     /// the terracotta (lifted only when the theme would dissolve it), the
-    /// cosh manager pane keeps the theme's text color (no invented brand), and an
+    /// morpheus manager pane keeps the theme's text color (no invented brand), and an
     /// unfocused brand name dims toward the background.
     #[test]
     fn header_name_is_indented_bold_and_brand_colored() {
@@ -4435,7 +4435,7 @@ mod tests {
     /// The pane's own pending queues paint the SAME strip the chat does,
     /// bottom-anchored above the pane's reserved edge — a message queued for a
     /// busy pane is visible in that pane, with its queue's cap label, for BOTH
-    /// pane kinds (nothing here depends on cosh). The strip keeps its rows out
+    /// pane kinds (nothing here depends on morpheus). The strip keeps its rows out
     /// of the activity window, so no line ever paints under a band.
     #[test]
     fn render_paints_the_pending_queue_strip_above_the_pane_edge() {
@@ -4573,7 +4573,7 @@ mod tests {
     fn render_pane_paints_the_embedded_edit_diff_with_the_real_tool_name() {
         const DIFF: &str = "--- a/src/main.rs\n+++ b/src/main.rs\n@@ -1,2 +1,3 @@\n fn main() {\n-    old();\n+    new();\n }";
         let theme = test_theme();
-        let mut state = AgentsSplitState::new(vec!["cosh".into()]);
+        let mut state = AgentsSplitState::new(vec!["morpheus".into()]);
         state.set_running(0, true);
         state.apply_event(
             0,
@@ -4714,7 +4714,7 @@ mod tests {
     /// The sweep must be VISIBLE: the pane tool spinner's accent never
     /// equals its base. The first cut fed `brand_rgba(agent, …, focused)`
     /// (the UNFOCUSED brand is blended 45% into the background) as accent
-    /// over the muted base, and the manager pane's `cosh` has no palette at
+    /// over the muted base, and the manager pane's `morpheus` has no palette at
     /// all (`brand_rgba` returns `theme.text`) — both pairings made the
     /// beam's lerp mathematically colorless, so the highlight painted
     /// exactly like plain text (the user-visible "nothing changed").
@@ -4723,11 +4723,11 @@ mod tests {
     #[test]
     fn running_tool_call_sweep_is_actually_visible() {
         let theme = test_theme();
-        // A catalog agent (claude → terracotta) AND the manager pane (cosh,
+        // A catalog agent (claude → terracotta) AND the manager pane (morpheus,
         // no palette) must both paint a beam that departs from the base.
         for agent in ["claude", MANAGER_LABEL] {
             let mut state =
-                AgentsSplitState::new(vec![cosh::types::AgentPaneRef::Name(agent.to_string())]);
+                AgentsSplitState::new(vec![morpheus::types::AgentPaneRef::Name(agent.to_string())]);
             state.set_running(0, true);
             state.apply_event(
                 0,
@@ -4780,11 +4780,11 @@ mod tests {
     fn render_pane_paints_the_worktree_badge_on_the_reserved_footer_row() {
         let theme = test_theme();
         let mut state = AgentsSplitState::new(vec!["claude".into()]);
-        let wt = cosh::git::worktree::PaneWorktree {
-            path: std::path::PathBuf::from("/tmp/cosh-worktrees/fix-1"),
+        let wt = morpheus::git::worktree::PaneWorktree {
+            path: std::path::PathBuf::from("/tmp/morpheus-worktrees/fix-1"),
             branch: "fix-1".into(),
             name: "fix-1".into(),
-            assigned_by: cosh::git::worktree::AssignedBy::User,
+            assigned_by: morpheus::git::worktree::AssignedBy::User,
         };
         state.panes[0].worktree = Some(wt);
 

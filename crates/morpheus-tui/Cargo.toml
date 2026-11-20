@@ -5,7 +5,7 @@ keywords = ["ai", "coding", "terminal", "agent"]
 license = "Apache-2.0"
 name = "morpheus-tui"
 readme = "README.md"
-repository = "https://github.com/aidreamy/co-sh"
+repository = "https://github.com/aidreamy/morpheus"
 version = "0.1.6"
 edition = "2024"
 

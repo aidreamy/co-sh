@@ -3,7 +3,7 @@
 //! original `packages/hashline/test/boundary-repair.test.ts` TS suite), plus
 //! this repo's original corruption-incident scenarios re-expectated to the
 //! parse-validated engine. Same scenarios, same expected outputs on both
-//! sides; run with `COSH_HASHLINE_TRACE=1` for decision traces.
+//! sides; run with `MORPHEUS_HASHLINE_TRACE=1` for decision traces.
 use super::super::apply::apply_edits;
 use super::super::parser::parse_patch;
 use super::super::recovery::{Recovery, RecoveryArgs};

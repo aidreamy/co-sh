@@ -18,18 +18,18 @@
 //!   Go's `math/rand/v2` PCG — so columns pop in one by one over ~1 s
 //! - **Animated ellipsis**: `.`, `..`, `...`, `` cycling every 8 frames
 //!   (400 ms at 20 fps) after the label, once initialized
-//! - **Timing**: the original ticks at 50 ms/frame (20 fps); cosh drives
+//! - **Timing**: the original ticks at 50 ms/frame (20 fps); morpheus drives
 //!   `advance()` per 30 fps animation tick, so each original frame is
 //!   applied on `ticks × 2/3` — the exact same wall-clock pacing.
 //!
 //! Deliberate divergences (all documented at the site):
 //! - Go's `Width()` over-reports by one gap+label (it double-counts the
-//!   label columns on top of `a.width`); cosh's layout math needs the
+//!   label columns on top of `a.width`); morpheus's layout math needs the
 //!   rendered width, so `width()` returns that instead.
 //! - Go assigns incrementing instance ids (birth schedules differ per
-//!   spinner); cosh requires byte-identical frames across instances, so a
+//!   spinner); morpheus requires byte-identical frames across instances, so a
 //!   fixed id is used.
-//! - The optional `Suffix` (elapsed-time readout) has no cosh counterpart
+//! - The optional `Suffix` (elapsed-time readout) has no morpheus counterpart
 //!   and is not ported; `NoScramble` is likewise unused.
 
 use morpheus_tui::core::lib::rgba::RGBA;
@@ -77,7 +77,7 @@ const AVAILABLE_RUNES: &[char] = &[
 const ELLIPSIS_FRAMES: &[&str] = &[".", "..", "...", ""];
 
 /// Fixed instance id (see module docs — Go uses an atomic counter).
-const INSTANCE_ID: &str = "cosh-agent";
+const INSTANCE_ID: &str = "morpheus-agent";
 
 // ── Go PCG (math/rand/v2 pcg.go) ───────────────────────────────────────────
 //
@@ -408,7 +408,7 @@ type Cell = Option<(char, RGBA)>;
 /// `color.RGBA` differs, but the key never crosses processes — it only
 /// feeds PCG seeding); the suffix color falls back to the label color
 /// (anim.go's `SuffixColor == nil` fallback), and there is no suffix
-/// function in cosh.
+/// function in morpheus.
 fn settings_hash(
     size: usize,
     label: &str,
@@ -471,7 +471,7 @@ pub struct AgentSpinnerCrush {
     ellipsis_step: u32,
     /// Whether the birth window has elapsed.
     initialized: bool,
-    /// Animation ticks elapsed at cosh's 30 fps; the crush frame index is
+    /// Animation ticks elapsed at morpheus's 30 fps; the crush frame index is
     /// `ticks × 2 / 3` (the original's 20 fps).
     ticks_elapsed: u32,
     /// Crush frames already applied to the animation state.
@@ -684,7 +684,7 @@ impl AgentSpinnerCrush {
     /// + label + widest ellipsis frame.
     ///
     /// (anim.go's `Width()` double-counts the gap+label on top of
-    /// `a.width`; cosh's layout needs the actual rendered span, so that
+    /// `a.width`; morpheus's layout needs the actual rendered span, so that
     /// over-report is not ported.)
     pub fn width(&self) -> usize {
         let mut w = self.width;

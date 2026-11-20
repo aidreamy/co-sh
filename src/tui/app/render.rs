@@ -930,7 +930,7 @@ impl App {
                         let mut name_styles = Vec::new();
                         // The badge's inputs, resolved BEFORE the prompt's
                         // mutable borrow: the ACP harness's own report, or —
-                        // for the manager (cosh) pane, whose bridge never
+                        // for the manager (morpheus) pane, whose bridge never
                         // reports one — the pane's own selection source (the
                         // per-pane pick, the session markers). A manager pane
                         // with no pick of its own drops the badge entirely:
@@ -986,7 +986,7 @@ impl App {
                         // Static LOGO_CHAT above the prompt input, centered.
                         // Skipped on short terminals where the layout dropped
                         // the logo block. Painted with the theme's
-                        // session-logo slot (a dim watermark on cosh).
+                        // session-logo slot (a dim watermark on morpheus).
                         if is_empty_session && let Some(logo_start_y) = logo_start_y {
                             // Centered on the whole main area, not on the
                             // (much narrower) empty-session prompt band: the
@@ -1106,12 +1106,13 @@ impl App {
                         device_login: true,
                         input,
                         ..
-                    } => crate::ui::dialogs::api_key_login_button_area(area, input)
-                        .is_some_and(|r| {
+                    } => crate::ui::dialogs::api_key_login_button_area(area, input).is_some_and(
+                        |r| {
                             self.last_mouse_x >= r.x
                                 && self.last_mouse_x < r.right()
                                 && self.last_mouse_y == r.y
-                        }),
+                        },
+                    ),
                     _ => false,
                 };
                 d.login_hover = hover;

@@ -1,5 +1,5 @@
 //! Tool dispatch: dequeue the next pending call and run it through the
-//! three-tier dispatch (cosh tools → MCP servers).
+//! three-tier dispatch (morpheus tools → MCP servers).
 
 use std::time::Duration;
 
@@ -10,7 +10,7 @@ use crate::harness::tools::{Tools, is_tool_disabled};
 
 impl Harness {
     /// Dequeue and dispatch the next pending tool call through the
-    /// three-tier dispatch: cosh tools → MCP servers.
+    /// three-tier dispatch: morpheus tools → MCP servers.
     ///
     /// Returns the text content of the tool response on success.
     /// Returns an error if the queue is empty, the tool is not found,
@@ -48,7 +48,7 @@ impl Harness {
         }
 
         // The merged `subagent_call` tool has TWO dispatch paths behind one
-        // visible definition: `agent` present → external CLI (the CoshTools
+        // visible definition: `agent` present → external CLI (the MorpheusTools
         // arm below); `agent` omitted or empty → INTERNAL sub-agent (a nested
         // harness that reuses this connector, starts with an empty context,
         // runs in Yolo mode, persists nothing, and reports only its final
@@ -94,7 +94,7 @@ impl Harness {
                     .and_then(|v| v.as_str())
                     .map(String::from);
                 let call_input = self
-                    .cosh_tools
+                    .morpheus_tools
                     .as_ref()
                     .ok_or_else(|| "internal sub-agent unavailable".to_string())?
                     .resolve_subagent_input(raw_input)?;
@@ -104,15 +104,17 @@ impl Harness {
                 // decision is kept for the report side: the internal turn's
                 // final report gets the header ENFORCED in
                 // `run_internal_subagent`.
-                let is_review =
-                    morpheus_tools::subagent::severity::is_review_task(&call_input, input.code_review);
+                let is_review = morpheus_tools::subagent::severity::is_review_task(
+                    &call_input,
+                    input.code_review,
+                );
                 // Right-panel list entry description (same contract as the
                 // external path): explicit values pass through; a code-review
                 // call may omit it (inferred `code-review-NN`), non-review
                 // calls must carry one. The RESOLVED value is display-only —
                 // the TUI derives the entry from the raw input — so this
                 // call exists to VALIDATE.
-                if let Some(tools) = self.cosh_tools.as_ref() {
+                if let Some(tools) = self.morpheus_tools.as_ref() {
                     // The issuer slot was ALREADY popped above ("Pop BEFORE
                     // any fallible step"): a validation failure here must
                     // NOT pop again, or the next queued tool call would be
@@ -186,9 +188,9 @@ impl Harness {
             // the turn making the call — the `wait` could never resolve and
             // the background busy-guard would spin forever. This refuses
             // BOTH modes for the coworker's OWN id; the cross-coworker `Wait` case
-            // (a manager targeting ANOTHER cosh coworker) is refused inside
+            // (a manager targeting ANOTHER morpheus coworker) is refused inside
             // `agent_coworkers::enqueue` with a pointer to background mode. Sibling
-            // cosh coworkers reached in background stay addressable.
+            // morpheus coworkers reached in background stay addressable.
             if self.coworkers_requester == super::agent_coworkers::MANAGER
                 && self.own_coworker_id.as_deref() == Some(coworker.as_str())
             {
@@ -440,11 +442,19 @@ impl Harness {
             if self.own_coworker_id.is_some() {
                 return Err("`agents_task_create` is not available to a pane.".to_string());
             }
-            let title = args_map.get("title").and_then(|v| v.as_str()).unwrap_or("").trim().to_string();
+            let title = args_map
+                .get("title")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
             if title.is_empty() {
                 return Err("`agents_task_create` requires a non-empty `title`.".to_string());
             }
-            let description = args_map.get("description").and_then(|v| v.as_str()).map(str::to_string);
+            let description = args_map
+                .get("description")
+                .and_then(|v| v.as_str())
+                .map(str::to_string);
             let deps: Vec<u64> = args_map
                 .get("deps")
                 .and_then(|v| v.as_array())
@@ -461,7 +471,10 @@ impl Harness {
                 Some(id) => id,
                 None => return Err("`agents_task_claim` requires a `task` id.".to_string()),
             };
-            let by = self.own_coworker_id.clone().unwrap_or_else(|| "main".to_string());
+            let by = self
+                .own_coworker_id
+                .clone()
+                .unwrap_or_else(|| "main".to_string());
             return match super::agent_coworkers::task_claim(task_id, &by) {
                 Ok(note) => Ok(note),
                 Err(e) => Err(e),
@@ -480,12 +493,22 @@ impl Harness {
                 return Err(format!("unknown task status '{s}'"));
             }
             let status = status_raw.map(super::agent_coworkers::TaskStatus::parse);
-            let artifacts = args_map.get("artifacts").and_then(|v| v.as_array()).map(|a| {
-                a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect()
-            });
-            let owner = args_map.get("owner").and_then(|v| v.as_str()).map(str::to_string);
+            let artifacts = args_map
+                .get("artifacts")
+                .and_then(|v| v.as_array())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|x| x.as_str().map(str::to_string))
+                        .collect()
+                });
+            let owner = args_map
+                .get("owner")
+                .and_then(|v| v.as_str())
+                .map(str::to_string);
             let caller = self.own_coworker_id.as_deref();
-            return match super::agent_coworkers::task_update_for(task_id, caller, status, artifacts, owner) {
+            return match super::agent_coworkers::task_update_for(
+                task_id, caller, status, artifacts, owner,
+            ) {
                 Ok(note) => Ok(note),
                 Err(e) => Err(e),
             };
@@ -498,10 +521,18 @@ impl Harness {
             let tasks = super::agent_coworkers::task_list();
             let mut out = String::new();
             for t in tasks {
-                out.push_str(&format!("#{} [{}] {} (owner: {})
-", t.id, t.status.as_str(), t.title, t.owner.as_deref().unwrap_or("unclaimed")));
+                out.push_str(&format!(
+                    "#{} [{}] {} (owner: {})
+",
+                    t.id,
+                    t.status.as_str(),
+                    t.title,
+                    t.owner.as_deref().unwrap_or("unclaimed")
+                ));
             }
-            if out.is_empty() { out = "No tasks.".to_string(); }
+            if out.is_empty() {
+                out = "No tasks.".to_string();
+            }
             return Ok(out);
         }
 
@@ -514,7 +545,7 @@ impl Harness {
             return Ok(format!("ok:{}", schema.name));
         }
 
-        // Tier 1: cosh tools
+        // Tier 1: morpheus tools
         let mut dispatched: Option<String> = None;
         // Drop any image payload abandoned by an earlier dispatch (permission
         // hook halt, user stop, MCP fallback): it can never be attached to
@@ -522,26 +553,26 @@ impl Harness {
         // risk leaking an old screenshot onto a later tool result.
         self.pending_images.clear();
         let mut images = Vec::new();
-        if let Some(ref cosh) = self.cosh_tools {
+        if let Some(ref morpheus) = self.morpheus_tools {
             // Clear any stale staged payload BEFORE dispatching: if a previous
             // screenshot was staged but its caller bailed out early (permission
             // hook halt, user stop), this reset guarantees the bytes never
             // surface on an unrelated tool result.
-            let _ = cosh.take_pending_images();
+            let _ = morpheus.take_pending_images();
             let args = serde_json::Value::Object(args_map.clone());
-            match cosh.dispatch(&tool_name, args).await {
+            match morpheus.dispatch(&tool_name, args).await {
                 Ok(result) => {
                     self.tool_issuer.pop_front();
-                    images = cosh.take_pending_images();
+                    images = morpheus.take_pending_images();
                     dispatched = Some(result);
                 }
-                Err(err) if err.starts_with("unknown cosh tool") => {}
+                Err(err) if err.starts_with("unknown morpheus tool") => {}
                 Err(err) => {
                     self.tool_issuer.pop_front();
                     // Drop any staged payload: the error string returned to
                     // the caller has no image channel, and a stale PNG must
                     // never leak onto a later tool result.
-                    let _ = cosh.take_pending_images();
+                    let _ = morpheus.take_pending_images();
                     return Err(self.enrich_with_schema_hint(&tool_name, err));
                 }
             }

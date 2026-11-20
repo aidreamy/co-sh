@@ -2,8 +2,8 @@
 //! the FOCUSED pane — or, when `Alt+0` left NO pane focused, to the MAIN
 //! agent itself (the normal-mode loop, unchanged). External agent CLIs each
 //! get an independent ACP turn (`morpheus_tools::subagent::acp::call` — the
-//! same one-shot contract the prompt corrector uses); each cosh pane (at
-//! any split position) runs the MAIN agent itself on its own real cosh
+//! same one-shot contract the prompt corrector uses); each morpheus pane (at
+//! any split position) runs the MAIN agent itself on its own real morpheus
 //! session — persisted in the session store (visible in the history panel)
 //! with the mode's normal prompt minus the self-review loop, and without
 //! the workspace-mutating tools delegated work never needs.
@@ -14,8 +14,10 @@
 //! `AgentsPaneEvent` (live stream) / `AgentsPaneDone` (final report).
 
 use crate::routes::session::right_panel::types::SubagentTimelineEntry;
-use cosh::coordinator::turn::{TerminalCause, TerminalKind, assemble_turn_input, close_pane_turn};
-use cosh::harness::events::HarnessEvent;
+use morpheus::coordinator::turn::{
+    TerminalCause, TerminalKind, assemble_turn_input, close_pane_turn,
+};
+use morpheus::harness::events::HarnessEvent;
 use morpheus_tools::subagent::events::{SubagentEvent, ToolCallStatus, ToolOutputBlock};
 use std::collections::HashSet;
 use std::path::PathBuf;
@@ -32,7 +34,7 @@ use crossterm::event::KeyCode;
 /// Sync the slash menu's command source to the split's focus: a FOCUSED
 /// pane serves its own (blocklist-filtered) command list — or its spinner
 /// row while the snapshot probe is still in flight — and NO focus returns
-/// the cosh set (the main agent's commands). Only the LIVE split counts:
+/// the morpheus set (the main agent's commands). Only the LIVE split counts:
 /// a parked split's stale `focused` must not hijack the menu (its prompt
 /// routing goes to the main agent). Idempotent by content: an unchanged
 /// source keeps the menu's selection, so this is safe to call on every
@@ -50,9 +52,9 @@ pub(super) fn sync_slash_source(app: &mut App) {
             app.slash_menu.set_loading(loading);
         }
         None => {
-            let cosh = crate::ui::slash_menu::SlashMenu::cosh_commands();
-            if !slash_lists_equal(&cosh, &app.slash_menu.commands) {
-                app.slash_menu.set_cosh_commands();
+            let morpheus = crate::ui::slash_menu::SlashMenu::morpheus_commands();
+            if !slash_lists_equal(&morpheus, &app.slash_menu.commands) {
+                app.slash_menu.set_morpheus_commands();
             }
             app.slash_menu.set_loading(false);
         }
@@ -83,9 +85,9 @@ fn slash_lists_equal(
 ///    app/TUI state, of which there is exactly one instance per process.
 ///    Never handed to a pane, whoever is focused — a `/background` picked on
 ///    a claude pane is still this one terminal's background.
-/// 2. **Agent**, and applied by cosh itself: `/worktree`, the pane's cwd
+/// 2. **Agent**, and applied by morpheus itself: `/worktree`, the pane's cwd
 ///    binding. Consumed here for ANY pane kind — the MANAGER included, since
-///    a bound cosh pane runs its turns in the checkout exactly like a bound
+///    a bound morpheus pane runs its turns in the checkout exactly like a bound
 ///    ACP pane.
 /// 3. **Agent**, on a MANAGER pane: the manager's agent IS the main loop, so
 ///    its `/models`, `/compact`, … are the App's own handlers (they write the
@@ -118,8 +120,8 @@ pub(super) fn route_agent_slash_command(
         return false;
     }
     if cmd.name == "worktree" {
-        // 2. cosh's own git-style command: intercepted BEFORE the manager
-        // guard and the passthrough (the worktree binding is cosh-side,
+        // 2. morpheus's own git-style command: intercepted BEFORE the manager
+        // guard and the passthrough (the worktree binding is morpheus-side,
         // never the agent's own) — its row is listed in EVERY pane's menu,
         // so a pick here must always be consumed, refusals included. The
         // typed argument tail rides the prompt — read it here, then apply.
@@ -135,7 +137,7 @@ pub(super) fn route_agent_slash_command(
     // THIS pane's session only (the pane's own selection plus its session
     // markers, never the global config). External agents keep their own
     // config-dialog path (the `resolve` branch below) — the picker here is
-    // the cosh pane's, which has no ACP config options to offer.
+    // the morpheus pane's, which has no ACP config options to offer.
     if cmd.name == "models" && pane.agent == MANAGER_LABEL {
         app.open_pane_model_dialog(focused);
         return true;
@@ -162,14 +164,14 @@ pub(super) fn route_agent_slash_command(
 /// - `add <path> <branch>` — worktree at `<path>` on a new branch, based on
 ///   the pane's current HEAD;
 /// - `add <branch>` — same, at the default temp path (the slug of the
-///   branch under `<OS temp>/cosh-worktrees/`);
+///   branch under `<OS temp>/morpheus-worktrees/`);
 /// - `exit` — drop the pane's worktree binding and return it to the
 ///   session's cwd. Nothing is removed: the worktree directory and its
 ///   branch survive (the name deliberately does not suggest deletion —
 ///   only the pane's cwd binding is dropped).
 ///
 /// Anything else (no args, unknown subcommand) is refused with a usage
-/// toast. The MANAGER pane is a pane like any other here: cosh's own agent
+/// toast. The MANAGER pane is a pane like any other here: morpheus's own agent
 /// loop resolves its cwd from the SAME per-pane binding an ACP pane uses
 /// (`dispatch_to_pane` → `HarnessAssembly::cwd`), so binding it really does
 /// move the turns into the checkout. The applied binding re-syncs the
@@ -316,7 +318,7 @@ fn show_worktree_list(app: &mut App, bound: Option<&std::path::Path>) {
     // answer that deserves an Info toast, while only a git refusal is an
     // Error. Folding them together (both produced `rows: None`) rendered
     // "no worktrees reported" in the error style.
-    let (message, rows, empty) = match cosh::git::worktree::list(&repo) {
+    let (message, rows, empty) = match morpheus::git::worktree::list(&repo) {
         Ok(entries) if entries.is_empty() => (
             format!("No worktrees reported for {}.", repo.display()),
             None,
@@ -418,11 +420,11 @@ fn assign_focused_pane_worktree(app: &mut App, path: Option<&str>, branch: &str)
     {
         return;
     }
-    match cosh::git::worktree::create_or_adopt(
+    match morpheus::git::worktree::create_or_adopt(
         &repo,
         branch,
         explicit.as_deref(),
-        cosh::git::worktree::AssignedBy::User,
+        morpheus::git::worktree::AssignedBy::User,
     ) {
         Ok((worktree, binding)) => {
             // Refuse a checkout ANOTHER agent already works in. Two loops in
@@ -484,12 +486,12 @@ fn assign_focused_pane_worktree(app: &mut App, path: Option<&str>, branch: &str)
 /// `/worktree exit`, which keeps the checkout on disk by product rule). A
 /// silent adoption would make the command a lie about what it built.
 fn adoption_toast(
-    worktree: &cosh::git::worktree::PaneWorktree,
-    binding: cosh::git::worktree::Binding,
+    worktree: &morpheus::git::worktree::PaneWorktree,
+    binding: morpheus::git::worktree::Binding,
 ) -> Option<String> {
     match binding {
-        cosh::git::worktree::Binding::Created => None,
-        cosh::git::worktree::Binding::Adopted => Some(format!(
+        morpheus::git::worktree::Binding::Created => None,
+        morpheus::git::worktree::Binding::Adopted => Some(format!(
             "Attached to existing worktree {} ({})",
             worktree.path.display(),
             worktree.branch
@@ -518,7 +520,7 @@ fn worktree_holder(
     except_pane: Option<usize>,
     except_main: bool,
 ) -> Option<String> {
-    use cosh::git::worktree::same_path;
+    use morpheus::git::worktree::same_path;
     // `except_main` when the caller IS the main agent: re-pinning itself at
     // the same checkout is a no-op, not a conflict with itself.
     let main_bound = !except_main
@@ -581,11 +583,11 @@ fn assign_main_agent_worktree(app: &mut App, path: Option<&str>, branch: &str) {
     // checkout the main agent is sitting in.
     let repo = PathBuf::from(&app.state.working_directory);
     let explicit = path.map(PathBuf::from);
-    match cosh::git::worktree::create_or_adopt(
+    match morpheus::git::worktree::create_or_adopt(
         &repo,
         branch,
         explicit.as_deref(),
-        cosh::git::worktree::AssignedBy::User,
+        morpheus::git::worktree::AssignedBy::User,
     ) {
         Ok((worktree, binding)) => {
             // Same guard as the pane path: a checkout another agent already
@@ -730,13 +732,13 @@ impl App {
         // for the one code path, and the `Binding` is asserted here rather
         // than ignored — an agent ask that silently adopted somebody's
         // checkout would be a bug, not a feature.
-        let outcome = match cosh::git::worktree::create_or_adopt(
+        let outcome = match morpheus::git::worktree::create_or_adopt(
             &repo,
             branch,
             None,
-            cosh::git::worktree::AssignedBy::Agent,
+            morpheus::git::worktree::AssignedBy::Agent,
         ) {
-            Ok((worktree, cosh::git::worktree::Binding::Created)) => {
+            Ok((worktree, morpheus::git::worktree::Binding::Created)) => {
                 let agent_label = split.panes[pane_index].agent.clone();
                 let message = format!(
                     "Pane isolated: {agent_label} now works in {} (branch {}).",
@@ -754,7 +756,7 @@ impl App {
             // if a future change ever lets an agent ask for a path, this
             // arm fails loudly rather than quietly reporting an adoption as
             // a creation.
-            Ok((worktree, cosh::git::worktree::Binding::Adopted)) => Err(format!(
+            Ok((worktree, morpheus::git::worktree::Binding::Adopted)) => Err(format!(
                 "internal: an agent worktree ask must never adopt (it has no path); got {} ({})",
                 worktree.path.display(),
                 worktree.branch
@@ -850,11 +852,11 @@ impl App {
                     self.worktree_agent_grant = true;
                 }
                 match op.action {
-                    cosh::harness::agent_coworkers::WorktreeAction::Assign => {
+                    morpheus::harness::agent_coworkers::WorktreeAction::Assign => {
                         let branch = op.branch.clone().unwrap_or_default();
                         self.assign_pane_worktree_for_agent(pane_index, &branch)
                     }
-                    cosh::harness::agent_coworkers::WorktreeAction::Clear => {
+                    morpheus::harness::agent_coworkers::WorktreeAction::Clear => {
                         self.clear_pane_worktree_for_agent(pane_index)
                     }
                 }
@@ -869,7 +871,7 @@ impl App {
                 op.coworker
             )),
         };
-        cosh::harness::agent_coworkers::complete_worktree_op(&op, outcome);
+        morpheus::harness::agent_coworkers::complete_worktree_op(&op, outcome);
         if !self.permission_dialog.visible {
             self.prompt_view.focus();
         }
@@ -896,7 +898,7 @@ impl App {
 /// pane while the mode is closed, and the confirmation resolver resolves
 /// its index through the same `either_split` view). Every pane kind is
 /// addressable here, the MANAGER included: a
-/// cosh pane runs a real agent session whose assembly takes the same
+/// morpheus pane runs a real agent session whose assembly takes the same
 /// per-pane cwd an ACP pane's does (`pane_effective_cwd`), so isolating it
 /// is honored rather than cosmetic. What keeps the user in charge is
 /// elsewhere and unchanged: `with_own_coworker_id` strips `agents_worktree`
@@ -934,7 +936,7 @@ fn persist_worktree_change(app: &mut App) {
 /// The LIVE split's focused pane for mutation — the worktree command is a
 /// LIVE-pane command (a parked split cannot take focus, so nothing else
 /// can reach it). `None` when no pane is focused. The MANAGER pane is a
-/// valid target: its turns run cosh's own loop, whose assembly takes the
+/// valid target: its turns run morpheus's own loop, whose assembly takes the
 /// SAME per-pane cwd an ACP pane's does (`dispatch_to_pane`), so a binding
 /// on it is honored rather than cosmetic.
 fn focused_agent_pane_mut(app: &mut App) -> Option<(usize, &mut AgentsSplitState)> {
@@ -948,7 +950,7 @@ fn focused_agent_pane_mut(app: &mut App) -> Option<(usize, &mut AgentsSplitState
 /// collected its agent's command/config snapshot, spawn the on-demand ACP
 /// probe (`session_snapshot` — resume + observe, never prompts) and flag
 /// the slash menu's spinner until the result lands. The manager pane is
-/// skipped: it is cosh itself, and the cosh command set already serves the
+/// skipped: it is morpheus itself, and the morpheus command set already serves the
 /// menu (its slash commands are the TUI's own, not an ACP publication).
 /// The LIVE split only — a parked pane cannot take focus.
 pub(super) fn ensure_pane_snapshot(app: &mut App, pane: usize) {
@@ -991,7 +993,7 @@ pub(super) fn ensure_pane_snapshot(app: &mut App, pane: usize) {
             Err(err) => {
                 let _ = event_tx.send(HarnessEvent::Toast {
                     message: format!("Command list for {agent} unavailable: {err}"),
-                    variant: cosh::harness::events::ToastVariant::Info,
+                    variant: morpheus::harness::events::ToastVariant::Info,
                 });
                 (Vec::new(), Vec::new(), Vec::new(), String::new())
             }
@@ -1052,7 +1054,7 @@ impl App {
     /// routes through here instead: with the menu open, the source must be
     /// re-derived against the CURRENT split state on EVERY recalculation, not
     /// only on focus changes. This closes the leak class where a stale source
-    /// (the split opened/closed/parked between two menu updates) let the cosh
+    /// (the split opened/closed/parked between two menu updates) let the morpheus
     /// command list render over a focused agent pane — or an agent's list over
     /// the main agent — and a pick then executed against the WRONG harness.
     pub(in crate::app) fn slash_menu_refresh(&mut self) {
@@ -1183,7 +1185,7 @@ impl App {
         split.finish_turn(
             pane,
             reason,
-            cosh::harness::agent_coworkers::AgentCoworkerTurnEnd::Cancelled,
+            morpheus::harness::agent_coworkers::AgentCoworkerTurnEnd::Cancelled,
         );
         // The force-close DROPS the winding-down turn's terminal Done (the
         // pane-idle gate in the event handler), which used to drop its
@@ -1201,7 +1203,8 @@ impl App {
             // and must wake the idle main agent), and the freed pane's next
             // queued message dispatches in this same frame — the same
             // follow-through as the normal `AgentsPaneDone` handler.
-            let requester = cosh::harness::agent_coworkers::cancel_serving(&id, reason.to_string());
+            let requester =
+                morpheus::harness::agent_coworkers::cancel_serving(&id, reason.to_string());
             // The user's own queue first: a message the human sent while
             // that pane was busy must not lose to an agent's `agents_call`.
             self.serve_agents_pane_user_queues();
@@ -1340,7 +1343,7 @@ impl App {
         // same session record. The user's prompt is refused with the same
         // toast shape the busy gate uses (finding 1).
         if let Some(pane) = split.focused_pane()
-            && cosh::harness::agent_coworkers::coworker_is_compacting(pane.id)
+            && morpheus::harness::agent_coworkers::coworker_is_compacting(pane.id)
         {
             self.toast_state.show(ToastOptions {
                 title: Some("Agents".into()),
@@ -1403,7 +1406,7 @@ impl App {
         let pane = self.agents_split.as_ref()?.focused_pane()?;
         let busy = pane.running
             || pane.rehydrating
-            || cosh::harness::agent_coworkers::coworker_is_compacting(pane.id);
+            || morpheus::harness::agent_coworkers::coworker_is_compacting(pane.id);
         busy.then_some((pane.id, pane.running))
     }
 
@@ -1447,10 +1450,10 @@ impl App {
                         // the harness's default is a paid-tier login wall)
                         // still apply.
                         // The picks ride in precedence order (see
-                        // [`cosh::coordinator::turn::turn_picks`]): the pane's own user pick
+                        // [`morpheus::coordinator::turn::turn_picks`]): the pane's own user pick
                         // first, then the persisted per-agent pick, and the
                         // registry default still applies when neither exists.
-                        cosh::coordinator::turn::turn_picks(
+                        morpheus::coordinator::turn::turn_picks(
                             p.config_options.as_deref(),
                             &p.picked_config_ids,
                             self.agents_model_picks.get(&p.agent),
@@ -1460,7 +1463,7 @@ impl App {
                         // working directory otherwise. Every layer of the
                         // isolation model rides THIS single resolution —
                         // the ACP session cwd, the MANAGER turn's
-                        // `HarnessAssembly::cwd` (harness root, CoshTools
+                        // `HarnessAssembly::cwd` (harness root, MorpheusTools
                         // root, LSP, hooks) and the fs sandbox root all
                         // derive from it inside the turn.
                         pane_effective_cwd(p, &self.state.working_directory),
@@ -1487,7 +1490,7 @@ impl App {
         // ACP session modes (similarity stems, `agent_command_map`). The
         // binding re-applies EVERY turn (per-connection session state), so
         // the map result at dispatch time is what this turn binds. `None`:
-        // an unmapped cosh mode, or an agent that advertises no modes — the
+        // an unmapped morpheus mode, or an agent that advertises no modes — the
         // agent keeps its own current (the Command-mode omission's
         // counterpart). Yolo deliberately maps to nothing: the split's
         // auto-approve IS the Yolo contract, and the permission-widening
@@ -1515,7 +1518,7 @@ impl App {
             None
         };
         // Fallible pre-flight BEFORE any bookkeeping: minting (or reusing)
-        // the manager pane's own cosh session can fail (I/O), and a refused
+        // the manager pane's own morpheus session can fail (I/O), and a refused
         // turn must leave the pane idle — never stranded `running` with a
         // spinner and a mirror spinning.
         let manager_session: Option<String> = if is_manager_pane {
@@ -1630,8 +1633,8 @@ impl App {
         // The pane's effective cwd (worktree path when pinned), resolved in
         // the snapshot above — NOT the session's working directory. The
         // manager pane rides the SAME resolution as an ACP pane: its
-        // binding feeds the assembly's `cwd` below (harness root, `CoshTools`
-        // root, LSP, hooks), so `/worktree add` on a cosh pane really moves
+        // binding feeds the assembly's `cwd` below (harness root, `MorpheusTools`
+        // root, LSP, hooks), so `/worktree add` on a morpheus pane really moves
         // its turns into the checkout.
         let cwd_string = pane_cwd.to_string_lossy().into_owned();
         let anthropic_ttl_1h = self.setup.anthropic_cache_ttl_1h();
@@ -1661,12 +1664,12 @@ impl App {
         // stoppable when the user re-enters the mode).
         // The steering handle: the SAME shared queue the main agent's
         // "next request" pump feeds, cloned into this pane's loop. Only a
-        // cosh pane's turn has request boundaries to drain it at; an ACP
+        // morpheus pane's turn has request boundaries to drain it at; an ACP
         // agent takes one prompt per turn, so its pane keeps `None` and its
         // queued "next request" goes out at the turn boundary instead, from
         // `serve_agents_pane_user_queues` (no prompt in flight to inject
         // into, but the message still becomes the pane's next request).
-        let steer = is_manager_pane.then(cosh::harness::queued_input::QueuedInput::default);
+        let steer = is_manager_pane.then(morpheus::harness::queued_input::QueuedInput::default);
         let signal = Arc::new(AtomicBool::new(false));
         // The TURN stamp: every event of this turn carries it, and a
         // force-closed turn's generation is never reused — so its late
@@ -1709,19 +1712,19 @@ impl App {
         let epoch = self.agents_pane_epoch;
         let event_tx = self.event_tx.clone();
         if is_manager_pane {
-            // The cosh pane: the MAIN agent itself, running delegated work
-            // on its OWN cosh session — a real, persisted session (visible
+            // The morpheus pane: the MAIN agent itself, running delegated work
+            // on its OWN morpheus session — a real, persisted session (visible
             // in the history panel, openable like any other), not a
             // throwaway nested harness. Its tool set is the user's mode
             // minus what a pane cannot do (see
-            // `cosh::coordinator::policy`): the workspace-mutating tools are
+            // `morpheus::coordinator::policy`): the workspace-mutating tools are
             // NOT removed — only `Mode::Manager` owns that restriction. The
             // session was bound by the pre-flight above (a second ensure
             // would just re-read it), so this only unwraps.
-            let Some(cosh_session) = manager_session else {
+            let Some(morpheus_session) = manager_session else {
                 return;
             };
-            let context = self.session_store.load_context(&cosh_session);
+            let context = self.session_store.load_context(&morpheus_session);
             // The cwd may have MOVED under this pane (`/worktree add|exit`
             // re-flags the handoff): the manager loop carries no prompt-side
             // preamble layer — its sibling awareness rides the harness's
@@ -1751,7 +1754,7 @@ impl App {
             // own deny-lists, so no request can ever be emitted.
             let permission_rx = if !matches!(
                 own_mode,
-                cosh::harness::Mode::Yolo | cosh::harness::Mode::Manager
+                morpheus::harness::Mode::Yolo | morpheus::harness::Mode::Manager
             ) {
                 let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
                 if let Some(split) =
@@ -1775,7 +1778,7 @@ impl App {
                 // "next request" messages — see `pane_steer`), NO decision
                 // audit (not distributed) and the pane's OWN session id as
                 // the cache-affinity key.
-                let assembly = cosh::assembly::HarnessAssembly {
+                let assembly = morpheus::assembly::HarnessAssembly {
                     provider: manager_route
                         .as_ref()
                         .map(|(p, _)| p.clone())
@@ -1791,7 +1794,9 @@ impl App {
                     summarization_models: summarization_models.clone(),
                     cwd: cwd_string.clone(),
                     mode: own_mode,
-                    disabled_tools: cosh::coordinator::policy::pane_disabled_tools(&HashSet::new()),
+                    disabled_tools: morpheus::coordinator::policy::pane_disabled_tools(
+                        &HashSet::new(),
+                    ),
                     // The MODE's normal prompt minus the self-review loop:
                     // a pane does delegated work whose deliverable is the
                     // task report — it does not run the review sub-agent
@@ -1804,16 +1809,20 @@ impl App {
                     // directory drift is not; Ask never had a review
                     // section, so it stays whole.
                     instructions: Some(match own_mode {
-                        cosh::harness::Mode::Build | cosh::harness::Mode::Command => {
-                            cosh::harness::core::INSTRUCTIONS_BUILD_BASE
+                        morpheus::harness::Mode::Build | morpheus::harness::Mode::Command => {
+                            morpheus::harness::core::INSTRUCTIONS_BUILD_BASE
                         }
-                        cosh::harness::Mode::Yolo => cosh::harness::core::INSTRUCTIONS_YOLO_BASE,
-                        cosh::harness::Mode::Manager => cosh::harness::core::INSTRUCTIONS_MANAGER,
-                        cosh::harness::Mode::Ask => cosh::harness::core::INSTRUCTIONS_ASK,
+                        morpheus::harness::Mode::Yolo => {
+                            morpheus::harness::core::INSTRUCTIONS_YOLO_BASE
+                        }
+                        morpheus::harness::Mode::Manager => {
+                            morpheus::harness::core::INSTRUCTIONS_MANAGER
+                        }
+                        morpheus::harness::Mode::Ask => morpheus::harness::core::INSTRUCTIONS_ASK,
                     }),
                     anthropic_ttl_1h,
                     openai_cache_retention: openai_cache_retention.clone(),
-                    cache_key: Some(cosh_session.clone()),
+                    cache_key: Some(morpheus_session.clone()),
                     mcp_config: mcp_config.clone(),
                     skills_config: skills_config.clone(),
                     effective_context,
@@ -1836,7 +1845,7 @@ impl App {
                     signal,
                     steer.clone().unwrap_or_default(),
                     assembly,
-                    cosh_session,
+                    morpheus_session,
                     store,
                     event_tx,
                 );
@@ -1884,7 +1893,7 @@ impl App {
             };
             let input = assemble_turn_input(
                 carried_block,
-                cosh::harness::agent_coworkers::take_preamble(coworker_identity),
+                morpheus::harness::agent_coworkers::take_preamble(coworker_identity),
                 msg,
             );
             // The permission channel rides the MODE (the split's Yolo
@@ -1898,7 +1907,7 @@ impl App {
             // the receiver goes into the turn.
             let permission_rx = if !matches!(
                 own_mode,
-                cosh::harness::Mode::Yolo | cosh::harness::Mode::Manager
+                morpheus::harness::Mode::Yolo | morpheus::harness::Mode::Manager
             ) {
                 let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
                 if let Some(split) =
@@ -1967,7 +1976,7 @@ impl App {
                 // `acp::call`: an `Err` carries `session = None` and records
                 // nothing.
                 if let Some(id) = &session {
-                    cosh::harness::agent_coworkers::record_session_binding(pane_id, id.clone());
+                    morpheus::harness::agent_coworkers::record_session_binding(pane_id, id.clone());
                 }
                 let _ = event_tx.send(HarnessEvent::AgentsPaneDone {
                     pane: index,
@@ -1995,7 +2004,7 @@ impl App {
     /// alone — it drains its deliveries at its own natural points (the
     /// per-iteration drain and the pre-Done busy-guard).
     pub(super) fn wake_main_agent_if_promised(&mut self, requester: Option<&'static str>) {
-        if requester != Some(cosh::harness::agent_coworkers::MAIN) {
+        if requester != Some(morpheus::harness::agent_coworkers::MAIN) {
             return;
         }
         if self.state.status == crate::types::SessionStatus::Working {
@@ -2006,19 +2015,19 @@ impl App {
         // with it would override the interrupt with a synthetic turn. Cancelled
         // deliveries are consumed and DISCARDED here (not left parked: a later
         // unrelated wake must never deliver a stale cancellation).
-        let notes: Vec<String> = cosh::harness::agent_coworkers::take_ready_deliveries(
-            cosh::harness::agent_coworkers::MAIN,
+        let notes: Vec<String> = morpheus::harness::agent_coworkers::take_ready_deliveries(
+            morpheus::harness::agent_coworkers::MAIN,
         )
         .into_iter()
         .filter_map(|delivery| {
-            if delivery.end == cosh::harness::agent_coworkers::AgentCoworkerTurnEnd::Cancelled {
+            if delivery.end == morpheus::harness::agent_coworkers::AgentCoworkerTurnEnd::Cancelled {
                 log::info!(
                     target: "laya",
                     "wake promise: a cancelled pane report (the user stopped the turn) is dropped, never delivered"
                 );
                 return None;
             }
-            Some(cosh::harness::agent_coworkers::delivery_note(&delivery))
+            Some(morpheus::harness::agent_coworkers::delivery_note(&delivery))
         })
         .collect();
         if notes.is_empty() {
@@ -2067,7 +2076,7 @@ impl App {
         if self.any_agent_running() {
             return;
         }
-        if self.state.mode == cosh::harness::Mode::Command {
+        if self.state.mode == morpheus::harness::Mode::Command {
             return;
         }
         if self.queue_actions_hold_active() {
@@ -2083,7 +2092,7 @@ impl App {
         let Some(todo) = todo else {
             return;
         };
-        let listed = cosh::harness::core::todo_rerun_open_items(todo);
+        let listed = morpheus::harness::core::todo_rerun_open_items(todo);
         if listed.is_empty() {
             return;
         }
@@ -2107,7 +2116,7 @@ impl App {
             listed.lines().count(),
             self.todo_wakes_left
         );
-        self.start_agent_loop(cosh::harness::core::todo_rerun_message(Some(&listed)));
+        self.start_agent_loop(morpheus::harness::core::todo_rerun_message(Some(&listed)));
     }
 
     /// Whether ANY agent turn is running: the main loop (`Working`) or any
@@ -2122,7 +2131,7 @@ impl App {
     }
 
     /// Absorb the session-binding FACTS the pane turns recorded gate-free
-    /// (see `cosh::harness::agent_coworkers::record_session_binding`): promote the
+    /// (see `morpheus::harness::agent_coworkers::record_session_binding`): promote the
     /// matching pane object — LIVE, PARKED or HIDDEN — to the session the
     /// turn actually drove.
     ///
@@ -2147,7 +2156,7 @@ impl App {
     ///   anti-contamination verdict the event gates reach, reached
     ///   structurally.
     pub(super) fn absorb_pane_session_bindings(&mut self) {
-        let facts = cosh::harness::agent_coworkers::drain_session_bindings();
+        let facts = morpheus::harness::agent_coworkers::drain_session_bindings();
         if facts.is_empty() {
             return;
         }
@@ -2200,13 +2209,13 @@ impl App {
         }
     }
 
-    /// Feed the RUNNING cosh panes' "next request" queues into their live
+    /// Feed the RUNNING morpheus panes' "next request" queues into their live
     /// turns — the pane-level twin of [`App::pump_queued_messages`].
     ///
     /// A message goes to the pane's steering handle (the harness drains it
     /// before the turn's next request) and echoes into the pane's timeline
     /// with the user's rail at the same moment, so the pane shows who is
-    /// speaking. Only panes that hold a handle qualify: a cosh pane's turn
+    /// speaking. Only panes that hold a handle qualify: a morpheus pane's turn
     /// has request boundaries, an ACP agent takes one prompt per turn (so no
     /// point to inject at) and a pane between turns has no loop at all. The
     /// ACP case is not stranded by that: its "next request" message is
@@ -2241,7 +2250,7 @@ impl App {
     /// The two queues keep the main agent's meaning for EVERY pane kind:
     /// `next request` is served FIRST (the message the user wanted as the
     /// pane's very next request), then `next loop` (a fresh working stretch).
-    /// For a cosh pane the `next request` queue normally never reaches this
+    /// For a morpheus pane the `next request` queue normally never reaches this
     /// pass while the turn runs — [`Self::pump_agents_pane_queued_requests`]
     /// already fed it into the harness, which drains it before its next
     /// request. An ACP pane has no prompt in flight to inject into, so its
@@ -2293,7 +2302,7 @@ impl App {
                 .iter()
                 .enumerate()
                 .filter(|(_, p)| !p.running && !p.rehydrating)
-                .filter(|(_, p)| !cosh::harness::agent_coworkers::coworker_is_compacting(p.id))
+                .filter(|(_, p)| !morpheus::harness::agent_coworkers::coworker_is_compacting(p.id))
                 .filter(|(_, p)| !p.queued.is_empty())
                 .map(|(i, _)| i)
                 .collect()
@@ -2357,7 +2366,7 @@ impl App {
                 .iter()
                 .enumerate()
                 // A running pane serves later (the queue holds), a
-                // rehydrating pane first finishes its replay. The cosh pane
+                // rehydrating pane first finishes its replay. The morpheus pane
                 // is a normal queue target — its own turn's `agents_call` to
                 // itself is rejected at the tool layer (see
                 // `Harness::with_own_coworker_id`), so a queued request always
@@ -2365,16 +2374,16 @@ impl App {
                 .filter(|(_, p)| {
                     !p.running
                         && !p.rehydrating
-                        && !cosh::harness::agent_coworkers::coworker_is_compacting(p.id)
+                        && !morpheus::harness::agent_coworkers::coworker_is_compacting(p.id)
                 })
                 .filter_map(|(i, _)| {
                     let id = split.pane_registry_id(i)?;
-                    cosh::harness::agent_coworkers::has_queued_request(&id).then_some((i, id))
+                    morpheus::harness::agent_coworkers::has_queued_request(&id).then_some((i, id))
                 })
                 .collect()
         };
         for (pane, id) in targets {
-            let Some(request) = cosh::harness::agent_coworkers::pop_next_request(&id) else {
+            let Some(request) = morpheus::harness::agent_coworkers::pop_next_request(&id) else {
                 continue;
             };
             self.dispatch_to_pane(pane, request.text, true);
@@ -2407,7 +2416,7 @@ impl App {
         if self.dialog.visible() || self.permission_dialog.visible {
             return;
         }
-        let Some(op) = cosh::harness::agent_coworkers::peek_worktree_op() else {
+        let Some(op) = morpheus::harness::agent_coworkers::peek_worktree_op() else {
             return;
         };
         // Resolve the target pane by registry id (the tool speaks ids, the
@@ -2423,7 +2432,7 @@ impl App {
                 let mut needs_confirmation = split.panes[index]
                     .worktree
                     .as_ref()
-                    .is_some_and(|w| w.assigned_by == cosh::git::worktree::AssignedBy::User);
+                    .is_some_and(|w| w.assigned_by == morpheus::git::worktree::AssignedBy::User);
                 // The user granted session-wide worktree permission
                 // ("Allow" on an earlier ask): the agent may rebind even
                 // User-assigned panes without asking again for the rest
@@ -2434,9 +2443,9 @@ impl App {
                 Some((index, needs_confirmation))
             });
         let Some((pane_index, needs_confirmation)) = resolved else {
-            let op = cosh::harness::agent_coworkers::pop_worktree_op();
+            let op = morpheus::harness::agent_coworkers::pop_worktree_op();
             if let Some(op) = op {
-                cosh::harness::agent_coworkers::complete_worktree_op(
+                morpheus::harness::agent_coworkers::complete_worktree_op(
                     &op,
                     Err(format!("pane '{}' no longer exists", op.coworker)),
                 );
@@ -2453,14 +2462,14 @@ impl App {
             // answer here instead of into the main loop's `perm_tx`
             // (this ask is resolved App-side, never by the harness).
             let description = match op.action {
-                cosh::harness::agent_coworkers::WorktreeAction::Assign => format!(
+                morpheus::harness::agent_coworkers::WorktreeAction::Assign => format!(
                     "An agent asks to move pane '{}' into a NEW worktree on branch '{}'. \
                      Allow for this whole session (the agent may then change any pane's \
                      worktree binding), only this once, or deny?",
                     op.coworker,
                     op.branch.as_deref().unwrap_or_default()
                 ),
-                cosh::harness::agent_coworkers::WorktreeAction::Clear => format!(
+                morpheus::harness::agent_coworkers::WorktreeAction::Clear => format!(
                     "An agent asks to move pane '{}' out of the worktree YOU assigned \
                      (the binding is dropped; nothing on disk is deleted). Allow for this \
                      whole session (the agent may then change any pane's worktree binding), \
@@ -2478,7 +2487,7 @@ impl App {
             // Default to "Allow Once" (index 1), same default as the
             // harness permission requests.
             self.permission_dialog.selected = 1;
-            let op = cosh::harness::agent_coworkers::pop_worktree_op();
+            let op = morpheus::harness::agent_coworkers::pop_worktree_op();
             if let Some(op) = op {
                 // The index was only the resolution vehicle — the op's
                 // registry id is the durable handle (re-resolved at
@@ -2487,19 +2496,19 @@ impl App {
             }
             return;
         }
-        let Some(op) = cosh::harness::agent_coworkers::pop_worktree_op() else {
+        let Some(op) = morpheus::harness::agent_coworkers::pop_worktree_op() else {
             return;
         };
         let outcome = match op.action {
-            cosh::harness::agent_coworkers::WorktreeAction::Assign => {
+            morpheus::harness::agent_coworkers::WorktreeAction::Assign => {
                 let branch = op.branch.clone().unwrap_or_default();
                 self.assign_pane_worktree_for_agent(pane_index, &branch)
             }
-            cosh::harness::agent_coworkers::WorktreeAction::Clear => {
+            morpheus::harness::agent_coworkers::WorktreeAction::Clear => {
                 self.clear_pane_worktree_for_agent(pane_index)
             }
         };
-        cosh::harness::agent_coworkers::complete_worktree_op(&op, outcome);
+        morpheus::harness::agent_coworkers::complete_worktree_op(&op, outcome);
     }
 
     /// The App-side `agents_compact` drain: pop parked compaction asks and
@@ -2528,7 +2537,7 @@ impl App {
     /// records from its session, so the summary arrives as its new
     /// baseline without colliding with any live stream.
     pub(super) fn serve_agents_pane_compact_ops(&mut self) {
-        let Some(op) = cosh::harness::agent_coworkers::peek_compact_op() else {
+        let Some(op) = morpheus::harness::agent_coworkers::peek_compact_op() else {
             return;
         };
         // Resolve the target pane by the op's stamped IDENTITY
@@ -2543,9 +2552,9 @@ impl App {
                     .map(|pane| (pane_index, pane.running, pane.session_id.clone()))
             });
         let Some((pane_index, running, session_id)) = resolved else {
-            let op = cosh::harness::agent_coworkers::pop_compact_op();
+            let op = morpheus::harness::agent_coworkers::pop_compact_op();
             if let Some(op) = op {
-                cosh::harness::agent_coworkers::complete_compact_op(
+                morpheus::harness::agent_coworkers::complete_compact_op(
                     &op,
                     Err(format!("pane '{}' no longer exists", op.coworker)),
                 );
@@ -2559,9 +2568,9 @@ impl App {
             return;
         }
         let Some(session_id) = session_id else {
-            let op = cosh::harness::agent_coworkers::pop_compact_op();
+            let op = morpheus::harness::agent_coworkers::pop_compact_op();
             if let Some(op) = op {
-                cosh::harness::agent_coworkers::complete_compact_op(
+                morpheus::harness::agent_coworkers::complete_compact_op(
                     &op,
                     Err(format!(
                         "pane '{}' has no bound session yet — nothing to compact",
@@ -2571,18 +2580,18 @@ impl App {
             }
             return;
         };
-        let Some(op) = cosh::harness::agent_coworkers::pop_compact_op() else {
+        let Some(op) = morpheus::harness::agent_coworkers::pop_compact_op() else {
             return;
         };
         let Some(ctx_state) = self.session_store.load_context(&session_id) else {
-            cosh::harness::agent_coworkers::complete_compact_op(
+            morpheus::harness::agent_coworkers::complete_compact_op(
                 &op,
                 Err("nothing to compact yet — the pane's session has no context records".into()),
             );
             return;
         };
         // The SAME inputs the user's `/compact` passes: the pane's session
-        // is a real cosh session, so it compacts through the identical
+        // is a real morpheus session, so it compacts through the identical
         // connector resolution and cache affinity (keyed to the PANE's own
         // session id — never the main session's).
         let provider = self.llm_config.provider.clone();
@@ -2626,7 +2635,7 @@ impl App {
                 Ok(mut harness) => {
                     harness.context_manager.restore_state(&ctx_state);
                     let ok = harness.compact_on_demand(&tx, stop_signal).await;
-                    if ok == cosh::harness::ManualCompactionOutcome::Compacted {
+                    if ok == morpheus::harness::ManualCompactionOutcome::Compacted {
                         // Persist the compacted context back to the PANE's
                         // session record (the same path the manager loop
                         // saves with) — the pane's next turn restores from
@@ -2652,19 +2661,19 @@ impl App {
                     // misconfiguration) into the tool result, like the
                     // `/compact` path forwards its `HarnessEvent::Error`.
                     builder_error = Some(reason);
-                    cosh::harness::ManualCompactionOutcome::Failed
+                    morpheus::harness::ManualCompactionOutcome::Failed
                 }
             };
             let note = match outcome {
-                cosh::harness::ManualCompactionOutcome::Compacted => Ok(format!(
+                morpheus::harness::ManualCompactionOutcome::Compacted => Ok(format!(
                     "Pane '{pane}' compacted: its context was summarized with the same \
                      mechanism as /compact and persisted to its session. Its next turn \
                      starts from the handoff summary."
                 )),
-                cosh::harness::ManualCompactionOutcome::NothingToCompact => {
+                morpheus::harness::ManualCompactionOutcome::NothingToCompact => {
                     Err(format!("Pane '{pane}' has nothing to compact yet."))
                 }
-                cosh::harness::ManualCompactionOutcome::Failed => Err(match builder_error {
+                morpheus::harness::ManualCompactionOutcome::Failed => Err(match builder_error {
                     Some(reason) => format!(
                         "The compaction of pane '{pane}' failed before it could run: \
                          {reason} Nothing changed."
@@ -2675,14 +2684,14 @@ impl App {
                     ),
                 }),
             };
-            cosh::harness::agent_coworkers::complete_compact_op(&op, note);
+            morpheus::harness::agent_coworkers::complete_compact_op(&op, note);
         });
         // `pane_index` is only the resolution vehicle (same as the
         // worktree drain): the registry pairs the outcome by op id.
         let _ = pane_index;
     }
 
-    /// The manager pane's OWN cosh session id, minted on first use: the
+    /// The manager pane's OWN morpheus session id, minted on first use: the
     /// pane is not a throwaway nested harness — it is a real session in the
     /// store (the history panel lists it from birth, and reopening it
     /// restores the manager's conversation). The claim open-locks the id,
@@ -2754,7 +2763,7 @@ impl App {
 
     /// The manager pane's OWN model selection, with the session markers'
     /// precedence: the pane's committed per-pane pick wins; absent one, the
-    /// pane's cosh session carries the same provider/model/reasoning markers
+    /// pane's morpheus session carries the same provider/model/reasoning markers
     /// the main session does (a pick made in a previous run comes back —
     /// the SAME precedence `restore_current_session_model` honors when the
     /// main view re-enters a session); `None` = the pane has no selection
@@ -2793,7 +2802,7 @@ impl App {
     /// the pane's JSONL per repaint). External ACP panes read the pane's
     /// `session_info` — the harness's own `SessionModel` report — and yield
     /// `None` when nothing was reported yet (the badge shows only the
-    /// brand name). The manager (cosh) pane is the main agent itself: its
+    /// brand name). The manager (morpheus) pane is the main agent itself: its
     /// bridge never emits a `SessionModel` event, so its badge resolves
     /// from the pane's OWN selection (`model_selection` — committed by the
     /// per-pane picker, hydrated from the session markers on every split
@@ -2813,7 +2822,7 @@ impl App {
         Some(selection.to_session_info())
     }
 
-    /// Hydrate every manager (cosh) pane's OWN model selection from its
+    /// Hydrate every manager (morpheus) pane's OWN model selection from its
     /// bound session's markers, ONE disk read per pane per call — never per
     /// frame (the render badge reads the in-memory `model_selection` the
     /// hydration lands in). A pane that already carries a selection (the
@@ -2904,7 +2913,7 @@ impl App {
             return;
         };
         // The manager pane is NOT an ACP client — its bound session is a
-        // real cosh session in THIS app's store, so cold-restore reads the
+        // real morpheus session in THIS app's store, so cold-restore reads the
         // session directly (no `session/load` round-trip): the persisted
         // CONTEXT — the same authoritative snapshot a resume would restore
         // into a fresh harness — replays as the pane's typed event stream
@@ -3107,19 +3116,19 @@ pub(in crate::app) fn pane_handoff_summary(timeline: &[SubagentTimelineEntry]) -
 /// consumer reads: the worktree path when the pane is pinned (`/worktree`),
 /// the session's working directory otherwise. The ACP turn's
 /// `acp::call(cwd)`, the MANAGER turn's `HarnessAssembly::cwd` (harness
-/// root, `CoshTools` root, LSP, hooks) and the focus-time snapshot probe
+/// root, `MorpheusTools` root, LSP, hooks) and the focus-time snapshot probe
 /// all funnel through it, so a binding is either honored by every layer or
-/// by none — the manager pane included (a cosh pane is a pane like any
+/// by none — the manager pane included (a morpheus pane is a pane like any
 /// other here; only the `agents_worktree` TOOL refuses to target one).
 pub(super) fn pane_effective_cwd(pane: &AgentPane, session_cwd: &str) -> PathBuf {
-    cosh::coordinator::turn::effective_cwd(
+    morpheus::coordinator::turn::effective_cwd(
         pane.worktree.as_ref().map(|w| w.path.as_path()),
         session_cwd,
     )
 }
 
 /// One manager-pane turn: the pane's harness assembled through the ONE
-/// assembly (`cosh::assembly::assemble`), whose plain event stream is bridged
+/// assembly (`morpheus::assembly::assemble`), whose plain event stream is bridged
 /// into the SAME typed `SubagentEvent` stream the external ACP panes emit —
 /// both pane flavors render identically. The final report (the loop's
 /// closure) arrives as `AgentsPaneDone`.
@@ -3134,14 +3143,16 @@ fn run_manager_turn(
     turn: u64,
     input: String,
     permission_rx: Option<
-        tokio::sync::mpsc::UnboundedReceiver<morpheus_tools::subagent::events::PanePermissionAnswer>,
+        tokio::sync::mpsc::UnboundedReceiver<
+            morpheus_tools::subagent::events::PanePermissionAnswer,
+        >,
     >,
     stop_signal: Arc<AtomicBool>,
     // The pane's steering queue: the user's "next request" messages, drained
     // by the harness before each of this turn's requests (the same contract
     // the main loop's queued input has).
-    steer: cosh::harness::queued_input::QueuedInput,
-    assembly: cosh::assembly::HarnessAssembly,
+    steer: morpheus::harness::queued_input::QueuedInput,
+    assembly: morpheus::assembly::HarnessAssembly,
     session_id: String,
     store: crate::session::store::SessionStore,
     event_tx: tokio::sync::mpsc::UnboundedSender<HarnessEvent>,
@@ -3154,12 +3165,12 @@ fn run_manager_turn(
     let panic_session = session_id.clone();
 
     let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        // THE shared process runtime (`cosh::assembly::agent_runtime`), not
+        // THE shared process runtime (`morpheus::assembly::agent_runtime`), not
         // a per-turn current_thread one: the pane now assembles MCP (and
         // may touch the LSP singleton) through the SAME assembly as the main
         // loop, and transports spawned on a per-turn runtime would be
         // killed (kill_on_drop) the moment the turn ends.
-        let rt = cosh::assembly::agent_runtime();
+        let rt = morpheus::assembly::agent_runtime();
         rt.block_on(async move {
             let (_answer_tx, answer_rx) = tokio::sync::mpsc::unbounded_channel();
             // The manager loop's permission channel: with a TUI-connected
@@ -3168,9 +3179,9 @@ fn run_manager_turn(
             // the loop self-contained.
             let (manager_perm_tx, perm_rx) = tokio::sync::mpsc::unbounded_channel();
             let (loop_tx, mut loop_rx) =
-                tokio::sync::mpsc::unbounded_channel::<cosh::harness::HarnessEvent>();
+                tokio::sync::mpsc::unbounded_channel::<morpheus::harness::HarnessEvent>();
 
-            // THE assembly (`cosh::assembly::assemble`): the pane assembles
+            // THE assembly (`morpheus::assembly::assemble`): the pane assembles
             // through the SAME path the main loop does — connector with the
             // user's tool-call mode + reasoning resolution, prompt-cache
             // headers keyed to the PANE's own session, MCP boot, RAG,
@@ -3179,13 +3190,13 @@ fn run_manager_turn(
             // pane id, no queued input, no audit). An assembly failure
             // closes the pane's turn with it instead of an Error event (the
             // pane has its own Done contract, not the main chat's).
-            let mut manager = match cosh::assembly::assemble(assembly, &event_tx).await {
+            let mut manager = match morpheus::assembly::assemble(assembly, &event_tx).await {
                 Ok(manager) => manager,
                 Err(error) => {
                     // Gate-free fact capture (see the external turn's record):
                     // the Done may be dropped by the handler's gates, the
                     // binding fact may not be lost with it.
-                    cosh::harness::agent_coworkers::record_session_binding(
+                    morpheus::harness::agent_coworkers::record_session_binding(
                         pane_id,
                         session_id.clone(),
                     );
@@ -3225,19 +3236,21 @@ fn run_manager_turn(
                         // option this build didn't offer has no trustworthy
                         // allow semantics.
                         let action = match answer {
-                            morpheus_tools::subagent::events::PanePermissionAnswer::Selected(id) => {
+                            morpheus_tools::subagent::events::PanePermissionAnswer::Selected(
+                                id,
+                            ) => {
                                 match id.as_str() {
-                                    "allow" => cosh::harness::PermissionAction::Allow,
-                                    "deny" => cosh::harness::PermissionAction::Deny,
+                                    "allow" => morpheus::harness::PermissionAction::Allow,
+                                    "deny" => morpheus::harness::PermissionAction::Deny,
                                     // `allow_once` AND any unknown id: the
                                     // once-grant cannot be replayed across
                                     // tools, so the blast radius stays one
                                     // call.
-                                    _ => cosh::harness::PermissionAction::AllowOnce,
+                                    _ => morpheus::harness::PermissionAction::AllowOnce,
                                 }
                             }
                             morpheus_tools::subagent::events::PanePermissionAnswer::Cancel => {
-                                cosh::harness::PermissionAction::Deny
+                                morpheus::harness::PermissionAction::Deny
                             }
                         };
                         // `Err` = the loop already ended: nothing to answer.
@@ -3379,7 +3392,7 @@ fn run_manager_turn(
                 }
             });
 
-            cosh::assembly::run_assembled_loop(
+            morpheus::assembly::run_assembled_loop(
                 &mut manager,
                 &input,
                 loop_tx,
@@ -3413,7 +3426,7 @@ fn run_manager_turn(
             let fallback = manager.context_manager.last_assistant_text();
             // Persist the manager session BEFORE dropping the harness: the
             // context snapshot must be taken while the manager still owns
-            // it. The pane is a REAL cosh session — the history panel lists
+            // it. The pane is a REAL morpheus session — the history panel lists
             // it and reopening it restores the conversation.
             let context_state = manager.context_manager.save_state();
             let display = manager_context_display(&context_state);
@@ -3427,8 +3440,8 @@ fn run_manager_turn(
             let cause = terminal_cause.lock().unwrap().take();
             let (output, end) = close_pane_turn(cause.as_ref(), final_answer, fallback);
             // Gate-free fact capture (see the external turn's record): the
-            // cosh pane's binding survives a Done the handler drops.
-            cosh::harness::agent_coworkers::record_session_binding(pane_id, session_id.clone());
+            // morpheus pane's binding survives a Done the handler drops.
+            morpheus::harness::agent_coworkers::record_session_binding(pane_id, session_id.clone());
             let _ = event_tx.send(HarnessEvent::AgentsPaneDone {
                 pane,
                 pane_id,
@@ -3436,9 +3449,9 @@ fn run_manager_turn(
                 turn,
                 output,
                 stop_reason: end.as_str().to_string(),
-                // The cosh pane's session id IS the bound session: carried
+                // The morpheus pane's session id IS the bound session: carried
                 // here so the Done handler seeds `pane.session_id` AND
-                // promotes the persisted pane ref to `Bound { agent: cosh,
+                // promotes the persisted pane ref to `Bound { agent: morpheus,
                 // session_id }` — without it the binding never reached
                 // disk and a reboot rebuilt the pane UNBOUND (empty chat,
                 // issue 6), even though the manager session itself was
@@ -3451,7 +3464,7 @@ fn run_manager_turn(
         // The panic path binds too (issue 6's contract): capture the fact
         // gate-free so the binding lands even when the handler drops the
         // synthetic Done.
-        cosh::harness::agent_coworkers::record_session_binding(pane_id, panic_session.clone());
+        morpheus::harness::agent_coworkers::record_session_binding(pane_id, panic_session.clone());
         // A panicking turn must never leave the pane Running forever (the
         // spinner would spin with nothing behind it and Esc would have
         // nothing to stop).
@@ -3471,7 +3484,7 @@ fn run_manager_turn(
 /// store persists: user prompts (synthetic provenance kept) and assistant
 /// text/closures, each carrying its DISPLAY-ONLY reasoning (`None` for user
 /// prompts and reasoning-less responses — see
-/// [`cosh::harness::context::ContextItem::Assistant::reasoning`]). Tool
+/// [`morpheus::harness::context::ContextItem::Assistant::reasoning`]). Tool
 /// calls/results are structural context, not display prose — the pane's live
 /// timeline already showed them.
 /// Rebuild the manager pane's replayed event stream from the session's
@@ -3485,7 +3498,7 @@ fn run_manager_turn(
 /// history — was silently dropped from the rebuilt timeline. The bug
 /// surfaced when adding a pane: `open_agents_split` rebuilds the split from
 /// scratch (`AgentsSplitState::new`), `trigger_agents_pane_replays` refills
-/// every bound pane with an empty timeline, and the cosh pane came back
+/// every bound pane with an empty timeline, and the morpheus pane came back
 /// stripped to its prose while the ACP panes (full `session/load` replay)
 /// kept their tool rows.
 ///
@@ -3515,9 +3528,9 @@ fn run_manager_turn(
 /// MODEL — the user watched every one of them stream into the pane, so the
 /// rebuilt timeline keeps them; masking likewise never rewrote the row.
 pub(in crate::app) fn manager_context_replay_events(
-    context: &cosh::harness::context::ContextManagerState,
+    context: &morpheus::harness::context::ContextManagerState,
 ) -> Vec<SubagentEvent> {
-    use cosh::harness::context::ContextItem;
+    use morpheus::harness::context::ContextItem;
 
     let mut events: Vec<SubagentEvent> = Vec::new();
     // Announced-but-unresolved calls by their context `call_id` → the tool
@@ -3617,7 +3630,7 @@ pub(in crate::app) fn manager_context_replay_events(
 
 /// Project a manager context snapshot into the DISPLAY messages the session
 /// store persists: ONE message per context item GROUP, using the shared rule
-/// [`cosh::harness::context::display_groups`] that the store's `update_ctx_ids`
+/// [`morpheus::harness::context::display_groups`] that the store's `update_ctx_ids`
 /// also derives its mapping from (a tool call absorbs every result carrying
 /// its `call_id`; every other item is a message of its own).
 ///
@@ -3633,10 +3646,10 @@ pub(in crate::app) fn manager_context_replay_events(
 /// The projection is also what the history view shows when the manager
 /// session is reopened as a normal chat, so tool rows belong here anyway.
 pub(in crate::app) fn manager_context_display(
-    context: &cosh::harness::ContextManagerState,
+    context: &morpheus::harness::ContextManagerState,
 ) -> Vec<(crate::types::MessageRole, Vec<crate::types::Part>)> {
     use crate::types::{MessageRole, Part, ReasoningPart, TextPart, ToolPart, ToolStatus};
-    use cosh::harness::context::ContextItem;
+    use morpheus::harness::context::ContextItem;
 
     fn text_part(text: &str) -> Part {
         Part::Text(TextPart {
@@ -3659,7 +3672,7 @@ pub(in crate::app) fn manager_context_display(
     }
 
     let mut display: Vec<(MessageRole, Vec<Part>)> = Vec::new();
-    for group in cosh::harness::context::display_groups(context) {
+    for group in morpheus::harness::context::display_groups(context) {
         // The group's FIRST item sets the role: compaction and commands read
         // as user turns (the model-visible checkpoint prose included), a tool
         // call and its results (or an orphan result) as assistant output.
@@ -3744,7 +3757,7 @@ pub(in crate::app) fn persist_manager_session(
     store: &crate::session::store::SessionStore,
     session_id: &str,
     display: Vec<(crate::types::MessageRole, Vec<crate::types::Part>)>,
-    context: cosh::harness::ContextManagerState,
+    context: morpheus::harness::ContextManagerState,
 ) {
     let created_at = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)

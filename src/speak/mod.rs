@@ -21,13 +21,13 @@
 //! and only the build that enables it takes on its obligations.
 //!
 //! ```toml
-//! cosh = { version = "1", features = ["speak"] }
+//! morpheus = { version = "1", features = ["speak"] }
 //! ```
 //!
 //! # Model
 //!
 //! Download the multilingual Kokoro bundle once and extract it where
-//! [`default_model_dir`] looks (`<cache>/cosh/models/kokoro-multi-lang-v1_1`,
+//! [`default_model_dir`] looks (`<cache>/morpheus/models/kokoro-multi-lang-v1_1`,
 //! overridable with [`MODEL_DIR_ENV`]):
 //!
 //! ```text
@@ -60,14 +60,14 @@
 //! # Example
 //!
 //! ```no_run
-//! use cosh::speak::{Speak, SpeakConfig};
+//! use morpheus::speak::{Speak, SpeakConfig};
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let speak = Speak::load(SpeakConfig::default())?;
 //! println!("{} speakers at {} Hz", speak.num_speakers(), speak.sample_rate());
 //!
 //! // Speak on the current thread (blocking) ...
-//! speak.speak("Hello from cosh.")?;
+//! speak.speak("Hello from morpheus.")?;
 //!
 //! // ... or synthesize now, play or save the owned samples later.
 //! let speech = speak.synthesize("This part is only synthesized.")?;
@@ -93,7 +93,9 @@ mod phonemize;
 mod player;
 mod voice;
 
-pub use backend::{Backend, DEFAULT_MODEL_DIR_NAME, KokoroConfig, MODEL_DIR_ENV, default_model_dir};
+pub use backend::{
+    Backend, DEFAULT_MODEL_DIR_NAME, KokoroConfig, MODEL_DIR_ENV, default_model_dir,
+};
 pub use config::{Phonemizer, SpeakConfig, SpeakError};
 pub use engine::{Speak, Speech};
 pub use voice::{Voice, find as find_voice};

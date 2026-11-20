@@ -1,6 +1,9 @@
 use super::{App, HOME_LOCK, isolate_home};
 use crate::routes::session::permission::PermissionAction;
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton as CBtn, MouseEvent as CMouse, MouseEventKind as CKind};
+use crossterm::event::{
+    KeyCode, KeyEvent, KeyModifiers, MouseButton as CBtn, MouseEvent as CMouse,
+    MouseEventKind as CKind,
+};
 
 fn key(code: KeyCode) -> KeyEvent {
     KeyEvent::new(code, KeyModifiers::NONE)
@@ -68,7 +71,10 @@ async fn permission_dialog_enter_close_restores_prompt_focus() {
     app.process_key_event(key(KeyCode::Enter)).unwrap();
     assert!(!app.permission_dialog.visible);
 
-    assert!(app.prompt_view.is_focused, "Enter-close must re-focus the prompt");
+    assert!(
+        app.prompt_view.is_focused,
+        "Enter-close must re-focus the prompt"
+    );
     assert_ctrl_c_clears(&mut app);
 }
 
@@ -84,7 +90,10 @@ async fn permission_dialog_esc_close_restores_prompt_focus() {
     app.process_key_event(key(KeyCode::Esc)).unwrap();
     assert!(!app.permission_dialog.visible);
 
-    assert!(app.prompt_view.is_focused, "Esc-close must re-focus the prompt");
+    assert!(
+        app.prompt_view.is_focused,
+        "Esc-close must re-focus the prompt"
+    );
     assert_ctrl_c_clears(&mut app);
 }
 
@@ -96,19 +105,22 @@ async fn worktree_permission_resolve_restores_prompt_focus() {
     type_text(&mut app, "draft");
     app.permission_dialog.visible = true;
     app.prompt_view.blur();
-    app.pending_worktree_confirmation = Some(cosh::harness::agent_coworkers::WorktreeOp {
+    app.pending_worktree_confirmation = Some(morpheus::harness::agent_coworkers::WorktreeOp {
         id: "wt-op-1".into(),
         coworker: "pane".into(),
         coworker_id: 1,
-        action: cosh::harness::agent_coworkers::WorktreeAction::Clear,
+        action: morpheus::harness::agent_coworkers::WorktreeAction::Clear,
         branch: None,
-        requester: cosh::harness::agent_coworkers::MAIN,
+        requester: morpheus::harness::agent_coworkers::MAIN,
     });
 
     app.resolve_pending_worktree_permission(PermissionAction::Deny);
     assert!(!app.permission_dialog.visible);
 
-    assert!(app.prompt_view.is_focused, "resolve must re-focus the prompt");
+    assert!(
+        app.prompt_view.is_focused,
+        "resolve must re-focus the prompt"
+    );
     assert_ctrl_c_clears(&mut app);
 }
 
@@ -136,9 +148,15 @@ async fn question_dialog_mouse_esc_close_restores_prompt_focus() {
             break;
         }
     }
-    assert!(closed, "must find a footer click that closes the question dialog");
+    assert!(
+        closed,
+        "must find a footer click that closes the question dialog"
+    );
 
-    assert!(app.prompt_view.is_focused, "mouse-close must re-focus the prompt");
+    assert!(
+        app.prompt_view.is_focused,
+        "mouse-close must re-focus the prompt"
+    );
     assert_ctrl_c_clears(&mut app);
 }
 
@@ -159,7 +177,10 @@ async fn free_gateway_keyboard_esc_restores_prompt_focus() {
     app.process_key_event(key(KeyCode::Esc)).unwrap();
     assert!(!app.free_gateway_dialog.visible);
 
-    assert!(app.prompt_view.is_focused, "Esc-close must re-focus the prompt");
+    assert!(
+        app.prompt_view.is_focused,
+        "Esc-close must re-focus the prompt"
+    );
     assert_ctrl_c_clears(&mut app);
 }
 
@@ -182,9 +203,15 @@ async fn free_gateway_mouse_esc_footer_restores_prompt_focus() {
     let footer_y = area.y + height.saturating_sub(2);
     let esc_x = area.x + 3 + 14;
     let _ = app.handle_mouse_event(mouse(CKind::Up(CBtn::Left), esc_x, footer_y));
-    assert!(!app.free_gateway_dialog.visible, "must close the free-gateway dialog");
+    assert!(
+        !app.free_gateway_dialog.visible,
+        "must close the free-gateway dialog"
+    );
 
-    assert!(app.prompt_view.is_focused, "mouse-close must re-focus the prompt");
+    assert!(
+        app.prompt_view.is_focused,
+        "mouse-close must re-focus the prompt"
+    );
     assert_ctrl_c_clears(&mut app);
 }
 
@@ -207,7 +234,10 @@ async fn free_gateway_authorized_event_restores_prompt_focus() {
     app.pump_gateway_events();
     assert!(!app.free_gateway_dialog.visible);
 
-    assert!(app.prompt_view.is_focused, "Authorized must re-focus the prompt");
+    assert!(
+        app.prompt_view.is_focused,
+        "Authorized must re-focus the prompt"
+    );
     if app.is_model_dialog_visible() {
         let _ = app.process_key_event(key(KeyCode::Esc));
     }
@@ -235,7 +265,10 @@ async fn free_gateway_failed_event_restores_prompt_focus() {
     app.pump_gateway_events();
     assert!(!app.free_gateway_dialog.visible);
 
-    assert!(app.prompt_view.is_focused, "Failed must re-focus the prompt");
+    assert!(
+        app.prompt_view.is_focused,
+        "Failed must re-focus the prompt"
+    );
     assert_ctrl_c_clears(&mut app);
 }
 
@@ -252,7 +285,10 @@ async fn rag_exit_restores_prompt_focus() {
     app.handle_rag_key_event(KeyCode::Esc);
     assert!(!app.show_rag);
 
-    assert!(app.prompt_view.is_focused, "RAG exit must re-focus the prompt");
+    assert!(
+        app.prompt_view.is_focused,
+        "RAG exit must re-focus the prompt"
+    );
     assert_ctrl_c_clears(&mut app);
 }
 

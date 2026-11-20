@@ -79,7 +79,7 @@ fn validate_path_denies_relative_traversal_via_dotdot() {
 
 #[test]
 fn validate_path_allows_harness_scratch_dir_outside_root() {
-    // The harness scratch dir (<temp>/cosh, where truncated tool-output logs
+    // The harness scratch dir (<temp>/morpheus, where truncated tool-output logs
     // live) is ephemeral — it must be readable without an explicit allowlist.
     let root = Path::new("/home/user/project");
     let scratch = std::env::temp_dir().join(super::HARNESS_SCRATCH_DIR);
@@ -196,7 +196,7 @@ fn validate_asset_path_rejects_dotdot() {
 
 #[test]
 fn validate_asset_path_returns_not_found_for_nonexistent() {
-    let dir = std::env::temp_dir().join("cosh_guard_test_vap_nonexistent");
+    let dir = std::env::temp_dir().join("morpheus_guard_test_vap_nonexistent");
     let _ = std::fs::create_dir_all(&dir);
     let result = validate_asset_path(&dir, "missing.txt");
     assert!(
@@ -212,7 +212,7 @@ fn validate_asset_path_returns_not_found_for_nonexistent() {
 
 #[test]
 fn validate_asset_path_allows_valid_file() {
-    let dir = std::env::temp_dir().join("cosh_guard_test_vap_valid");
+    let dir = std::env::temp_dir().join("morpheus_guard_test_vap_valid");
     let _ = std::fs::create_dir_all(&dir);
     let file_path = dir.join("hello.txt");
     std::fs::write(&file_path, "hi").unwrap();
@@ -236,7 +236,7 @@ impl TempDir {
     fn new() -> Self {
         static COUNTER: AtomicU64 = AtomicU64::new(0);
         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
-        let path = std::env::temp_dir().join(format!("cosh_path_guard_test_{id}"));
+        let path = std::env::temp_dir().join(format!("morpheus_path_guard_test_{id}"));
         let _ = std::fs::remove_dir_all(&path);
         std::fs::create_dir_all(&path).expect("create temp dir");
         Self { path }
@@ -340,7 +340,7 @@ fn path_guard_allows_allowlisted_path_outside_root() {
     // so that canonicalize() succeeds and validate_path can verify the
     // allowlist exception.
     let parent_dir = dir.path().parent().unwrap();
-    let outside_file = parent_dir.join("cosh_guard_outside_allowed.txt");
+    let outside_file = parent_dir.join("morpheus_guard_outside_allowed.txt");
     let _ = std::fs::write(&outside_file, "allowed content");
 
     let allowlist = [outside_file.clone()];

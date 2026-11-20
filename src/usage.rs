@@ -24,7 +24,7 @@ const USAGE_FILE: &str = "usage.jsonl";
 /// Cache-dir handle shared with the SDK's context-window / reasoning
 /// metadata lookups, so both reuse the same models.dev catalog discovery
 /// maintains.
-pub const MODELS_DEV_CACHE_DIR: Option<&str> = Some("cosh/cache");
+pub const MODELS_DEV_CACHE_DIR: Option<&str> = Some("morpheus/cache");
 
 /// A single API request's real usage, persisted as one JSONL line.
 ///
@@ -71,7 +71,7 @@ pub struct UsageStore {
 
 impl UsageStore {
     /// Create a store rooted at `{data_dir}/usage/usage.jsonl`. Honours
-    /// `COSH_DATA_DIR` (test isolation; see `crate::setup::data_dir_override`).
+    /// `MORPHEUS_DATA_DIR` (test isolation; see `crate::setup::data_dir_override`).
     ///
     /// # Panics
     /// Panics if the data directory cannot be determined (no override AND
@@ -95,7 +95,7 @@ impl UsageStore {
     }
 
     /// Append one record. A single line is appended atomically on Linux, so
-    /// concurrent cosh processes cannot corrupt the log.
+    /// concurrent morpheus processes cannot corrupt the log.
     pub fn append(&self, record: &UsageRecord) {
         let mut line = match serde_json::to_string(&record) {
             Ok(line) => line,
@@ -412,7 +412,7 @@ mod tests {
         // A Charm Hyper record carries BOTH the USD figure and the native
         // Hypercredit figure; both survive the JSONL round trip so the
         // session view can render ◆ while totals stay in $.
-        let dir = std::env::temp_dir().join(format!("cosh-usage-hc-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("morpheus-usage-hc-{}", std::process::id()));
         let store = UsageStore::with_file(dir.join("usage.jsonl"));
         let mut r = rec(1, "charm", Some(0.000012), 10, 5);
         r.cost_credits = Some(12.0);
@@ -434,7 +434,7 @@ mod tests {
 
     #[test]
     fn load_assigns_unique_runtime_ids() {
-        let dir = std::env::temp_dir().join(format!("cosh-usage-ids-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("morpheus-usage-ids-{}", std::process::id()));
         let store = UsageStore::with_file(dir.join("usage.jsonl"));
         store.append(&rec(1, "a", Some(1.0), 1, 1));
         store.append(&rec(2, "b", Some(2.0), 1, 1));
@@ -470,7 +470,7 @@ mod tests {
 
     #[test]
     fn append_round_trips_through_disk() {
-        let dir = std::env::temp_dir().join(format!("cosh-usage-test-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("morpheus-usage-test-{}", std::process::id()));
         let store = UsageStore::with_file(dir.join("usage.jsonl"));
         let r = rec(1, "openai", Some(0.5), 10, 20);
         store.append(&r);

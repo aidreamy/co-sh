@@ -36,7 +36,7 @@ Every `with_*` method returns `Self` (builder style) and is `#[must_use]`:
 | `with_user` | `impl Into<String>` | end-user id for monitoring |
 | `with_base_url` | `impl Into<String>` | override the endpoint |
 | `with_api_key` | `impl Into<String>` | explicit key (highest priority) |
-| `with_service_keyring` | `impl Into<String>` | keyring service override (default `"cosh"`) |
+| `with_service_keyring` | `impl Into<String>` | keyring service override (default `"morpheus"`) |
 
 Only `new` is fallible. Everything else just accumulates into `Parameters` —
 the request is validated against the provider at call time, not build time.

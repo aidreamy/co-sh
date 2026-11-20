@@ -14,7 +14,7 @@ async fn compaction_progress_targets_the_running_box_and_final_output_replaces_s
     let _guard = HOME_LOCK.lock();
     isolate_home();
     use crate::types::{Message, MessageRole, Part, TextPart};
-    use cosh::harness::events::{LlmCompactionEvent, LlmCompactionPhase};
+    use morpheus::harness::events::{LlmCompactionEvent, LlmCompactionPhase};
     let mut app = App::new("/tmp".to_string());
     let id = crate::session::store::generate_session_id();
     app.state
@@ -287,7 +287,7 @@ async fn slash_new_creates_and_selects_a_fresh_session() {
 
 /// REGRESSION (multi-process session adoption — "single-entry vanished"):
 /// a freshly created session used to be selectable but UNLOCKED, so a
-/// second cosh process could adopt it through the sidebar switch while the
+/// second morpheus process could adopt it through the sidebar switch while the
 /// creator kept appending to the same JSONL. The entry funnel must take the
 /// per-session open-lock at CREATION time: `/new` (the first-message
 /// bootstrap's path too) must leave the new session claimed by THIS process
@@ -307,7 +307,7 @@ async fn slash_new_claims_the_fresh_session_lock_against_a_foreign_process() {
         .clone()
         .expect("a session was selected");
 
-    // A foreign cosh process (independent store, same data dir) must be
+    // A foreign morpheus process (independent store, same data dir) must be
     // REFUSED: the claim exists from the moment of creation.
     let foreign = crate::session::store::SessionStore::new();
     assert!(
@@ -319,7 +319,7 @@ async fn slash_new_claims_the_fresh_session_lock_against_a_foreign_process() {
 
 /// REGRESSION (stale open-lock on /new): a process that CLAIMED a session
 /// (sidebar switch) and then started a NEW session used to keep holding the
-/// old session's lock until the process died — every other cosh process
+/// old session's lock until the process died — every other morpheus process
 /// trying to open that session was refused with "already open in another
 /// process" while nothing here was using it. A claim must be handed off the
 /// moment the session stops being this process's selected one: /new (and
@@ -736,7 +736,7 @@ async fn slash_compact_clears_a_wedged_stop_flag_before_spawning() {
         agent: None,
         model: None,
     }];
-    let state: cosh::harness::ContextManagerState = Default::default();
+    let state: morpheus::harness::ContextManagerState = Default::default();
     app.session_store
         .save_session_with_context(&app.state.current_session().unwrap().clone(), &state);
 
@@ -825,7 +825,7 @@ async fn background_preference_loads_from_setup_on_startup() {
     isolate_home();
     // isolate_home wipes <scratch>/.config first, so write AFTER it runs.
     let cfg = std::env::temp_dir()
-        .join("cosh-hook-test-home")
+        .join("morpheus-hook-test-home")
         .join(".config/morpheus");
     std::fs::create_dir_all(&cfg).unwrap();
     std::fs::write(
@@ -936,7 +936,7 @@ async fn tools_hover_moves_selection_and_release_click_toggles() {
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    // The project-scope toggle persists to `<cwd>/.cosh-tools.json`; a
+    // The project-scope toggle persists to `<cwd>/.morpheus-tools.json`; a
     // throwaway cwd keeps runs independent (a shared /tmp would make the
     // second run toggle the tool back ON).
     let tools_cwd = tempfile::tempdir().unwrap();
@@ -1003,12 +1003,12 @@ async fn tools_hover_moves_selection_and_release_click_toggles() {
 #[tokio::test]
 async fn agents_pane_done_promotes_the_pane_binding_for_the_next_open() {
     use crate::types::AgentPaneRef;
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
     let mut app = App::new("/tmp".to_string());
-    // One session, split open with a fresh pick list: claude ×2, cosh last
+    // One session, split open with a fresh pick list: claude ×2, morpheus last
     // (the manager pane exists ONLY because the user marked it).
     let session_id = crate::session::store::generate_session_id();
     app.state
@@ -1022,7 +1022,7 @@ async fn agents_pane_done_promotes_the_pane_binding_for_the_next_open() {
             instances: 2,
         },
         crate::ui::agents_picker::AgentPick {
-            name: "cosh".into(),
+            name: "morpheus".into(),
             instances: 1,
         },
     ]);
@@ -1034,7 +1034,7 @@ async fn agents_pane_done_promotes_the_pane_binding_for_the_next_open() {
             &vec![
                 AgentPaneRef::Name("claude".into()),
                 AgentPaneRef::Name("claude".into()),
-                AgentPaneRef::Name("cosh".into()),
+                AgentPaneRef::Name("morpheus".into()),
             ],
             "fresh picks persist as unbound Name entries"
         );
@@ -1079,7 +1079,7 @@ async fn agents_pane_done_promotes_the_pane_binding_for_the_next_open() {
         AgentPaneRef::Name("claude".into()),
         "the sibling claude instance stays unbound"
     );
-    assert_eq!(panes[2], AgentPaneRef::Name("cosh".into()));
+    assert_eq!(panes[2], AgentPaneRef::Name("morpheus".into()));
 
     // Rebinding pane 0 to a NEW session (a later turn) overwrites — the
     // binding tracks the pane's latest context, not its first. Each turn
@@ -1154,7 +1154,7 @@ async fn agents_pane_done_promotes_the_pane_binding_for_the_next_open() {
 /// chat visually reset.
 #[tokio::test]
 async fn adding_panes_while_running_keeps_the_running_turns_and_chats() {
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
@@ -1368,7 +1368,7 @@ async fn parked_agents_split_survives_park_and_re_attach() {
 
     // A turn starts streaming: events land in the live split while the
     // mode is on screen.
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
     app.event_tx
         .send(HarnessEvent::AgentsPaneEvent {
             pane: 0,
@@ -1573,14 +1573,14 @@ async fn session_switch_restores_the_mode_only_when_it_was_left_open() {
 /// (same agent name) would even be served by the NEW session's pane.
 #[tokio::test]
 async fn session_switch_fails_outstanding_pane_requests_and_resyncs_the_registry() {
-    use cosh::harness::agent_coworkers::{self, ReplyMode};
+    use morpheus::harness::agent_coworkers::{self, ReplyMode};
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
     let mut app = App::new("/tmp".to_string());
     let unique = |tag: &str| format!("{}-{tag}", crate::session::store::generate_session_id());
 
-    // Session A: a split with a cosh pane; a queued `agents_call` request
+    // Session A: a split with a morpheus pane; a queued `agents_call` request
     // nobody has dispatched yet (the pane is idle — the frame tick would
     // serve it, but the switch races ahead of it).
     let a = unique("a");
@@ -1588,20 +1588,20 @@ async fn session_switch_fails_outstanding_pane_requests_and_resyncs_the_registry
         .add_empty_session(a.clone(), "with panes".into(), 0);
     app.state.current_session_id = Some(a.clone());
     app.open_agents_split(vec![crate::ui::agents_picker::AgentPick {
-        name: "cosh".into(),
+        name: "morpheus".into(),
         instances: 1,
     }]);
     app.sync_agents_pane_registry();
     let handle = agent_coworkers::enqueue(
-        "cosh",
+        "morpheus",
         "delegated work",
         agent_coworkers::MAIN,
         ReplyMode::Wait,
     )
-    .expect("cosh pane is addressable");
+    .expect("morpheus pane is addressable");
     let rx = handle.receiver.expect("wait mode carries a receiver");
     assert!(
-        agent_coworkers::has_queued_request("cosh"),
+        agent_coworkers::has_queued_request("morpheus"),
         "request queued"
     );
     assert!(agent_coworkers::has_outstanding_requests(
@@ -1644,7 +1644,7 @@ async fn session_switch_fails_outstanding_pane_requests_and_resyncs_the_registry
         .map(|p| p.id)
         .collect();
     assert!(
-        ids.contains(&"cosh".to_string()),
+        ids.contains(&"morpheus".to_string()),
         "pane re-registered: {ids:?}"
     );
     assert!(agent_coworkers::has_coworkers());
@@ -1704,7 +1704,7 @@ async fn fresh_confirm_supersedes_the_parked_split() {
 #[tokio::test]
 async fn stale_epoch_agents_pane_done_is_dropped() {
     use crate::types::AgentPaneRef;
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
@@ -1827,7 +1827,7 @@ async fn stale_epoch_agents_pane_done_is_dropped() {
 #[tokio::test]
 async fn reopening_the_split_rehydrates_bound_panes_with_empty_timelines() {
     use crate::types::AgentPaneRef;
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
@@ -1967,7 +1967,7 @@ async fn reopening_the_split_rehydrates_bound_panes_with_empty_timelines() {
 #[tokio::test]
 async fn a_failed_replay_marks_the_pane_instead_of_silence() {
     use crate::types::AgentPaneRef;
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
@@ -2111,7 +2111,7 @@ async fn a_prompt_to_a_rehydrating_pane_is_refused_with_a_toast() {
 #[tokio::test]
 async fn a_user_prompt_echoes_into_the_pane_timeline() {
     use crate::types::AgentPaneRef;
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
@@ -2190,7 +2190,7 @@ async fn a_user_prompt_echoes_into_the_pane_timeline() {
 #[tokio::test]
 async fn a_session_model_event_lands_on_the_pane() {
     use crate::types::AgentPaneRef;
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
@@ -2262,7 +2262,7 @@ async fn a_session_model_event_lands_on_the_pane() {
 #[tokio::test]
 async fn a_usage_event_lands_on_the_pane() {
     use crate::types::AgentPaneRef;
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
@@ -2322,14 +2322,14 @@ async fn a_usage_event_lands_on_the_pane() {
     );
 }
 
-/// End-to-end `/agents` queue flow with a `cosh` pane. The registry mirrors
-/// the split (cosh addressable like any agent), an `agents_call` queued to
-/// "cosh" is picked up by the App's queue service (which used to skip the
+/// End-to-end `/agents` queue flow with a `morpheus` pane. The registry mirrors
+/// the split (morpheus addressable like any agent), an `agents_call` queued to
+/// "morpheus" is picked up by the App's queue service (which used to skip the
 /// manager loop), and the pane-keyed completion resolves the waiter — exactly the
 /// path a manager delegation to a sibling takes.
 #[tokio::test]
-async fn agents_call_serves_a_queued_cosh_pane_end_to_end() {
-    use cosh::harness::agent_coworkers::{self, ReplyMode};
+async fn agents_call_serves_a_queued_morpheus_pane_end_to_end() {
+    use morpheus::harness::agent_coworkers::{self, ReplyMode};
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
@@ -2345,11 +2345,11 @@ async fn agents_call_serves_a_queued_cosh_pane_end_to_end() {
     app.router_view.fallbacks.clear();
     let session_id = crate::session::store::generate_session_id();
     app.state
-        .add_empty_session(session_id.clone(), "cosh queue".into(), 0);
+        .add_empty_session(session_id.clone(), "morpheus queue".into(), 0);
     app.state.current_session_id = Some(session_id);
     app.open_agents_split(vec![
         crate::ui::agents_picker::AgentPick {
-            name: "cosh".into(),
+            name: "morpheus".into(),
             instances: 1,
         },
         crate::ui::agents_picker::AgentPick {
@@ -2366,42 +2366,42 @@ async fn agents_call_serves_a_queued_cosh_pane_end_to_end() {
         .map(|p| p.id)
         .collect();
     assert!(
-        ids.contains(&"cosh".to_string()),
-        "cosh is registered: {ids:?}"
+        ids.contains(&"morpheus".to_string()),
+        "morpheus is registered: {ids:?}"
     );
     assert!(
         ids.contains(&"claude".to_string()),
         "sibling pane is registered too: {ids:?}"
     );
 
-    // The MAIN loop delegates to the cosh pane: the request queues, the
+    // The MAIN loop delegates to the morpheus pane: the request queues, the
     // queue service dispatches it (the manager pane routing is live), and the turn
     // is running.
     let handle = agent_coworkers::enqueue(
-        "cosh",
+        "morpheus",
         "do the work",
         agent_coworkers::MAIN,
         ReplyMode::Wait,
     )
-    .expect("cosh pane is addressable");
+    .expect("morpheus pane is addressable");
     assert!(
-        agent_coworkers::has_queued_request("cosh"),
+        agent_coworkers::has_queued_request("morpheus"),
         "request queued"
     );
     app.serve_agents_pane_queues();
     assert!(
-        !agent_coworkers::has_queued_request("cosh"),
-        "the cosh request left the queue: it was served"
+        !agent_coworkers::has_queued_request("morpheus"),
+        "the morpheus request left the queue: it was served"
     );
     assert!(
         app.agents_split.as_ref().unwrap().panes[0].running,
-        "the cosh pane turn started"
+        "the morpheus pane turn started"
     );
 
     // The turn's end (keyed by pane) resolves the waiter with its report.
     assert_eq!(
         agent_coworkers::complete_request(
-            "cosh",
+            "morpheus",
             agent_coworkers::AgentCoworkerReport::new(
                 Ok("report".to_string()),
                 agent_coworkers::AgentCoworkerTurnEnd::EndTurn
@@ -2423,13 +2423,13 @@ async fn agents_call_serves_a_queued_cosh_pane_end_to_end() {
     app.sync_agents_pane_registry();
     app.serve_agents_pane_queues();
     assert!(
-        !agent_coworkers::has_queued_request("cosh"),
-        "an absent cosh pane has no queue to serve"
+        !agent_coworkers::has_queued_request("morpheus"),
+        "an absent morpheus pane has no queue to serve"
     );
 }
 
-/// Issue 6 — rebooting with a cosh pane in the split restores its chat:
-/// 1. the manager turn's terminal Done carries the pane's OWN cosh session
+/// Issue 6 — rebooting with a morpheus pane in the split restores its chat:
+/// 1. the manager turn's terminal Done carries the pane's OWN morpheus session
 ///    id, so the persisted entry promotes to `Bound` (before the fix every
 ///    manager Done carried `session: None` and the binding never reached
 ///    disk);
@@ -2438,23 +2438,23 @@ async fn agents_call_serves_a_queued_cosh_pane_end_to_end() {
 ///    manager pane is not an ACP client — no `session/load` round-trip):
 ///    the pane's timeline refills with the conversation.
 #[tokio::test]
-async fn a_rebooted_cosh_pane_replays_its_session_from_the_store() {
+async fn a_rebooted_morpheus_pane_replays_its_session_from_the_store() {
     use crate::types::{AgentPaneRef, Message, MessageRole, Part, ReasoningPart, TextPart};
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
     let mut app = App::new("/tmp".to_string());
     let session_id = crate::session::store::generate_session_id();
     app.state
-        .add_empty_session(session_id.clone(), "cosh pane restore".into(), 0);
+        .add_empty_session(session_id.clone(), "morpheus pane restore".into(), 0);
     app.state.current_session_id = Some(session_id);
     app.open_agents_split(vec![crate::ui::agents_picker::AgentPick {
-        name: "cosh".into(),
+        name: "morpheus".into(),
         instances: 1,
     }]);
 
-    // The manager pane's cosh session exists in the store with a real
+    // The manager pane's morpheus session exists in the store with a real
     // conversation (as `persist_manager_session` leaves it after a turn).
     let manager_session_id = "mgr-sess-issue6";
     app.session_store.save_session(&crate::types::Session {
@@ -2533,11 +2533,11 @@ async fn a_rebooted_cosh_pane_replays_its_session_from_the_store() {
             .clone()
             .unwrap()[0],
         AgentPaneRef::Bound {
-            agent: "cosh".into(),
+            agent: "morpheus".into(),
             session_id: manager_session_id.into(),
             worktree: None,
         },
-        "the manager Done must promote the cosh pane's binding (issue 6)"
+        "the manager Done must promote the morpheus pane's binding (issue 6)"
     );
 
     // REBOOT: the process died with the app — a fresh split rebuilds from
@@ -2635,7 +2635,7 @@ async fn a_rebooted_cosh_pane_replays_its_session_from_the_store() {
 /// runs its real path in the test (no dialog, no parked message).
 #[tokio::test]
 async fn a_main_initiated_pane_report_wakes_the_idle_main_agent() {
-    use cosh::harness::agent_coworkers::{self, ReplyMode};
+    use morpheus::harness::agent_coworkers::{self, ReplyMode};
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
@@ -2646,23 +2646,23 @@ async fn a_main_initiated_pane_report_wakes_the_idle_main_agent() {
         .add_empty_session(session_id.clone(), "wake promise".into(), 0);
     app.state.current_session_id = Some(session_id);
     app.open_agents_split(vec![crate::ui::agents_picker::AgentPick {
-        name: "cosh".into(),
+        name: "morpheus".into(),
         instances: 1,
     }]);
     app.sync_agents_pane_registry();
 
-    // The MAIN loop delegates to the cosh pane and its turn ends before
+    // The MAIN loop delegates to the morpheus pane and its turn ends before
     // the report arrives (the user pressed Esc, or the loop finished while
     // the pane kept working): the request is WAIT mode — an inline wait —
     // so simulate the ended waiter by completing the request AFTER the
     // handle is dropped into a dead receiver.
     let handle = agent_coworkers::enqueue(
-        "cosh",
+        "morpheus",
         "delegate the work",
         agent_coworkers::MAIN,
         ReplyMode::Wait,
     )
-    .expect("cosh pane is addressable");
+    .expect("morpheus pane is addressable");
     app.serve_agents_pane_queues();
     // The pane is running the delegated turn; the app is IDLE (no main
     // loop running — the state never went Working).
@@ -2676,7 +2676,7 @@ async fn a_main_initiated_pane_report_wakes_the_idle_main_agent() {
     // requester and the wake promise fires — the idle main agent starts
     // a FRESH turn carrying the report.
     let requester = agent_coworkers::complete_request(
-        "cosh",
+        "morpheus",
         agent_coworkers::AgentCoworkerReport::new(
             Ok("the pane's report".to_string()),
             agent_coworkers::AgentCoworkerTurnEnd::EndTurn,
@@ -2708,7 +2708,7 @@ async fn a_main_initiated_pane_report_wakes_the_idle_main_agent() {
 /// wake an idle main agent. The pane works in harmony with the main agent.
 #[tokio::test]
 async fn a_user_initiated_pane_turn_never_wakes_the_main_agent() {
-    use cosh::harness::agent_coworkers;
+    use morpheus::harness::agent_coworkers;
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
@@ -2718,7 +2718,7 @@ async fn a_user_initiated_pane_turn_never_wakes_the_main_agent() {
         .add_empty_session(session_id.clone(), "harmony".into(), 0);
     app.state.current_session_id = Some(session_id);
     app.open_agents_split(vec![crate::ui::agents_picker::AgentPick {
-        name: "cosh".into(),
+        name: "morpheus".into(),
         instances: 1,
     }]);
     app.sync_agents_pane_registry();
@@ -2726,11 +2726,11 @@ async fn a_user_initiated_pane_turn_never_wakes_the_main_agent() {
     // A USER turn ran in the pane and completed: the registry tracked no
     // request, so the completion resolves None and no wake can arm.
     assert!(
-        !agent_coworkers::has_queued_request("cosh"),
+        !agent_coworkers::has_queued_request("morpheus"),
         "a user turn tracks no agents_call request"
     );
     let requester = agent_coworkers::complete_request(
-        "cosh",
+        "morpheus",
         agent_coworkers::AgentCoworkerReport::new(
             Ok("a user-driven report".to_string()),
             agent_coworkers::AgentCoworkerTurnEnd::EndTurn,
@@ -2756,7 +2756,7 @@ async fn a_user_initiated_pane_turn_never_wakes_the_main_agent() {
 /// dropped, not parked for a later wake.
 #[tokio::test]
 async fn a_cancelled_pane_report_never_wakes_the_main_agent() {
-    use cosh::harness::agent_coworkers::{self, ReplyMode};
+    use morpheus::harness::agent_coworkers::{self, ReplyMode};
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
@@ -2767,7 +2767,7 @@ async fn a_cancelled_pane_report_never_wakes_the_main_agent() {
         .add_empty_session(session_id.clone(), "cancelled wake".into(), 0);
     app.state.current_session_id = Some(session_id);
     app.open_agents_split(vec![crate::ui::agents_picker::AgentPick {
-        name: "cosh".into(),
+        name: "morpheus".into(),
         instances: 1,
     }]);
     app.sync_agents_pane_registry();
@@ -2776,17 +2776,17 @@ async fn a_cancelled_pane_report_never_wakes_the_main_agent() {
     // The cancellation parks as a delivery tagged MAIN — exactly what the
     // old wake would have delivered as a synthetic turn.
     let handle = agent_coworkers::enqueue(
-        "cosh",
+        "morpheus",
         "delegate the work",
         agent_coworkers::MAIN,
         ReplyMode::Background,
     )
-    .expect("cosh pane is addressable");
+    .expect("morpheus pane is addressable");
     let _ = handle;
     app.serve_agents_pane_queues();
     app.agents_split.as_mut().unwrap().set_running(0, false);
     let requester =
-        agent_coworkers::cancel_serving("cosh", "interrupted by the user (Ctrl+X)".to_string());
+        agent_coworkers::cancel_serving("morpheus", "interrupted by the user (Ctrl+X)".to_string());
     assert_eq!(requester, Some(agent_coworkers::MAIN));
     app.wake_main_agent_if_promised(requester);
 
@@ -2815,7 +2815,7 @@ async fn a_cancelled_pane_report_never_wakes_the_main_agent() {
 /// not wake the MAIN agent: the delivery belongs to the manager's drain.
 #[tokio::test]
 async fn a_manager_initiated_pane_report_never_wakes_the_main_agent() {
-    use cosh::harness::agent_coworkers::{self, ReplyMode};
+    use morpheus::harness::agent_coworkers::{self, ReplyMode};
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
@@ -2825,23 +2825,23 @@ async fn a_manager_initiated_pane_report_never_wakes_the_main_agent() {
         .add_empty_session(session_id.clone(), "manager tag".into(), 0);
     app.state.current_session_id = Some(session_id);
     app.open_agents_split(vec![crate::ui::agents_picker::AgentPick {
-        name: "cosh".into(),
+        name: "morpheus".into(),
         instances: 1,
     }]);
     app.sync_agents_pane_registry();
 
     let handle = agent_coworkers::enqueue(
-        "cosh",
+        "morpheus",
         "manager to sibling",
         agent_coworkers::MANAGER,
         ReplyMode::Background,
     )
-    .expect("cosh pane is addressable");
+    .expect("morpheus pane is addressable");
     let _ = handle;
     app.serve_agents_pane_queues();
     app.agents_split.as_mut().unwrap().set_running(0, false);
     let requester = agent_coworkers::complete_request(
-        "cosh",
+        "morpheus",
         agent_coworkers::AgentCoworkerReport::new(
             Ok("manager's report".to_string()),
             agent_coworkers::AgentCoworkerTurnEnd::EndTurn,
@@ -2924,7 +2924,7 @@ async fn a_pending_todo_wakes_the_idle_main_agent_with_the_rerun_message() {
     );
     assert_eq!(
         app.todo_wake_last_items.as_deref(),
-        Some(cosh::harness::core::todo_rerun_open_items(&todo).as_str()),
+        Some(morpheus::harness::core::todo_rerun_open_items(&todo).as_str()),
         "the wake recorded the open listing it fired with"
     );
 
@@ -3100,12 +3100,12 @@ async fn hiding_and_restoring_panes_is_lifo_and_never_deletes() {
             instances: 1,
         },
         AgentPick {
-            name: "cosh".into(),
+            name: "morpheus".into(),
             instances: 1,
         },
     ]);
 
-    // Hide the middle pane, then the (new) middle one — stack [kilo, cosh].
+    // Hide the middle pane, then the (new) middle one — stack [kilo, morpheus].
     app.agents_split.as_mut().unwrap().focused = Some(1);
     app.hide_focused_agents_pane();
     app.agents_split.as_mut().unwrap().focused = Some(1);
@@ -3120,12 +3120,12 @@ async fn hiding_and_restoring_panes_is_lifo_and_never_deletes() {
         assert_eq!(session.agents_hidden[0].pane.agent(), "kilo");
         assert_eq!(
             session.agents_hidden[1].pane.agent(),
-            "cosh",
+            "morpheus",
             "the most recently hidden sits on top"
         );
     }
 
-    // Restore: cosh first (LIFO), then kilo — both at their old index 1.
+    // Restore: morpheus first (LIFO), then kilo — both at their old index 1.
     app.restore_last_hidden_agents_pane();
     {
         let session = app.state.current_session().unwrap();
@@ -3133,7 +3133,7 @@ async fn hiding_and_restoring_panes_is_lifo_and_never_deletes() {
         let panes = session.agents_panes.as_ref().unwrap();
         assert_eq!(
             panes.iter().map(|p| p.agent()).collect::<Vec<_>>(),
-            vec!["claude", "cosh"]
+            vec!["claude", "morpheus"]
         );
     }
     app.restore_last_hidden_agents_pane();
@@ -3143,7 +3143,7 @@ async fn hiding_and_restoring_panes_is_lifo_and_never_deletes() {
         let panes = session.agents_panes.as_ref().unwrap();
         assert_eq!(
             panes.iter().map(|p| p.agent()).collect::<Vec<_>>(),
-            vec!["claude", "kilo", "cosh"]
+            vec!["claude", "kilo", "morpheus"]
         );
     }
     // Nothing left to restore: a no-op, not a panic.
@@ -3250,7 +3250,7 @@ async fn legacy_empty_pane_set_opens_the_picker_not_an_empty_split() {
 
 /// Real repo helper for the `/worktree` integration tests: one empty commit
 /// on the default branch, so `worktree add` branches off a HEAD. Isolated
-/// from the shared `/tmp/cosh-worktrees` root: the add path is EXPLICIT
+/// from the shared `/tmp/morpheus-worktrees` root: the add path is EXPLICIT
 /// (tempdir-scoped), so parallel tests never collide on names.
 fn worktree_test_repo() -> (tempfile::TempDir, std::path::PathBuf) {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -3275,7 +3275,7 @@ fn worktree_test_repo() -> (tempfile::TempDir, std::path::PathBuf) {
 /// agent pane holds the focus still acts on the APP. `/background` toggles
 /// this terminal's background and is never dispatched to the pane as a
 /// prompt — before the scope inventory existed, the router trusted the
-/// menu's `source` alone, so every cosh command picked on a focused pane
+/// menu's `source` alone, so every morpheus command picked on a focused pane
 /// became the AGENT's (a per-pane background would mean one terminal with
 /// one background per pane: the overengineering the product rule forbids).
 #[tokio::test]
@@ -3344,7 +3344,7 @@ async fn slash_worktree_add_pins_the_pane_and_persists_the_binding() {
     let pin = pane.worktree.as_ref().expect("the pane got pinned");
     assert_eq!(pin.branch, "feat-x");
     assert_eq!(pin.path, wt);
-    assert_eq!(pin.assigned_by, cosh::git::worktree::AssignedBy::User);
+    assert_eq!(pin.assigned_by, morpheus::git::worktree::AssignedBy::User);
     assert!(wt.is_dir(), "the worktree directory exists");
     assert!(
         pane.worktree_handoff_pending,
@@ -3366,7 +3366,7 @@ async fn slash_worktree_add_pins_the_pane_and_persists_the_binding() {
     );
 
     // The main agent's registry knows the pane's worktree (context block).
-    let descriptors = cosh::harness::agent_coworkers::list_coworkers();
+    let descriptors = morpheus::harness::agent_coworkers::list_coworkers();
     assert_eq!(descriptors.len(), 1);
     assert_eq!(
         descriptors[0].worktree.as_deref(),
@@ -3393,7 +3393,7 @@ async fn slash_worktree_add_pins_the_pane_and_persists_the_binding() {
 }
 
 /// `/worktree add <branch>` (no path): the worktree lands at the default
-/// temp location — `<temp>/cosh-worktrees/<slug>` — and the pane's cwd
+/// temp location — `<temp>/morpheus-worktrees/<slug>` — and the pane's cwd
 /// resolution moves there. The default root is SHARED system temp state,
 /// so the test claims a run-unique slug (never colliding with parallel
 /// tests or leftovers) and removes its own worktree at the end.
@@ -3423,7 +3423,7 @@ async fn slash_worktree_add_without_a_path_uses_the_default_temp_root() {
     assert_eq!(pin.branch, branch);
 
     // Teardown: let the TempDir drop clean up the worktree directory.
-    // The branch survives; cosh never deletes branches.
+    // The branch survives; morpheus never deletes branches.
 }
 
 /// `/worktree exit` drops the binding, keeps the worktree on disk (nothing
@@ -3529,7 +3529,7 @@ async fn slash_worktree_handoff_flows_into_the_next_turn_input() {
     let pane = &app.agents_split.as_ref().unwrap().panes[0];
     assert!(pane.worktree_handoff_pending);
 
-    // A turn consumes the flag (the manager pane path is testable: cosh
+    // A turn consumes the flag (the manager pane path is testable: morpheus
     // panes run the real harness loop). Use the ACP pane's INPUT path:
     // dispatch_to_pane flags running + spawns ACP, which tests must not
     // do — so consume via the split's setter, the same call the dispatch
@@ -3546,7 +3546,7 @@ async fn slash_worktree_handoff_flows_into_the_next_turn_input() {
 #[tokio::test]
 async fn slash_worktree_pane_promotes_to_bound_with_its_worktree() {
     use crate::types::AgentPaneRef;
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
 
     let _guard = HOME_LOCK.lock();
     isolate_home();
@@ -3610,11 +3610,11 @@ async fn agents_worktree_assign_executes_on_the_app_drain() {
     app.sync_agents_pane_registry();
 
     let branch = format!("agent-wt-{}", std::process::id());
-    let op_id = cosh::harness::agent_coworkers::enqueue_worktree_op(
+    let op_id = morpheus::harness::agent_coworkers::enqueue_worktree_op(
         "claude",
-        cosh::harness::agent_coworkers::WorktreeAction::Assign,
+        morpheus::harness::agent_coworkers::WorktreeAction::Assign,
         Some(&branch),
-        cosh::harness::agent_coworkers::MAIN,
+        morpheus::harness::agent_coworkers::MAIN,
     )
     .expect("the ask parks");
     app.serve_agents_pane_worktree_ops();
@@ -3624,7 +3624,7 @@ async fn agents_worktree_assign_executes_on_the_app_drain() {
     assert_eq!(pin.branch, branch);
     assert_eq!(
         pin.assigned_by,
-        cosh::git::worktree::AssignedBy::Agent,
+        morpheus::git::worktree::AssignedBy::Agent,
         "the agent asked, not the user"
     );
     assert!(
@@ -3638,10 +3638,10 @@ async fn agents_worktree_assign_executes_on_the_app_drain() {
     assert!(
         pin.path
             .starts_with(std::env::temp_dir().join("morpheus-worktrees")),
-        "the agent NEVER picks a path — cosh's temp root only"
+        "the agent NEVER picks a path — morpheus's temp root only"
     );
     // The registry knows the pin (the main agent's listing sees it).
-    let listed = cosh::harness::agent_coworkers::list_coworkers();
+    let listed = morpheus::harness::agent_coworkers::list_coworkers();
     assert!(
         listed
             .iter()
@@ -3649,13 +3649,14 @@ async fn agents_worktree_assign_executes_on_the_app_drain() {
         "the registry carries the new binding"
     );
     // The outcome is a Worktree delivery for the asking loop.
-    let deliveries =
-        cosh::harness::agent_coworkers::take_ready_deliveries(cosh::harness::agent_coworkers::MAIN);
+    let deliveries = morpheus::harness::agent_coworkers::take_ready_deliveries(
+        morpheus::harness::agent_coworkers::MAIN,
+    );
     assert_eq!(deliveries.len(), 1);
     assert_eq!(deliveries[0].request_id, op_id);
     assert_eq!(
         deliveries[0].kind,
-        cosh::harness::agent_coworkers::DeliveryKind::Worktree
+        morpheus::harness::agent_coworkers::DeliveryKind::Worktree
     );
     let note = deliveries[0].output.clone().unwrap();
     assert!(note.contains(&branch), "{note}");
@@ -3665,7 +3666,7 @@ async fn agents_worktree_assign_executes_on_the_app_drain() {
     );
 
     // Teardown: let the TempDir drop clean up the worktree directory.
-    // The branch survives; cosh never deletes branches.
+    // The branch survives; morpheus never deletes branches.
 }
 
 /// The SUPREMACY rule: the pane's binding was `AssignedBy::User`, so the
@@ -3694,11 +3695,11 @@ async fn agents_worktree_clear_of_user_binding_needs_the_user() {
     );
     app.sync_agents_pane_registry();
 
-    let op_id = cosh::harness::agent_coworkers::enqueue_worktree_op(
+    let op_id = morpheus::harness::agent_coworkers::enqueue_worktree_op(
         "claude",
-        cosh::harness::agent_coworkers::WorktreeAction::Clear,
+        morpheus::harness::agent_coworkers::WorktreeAction::Clear,
         None,
-        cosh::harness::agent_coworkers::MAIN,
+        morpheus::harness::agent_coworkers::MAIN,
     )
     .expect("the ask parks");
     app.serve_agents_pane_worktree_ops();
@@ -3721,8 +3722,10 @@ async fn agents_worktree_clear_of_user_binding_needs_the_user() {
         "no side effect before the answer"
     );
     assert!(
-        cosh::harness::agent_coworkers::take_ready_deliveries(cosh::harness::agent_coworkers::MAIN)
-            .is_empty()
+        morpheus::harness::agent_coworkers::take_ready_deliveries(
+            morpheus::harness::agent_coworkers::MAIN
+        )
+        .is_empty()
     );
 
     // The user declines: the binding is kept, the outcome still lands.
@@ -3739,8 +3742,9 @@ async fn agents_worktree_clear_of_user_binding_needs_the_user() {
         !app.permission_dialog.visible,
         "the answer closed the permission box"
     );
-    let deliveries =
-        cosh::harness::agent_coworkers::take_ready_deliveries(cosh::harness::agent_coworkers::MAIN);
+    let deliveries = morpheus::harness::agent_coworkers::take_ready_deliveries(
+        morpheus::harness::agent_coworkers::MAIN,
+    );
     assert_eq!(deliveries.len(), 1);
     assert_eq!(deliveries[0].request_id, op_id);
     let note = deliveries[0].output.clone().unwrap_err();
@@ -3780,11 +3784,11 @@ async fn agents_worktree_ask_on_a_parked_split_executes_after_allow_once() {
     assert!(app.parked_agents_split.is_some());
     app.sync_agents_pane_registry();
 
-    let op_id = cosh::harness::agent_coworkers::enqueue_worktree_op(
+    let op_id = morpheus::harness::agent_coworkers::enqueue_worktree_op(
         "claude",
-        cosh::harness::agent_coworkers::WorktreeAction::Clear,
+        morpheus::harness::agent_coworkers::WorktreeAction::Clear,
         None,
-        cosh::harness::agent_coworkers::MAIN,
+        morpheus::harness::agent_coworkers::MAIN,
     )
     .expect("the ask parks");
     app.serve_agents_pane_worktree_ops();
@@ -3811,8 +3815,9 @@ async fn agents_worktree_ask_on_a_parked_split_executes_after_allow_once() {
         !app.worktree_agent_grant(),
         "AllowOnce does not latch the session grant"
     );
-    let deliveries =
-        cosh::harness::agent_coworkers::take_ready_deliveries(cosh::harness::agent_coworkers::MAIN);
+    let deliveries = morpheus::harness::agent_coworkers::take_ready_deliveries(
+        morpheus::harness::agent_coworkers::MAIN,
+    );
     assert_eq!(deliveries.len(), 1);
     assert_eq!(deliveries[0].request_id, op_id);
     assert!(deliveries[0].output.clone().unwrap().contains("cleared"));
@@ -3832,11 +3837,11 @@ async fn agents_worktree_assign_executes_on_a_parked_split_without_a_box() {
     app.sync_agents_pane_registry();
 
     let branch = format!("agent-parked-{}", std::process::id());
-    let op_id = cosh::harness::agent_coworkers::enqueue_worktree_op(
+    let op_id = morpheus::harness::agent_coworkers::enqueue_worktree_op(
         "claude",
-        cosh::harness::agent_coworkers::WorktreeAction::Assign,
+        morpheus::harness::agent_coworkers::WorktreeAction::Assign,
         Some(&branch),
-        cosh::harness::agent_coworkers::MAIN,
+        morpheus::harness::agent_coworkers::MAIN,
     )
     .expect("the ask parks");
     app.serve_agents_pane_worktree_ops();
@@ -3848,9 +3853,10 @@ async fn agents_worktree_assign_executes_on_a_parked_split_without_a_box() {
     let pane = &app.parked_agents_split.as_ref().unwrap().panes[0];
     let pin = pane.worktree.as_ref().expect("the parked pane got pinned");
     assert_eq!(pin.branch, branch);
-    assert_eq!(pin.assigned_by, cosh::git::worktree::AssignedBy::Agent);
-    let deliveries =
-        cosh::harness::agent_coworkers::take_ready_deliveries(cosh::harness::agent_coworkers::MAIN);
+    assert_eq!(pin.assigned_by, morpheus::git::worktree::AssignedBy::Agent);
+    let deliveries = morpheus::harness::agent_coworkers::take_ready_deliveries(
+        morpheus::harness::agent_coworkers::MAIN,
+    );
     assert_eq!(deliveries.len(), 1);
     assert_eq!(deliveries[0].request_id, op_id);
     assert!(deliveries[0].output.is_ok());
@@ -3875,11 +3881,11 @@ async fn agents_worktree_allow_latches_the_session_grant() {
     app.sync_agents_pane_registry();
 
     // First ask: the box opens, the user answers "Allow".
-    cosh::harness::agent_coworkers::enqueue_worktree_op(
+    morpheus::harness::agent_coworkers::enqueue_worktree_op(
         "claude",
-        cosh::harness::agent_coworkers::WorktreeAction::Clear,
+        morpheus::harness::agent_coworkers::WorktreeAction::Clear,
         None,
-        cosh::harness::agent_coworkers::MAIN,
+        morpheus::harness::agent_coworkers::MAIN,
     )
     .expect("the ask parks");
     app.serve_agents_pane_worktree_ops();
@@ -3904,8 +3910,10 @@ async fn agents_worktree_allow_latches_the_session_grant() {
     // state — a leftover here would leak into the next test that reads
     // MAIN's deliveries.
     assert_eq!(
-        cosh::harness::agent_coworkers::take_ready_deliveries(cosh::harness::agent_coworkers::MAIN)
-            .len(),
+        morpheus::harness::agent_coworkers::take_ready_deliveries(
+            morpheus::harness::agent_coworkers::MAIN
+        )
+        .len(),
         1
     );
 
@@ -3923,11 +3931,11 @@ async fn agents_worktree_allow_latches_the_session_grant() {
     );
     app.sync_agents_pane_registry();
 
-    let op_id = cosh::harness::agent_coworkers::enqueue_worktree_op(
+    let op_id = morpheus::harness::agent_coworkers::enqueue_worktree_op(
         "claude",
-        cosh::harness::agent_coworkers::WorktreeAction::Clear,
+        morpheus::harness::agent_coworkers::WorktreeAction::Clear,
         None,
-        cosh::harness::agent_coworkers::MAIN,
+        morpheus::harness::agent_coworkers::MAIN,
     )
     .expect("the second ask parks");
     app.serve_agents_pane_worktree_ops();
@@ -3941,8 +3949,9 @@ async fn agents_worktree_allow_latches_the_session_grant() {
             .worktree
             .is_none()
     );
-    let deliveries =
-        cosh::harness::agent_coworkers::take_ready_deliveries(cosh::harness::agent_coworkers::MAIN);
+    let deliveries = morpheus::harness::agent_coworkers::take_ready_deliveries(
+        morpheus::harness::agent_coworkers::MAIN,
+    );
     assert_eq!(deliveries.len(), 1);
     assert_eq!(deliveries[0].request_id, op_id);
 }
@@ -3968,11 +3977,11 @@ async fn agents_worktree_ask_holds_the_box_and_re_shows_a_parked_permission_requ
     app.sync_agents_pane_registry();
 
     // The worktree ask opens the box first.
-    cosh::harness::agent_coworkers::enqueue_worktree_op(
+    morpheus::harness::agent_coworkers::enqueue_worktree_op(
         "claude",
-        cosh::harness::agent_coworkers::WorktreeAction::Clear,
+        morpheus::harness::agent_coworkers::WorktreeAction::Clear,
         None,
-        cosh::harness::agent_coworkers::MAIN,
+        morpheus::harness::agent_coworkers::MAIN,
     )
     .expect("the ask parks");
     app.serve_agents_pane_worktree_ops();
@@ -3983,7 +3992,7 @@ async fn agents_worktree_ask_holds_the_box_and_re_shows_a_parked_permission_requ
     // A harness permission request arrives while the ask holds the box:
     // it must NOT overwrite the ask's content (it parks instead).
     app.event_tx
-        .send(cosh::harness::HarnessEvent::PermissionRequest {
+        .send(morpheus::harness::HarnessEvent::PermissionRequest {
             tool: "bash_run".into(),
             description: "Run ls".into(),
             args: "path: /tmp".into(),
@@ -4018,22 +4027,24 @@ async fn agents_worktree_ask_holds_the_box_and_re_shows_a_parked_permission_requ
     // Drain the ask's outcome: registry deliveries are GLOBAL state — a
     // leftover here would leak into the next test reading MAIN's box.
     assert_eq!(
-        cosh::harness::agent_coworkers::take_ready_deliveries(cosh::harness::agent_coworkers::MAIN)
-            .len(),
+        morpheus::harness::agent_coworkers::take_ready_deliveries(
+            morpheus::harness::agent_coworkers::MAIN
+        )
+        .len(),
         1
     );
 }
 
-// ── /worktree on the MANAGER (cosh) pane ────────────────────────────────
+// ── /worktree on the MANAGER (morpheus) pane ────────────────────────────────
 //
-// A cosh pane is a pane like any other for the slash command: it LISTS
+// A morpheus pane is a pane like any other for the slash command: it LISTS
 // `/worktree`, APPLYING it pins the pane, and the manager turn's own
 // `HarnessAssembly::cwd` resolves through `pane_effective_cwd`, so a bound
-// cosh pane really runs its turns in the checkout. Only the
-// `agents_worktree` TOOL refuses a cosh pane (the user's call, never a
+// morpheus pane really runs its turns in the checkout. Only the
+// `agents_worktree` TOOL refuses a morpheus pane (the user's call, never a
 // peer agent's ask).
 
-/// One `cosh` (manager) pane split with pane 0 focused — the manager-pane
+/// One `morpheus` (manager) pane split with pane 0 focused — the manager-pane
 /// mirror of `worktree_split_app`.
 fn manager_worktree_split_app(repo: &std::path::Path) -> App {
     let mut app = App::new(repo.display().to_string());
@@ -4049,7 +4060,7 @@ fn manager_worktree_split_app(repo: &std::path::Path) -> App {
 }
 
 /// (a) The focused manager pane's slash SOURCE carries exactly ONE
-/// `worktree` entry — one row, not a duplicate (the cosh set never had it,
+/// `worktree` entry — one row, not a duplicate (the morpheus set never had it,
 /// and it is prepended exactly once for the manager branch).
 #[tokio::test]
 async fn manager_pane_slash_source_lists_worktree_exactly_once() {
@@ -4082,15 +4093,15 @@ async fn manager_pane_slash_source_lists_worktree_exactly_once() {
         .count();
     assert_eq!(menu_count, 1, "the synced menu carries one /worktree row");
     // `/worktree` is part of the BASE list (the main agent gets it too), so
-    // the manager's list is now byte-identical to the cosh set. The sync is
-    // therefore a no-op and the source stays `Cosh` — that is the intended
+    // the manager's list is now byte-identical to the morpheus set. The sync is
+    // therefore a no-op and the source stays `Morpheus` — that is the intended
     // idempotence (`slash_lists_equal` must not churn selection), not a
     // routing change: the router keys on the command's SCOPE, never on this
     // cosmetic label.
     assert_eq!(
         app.slash_menu.commands.len(),
-        crate::ui::slash_menu::SlashMenu::cosh_commands().len(),
-        "the manager's list IS the base cosh list"
+        crate::ui::slash_menu::SlashMenu::morpheus_commands().len(),
+        "the manager's list IS the base morpheus list"
     );
 }
 
@@ -4118,7 +4129,7 @@ async fn slash_worktree_add_pins_the_manager_pane() {
     let pin = pane.worktree.as_ref().expect("the manager pane got pinned");
     assert_eq!(pin.branch, "feat-mgr");
     assert_eq!(pin.path, wt);
-    assert_eq!(pin.assigned_by, cosh::git::worktree::AssignedBy::User);
+    assert_eq!(pin.assigned_by, morpheus::git::worktree::AssignedBy::User);
     assert!(wt.is_dir(), "the worktree directory exists");
     assert!(
         pane.worktree_handoff_pending,
@@ -4202,14 +4213,14 @@ async fn slash_worktree_exit_clears_the_manager_pane_binding() {
     assert!(wt.is_dir(), "exit never deletes the worktree");
 }
 
-/// (e) The `agents_worktree` TOOL addresses a cosh pane like any other: the
+/// (e) The `agents_worktree` TOOL addresses a morpheus pane like any other: the
 /// manager pane gets no special refusal — it runs its own agent session with
 /// its own cwd, so isolating it is the same ask as isolating a `claude` pane.
 /// What still protects the user is unchanged: panes never receive this tool
 /// (`with_own_coworker_id` strips it) and a User-assigned binding always opens
 /// the confirmation box.
 #[tokio::test]
-async fn agents_worktree_tool_accepts_a_cosh_pane() {
+async fn agents_worktree_tool_accepts_a_morpheus_pane() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
     let (_dir, repo) = worktree_test_repo();
@@ -4217,32 +4228,32 @@ async fn agents_worktree_tool_accepts_a_cosh_pane() {
     app.sync_agents_pane_registry();
 
     // The tool's pane enum offers the manager alongside every other pane...
-    let tool = cosh::harness::agent_coworkers::agents_worktree_tool();
+    let tool = morpheus::harness::agent_coworkers::agents_worktree_tool();
     let enum_values = tool.input_schema["properties"]["pane"]["enum"]
         .as_array()
         .expect("pane enum present");
     assert!(
-        enum_values.iter().any(|v| v == "cosh"),
-        "the cosh pane IS an addressable target: {enum_values:?}"
+        enum_values.iter().any(|v| v == "morpheus"),
+        "the morpheus pane IS an addressable target: {enum_values:?}"
     );
 
     // ...and an assign to it parks instead of being refused.
-    let id = cosh::harness::agent_coworkers::enqueue_worktree_op(
-        "cosh",
-        cosh::harness::agent_coworkers::WorktreeAction::Assign,
-        Some("feat-cosh"),
-        cosh::harness::agent_coworkers::MAIN,
+    let id = morpheus::harness::agent_coworkers::enqueue_worktree_op(
+        "morpheus",
+        morpheus::harness::agent_coworkers::WorktreeAction::Assign,
+        Some("feat-morpheus"),
+        morpheus::harness::agent_coworkers::MAIN,
     )
-    .expect("the tool addresses a cosh pane");
-    let parked = cosh::harness::agent_coworkers::peek_worktree_op().expect("the ask is parked");
+    .expect("the tool addresses a morpheus pane");
+    let parked = morpheus::harness::agent_coworkers::peek_worktree_op().expect("the ask is parked");
     assert_eq!(parked.id, id);
-    assert_eq!(parked.coworker, "cosh");
-    let _ = cosh::harness::agent_coworkers::pop_worktree_op();
+    assert_eq!(parked.coworker, "morpheus");
+    let _ = morpheus::harness::agent_coworkers::pop_worktree_op();
 }
 
 /// The MAIN agent's shape: a session and NO `/agents` split. `/worktree`
 /// must be reachable from normal chat, which is the whole point of the
-/// command being part of the base cosh list instead of a pane synthesis.
+/// command being part of the base morpheus list instead of a pane synthesis.
 fn main_agent_worktree_app(repo: &std::path::Path) -> App {
     let mut app = App::new(repo.display().to_string());
     let session_id = crate::session::store::generate_session_id();
@@ -4307,7 +4318,7 @@ async fn slash_worktree_add_pins_the_main_agent_and_persists() {
         .expect("the main agent got pinned");
     assert_eq!(pin.branch, "feat-main");
     assert_eq!(pin.path, wt);
-    assert_eq!(pin.assigned_by, cosh::git::worktree::AssignedBy::User);
+    assert_eq!(pin.assigned_by, morpheus::git::worktree::AssignedBy::User);
 
     // The binding reached disk: a fresh load of the session file agrees.
     let reloaded = app
@@ -4403,7 +4414,7 @@ async fn slash_worktree_main_agent_bad_args_refuse_with_usage() {
 
 /// Feature A (adoption): `/worktree add <path> <branch>` on a worktree that
 /// ALREADY exists re-enters it instead of failing, binds the main agent, and
-/// SAYS SO — the badge alone cannot tell a user whether cosh built a
+/// SAYS SO — the badge alone cannot tell a user whether morpheus built a
 /// checkout or walked into one that was already there (typically after
 /// `/worktree exit`, which keeps the checkout on disk by product rule).
 #[tokio::test]
@@ -4414,11 +4425,11 @@ async fn slash_worktree_add_adopts_an_existing_worktree_and_says_so() {
     let wt = repo.join("wt-adopt");
     // The checkout exists FIRST — created outside the command, exactly the
     // state `/worktree exit` leaves behind.
-    let existing = cosh::git::worktree::create(
+    let existing = morpheus::git::worktree::create(
         &repo,
         "feat-adopt",
         Some(&wt),
-        cosh::git::worktree::AssignedBy::User,
+        morpheus::git::worktree::AssignedBy::User,
     )
     .expect("the checkout exists before the command runs");
 
@@ -4435,7 +4446,7 @@ async fn slash_worktree_add_adopts_an_existing_worktree_and_says_so() {
     assert_eq!(pin.branch, "feat-adopt");
     assert_eq!(
         pin.assigned_by,
-        cosh::git::worktree::AssignedBy::User,
+        morpheus::git::worktree::AssignedBy::User,
         "a slash command is the user acting"
     );
 
@@ -4457,7 +4468,7 @@ async fn slash_worktree_add_adopts_an_existing_worktree_and_says_so() {
 
     // No second checkout appeared: adoption is a binding change, not a
     // filesystem one.
-    let entries = cosh::git::worktree::list(&repo).expect("list");
+    let entries = morpheus::git::worktree::list(&repo).expect("list");
     assert_eq!(
         entries.iter().filter(|entry| entry.path == wt).count(),
         1,
@@ -4476,11 +4487,11 @@ async fn slash_worktree_list_marks_the_bound_worktree() {
     let first = repo.join("wt-list-a");
     let second = repo.join("wt-list-b");
     for (path, branch) in [(&first, "feat-list-a"), (&second, "feat-list-b")] {
-        cosh::git::worktree::create(
+        morpheus::git::worktree::create(
             &repo,
             branch,
             Some(path),
-            cosh::git::worktree::AssignedBy::User,
+            morpheus::git::worktree::AssignedBy::User,
         )
         .expect("checkout");
     }
@@ -4542,11 +4553,11 @@ async fn slash_worktree_list_with_extra_args_refuses_with_usage() {
     isolate_home();
     let (_dir, repo) = worktree_test_repo();
     let wt = repo.join("wt-list-args");
-    cosh::git::worktree::create(
+    morpheus::git::worktree::create(
         &repo,
         "feat-list-args",
         Some(&wt),
-        cosh::git::worktree::AssignedBy::User,
+        morpheus::git::worktree::AssignedBy::User,
     )
     .expect("checkout");
 
@@ -4619,7 +4630,7 @@ async fn variant_c_a_force_closed_turns_binding_fact_promotes_the_pane() {
     isolate_home();
     // Start from a clean fact registry: this suite shares the process
     // with every other test, and a fact is consumed exactly once.
-    let _ = cosh::harness::agent_coworkers::drain_session_bindings();
+    let _ = morpheus::harness::agent_coworkers::drain_session_bindings();
     let mut app = App::new("/tmp".to_string());
     let session_id = crate::session::store::generate_session_id();
     app.state
@@ -4637,7 +4648,7 @@ async fn variant_c_a_force_closed_turns_binding_fact_promotes_the_pane() {
     // The turn runs; its resume of "s-1" failed and the harness fell
     // back to a FRESH session "s-2" (the fact the Done used to carry).
     app.agents_split.as_mut().unwrap().set_running(0, true);
-    cosh::harness::agent_coworkers::record_session_binding(pane_id, "s-2".into());
+    morpheus::harness::agent_coworkers::record_session_binding(pane_id, "s-2".into());
 
     // Ctrl+X: the pane goes idle NOW; the turn's terminal Done arrives
     // later against an idle pane and is dropped by the gate. The
@@ -4672,7 +4683,7 @@ async fn variant_c_a_force_closed_turns_binding_fact_promotes_the_pane() {
     // The late REAL Done (still winding down, carrying the OLD id) must
     // not overwrite the absorbed binding: the pane-idle gate drops it.
     app.event_tx
-        .send(cosh::harness::HarnessEvent::AgentsPaneDone {
+        .send(morpheus::harness::HarnessEvent::AgentsPaneDone {
             pane: 0,
             pane_id,
             epoch: app.agents_pane_epoch,
@@ -4712,7 +4723,7 @@ async fn variant_c_a_force_closed_turns_binding_fact_promotes_the_pane() {
 async fn variant_a_a_hidden_panes_first_turn_binding_lands_in_the_hidden_stack() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    let _ = cosh::harness::agent_coworkers::drain_session_bindings();
+    let _ = morpheus::harness::agent_coworkers::drain_session_bindings();
     let mut app = App::new("/tmp".to_string());
     let session_id = crate::session::store::generate_session_id();
     app.state
@@ -4757,7 +4768,7 @@ async fn variant_a_a_hidden_panes_first_turn_binding_lands_in_the_hidden_stack()
 
     // The turn finishes AFTER the hide: `acp::call` resolved a fresh
     // session "s-A" and the turn task recorded the gate-free fact.
-    cosh::harness::agent_coworkers::record_session_binding(pane_id, "s-A".into());
+    morpheus::harness::agent_coworkers::record_session_binding(pane_id, "s-A".into());
     app.absorb_pane_session_bindings();
 
     {
@@ -4783,7 +4794,7 @@ async fn variant_a_a_hidden_panes_first_turn_binding_lands_in_the_hidden_stack()
 async fn variant_a_a_restored_hidden_pane_comes_back_bound() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    let _ = cosh::harness::agent_coworkers::drain_session_bindings();
+    let _ = morpheus::harness::agent_coworkers::drain_session_bindings();
     let mut app = App::new("/tmp".to_string());
     let session_id = crate::session::store::generate_session_id();
     app.state
@@ -4802,7 +4813,7 @@ async fn variant_a_a_restored_hidden_pane_comes_back_bound() {
     let pane_id = app.agents_split.as_ref().unwrap().panes[0].id;
     app.agents_split.as_mut().unwrap().set_running(0, true);
     app.hide_focused_agents_pane();
-    cosh::harness::agent_coworkers::record_session_binding(pane_id, "s-A".into());
+    morpheus::harness::agent_coworkers::record_session_binding(pane_id, "s-A".into());
     app.absorb_pane_session_bindings();
 
     // Ctrl+Z: the pane returns — bound, so its empty timeline is
@@ -4835,7 +4846,7 @@ async fn variant_a_a_restored_hidden_pane_comes_back_bound() {
 async fn an_absorbed_binding_fact_without_an_owner_is_dropped() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    let _ = cosh::harness::agent_coworkers::drain_session_bindings();
+    let _ = morpheus::harness::agent_coworkers::drain_session_bindings();
     let mut app = App::new("/tmp".to_string());
     let session_id = crate::session::store::generate_session_id();
     app.state
@@ -4847,8 +4858,8 @@ async fn an_absorbed_binding_fact_without_an_owner_is_dropped() {
     }]);
 
     // An id that answers to no pane object, and the legacy `0`.
-    cosh::harness::agent_coworkers::record_session_binding(99_999, "s-x".into());
-    cosh::harness::agent_coworkers::record_session_binding(0, "s-y".into());
+    morpheus::harness::agent_coworkers::record_session_binding(99_999, "s-x".into());
+    morpheus::harness::agent_coworkers::record_session_binding(0, "s-y".into());
     app.absorb_pane_session_bindings();
 
     assert_eq!(
@@ -4868,7 +4879,7 @@ async fn an_absorbed_binding_fact_without_an_owner_is_dropped() {
         "the persisted set stays unbound"
     );
     assert!(
-        cosh::harness::agent_coworkers::drain_session_bindings().is_empty(),
+        morpheus::harness::agent_coworkers::drain_session_bindings().is_empty(),
         "the pass consumed every fact: nothing resurfaces later"
     );
 }
@@ -4881,7 +4892,7 @@ async fn an_absorbed_binding_fact_without_an_owner_is_dropped() {
 async fn a_done_for_an_unknown_pane_id_still_delivers_nothing() {
     let _guard = HOME_LOCK.lock();
     isolate_home();
-    let _ = cosh::harness::agent_coworkers::drain_session_bindings();
+    let _ = morpheus::harness::agent_coworkers::drain_session_bindings();
     let mut app = App::new("/tmp".to_string());
     let session_id = crate::session::store::generate_session_id();
     app.state
@@ -4893,7 +4904,7 @@ async fn a_done_for_an_unknown_pane_id_still_delivers_nothing() {
     }]);
 
     app.event_tx
-        .send(cosh::harness::HarnessEvent::AgentsPaneDone {
+        .send(morpheus::harness::HarnessEvent::AgentsPaneDone {
             pane: 0,
             pane_id: 777_777,
             epoch: app.agents_pane_epoch,
@@ -4940,28 +4951,29 @@ async fn agents_compact_of_an_unbound_pane_is_refused_and_frees_the_guard() {
     app.sync_agents_pane_registry();
     let pane_id = app.agents_split.as_ref().unwrap().panes[0].id;
 
-    let op_id = cosh::harness::agent_coworkers::enqueue_compact_op(
+    let op_id = morpheus::harness::agent_coworkers::enqueue_compact_op(
         crate::routes::session::agents_split::MANAGER_LABEL,
-        cosh::harness::agent_coworkers::MAIN,
+        morpheus::harness::agent_coworkers::MAIN,
     )
     .expect("the ask parks");
     app.serve_agents_pane_compact_ops();
 
     assert!(
-        cosh::harness::agent_coworkers::peek_compact_op().is_none(),
+        morpheus::harness::agent_coworkers::peek_compact_op().is_none(),
         "the ask is popped, never left parked on a refusal"
     );
     assert!(
-        !cosh::harness::agent_coworkers::coworker_is_compacting(pane_id),
+        !morpheus::harness::agent_coworkers::coworker_is_compacting(pane_id),
         "a refusal clears the guard: the pane is usable again"
     );
-    let deliveries =
-        cosh::harness::agent_coworkers::take_ready_deliveries(cosh::harness::agent_coworkers::MAIN);
+    let deliveries = morpheus::harness::agent_coworkers::take_ready_deliveries(
+        morpheus::harness::agent_coworkers::MAIN,
+    );
     assert_eq!(deliveries.len(), 1);
     assert_eq!(deliveries[0].request_id, op_id);
     assert_eq!(
         deliveries[0].kind,
-        cosh::harness::agent_coworkers::DeliveryKind::Compact
+        morpheus::harness::agent_coworkers::DeliveryKind::Compact
     );
     let error = deliveries[0].output.clone().unwrap_err();
     assert!(
@@ -4995,24 +5007,27 @@ async fn agents_compact_waits_for_a_running_pane_instead_of_failing() {
     let mut app = manager_worktree_split_app(&app_repo);
     app.sync_agents_pane_registry();
     let pane_label = crate::routes::session::agents_split::MANAGER_LABEL;
-    let op_id = cosh::harness::agent_coworkers::enqueue_compact_op(
+    let op_id = morpheus::harness::agent_coworkers::enqueue_compact_op(
         pane_label,
-        cosh::harness::agent_coworkers::MAIN,
+        morpheus::harness::agent_coworkers::MAIN,
     )
     .expect("the ask parks");
 
     // The pane is mid-turn: the drain must leave the ask parked.
     app.agents_split.as_mut().unwrap().set_running(0, true);
     app.serve_agents_pane_compact_ops();
-    let still = cosh::harness::agent_coworkers::peek_compact_op().expect("the ask stays parked");
+    let still =
+        morpheus::harness::agent_coworkers::peek_compact_op().expect("the ask stays parked");
     assert_eq!(still.id, op_id, "not popped while the pane is busy");
     assert!(
-        !cosh::harness::agent_coworkers::coworker_is_compacting(still.coworker_id),
+        !morpheus::harness::agent_coworkers::coworker_is_compacting(still.coworker_id),
         "a parked ask reserves nothing yet"
     );
     assert!(
-        cosh::harness::agent_coworkers::take_ready_deliveries(cosh::harness::agent_coworkers::MAIN)
-            .is_empty(),
+        morpheus::harness::agent_coworkers::take_ready_deliveries(
+            morpheus::harness::agent_coworkers::MAIN
+        )
+        .is_empty(),
         "no outcome while the ask is still parked"
     );
 
@@ -5020,9 +5035,10 @@ async fn agents_compact_waits_for_a_running_pane_instead_of_failing() {
     // for the missing session, which is the point — it MOVED).
     app.agents_split.as_mut().unwrap().set_running(0, false);
     app.serve_agents_pane_compact_ops();
-    assert!(cosh::harness::agent_coworkers::peek_compact_op().is_none());
-    let deliveries =
-        cosh::harness::agent_coworkers::take_ready_deliveries(cosh::harness::agent_coworkers::MAIN);
+    assert!(morpheus::harness::agent_coworkers::peek_compact_op().is_none());
+    let deliveries = morpheus::harness::agent_coworkers::take_ready_deliveries(
+        morpheus::harness::agent_coworkers::MAIN,
+    );
     assert_eq!(deliveries.len(), 1);
     assert_eq!(deliveries[0].request_id, op_id);
 }

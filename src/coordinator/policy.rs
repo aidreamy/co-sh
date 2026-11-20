@@ -4,7 +4,7 @@
 //! ## The bug this file fixes
 //!
 //! The TUI carried a `MANAGER_BLOCKED_TOOLS` list that it applied to every
-//! cosh pane turn, on the stated rationale "delegated work reads, searches,
+//! morpheus pane turn, on the stated rationale "delegated work reads, searches,
 //! runs commands and reports back — it must not edit the workspace". That
 //! rationale was written when the only thing separating a pane from the main
 //! loop was which agent name it ran; the pane had no checkout of its own, so a
@@ -21,9 +21,9 @@
 //!    restore a recorded version, and the two lists drifted independently.
 //! 2. **The panic it prevented no longer exists.** A pane pinned by
 //!    `/worktree` writes inside its own checkout: `pane_effective_cwd` feeds
-//!    the ACP session cwd, the harness root, the `CoshTools` root, the LSP and
+//!    the ACP session cwd, the harness root, the `MorpheusTools` root, the LSP and
 //!    the fs sandbox root, and the sandbox pins that root. The workspace-
-//!    mutating half of the list became an outage, not a guardrail: the cosh
+//!    mutating half of the list became an outage, not a guardrail: the morpheus
 //!    pane — the one agent whose cost and context the product actually
 //!    controls — was the only pane unable to implement anything, while an
 //!    external CLI pane could.

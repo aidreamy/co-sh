@@ -86,7 +86,7 @@ tests can keep mocking exact URLs.
 `x-preview-f-free`, key env `OPENCODE_API_KEY`). The gateway deliberately
 serves an ANONYMOUS free tier: requests carrying the sentinel bearer
 [`ZEN_PUBLIC_KEY`] (`"public"`) are answered only for models flagged
-`allowAnonymous` server-side and are rate-limited per IP. cosh's rules for
+`allowAnonymous` server-side and are rate-limited per IP. morpheus's rules for
 using it — enforced in code, not convention:
 
 - **Account keys always win.** A key resolved from keyring/env (or passed via
@@ -100,7 +100,7 @@ using it — enforced in code, not convention:
   `ConnectorError::AnonymousModelBlocked`. Anonymous `list_models` returns
   only free models. The list deliberately excludes
   `muse-spark-1.2-contributor-free` (its data policy grants training rights).
-- **Honest identification.** Zen requests carry `User-Agent: cosh/<version>`
+- **Honest identification.** Zen requests carry `User-Agent: morpheus/<version>`
   ([`ZEN_USER_AGENT`]) and no other client's headers — anonymous traffic keeps
   the stricter public rate-limit bucket instead of imitating the official
   client.
@@ -108,7 +108,7 @@ using it — enforced in code, not convention:
 ```rust,ignore
 pub const ZEN_PROVIDER: &str = "opencode";
 pub const ZEN_PUBLIC_KEY: &str = "public";
-pub const ZEN_USER_AGENT: &str = "cosh/<version>";
+pub const ZEN_USER_AGENT: &str = "morpheus/<version>";
 pub const ZEN_FREE_MODELS: &[&str];
 pub fn is_zen_free_model(model: &str) -> bool;
 pub fn set_zen_public_tier_enabled(enabled: bool);   // process-wide opt-in
@@ -146,7 +146,7 @@ effort, and image input work through the shared family path unchanged.
 
 **Decision — no AWS SDK.** The full `aws-sdk-bedrockruntime` (and its
 `Converse` API, SigV4 chain, Guardrails, embeddings) is deliberately NOT a
-dependency: the OpenAI-compatible endpoint covers everything cosh needs and
+dependency: the OpenAI-compatible endpoint covers everything morpheus needs and
 the SDK would pull dozens of crates into the slim build. If a future
 requirement genuinely needs the native surface, the plan is to add it as an
 opt-in **feature gate** (`bedrock-sdk`) wrapping the SDK behind the existing
@@ -155,7 +155,7 @@ isolated-family pattern — not to replace this integration.
 ## API key resolution
 
 ```rust,ignore
-pub const COSH_SERVICE: &str = "cosh";   // default keyring service
+pub const COSH_SERVICE: &str = "cosh";   // keyring service in `aiface`, kept for stored keys
 
 pub fn get_api_key(provider: &str, service: Option<&str>) -> Option<String>
 pub fn has_api_key(provider: &str) -> bool
@@ -180,7 +180,7 @@ if let Some(provider) = detect_provider() {
 Resolution order:
 
 1. **OS keyring** — the authoritative store for keys saved explicitly through
-   the app (`keyring::Entry` under `cosh` by default). Preferring it over the
+   the app (`keyring::Entry` under `morpheus` by default). Preferring it over the
    environment means stale shell/`.env` exports can't shadow a key the user
    configured.
 
@@ -220,7 +220,7 @@ Next: [discovery — context windows and reasoning](discovery.md).
 - Enumeration: `known_providers()` (iterator), `known_providers_with_env()` (pairs with env vars), and `get_provider_env_var()` (env var name for a provider). Local providers are excluded from `known_providers_with_env` — they have no key and must not be "detected" as configured cloud providers.
 - `is_local_provider` / `known_local_providers` classify the registry; `get_provider` returns the full `ProviderConfig` (default port, family, model).
 - `normalize_local_base_url(provider, url)` appends `/v1` for bare OpenAI-compatible URLs; it is applied at request time in the TUI layer, never persisted.
-- API key resolution: OS keyring (authoritative store under `cosh` service) → environment variable (fallback) → explicit `with_api_key` (highest priority).
+- API key resolution: OS keyring (authoritative store under `morpheus` service) → environment variable (fallback) → explicit `with_api_key` (highest priority).
 - Keyring lookups are cached per process lifetime (keyed by service + env var) and `Zeroizing`; misses are never cached so externally-added keys appear immediately.
 - Cache invalidation: `invalidate_api_key(env_var)` after storing/updating a key, or `clear_api_key_cache()` to forget everything.
 - `has_api_key(provider)` answers "configured?" regardless of backend; `detect_provider()` returns the first provider with a key (natural default).

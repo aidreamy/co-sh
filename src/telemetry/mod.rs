@@ -1,9 +1,9 @@
-//! Telemetry for cosh — privacy-first, default-on (opt-out), server-economical.
+//! Telemetry for morpheus — privacy-first, default-on (opt-out), server-economical.
 //!
 //! Design lives in `docs/telemetry-plan.md`. The rules that matter here:
 //!
 //! 1. **Default-on, opt-out** (industry standard): telemetry ships enabled;
-//!    the user can disable it in Settings or via `COSH_TELEMETRY=off`, and
+//!    the user can disable it in Settings or via `MORPHEUS_TELEMETRY=off`, and
 //!    CI environments are hard-off regardless (checked via
 //!    [`Telemetry::enabled`]).
 //! 2. **Allowlist boundary**: only closed enums from `schema` and normalizers
@@ -51,13 +51,13 @@ impl Telemetry {
     /// platform data dir.
     ///
     /// Consent precedence (plan §6):
-    /// 1. `COSH_TELEMETRY=off` → disabled (off wins over everything, incl. on).
+    /// 1. `MORPHEUS_TELEMETRY=off` → disabled (off wins over everything, incl. on).
     /// 2. `CI` env set → disabled (hard-off in CI).
-    /// 3. `COSH_TELEMETRY=on` → enabled.
+    /// 3. `MORPHEUS_TELEMETRY=on` → enabled.
     /// 4. Otherwise the persisted user config decides (default ON — opt-out;
-    ///    users disable via Settings or `COSH_TELEMETRY=off`).
+    ///    users disable via Settings or `MORPHEUS_TELEMETRY=off`).
     pub fn resolve(consented_in_config: bool) -> Self {
-        let env = std::env::var("COSH_TELEMETRY").unwrap_or_default();
+        let env = std::env::var("MORPHEUS_TELEMETRY").unwrap_or_default();
         let ci = std::env::var("CI").is_ok();
         let enabled = resolve_enabled(&env, ci, consented_in_config);
         Self {
@@ -164,7 +164,7 @@ mod tests {
     #[test]
     fn disabled_telemetry_never_enqueues() {
         let t = Telemetry {
-            queue: EventQueue::new(std::env::temp_dir().join("cosh-tel-test-disabled")),
+            queue: EventQueue::new(std::env::temp_dir().join("morpheus-tel-test-disabled")),
             enabled: false,
         };
         assert!(!t.enqueue(&envelope()));

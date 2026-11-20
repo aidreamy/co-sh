@@ -5,13 +5,13 @@
 //! introduced:
 //!
 //! * **LSP diagnostics** — the process-wide singleton engine
-//!   ([`cosh::harness::lsp::global_lsp`], the same store the `lsp_*` tools and
+//!   ([`morpheus::harness::lsp::global_lsp`], the same store the `lsp_*` tools and
 //!   the passive tool findings read). Peeked read-only via
-//!   [`cosh::harness::lsp::peek_global_lsp`]: the explorer never starts a
+//!   [`morpheus::harness::lsp::peek_global_lsp`]: the explorer never starts a
 //!   server, it only shows what servers have already published.
 //! * **Git status** — one `git status --porcelain=v1 -z` call per second in a
 //!   background thread. The project's git utilities read branch state
-//!   directly from `.git` (see [`cosh::git::branch`]), but porcelain status
+//!   directly from `.git` (see [`morpheus::git::branch`]), but porcelain status
 //!   cannot be reproduced that way without reimplementing git; shelling out
 //!   is what VS Code and Zed do. Missing `git` binary / non-repo simply means
 //!   no git colors — never an error surface.
@@ -211,7 +211,7 @@ impl GitWatcher {
         };
         let inner = Arc::clone(&watcher.inner);
         let spawned = std::thread::Builder::new()
-            .name("cosh-explorer-git".into())
+            .name("morpheus-explorer-git".into())
             .spawn(move || {
                 let mut last = GitSnapshot::default();
                 loop {
@@ -285,7 +285,7 @@ impl StatusIndex {
     pub fn refresh(&mut self, explorer_root: &Path, watcher: &GitWatcher) -> bool {
         // One peek per refresh: the engine is resolved once and used both
         // for its version (change detection) and its snapshot below.
-        let lsp = cosh::harness::lsp::peek_global_lsp(&explorer_root.to_string_lossy());
+        let lsp = morpheus::harness::lsp::peek_global_lsp(&explorer_root.to_string_lossy());
         let lsp_version = lsp
             .as_ref()
             .map(|lsp| lsp.diagnostics_engine().version())

@@ -63,8 +63,9 @@ impl HfTokenizer {
     /// `tokenizer_config.json` for the special-token names), as
     /// `AutoTokenizer.from_pretrained` does.
     pub fn from_dir(dir: &Path) -> Result<Self> {
-        let tok = tokenizers::Tokenizer::from_file(dir.join("tokenizer.json"))
-            .map_err(|e| Error::Runtime(format!("morpheus-onnx: could not load tokenizer: {}", e)))?;
+        let tok = tokenizers::Tokenizer::from_file(dir.join("tokenizer.json")).map_err(|e| {
+            Error::Runtime(format!("morpheus-onnx: could not load tokenizer: {}", e))
+        })?;
         let cfg: Value = std::fs::read_to_string(dir.join("tokenizer_config.json"))
             .ok()
             .and_then(|raw| serde_json::from_str(&raw).ok())

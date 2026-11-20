@@ -1,6 +1,6 @@
-# Fixing Improper Agent-Loop Stops in Cosh
+# Fixing Improper Agent-Loop Stops in Morpheus
 
-**Status:** implemented and tested (`cargo check` clean; `cargo test -p cosh --lib harness::` → **405 passed, 0 failed**; the 6 new gate tests all pass).
+**Status:** implemented and tested (`cargo check` clean; `cargo test -p morpheus --lib harness::` → **405 passed, 0 failed**; the 6 new gate tests all pass).
 
 ## 1. The problem
 

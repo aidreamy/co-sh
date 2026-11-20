@@ -46,20 +46,20 @@ pub struct LlmConfig {
 impl LlmConfig {
     pub fn from_env() -> Self {
         // Try to get provider from env, otherwise auto-detect from available API keys
-        let provider = std::env::var("COSH_PROVIDER")
+        let provider = std::env::var("MORPHEUS_PROVIDER")
             .ok()
             .or_else(|| aiface::connector::detect_provider().map(String::from))
             .unwrap_or_else(|| "openai".to_string());
 
-        let tool_call_mode = match std::env::var("COSH_TOOL_CALL_MODE").as_deref() {
+        let tool_call_mode = match std::env::var("MORPHEUS_TOOL_CALL_MODE").as_deref() {
             Ok("inline") => aiface::connector::ToolCallMode::Inline,
             Ok("native") | Ok(_) | Err(_) => aiface::connector::ToolCallMode::Native,
         };
 
         Self {
             provider,
-            model: std::env::var("COSH_MODEL").ok(),
-            reasoning: std::env::var("COSH_REASONING").ok(),
+            model: std::env::var("MORPHEUS_MODEL").ok(),
+            reasoning: std::env::var("MORPHEUS_REASONING").ok(),
             tool_call_mode,
         }
     }
@@ -69,7 +69,7 @@ impl LlmConfig {
 /// which the harness already fills on startup) is the authoritative offline
 /// source for per-model reasoning metadata. The providers' own `/models`
 /// endpoints do NOT expose it.
-const MODELS_DEV_CACHE_DIR: Option<&str> = Some("cosh/cache");
+const MODELS_DEV_CACHE_DIR: Option<&str> = Some("morpheus/cache");
 
 /// Whether a model supports configurable reasoning/thinking.
 ///

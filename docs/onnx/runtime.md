@@ -69,7 +69,7 @@ links into a shared blob store.
 The crate enables the standard, ndarray and Rustls features of `ort`, plus
 `download-binaries`; it does not enable a CUDA execution provider. This keeps
 the dependency graph predictable and makes the same CPU behavior available to
-the standalone crate and to the `cosh` `onnx` feature.
+the standalone crate and to the `morpheus` `onnx` feature.
 
 ## Summary
 

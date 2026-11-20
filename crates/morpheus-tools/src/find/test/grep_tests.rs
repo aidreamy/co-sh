@@ -29,7 +29,8 @@ fn fixture_glob_file(dir: &std::path::Path) -> String {
 /// Create a scratch directory for grep tests that need controlled fixtures.
 /// Recreated fresh on each call so tests are independent of prior state.
 fn temp_dir(name: &str) -> std::path::PathBuf {
-    let dir = std::env::temp_dir().join(format!("cosh_find_test_{name}_{}", std::process::id()));
+    let dir =
+        std::env::temp_dir().join(format!("morpheus_find_test_{name}_{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).expect("create temp test directory");
     dir
@@ -140,7 +141,7 @@ fn grep_ignore_case_widens_results() {
 
 #[test]
 fn grep_nonexistent_path_returns_error() {
-    let result = grep(&Grep::default(), "fn", "/nonexistent/cosh_test_path");
+    let result = grep(&Grep::default(), "fn", "/nonexistent/morpheus_test_path");
 
     assert!(result.is_err(), "nonexistent path should return an error");
 }

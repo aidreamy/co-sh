@@ -59,7 +59,7 @@ fn empty_prefix_leaves_keys_untouched() {
 
 #[test]
 fn tokenizer_usable_mirrors_the_loader_rule() {
-    let root = std::env::temp_dir().join("cosh-tokenizer-usable-test");
+    let root = std::env::temp_dir().join("morpheus-tokenizer-usable-test");
     let _ = std::fs::remove_dir_all(&root);
     let snap = root.join("snap");
     std::fs::create_dir_all(snap.join("english/tokenizer")).unwrap();
@@ -133,7 +133,7 @@ fn no_graph_candidates_is_a_value_error() {
 
 #[test]
 fn local_directory_repo_is_a_value_error() {
-    let dir = std::env::temp_dir().join("cosh-install-local-dir-test");
+    let dir = std::env::temp_dir().join("morpheus-install-local-dir-test");
     std::fs::create_dir_all(&dir).unwrap();
     let err = super::install(InstallRequest {
         repo: dir.to_str().unwrap(),
@@ -154,7 +154,7 @@ fn cache_status_is_none_for_an_uncached_repo() {
     // still legal folder names, so just an improbable one).
     assert!(
         super::cache_status(
-            "cosh-tests/nonexistent-repo-zz",
+            "morpheus-tests/nonexistent-repo-zz",
             Some("english"),
             &["laya.onnx"],
             None,

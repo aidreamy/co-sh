@@ -2723,7 +2723,7 @@ async fn capture_real_opencode_stream_multi_tool() {
             &[],
             None,
             None,
-            std::path::PathBuf::from("/home/inky/co-sh"),
+            std::path::PathBuf::from("/home/inky/morpheus"),
             std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
             chunk_tx,
         ))
@@ -2893,7 +2893,7 @@ async fn capture_real_opencode_stream() {
             &[],
             None,
             None,
-            std::path::PathBuf::from("/home/inky/co-sh"),
+            std::path::PathBuf::from("/home/inky/morpheus"),
             std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
             chunk_tx,
         ))

@@ -44,7 +44,7 @@ subtree has a syntax error.
 > `replace block N:` then fails with `\`replace block N:\` is not available
 > here (no tree-sitter block resolver is configured). Use \`replace N..M:\`
 > with an explicit range.` The real resolver lives in the host application
-> (cosh's own `tree_sitter` module) and is passed in as the third argument.
+> (morpheus's own `tree_sitter` module) and is passed in as the third argument.
 
 ## Throw vs. Drop
 

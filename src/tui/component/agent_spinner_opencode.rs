@@ -18,7 +18,7 @@
 //! - **Global fade** (`createKnightRiderTrail`): inactive dots fade
 //!   linearly down to `minAlpha` (0.3) across each hold and back up across
 //!   each sweep, scaled by the `inactiveFactor` (0.6) base alpha.
-//! - **Timing**: the original ticks at 40 ms/frame (25 fps); cosh drives
+//! - **Timing**: the original ticks at 40 ms/frame (25 fps); morpheus drives
 //!   `advance()` per 30 fps animation tick, so the scan frame index is
 //!   `ticks × 5 / 6` — the exact same wall-clock pacing.
 //!
@@ -65,7 +65,7 @@ const SWEEP_BACK: u32 = WIDTH as u32 - 1;
 /// `width + holdEnd + (width - 1) + holdStart` (spinner.ts comment).
 const TOTAL_FRAMES: u32 = SWEEP_FORWARD + HOLD_END + SWEEP_BACK + HOLD_START;
 
-/// cosh advances one animation tick per 30 fps frame (`render.rs`), while
+/// morpheus advances one animation tick per 30 fps frame (`render.rs`), while
 /// the original ticks at `interval={40}` (25 fps). The scan frame index is
 /// therefore `ticks × 5/6` — exact integer math: tick 6 = 200 ms =
 /// scan frame 5.

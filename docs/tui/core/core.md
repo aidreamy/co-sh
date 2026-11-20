@@ -70,7 +70,7 @@ root.render_self(&mut buffer, buffer.area());
 ## The two render paths
 
 1. **Direct** — call `widget.render_self(&mut buffer, area)` yourself, e.g.
-   from inside a ratatui `Frame`. This is what the cosh application itself
+   from inside a ratatui `Frame`. This is what the morpheus application itself
    does in several places (`render_markdown` in `src/tui/util/markdown.rs`
    builds a `MarkdownRenderable` and renders it straight into the frame's
    buffer).

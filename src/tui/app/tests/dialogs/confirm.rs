@@ -15,7 +15,7 @@ fn click(app: &mut App, column: u16, row: u16) {
     app.handle_mouse_event(evt(CKind::Up(CBtn::Left))).unwrap();
 }
 
-    /// Regression: clicking "Yes" on the Ctrl+C "Quit morpheus?" confirm while the
+/// Regression: clicking "Yes" on the Ctrl+C "Quit morpheus?" confirm while the
 /// slash menu is open must quit the app. At 80x24 the confirm box is centered
 /// at dialog_x=25, dialog_y=8; the options row is dialog_y+4=12 and "Yes"
 /// spans x=35..38 (opts_x = 25 + (30-9)/2 = 35).

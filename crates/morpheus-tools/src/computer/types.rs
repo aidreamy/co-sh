@@ -298,7 +298,7 @@ pub struct ComputerScreenshot {
     /// milliseconds. Default 3000.
     pub timeout_ms: Option<u64>,
     /// ALSO write the PNG to this file path (any capture form) — relative
-    /// paths resolve against cosh's working directory; the file is
+    /// paths resolve against morpheus's working directory; the file is
     /// overwritten. The image still returns inline so you can see it.
     /// Outside any project root the harness asks for approval.
     pub save_path: Option<String>,

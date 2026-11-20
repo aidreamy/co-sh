@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use super::App;
 use aiface::connector::{Connector, ToolCallMode};
-use cosh::harness::{Harness, HarnessEvent};
+use morpheus::harness::{Harness, HarnessEvent};
 
 use crate::fallback::PromptCorrectorFallback;
 

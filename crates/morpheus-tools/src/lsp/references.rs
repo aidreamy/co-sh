@@ -33,13 +33,14 @@ pub async fn run_references(
         "context": { "includeDeclaration": include_declaration },
     });
 
-    let response: Option<Vec<morpheus_sdk::lsp::lsp_types::Location>> = super::support::first_answer(
-        &clients,
-        deps.request_timeout,
-        |caps| super::support::provider_enabled(&caps.references_provider),
-        |_client| (References::METHOD.to_owned(), params.clone()),
-    )
-    .await?;
+    let response: Option<Vec<morpheus_sdk::lsp::lsp_types::Location>> =
+        super::support::first_answer(
+            &clients,
+            deps.request_timeout,
+            |caps| super::support::provider_enabled(&caps.references_provider),
+            |_client| (References::METHOD.to_owned(), params.clone()),
+        )
+        .await?;
 
     let locations: Vec<morpheus_sdk::lsp::lsp_types::Location> = response.unwrap_or_default();
 

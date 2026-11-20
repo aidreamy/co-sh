@@ -5,7 +5,7 @@
 //! layout, the DLLs and the uninstaller that ships next to the binary, and it
 //! is versioned WITH the release it installs. What this module adds is the
 //! standard command line around it — version resolution, confirmation and
-//! `COSH_VERSION`/`COSH_VARIANT` pinned to the running build.
+//! `MORPHEUS_VERSION`/`MORPHEUS_VARIANT` pinned to the running build.
 //!
 //! The installer is downloaded into a private temp file and executed directly
 //! instead of being piped through a shell: no tag or path is ever
@@ -23,7 +23,7 @@
 use std::io::{IsTerminal, Write};
 use std::process::Command;
 
-use cosh::update::{REPO, fetch_latest_tag, is_update_available, normalize_tag};
+use morpheus::update::{REPO, fetch_latest_tag, is_update_available, normalize_tag};
 
 use crate::cli::VERSION;
 use crate::cli::style::Palette;
@@ -89,10 +89,7 @@ pub async fn run(options: UpdateOptions) -> i32 {
 }
 
 /// Resolve the release tag to install. `Ok(None)` = already up to date.
-async fn resolve_target(
-    options: &UpdateOptions,
-    palette: &Palette,
-) -> Result<Option<String>, i32> {
+async fn resolve_target(options: &UpdateOptions, palette: &Palette) -> Result<Option<String>, i32> {
     if let Some(raw) = &options.target {
         return match normalize_tag(raw) {
             Some(tag) => Ok(Some(tag)),
@@ -221,8 +218,8 @@ async fn install(target: &str) -> Result<(), String> {
     };
     command
         .arg(&script)
-        .env("COSH_VERSION", target)
-        .env("COSH_VARIANT", variant());
+        .env("MORPHEUS_VERSION", target)
+        .env("MORPHEUS_VARIANT", variant());
 
     // An in-app update spawns `morpheus update` without a console; a console
     // program started from a console-less process (powershell) would get a

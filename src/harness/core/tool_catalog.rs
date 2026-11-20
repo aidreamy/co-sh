@@ -17,7 +17,7 @@ pub struct HarnessTool {
 
 /// Build the language-server wrapper bound to `cwd`.
 ///
-/// Returns `None` when `COSH_LSP=off|0|false`, the config-driven LSP switch is
+/// Returns `None` when `MORPHEUS_LSP=off|0|false`, the config-driven LSP switch is
 /// off, no tokio runtime is active, or under `cfg(test)` (unit tests must not
 /// spawn real language servers; LSP behavior is covered by the SDK/tools
 /// suites). The engine itself is the process-wide singleton in
@@ -32,7 +32,7 @@ pub(super) fn build_lsp(cwd: &str) -> Option<Arc<Lsp>> {
     {
         if !crate::harness::lsp::lsp_enabled()
             || matches!(
-                std::env::var("COSH_LSP").as_deref(),
+                std::env::var("MORPHEUS_LSP").as_deref(),
                 Ok("off" | "0" | "false")
             )
         {

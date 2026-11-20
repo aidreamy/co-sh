@@ -341,7 +341,7 @@ pub fn check_tool_permission(
                     return PermissionCheck::Denied(
                         "`computer_control` types into whatever element holds keyboard focus, \
                          and no earlier step in the chain clicks an element to set focus — \
-                         the text would land in the cosh input box. Start with a click on \
+                         the text would land in the morpheus input box. Start with a click on \
                          the target element (`app`/`pid`/`surface` + `selector`) and chain \
                          the typing via `then`, or switch to Yolo/Command mode"
                             .to_string(),
@@ -407,7 +407,7 @@ pub fn check_tool_permission(
                     return PermissionCheck::Denied(
                         "`computer_act` types into whatever element holds keyboard focus, \
                          and no earlier step in the chain acts on an element to set focus — \
-                         the text would land in the cosh input box. Start with an element \
+                         the text would land in the morpheus input box. Start with an element \
                          step (`name`/`pid`/`surface` + `selector`) and chain the typing \
                          via `then`; if the typing still misses the field, click it with \
                          computer_control first (a real click is the one reliable focus \

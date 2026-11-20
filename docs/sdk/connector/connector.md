@@ -50,7 +50,7 @@ shared parameters onto its native format.
 
 API keys resolve in this order (see [`provider`](provider.md)):
 
-1. **OS keyring** (under the `cosh` service) — the authoritative store for
+1. **OS keyring** (under the `morpheus` service) — the authoritative store for
    keys saved through the app;
 2. **Environment variable** — per-provider fallback (`OPENAI_API_KEY`,
    `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, …);

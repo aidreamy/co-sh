@@ -5,7 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// Unique temp dir per test (no `tempfile` dependency in this crate).
 fn temp_root(tag: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!(
-        "cosh-explorer-test-{tag}-{}-{}",
+        "morpheus-explorer-test-{tag}-{}-{}",
         std::process::id(),
         SystemTime::now()
             .duration_since(UNIX_EPOCH)

@@ -12,8 +12,8 @@
 //!
 //! Deliberately NOT app configuration: this is domain state of the sub-agent
 //! integration, sibling of `palette` and `events`. The crate must stay
-//! embeddable independent of cosh, so NO directory is hardcoded here — the
-//! caller injects the storage directory (cosh passes its data-dir override
+//! embeddable independent of morpheus, so NO directory is hardcoded here — the
+//! caller injects the storage directory (morpheus passes its data-dir override
 //! resolution; tests pass a temp dir), the same separation
 //! [`crate::session::store::SessionStore`] uses with its `with_dir`.
 //!
@@ -127,7 +127,7 @@ fn load_from_disk(path: &Path) -> Result<Option<BTreeMap<String, String>>, Strin
 }
 
 /// A writer-UNIQUE temp path beside `path`: the fixed `with_extension` name
-/// two concurrent writers would share (two cosh processes, or a save racing a
+/// two concurrent writers would share (two morpheus processes, or a save racing a
 /// reopen) lets one writer's `create` truncate the other's half-written temp
 /// before its rename lands — the exact torn-write the atomic replace exists
 /// to prevent. The pid plus a process-unique counter gives every writer its
@@ -251,7 +251,7 @@ mod tests {
     fn two_writers_on_one_file_never_publish_torn_state() {
         let dir = tempfile::tempdir().expect("temp dir");
         let file = dir.path().join("picks.json");
-        // Two handles = the two-cosh-processes shape: each writer owns its
+        // Two handles = the two-morpheus-processes shape: each writer owns its
         // pid+counter temp file, so one writer's `create` can never truncate
         // the other's half-written temp before its rename lands (the fixed
         // `with_extension` name used to allow exactly that).

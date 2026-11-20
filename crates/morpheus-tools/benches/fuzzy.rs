@@ -1,5 +1,5 @@
-use morpheus_tools::fs::fuzzy::{FindMatchOptions, find_match};
 use criterion::{Criterion, criterion_group, criterion_main};
+use morpheus_tools::fs::fuzzy::{FindMatchOptions, find_match};
 
 fn source_lines(n: usize) -> String {
     let mut out = String::new();

@@ -99,14 +99,14 @@ crate::const_str_joined! {
     /// agent to its working directory.
     INSTRUCTIONS_YOLO : joined [
         /// Content base of the Build/Yolo instructions: everything the main
-        /// agent needs EXCEPT the self-review loop. The /agents cosh pane
+        /// agent needs EXCEPT the self-review loop. The /agents morpheus pane
         /// runs this base alone (no `subagent_call` review instruction).
         INSTRUCTIONS_BUILD_BASE = build_base_text!(),
         /// The self-review loop instruction: call a `subagent_call` review
         /// agent after code changes that affect runtime behavior, and
         /// iterate until only minor issues remain. Appended after
         /// [`INSTRUCTIONS_BUILD_BASE`] for the main agent; a loop that must
-        /// not spawn review agents (the /agents cosh pane) runs the base
+        /// not spawn review agents (the /agents morpheus pane) runs the base
         /// alone.
         INSTRUCTIONS_BUILD_SELF_REVIEW = build_self_review_text!(),
         /// The Yolo cwd-containment instruction: appended after the full
@@ -121,7 +121,7 @@ crate::const_str_joined! {
 /// the pre-refactor text; Yolo mode receives [`INSTRUCTIONS_YOLO`]).
 pub const INSTRUCTIONS_BUILD: &str = build_full_text!();
 
-/// The /agents cosh pane's Yolo prompt: the Build base (no self-review
+/// The /agents morpheus pane's Yolo prompt: the Build base (no self-review
 /// loop, a pane never spawns review agents) plus the cwd-containment
 /// block. Build/Command panes keep [`INSTRUCTIONS_BUILD_BASE`] whole.
 pub const INSTRUCTIONS_YOLO_BASE: &str = concat!(build_base_text!(), yolo_cwd_text!());

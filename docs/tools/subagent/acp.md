@@ -124,7 +124,7 @@ spawned.
 2. **Spawn & initialize.** The harness subprocess is spawned speaking
    JSON-RPC over stdio; the client sends `initialize` advertising the `fs`
    capability (read/write text file) so conformant agents may delegate file
-   operations to cosh.
+   operations to morpheus.
 3. **Authenticate** with the first advertised method, when the harness
    advertises `auth_methods` (e.g. `goose acp`). Harnesses that manage auth
    themselves advertise none and are skipped.

@@ -40,7 +40,7 @@ visual grounding without ever doing pixel math.
 ## Keep the pixels: `save_path`
 
 Any capture form can ALSO write the PNG to disk — pass `save_path`
-(relative paths resolve against cosh's working directory; the file is
+(relative paths resolve against morpheus's working directory; the file is
 overwritten, parent directories are created):
 
 ```

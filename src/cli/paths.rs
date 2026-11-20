@@ -1,23 +1,23 @@
 //! `morpheus paths` — print the directories the app reads and writes.
 //!
 //! Support and composition both need this: "where are my sessions?" is
-//! answered by the store's own resolution (including the `COSH_DATA_DIR`
+//! answered by the store's own resolution (including the `MORPHEUS_DATA_DIR`
 //! override), not by a second, drifting copy of the path rules.
 
 use std::path::PathBuf;
 
-use cosh::session::store::SessionStore;
+use morpheus::session::store::SessionStore;
 
 use crate::cli::style::Palette;
 
 /// One printed row: the label and the resolved path.
 pub fn entries() -> Vec<(&'static str, PathBuf)> {
-    let logs = cosh::harness::truncate::scratch_log_dir().join("log");
+    let logs = morpheus::harness::truncate::scratch_log_dir().join("log");
     let sessions = SessionStore::new().sessions_dir().to_path_buf();
     let binary = std::env::current_exe().unwrap_or_default();
     vec![
-        ("data", cosh::setup::data_dir_override()),
-        ("config", cosh::setup::config_dir_override()),
+        ("data", morpheus::setup::data_dir_override()),
+        ("config", morpheus::setup::config_dir_override()),
         ("logs", logs),
         ("sessions", sessions),
         ("binary", binary),
@@ -38,7 +38,9 @@ pub fn run(palette: &Palette) -> i32 {
     println!();
     println!(
         "{}",
-        palette.muted("data and config can be overridden with COSH_DATA_DIR / COSH_CONFIG_DIR.")
+        palette.muted(
+            "data and config can be overridden with MORPHEUS_DATA_DIR / MORPHEUS_CONFIG_DIR."
+        )
     );
     0
 }

@@ -208,11 +208,11 @@ async fn mcp_form_registers_server_end_to_end() {
     assert_eq!(server.name, "docs");
     assert!(server.enabled);
     match &server.transport {
-        cosh::mcp::McpTransport::Http(http) => {
+        morpheus::mcp::McpTransport::Http(http) => {
             assert_eq!(http.url, "https://example.com/mcp");
             assert_eq!(http.timeout_ms, 30_000);
         }
-        cosh::mcp::McpTransport::Stdio(_) => panic!("expected http transport"),
+        morpheus::mcp::McpTransport::Stdio(_) => panic!("expected http transport"),
     }
 }
 
@@ -342,7 +342,7 @@ async fn mcp_form_rejects_duplicate_name_and_bad_timeout() {
     isolate_home();
     let mut app = App::new("/tmp".to_string());
     app.setup.mcp.servers.push(
-        cosh::mcp::build_mcp_entry("docs", "https://example.com/mcp", "", "")
+        morpheus::mcp::build_mcp_entry("docs", "https://example.com/mcp", "", "")
             .unwrap()
             .entry,
     );

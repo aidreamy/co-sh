@@ -5,9 +5,11 @@ use ratatui::buffer::{Buffer, CellDiffOption};
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Modifier, Style};
 
-use cosh::ModelEntry;
+use morpheus::ModelEntry;
 use morpheus_tui::core::lib::rgba::RGBA;
-use morpheus_tui::core::lib::unicode_util::{graphemes_with_width, str_display_width, word_wrap_spans};
+use morpheus_tui::core::lib::unicode_util::{
+    graphemes_with_width, str_display_width, word_wrap_spans,
+};
 use morpheus_tui::core::renderable::Renderable;
 use morpheus_tui::core::renderables::r#box::BoxRenderable;
 use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType};
@@ -525,15 +527,15 @@ pub enum DialogType {
     },
     /// Standardized config picker for a focused `/agents` pane's mapped
     /// command group (model / provider / mode): the pane's OWN
-    /// ACP config options rendered cosh-style. `options` are
+    /// ACP config options rendered morpheus-style. `options` are
     /// `(value_id, display_name)` rows of the matched session config
     /// option, `current` the active value id (the row indicator); the app
     /// layer applies the picked value through `session/set_config_option`.
     /// Filtering/selection/cursor live in the shared list-dialog
-    /// component's [`FilterState`] — the same search box every cosh list
+    /// component's [`FilterState`] — the same search box every morpheus list
     /// picker carries, OMITTED when `search` is false (the reasoning
     /// sub-box: a level list is never long enough to filter, and it must
-    /// render the exact shape of the cosh reasoning picker).
+    /// render the exact shape of the morpheus reasoning picker).
     AgentConfigList {
         title: String,
         options: Vec<(String, String)>,
@@ -752,7 +754,7 @@ pub enum DialogType {
         /// `(undo_label, prompt_preview)` per revert, oldest first.
         versions: Vec<(String, String)>,
         /// `Some(pane)` when the list holds an `/agents` ACP pane's
-        /// CHECKPOINTS instead of a cosh session's revert references: the
+        /// CHECKPOINTS instead of a morpheus session's revert references: the
         /// pane has no store session to roll back (its `session_id` is the
         /// agent's), so a pick rewinds the pane's own transcript instead.
         /// `None` = the native, store-backed list.
@@ -1536,7 +1538,7 @@ impl DialogState {
                 let dialog_w = max_w.max(28).min(area.width.saturating_sub(2));
                 let dialog_x = area.x + area.width.saturating_sub(dialog_w) / 2;
 
-                let max_visible = cosh::setup::SpinnerStyle::ALL.len();
+                let max_visible = morpheus::setup::SpinnerStyle::ALL.len();
                 let dialog_h = (max_visible + 4) as u16;
                 let dialog_y = area
                     .y
@@ -1768,7 +1770,12 @@ impl DialogState {
                 selection,
                 ..
             } => {
-                let values = [name.as_str(), base_url.as_str(), family.as_str(), model.as_str()];
+                let values = [
+                    name.as_str(),
+                    base_url.as_str(),
+                    family.as_str(),
+                    model.as_str(),
+                ];
                 focus_form_field(
                     area,
                     x,
@@ -2642,7 +2649,12 @@ impl DialogState {
                 } else {
                     "Add provider"
                 };
-                let values = [name.as_str(), base_url.as_str(), family.as_str(), model.as_str()];
+                let values = [
+                    name.as_str(),
+                    base_url.as_str(),
+                    family.as_str(),
+                    model.as_str(),
+                ];
                 render_form_panel(
                     buf,
                     area,
@@ -3587,7 +3599,7 @@ impl DialogState {
                 }
             }
             DialogType::SpinnerList { current } => {
-                let style_count = cosh::setup::SpinnerStyle::ALL.len();
+                let style_count = morpheus::setup::SpinnerStyle::ALL.len();
                 let selection = instance.selected.min(style_count.saturating_sub(1));
 
                 // Same wide geometry as the mouse handler so clicks and the
@@ -3640,7 +3652,7 @@ impl DialogState {
                 let list_w = dialog_w.saturating_sub(list_pad * 2);
                 let bg_element = rgba_color(theme.background_element);
 
-                for (idx, style) in cosh::setup::SpinnerStyle::ALL.iter().enumerate() {
+                for (idx, style) in morpheus::setup::SpinnerStyle::ALL.iter().enumerate() {
                     if idx >= max_visible {
                         break;
                     }
@@ -3661,7 +3673,7 @@ impl DialogState {
                     }
 
                     // Current-style indicator ●; selected indicator (space) —
-                    // the same dot language every cosh list picker speaks.
+                    // the same dot language every morpheus list picker speaks.
                     let (indicator_fg, indicator_ch) = if is_current {
                         if is_selected {
                             let (pr, pg, pb, _) = theme.primary.to_ints();
@@ -3719,7 +3731,7 @@ impl DialogState {
                     // Column-aligned rows (same convention as the Shortcuts
                     // dialog): label column sized to the widest style name,
                     // description in its own column one space over.
-                    let label_col = cosh::setup::SpinnerStyle::ALL
+                    let label_col = morpheus::setup::SpinnerStyle::ALL
                         .iter()
                         .map(|s| s.label().chars().count())
                         .max()
@@ -4369,7 +4381,7 @@ fn relative_luminance(c: RGBA) -> f32 {
 }
 
 /// Marker text color adapted to the THEME, not just the highlight: dark
-/// themes (cosh) get near-white, light themes (sakura) near-black, so the
+/// themes (morpheus) get near-white, light themes (sakura) near-black, so the
 /// label keeps contrast both against the primary swatch and the panel.
 fn hook_marker_fg(theme: &Theme) -> Color {
     if relative_luminance(theme.background) < 0.5 {
@@ -4690,11 +4702,11 @@ mod hook_panel_tests {
     #[test]
     fn marker_fg_adapts_to_theme_background() {
         let registry = ThemeRegistry::new();
-        let cosh = registry
+        let morpheus = registry
             .themes
             .iter()
-            .find(|t| t.name == "cosh")
-            .expect("cosh theme")
+            .find(|t| t.name == "morpheus")
+            .expect("morpheus theme")
             .theme
             .clone();
         let sakura = registry
@@ -4707,10 +4719,13 @@ mod hook_panel_tests {
 
         // Dark background → light marker text; light background → dark.
         assert!(
-            relative_luminance(cosh.background) < 0.5,
-            "cosh is a dark theme"
+            relative_luminance(morpheus.background) < 0.5,
+            "morpheus is a dark theme"
         );
-        assert!(matches!(hook_marker_fg(&cosh), Color::Rgb(245, 245, 245)));
+        assert!(matches!(
+            hook_marker_fg(&morpheus),
+            Color::Rgb(245, 245, 245)
+        ));
         assert!(
             relative_luminance(sakura.background) >= 0.5,
             "sakura is a light theme"
@@ -4965,7 +4980,7 @@ mod hook_panel_tests {
 mod model_list_mouse_tests {
     use super::{DialogAction, DialogState, DialogType};
     use crate::theme::ThemeRegistry;
-    use cosh::ModelEntry;
+    use morpheus::ModelEntry;
     use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType, MouseModifiers};
     use ratatui::layout::Rect;
 
@@ -5106,7 +5121,7 @@ mod theme_list_swatch_tests {
         DialogType::ThemeList {
             themes,
             swatches,
-            current: "cosh".into(),
+            current: "morpheus".into(),
             filter: String::new(),
         }
     }
@@ -5117,7 +5132,7 @@ mod theme_list_swatch_tests {
         let theme = registry.default_theme().clone();
         let area = Rect::new(0, 0, 80, 24);
         let mut state = DialogState::new();
-        state.show(theme_list(&registry, &["cosh", "sakura"]));
+        state.show(theme_list(&registry, &["morpheus", "sakura"]));
 
         let mut buf = Buffer::empty(area);
         state.render(&mut buf, area, &theme, std::time::SystemTime::now());
@@ -5127,10 +5142,10 @@ mod theme_list_swatch_tests {
         // they start at list_x + list_w - chips_w on EVERY row.
         let list_x = 21u16;
         let list_w = 38u16;
-        let cosh_swatches = theme_swatches(registry.get("cosh").expect("cosh"));
-        let chips_w = swatches_width(cosh_swatches.len());
+        let morpheus_swatches = theme_swatches(registry.get("morpheus").expect("morpheus"));
+        let chips_w = swatches_width(morpheus_swatches.len());
         // Each chip paints SWATCH_WIDTH cells, so its fg appears once per cell.
-        let expected: Vec<Color> = cosh_swatches
+        let expected: Vec<Color> = morpheus_swatches
             .iter()
             .flat_map(|c| std::iter::repeat_n(rgba_color(*c), 2))
             .collect();
@@ -5165,7 +5180,7 @@ mod theme_list_swatch_tests {
         let theme = registry.default_theme().clone();
         let area = Rect::new(0, 0, 80, 24);
         let mut state = DialogState::new();
-        let mut dialog = theme_list(&registry, &["cosh", "sakura"]);
+        let mut dialog = theme_list(&registry, &["morpheus", "sakura"]);
         if let DialogType::ThemeList { filter, .. } = &mut dialog {
             filter.push('s');
             filter.push('a'); // matches "sakura" only
@@ -5190,7 +5205,7 @@ mod theme_list_swatch_tests {
         let theme = registry.default_theme().clone();
         let area = Rect::new(0, 0, 80, 24);
         let mut state = DialogState::new();
-        state.show(theme_list(&registry, &["cosh", "sakura"]));
+        state.show(theme_list(&registry, &["morpheus", "sakura"]));
 
         // Click inside the chip region of row 0 (chips right-anchor: with
         // list_x=21, list_w=38, an 8-cell strip starts at x=51).
@@ -5244,7 +5259,10 @@ mod theme_list_swatch_tests {
         let max_rows = input_dialog_max_rows(area);
         let rows = word_wrap_spans(&input, box_rect.width - 4);
 
-        assert!(rows.len() as u16 > max_rows, "the input must need scrolling");
+        assert!(
+            rows.len() as u16 > max_rows,
+            "the input must need scrolling"
+        );
         assert_eq!(box_rect.height, 6 + max_rows);
         assert!(box_rect.height <= area.height);
 

@@ -1,9 +1,9 @@
-//! Daemons — out-of-process services shared by every cosh instance.
+//! Daemons — out-of-process services shared by every morpheus instance.
 //!
 //! The app is assembled per turn and is routinely open in several instances
 //! at once; any expensive resident resource (a ~1.3 GB ONNX graph and its
 //! ORT session, today) duplicated per process is a waste. A daemon owns the
-//! resource once and every cosh process reaches it over the OS's local IPC.
+//! resource once and every morpheus process reaches it over the OS's local IPC.
 //!
 //! ## Layout
 //!
@@ -27,14 +27,14 @@
 //! 1. Create `src/daemon/<name>/` with `protocol.rs` (a `Params` enum
 //!    tagged by method — see `decision/protocol.rs`), `server.rs` (routing
 //!    for that protocol), and `client.rs` (the seam-side adapter).
-//! 2. Register `[[bin]] name = "cosh-<name>d",
+//! 2. Register `[[bin]] name = "morpheus-<name>d",
 //!    path = "src/daemon/<name>/main.rs"` in `Cargo.toml`.
 //! 3. Activate through `daemon::activation`: the socket path is derived from
 //!    the daemon name; nothing else in the shared layer changes.
 //!
-//! The shared layer is app-internal by design (only cosh consumes it). If a
+//! The shared layer is app-internal by design (only morpheus consumes it). If a
 //! second workspace crate ever needs a daemon, `ipc.rs`/`activation.rs`/
-//! `client.rs` are the exact boundary to lift into a `cosh-ipc` crate.
+//! `client.rs` are the exact boundary to lift into a `morpheus-ipc` crate.
 //!
 //! Everything here is gated on `onnx` like the runtime it serves: today the
 //! only daemon consumes the ONNX decision engine, so a build without the

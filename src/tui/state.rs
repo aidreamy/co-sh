@@ -6,7 +6,7 @@ use lru::LruCache;
 use crate::routes::session::right_panel::types::RightPanelState;
 use crate::session::store::SessionSummary;
 use crate::types::{Session, SessionStatus};
-use cosh::harness::Mode;
+use morpheus::harness::Mode;
 
 const SESSION_CACHE_SIZE: usize = 10;
 
@@ -58,7 +58,7 @@ pub struct AppState {
     pub status: SessionStatus,
     pub scroll_y: i32,
     pub content_height: i32,
-    /// Where cosh itself starts: the process cwd, captured once in
+    /// Where morpheus itself starts: the process cwd, captured once in
     /// `App::new` and never mutated afterwards. Two things read it — the
     /// session store root (it LOCATES the session, so it must not move) and
     /// `/worktree exit` (it RESTORES this, so it must not move). Anything
@@ -70,7 +70,7 @@ pub struct AppState {
     /// Refreshed by the app loop via the git branch tracker.
     pub git_branch: Option<String>,
     pub mode: Mode,
-    /// Whether LSP is enabled at all (`COSH_LSP`). Distinct from how many
+    /// Whether LSP is enabled at all (`MORPHEUS_LSP`). Distinct from how many
     /// servers are running — the footer shows "disabled" only when false.
     pub lsp_available: bool,
     /// Catalog names of the language servers currently active; rendered as
@@ -274,7 +274,7 @@ impl AppState {
     /// upserted into the cache (so subsequent switches are fast).
     ///
     /// Returns `false` when the target session is already open in another
-    /// cosh process — the switch is refused and the caller is expected to
+    /// morpheus process — the switch is refused and the caller is expected to
     /// surface that to the user. Otherwise releases the previous session's
     /// open-lock, claims the target's and performs the switch.
     pub fn switch_to_session(
@@ -302,7 +302,7 @@ impl AppState {
                 self.ensure_session_summary(oid);
             }
             // The old session is no longer open in this process: free its
-            // open-lock so another cosh instance can take it over. Re-selecting
+            // open-lock so another morpheus instance can take it over. Re-selecting
             // the session already being viewed must NOT release — the claim
             // just re-verified above is the one this process keeps holding.
             if oid != &session_id {

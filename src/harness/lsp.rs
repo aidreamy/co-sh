@@ -4,7 +4,7 @@
 //! The TUI has no `Setup`-free path to flip the switch, so this `AtomicBool`
 //! is the single shared source of truth the TUI flips at startup and from the
 //! Settings toggle; every `build_lsp` consults it (in addition to the
-//! `COSH_LSP` env override).
+//! `MORPHEUS_LSP` env override).
 //!
 //! The engine is a singleton ([`global_lsp`]) on purpose: the TUI rebuilds a
 //! [`Harness`](crate::harness::core::Harness) for every agent-loop run, and a

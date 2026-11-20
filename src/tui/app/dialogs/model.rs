@@ -2,7 +2,7 @@ use super::super::App;
 use crossterm::event::KeyCode;
 
 use crate::ui::dialogs::DialogType;
-use cosh::harness::HarnessEvent;
+use morpheus::harness::HarnessEvent;
 
 impl App {
     pub(in crate::app) fn open_summarization_model_dialog(&mut self, index: Option<usize>) {
@@ -31,7 +31,7 @@ impl App {
         self.open_model_dialog_with_current(current);
     }
 
-    /// The pane-scoped variant: the picker serves ONE focused cosh pane.
+    /// The pane-scoped variant: the picker serves ONE focused morpheus pane.
     /// The machinery below (provider checks, cache, background
     /// revalidation) is shared with the global picker, but the commit lands
     /// on the pane's own selection and its session's model markers instead
@@ -65,7 +65,7 @@ impl App {
             .and_then(|p| p.model_selection.clone())
     }
 
-    /// The pane's bound cosh session id, same split resolution.
+    /// The pane's bound morpheus session id, same split resolution.
     fn pane_session_id(&self, pane: usize) -> Option<String> {
         self.agents_split
             .as_ref()
@@ -92,7 +92,7 @@ impl App {
     /// edits — the global config's, or the focused pane's own.
     fn open_model_dialog_with_current(&mut self, current: String) {
         use aiface::connector::Connector;
-        use cosh::ModelEntry;
+        use morpheus::ModelEntry;
 
         // Collect providers and check if their API key is still configured.
         // If a provider has no key (env var or keyring), invalidate its cache
@@ -209,8 +209,8 @@ impl App {
     }
 
     /// Group models by provider and update the cache for each provider.
-    pub(in crate::app) fn update_model_cache(&mut self, models: &[cosh::ModelEntry]) {
-        use cosh::ModelEntry;
+    pub(in crate::app) fn update_model_cache(&mut self, models: &[morpheus::ModelEntry]) {
+        use morpheus::ModelEntry;
         use std::collections::HashMap;
         use std::collections::HashSet;
 
@@ -349,7 +349,7 @@ impl App {
                     return true;
                 };
                 // The shared list-dialog filter edit: pop + selection reset
-                // + cursor blink, one definition for every cosh list box.
+                // + cursor blink, one definition for every morpheus list box.
                 crate::component::list_dialog::pop_filter(filter, &mut d.selected, &mut d.cursor);
                 true
             }
@@ -368,7 +368,7 @@ impl App {
             if model == "auto" || model.trim().is_empty() || provider.trim().is_empty() {
                 return;
             }
-            let entry = cosh::setup::FallbackEntry {
+            let entry = morpheus::setup::FallbackEntry {
                 provider: provider.to_string(),
                 model: model.to_string(),
             };
@@ -520,7 +520,7 @@ impl App {
     /// Commit a pane-scoped model pick: the selection lands on THAT pane
     /// only — the pane's live state (which the dispatch route reads for
     /// every later turn) and the SAME provider/model/reasoning markers the
-    /// main session records, written onto the pane's own cosh session so
+    /// main session records, written onto the pane's own morpheus session so
     /// the pick survives restarts with the existing marker precedence. The
     /// global config, the persisted global slot and the main session are
     /// never touched. A pane that has not run its first turn yet has no
@@ -744,7 +744,7 @@ impl App {
         if let Some(d) = self.dialog.current_mut() {
             if let DialogType::ModelList { filter, .. } = &mut d.dialog_type {
                 // The shared list-dialog filter edit: push + selection reset
-                // + cursor blink, one definition for every cosh list box.
+                // + cursor blink, one definition for every morpheus list box.
                 crate::component::list_dialog::push_filter(
                     filter,
                     &mut d.selected,
@@ -758,7 +758,7 @@ impl App {
         }
     }
 
-    pub(in crate::app) fn collect_cached_models(&self) -> Vec<cosh::ModelEntry> {
+    pub(in crate::app) fn collect_cached_models(&self) -> Vec<morpheus::ModelEntry> {
         let mut models = Vec::new();
         for provider in self.active_providers() {
             if let Some(cached) = self.model_cache.get(&provider.to_string()) {
@@ -771,11 +771,11 @@ impl App {
     /// Compute the flat list of models in the same grouped-by-provider order
     /// used by the dialog render, so navigation and rendering stay in sync.
     pub(in crate::app) fn model_dialog_flat_entries<'a>(
-        models: &'a [cosh::ModelEntry],
+        models: &'a [morpheus::ModelEntry],
         filter: &str,
-    ) -> Vec<&'a cosh::ModelEntry> {
+    ) -> Vec<&'a morpheus::ModelEntry> {
         use std::collections::BTreeMap;
-        let mut grouped: BTreeMap<String, Vec<&'a cosh::ModelEntry>> = BTreeMap::new();
+        let mut grouped: BTreeMap<String, Vec<&'a morpheus::ModelEntry>> = BTreeMap::new();
         for entry in models {
             if crate::ui::dialogs::model_entry_matches_filter(entry, filter) {
                 grouped

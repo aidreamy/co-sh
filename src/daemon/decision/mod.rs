@@ -1,7 +1,7 @@
 //! The decision-model daemon (`morpheus-decisiond`).
 //!
 //! One process owns the resident decision model (the ~1.3 GB ONNX graph and
-//! its ORT session); every cosh instance shares it over the daemon IPC
+//! its ORT session); every morpheus instance shares it over the daemon IPC
 //! layer. This is the `c89c6e5` residency generalized: the resident model
 //! lived in per-process statics, which still duplicated the graph per open
 //! app — the daemon owns it once for all of them.
@@ -73,7 +73,7 @@ pub fn run() -> i32 {
         }
     };
 
-    let idle_timeout = std::env::var("COSH_DECISIOND_IDLE_SECS")
+    let idle_timeout = std::env::var("MORPHEUS_DECISIOND_IDLE_SECS")
         .ok()
         .and_then(|v| v.parse::<u64>().ok())
         .map(Duration::from_secs)

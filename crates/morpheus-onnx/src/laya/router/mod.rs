@@ -494,9 +494,9 @@ fn default_agent_factory(
     // Router-side opt-in for the session thread cap, mirroring
     // `LoadOptions::intra_op_threads` for the facade path. The Router
     // factory signature is upstream-shaped (no options struct), so the
-    // environment is the only channel; `COSH_ONNX_INTRA_THREADS` is a
+    // environment is the only channel; `MORPHEUS_ONNX_INTRA_THREADS` is a
     // positive integer. Absent/invalid keeps ORT's default.
-    let intra_op_threads = std::env::var("COSH_ONNX_INTRA_THREADS")
+    let intra_op_threads = std::env::var("MORPHEUS_ONNX_INTRA_THREADS")
         .ok()
         .and_then(|v| v.parse::<usize>().ok())
         .filter(|&n| n > 0);

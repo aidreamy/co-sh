@@ -4,7 +4,7 @@
 //! The app drives the agent-loop spinner through a single interface
 //! (`new`/`advance`/`set_activity`/`set_mode_color`/`update_theme`/`width`
 //! /`render`/`reset`/`is_initialized`). This enum dispatches those calls to
-//! whichever animation the user picked (`cosh::setup::SpinnerStyle`), so a
+//! whichever animation the user picked (`morpheus::setup::SpinnerStyle`), so a
 //! style switch is a pure decoration change — the loop code never learns
 //! which variant is live.
 
@@ -34,19 +34,21 @@ pub enum AnySpinner {
 
 impl AnySpinner {
     /// Build the spinner for `style` with the given label.
-    pub fn new(label: &str, theme: &Theme, style: cosh::setup::SpinnerStyle) -> Self {
+    pub fn new(label: &str, theme: &Theme, style: morpheus::setup::SpinnerStyle) -> Self {
         match style {
-            cosh::setup::SpinnerStyle::Bass => {
+            morpheus::setup::SpinnerStyle::Bass => {
                 AnySpinner::Bass(AgentSpinnerBass::new(label, theme))
             }
-            cosh::setup::SpinnerStyle::Runes => AnySpinner::Runes(AgentSpinner::new(label, theme)),
-            cosh::setup::SpinnerStyle::Opencode => {
+            morpheus::setup::SpinnerStyle::Runes => {
+                AnySpinner::Runes(AgentSpinner::new(label, theme))
+            }
+            morpheus::setup::SpinnerStyle::Opencode => {
                 AnySpinner::Opencode(AgentSpinnerOpencode::new(label, theme))
             }
-            cosh::setup::SpinnerStyle::Crush => {
+            morpheus::setup::SpinnerStyle::Crush => {
                 AnySpinner::Crush(AgentSpinnerCrush::new(label, theme))
             }
-            cosh::setup::SpinnerStyle::Classic => {
+            morpheus::setup::SpinnerStyle::Classic => {
                 AnySpinner::Classic(AgentSpinnerClassic::new(label, theme))
             }
         }
@@ -157,7 +159,7 @@ impl AnySpinner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cosh::setup::SpinnerStyle;
+    use morpheus::setup::SpinnerStyle;
 
     #[test]
     fn every_style_builds_and_reports_its_own_width() {

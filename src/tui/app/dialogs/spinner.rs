@@ -10,7 +10,7 @@ impl App {
     pub(in crate::app) fn open_spinner_dialog(&mut self) {
         let current = self.setup.appearance.spinner.id().to_string();
         // Preselect the active style's row.
-        let selected = cosh::setup::SpinnerStyle::ALL
+        let selected = morpheus::setup::SpinnerStyle::ALL
             .iter()
             .position(|s| s.id() == current)
             .unwrap_or(0);
@@ -30,7 +30,7 @@ impl App {
         if !self.is_spinner_dialog_visible() {
             return false;
         }
-        let style_count = cosh::setup::SpinnerStyle::ALL.len();
+        let style_count = morpheus::setup::SpinnerStyle::ALL.len();
         match key {
             KeyCode::Up => {
                 if let Some(d) = self.dialog.current_mut() {
@@ -53,7 +53,7 @@ impl App {
                     .dialog
                     .current()
                     .map_or(0, |d| d.selected.min(style_count - 1));
-                let style = cosh::setup::SpinnerStyle::ALL[selected];
+                let style = morpheus::setup::SpinnerStyle::ALL[selected];
                 // The style drives the NEXT spinner construction; the live
                 // one (if any) keeps animating until the loop ends.
                 self.setup.appearance.spinner = style;
@@ -72,7 +72,7 @@ impl App {
 
     /// Toast feedback after a `/spinner` pick (the same surface /bell
     /// reports through).
-    fn toast_style_changed(&mut self, style: cosh::setup::SpinnerStyle) {
+    fn toast_style_changed(&mut self, style: morpheus::setup::SpinnerStyle) {
         use crate::ui::toast::{ToastOptions, ToastVariant};
         self.toast_state.show(ToastOptions {
             title: Some("Spinner".into()),

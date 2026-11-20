@@ -9,7 +9,7 @@
 
 use ratatui::{Terminal, backend::TestBackend};
 
-use cosh::harness::HarnessEvent;
+use morpheus::harness::HarnessEvent;
 
 use super::App;
 

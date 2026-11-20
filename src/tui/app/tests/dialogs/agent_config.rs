@@ -41,7 +41,7 @@ fn split_app_with_model_option(current: &str) -> App {
     // The config options ride the pane chrome event the same way a real
     // turn's report delivers them.
     app.event_tx
-        .send(cosh::harness::HarnessEvent::AgentsPaneEvent {
+        .send(morpheus::harness::HarnessEvent::AgentsPaneEvent {
             pane: 0,
             pane_id: app.agents_split.as_ref().unwrap().panes[0].id,
             epoch: app.agents_pane_epoch,
@@ -106,7 +106,7 @@ async fn confirming_a_model_pick_persists_it_per_agent() {
     // pass a regression that never writes (e.g. a wrong directory composed
     // at `App::new`), and the whole point of the store is surviving the
     // session it was made in.
-    let file = cosh::setup::data_dir_override()
+    let file = morpheus::setup::data_dir_override()
         .join("agents")
         .join(morpheus_tools::subagent::model_picks::MODEL_PICKS_FILE);
     let text = std::fs::read_to_string(&file).expect("the store file was written");
@@ -130,7 +130,7 @@ async fn non_model_picks_and_defaults_never_persist() {
     // A tool-call completion event (the panes' ordinary traffic) writes
     // nothing.
     app.event_tx
-        .send(cosh::harness::HarnessEvent::AgentsPaneEvent {
+        .send(morpheus::harness::HarnessEvent::AgentsPaneEvent {
             pane: 0,
             pane_id: app.agents_split.as_ref().unwrap().panes[0].id,
             epoch: app.agents_pane_epoch,
@@ -151,7 +151,7 @@ async fn non_model_picks_and_defaults_never_persist() {
     // A reasoning pick does not touch the model record: only a model pick
     // writes the store.
     app.event_tx
-        .send(cosh::harness::HarnessEvent::AgentsPaneEvent {
+        .send(morpheus::harness::HarnessEvent::AgentsPaneEvent {
             pane: 0,
             pane_id: app.agents_split.as_ref().unwrap().panes[0].id,
             epoch: app.agents_pane_epoch,
@@ -207,7 +207,7 @@ async fn config_options_report_seeds_the_persisted_dot() {
 
     // No pick persisted: the report passes through untouched.
     app.event_tx
-        .send(cosh::harness::HarnessEvent::AgentsPaneEvent {
+        .send(morpheus::harness::HarnessEvent::AgentsPaneEvent {
             pane: 0,
             pane_id: app.agents_split.as_ref().unwrap().panes[0].id,
             epoch: app.agents_pane_epoch,
@@ -231,7 +231,7 @@ async fn config_options_report_seeds_the_persisted_dot() {
         .set("claude", "model-b")
         .expect("persist");
     app.event_tx
-        .send(cosh::harness::HarnessEvent::AgentsPaneEvent {
+        .send(morpheus::harness::HarnessEvent::AgentsPaneEvent {
             pane: 0,
             pane_id: app.agents_split.as_ref().unwrap().panes[0].id,
             epoch: app.agents_pane_epoch,
@@ -258,7 +258,7 @@ async fn config_options_report_seeds_the_persisted_dot() {
         .set("claude", "model-gone")
         .expect("persist");
     app.event_tx
-        .send(cosh::harness::HarnessEvent::AgentsPaneEvent {
+        .send(morpheus::harness::HarnessEvent::AgentsPaneEvent {
             pane: 0,
             pane_id: app.agents_split.as_ref().unwrap().panes[0].id,
             epoch: app.agents_pane_epoch,
@@ -295,7 +295,7 @@ async fn config_options_report_seeds_the_persisted_dot() {
         o.current = "model-b".to_string();
     }
     app.event_tx
-        .send(cosh::harness::HarnessEvent::AgentsPaneEvent {
+        .send(morpheus::harness::HarnessEvent::AgentsPaneEvent {
             pane: 0,
             pane_id: app.agents_split.as_ref().unwrap().panes[0].id,
             epoch: app.agents_pane_epoch,

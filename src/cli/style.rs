@@ -2,7 +2,7 @@
 //!
 //! The palette is the user's **active theme** — the same [`Theme`] the TUI
 //! paints with — converted to 24-bit ANSI escapes. Loading goes through
-//! [`cosh::setup::Setup`], so `morpheus --help` looks like the app the user
+//! [`morpheus::setup::Setup`], so `morpheus --help` looks like the app the user
 //! configured, without a second colour configuration to keep in sync.
 //!
 //! Colour is emitted only when it cannot hurt: stdout must be a terminal,
@@ -32,7 +32,7 @@ impl Palette {
     /// (registry default when unset or unknown) plus the terminal's colour and
     /// width capabilities.
     pub fn load() -> Self {
-        let setup = cosh::setup::Setup::load();
+        let setup = morpheus::setup::Setup::load();
         let registry = ThemeRegistry::new();
         let theme = registry
             .get(&setup.appearance.theme)

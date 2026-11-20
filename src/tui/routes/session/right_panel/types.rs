@@ -23,7 +23,7 @@ use ratatui::buffer::{Buffer, Cell};
 use ratatui::layout::Rect;
 
 use crate::theme::Theme;
-use cosh::harness::agent_coworkers::AgentCoworkerTurnEnd;
+use morpheus::harness::agent_coworkers::AgentCoworkerTurnEnd;
 
 use crate::types::{Part, Session, ToolStatus};
 use crate::util::text_region::{TextRegion, extract_text_in_region};
@@ -2081,7 +2081,7 @@ impl RightPanelState {
     }
 
     /// Unique spill directory for a new state instance:
-    /// `<tmp>/cosh/right-panel/<pid>-<nanos>/`. Removed by `Drop`.
+    /// `<tmp>/morpheus/right-panel/<pid>-<nanos>/`. Removed by `Drop`.
     fn fresh_spill_dir() -> PathBuf {
         let nanos = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -3731,7 +3731,7 @@ impl RightPanelState {
     }
 
     /// Open (idempotently) the main-agent mirror window. The mirror is a
-    /// running `subagent: cosh` window wearing the `main_mirror` marker —
+    /// running `subagent: morpheus` window wearing the `main_mirror` marker —
     /// the same shape a subagent window renders, so zero new rendering
     /// code. Never superseded, never listed, never a normal-event target.
     pub(crate) fn open_main_mirror_window(&mut self) {
@@ -3740,7 +3740,7 @@ impl RightPanelState {
         }
         self.next_pty_id += 1;
         let id = format!("pty-{}", self.next_pty_id);
-        let mut session = PtySession::new(id, "subagent: cosh".to_string(), None);
+        let mut session = PtySession::new(id, "subagent: morpheus".to_string(), None);
         session.main_mirror = true;
         self.pty_sessions.push(session);
         self.pty_gen = self.pty_gen.wrapping_add(1);
@@ -3864,7 +3864,7 @@ impl RightPanelState {
         self.pty_gen = self.pty_gen.wrapping_add(1);
         // Selection/pins index absolute positions — clamp defensively. A
         // window click while the mirror was up may have left the panel
-        // focused on the mirror's own queue (`Agent("cosh")`): with the
+        // focused on the mirror's own queue (`Agent("morpheus")`): with the
         // mirror gone that focus is stale — drop it with the rest.
         self.panel_focus = None;
         self.subagent_list_selected = None;
@@ -4211,7 +4211,8 @@ impl RightPanelState {
                 // green/orange/red. Extracted from the UNWRAPPED report and
                 // BEFORE the tail-only truncation below, or a large report
                 // would lose its header.
-                let (severity, _) = morpheus_tools::subagent::severity::extract_severity(&final_output);
+                let (severity, _) =
+                    morpheus_tools::subagent::severity::extract_severity(&final_output);
                 session.severity = severity;
             }
             // SEAL ON THE TRANSITION ONLY: one subagent call's completion
@@ -8535,7 +8536,7 @@ mod tests {
 
         // Supersede immunity: a finished mirror survives a same-CLI spawn.
         state.finish_main_mirror(false);
-        state.start_pty("subagent: cosh".to_string(), None);
+        state.start_pty("subagent: morpheus".to_string(), None);
         assert!(
             !state.pty_sessions[0].superseded,
             "a same-CLI subagent spawn never supersedes the main mirror"

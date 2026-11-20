@@ -17,7 +17,7 @@ impl TempDir {
             .as_nanos();
         let seq = COUNTER.fetch_add(1, Ordering::Relaxed);
         let pid = std::process::id();
-        let path = std::env::temp_dir().join(format!("cosh-glob-tool-{pid}-{nanos}-{seq}"));
+        let path = std::env::temp_dir().join(format!("morpheus-glob-tool-{pid}-{nanos}-{seq}"));
         std::fs::create_dir_all(&path).expect("create temp dir");
         Self(path)
     }
@@ -146,7 +146,7 @@ fn glob_rejects_unknown_file_type() {
 
 #[test]
 fn glob_nonexistent_path_returns_error() {
-    let result = glob(&Glob::default(), "*", "/nonexistent/cosh_test_path");
+    let result = glob(&Glob::default(), "*", "/nonexistent/morpheus_test_path");
 
     assert!(result.is_err(), "nonexistent path should return an error");
 }

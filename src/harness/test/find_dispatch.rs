@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use super::super::tools::{CoshTools, Tools};
+use super::super::tools::{MorpheusTools, Tools};
 use serde_json::json;
 
 struct TempDir(PathBuf);
@@ -16,7 +16,7 @@ impl TempDir {
             .as_nanos();
         let seq = COUNTER.fetch_add(1, Ordering::Relaxed);
         let pid = std::process::id();
-        let path = std::env::temp_dir().join(format!("cosh-find-dispatch-{pid}-{nanos}-{seq}"));
+        let path = std::env::temp_dir().join(format!("morpheus-find-dispatch-{pid}-{nanos}-{seq}"));
         std::fs::create_dir_all(&path).expect("create temp dir");
         Self(path)
     }
@@ -35,8 +35,8 @@ fn seed_tree(root: &Path, files: usize) {
     }
 }
 
-fn make_tools(root: &Path) -> CoshTools {
-    CoshTools::new(root.to_str().expect("temp dir is utf-8"))
+fn make_tools(root: &Path) -> MorpheusTools {
+    MorpheusTools::new(root.to_str().expect("temp dir is utf-8"))
 }
 
 #[tokio::test]

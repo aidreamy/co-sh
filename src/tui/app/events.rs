@@ -1,8 +1,8 @@
 use std::io;
 use std::time::Duration;
 
-use morpheus_tui::core::lib::rgba::RGBA;
 use crossterm::event::{self, Event, KeyEventKind};
+use morpheus_tui::core::lib::rgba::RGBA;
 use ratatui::style::Color;
 
 use super::agents_dispatch::{either_split, either_split_mut};
@@ -14,8 +14,8 @@ use crate::routes::session::queue_choice::QueueTarget;
 use crate::session::store::is_valid_session;
 use crate::types::{Part, Session, SessionStatus};
 use crate::ui::dialogs::DialogType;
-use cosh::harness::HarnessEvent;
-use cosh::harness::context::ContextManagerState;
+use morpheus::harness::HarnessEvent;
+use morpheus::harness::context::ContextManagerState;
 use morpheus_tools::subagent::events::SubagentEvent;
 
 /// Process-wide sequence for live-created tool parts' `tool_call_id`s. The
@@ -422,7 +422,7 @@ impl App {
                             // provider and a model option under category
                             // `model`, and a flat id-or-category scan would
                             // seed the provider option's badge.
-                            let model_id = cosh::coordinator::turn::model_option_id(&options)
+                            let model_id = morpheus::coordinator::turn::model_option_id(&options)
                                 .map(str::to_string);
                             if let Some(p) = split.panes.get(pane) {
                                 // The seed value in precedence order — the
@@ -611,8 +611,9 @@ impl App {
                     // reason from its own terminal event now, so a guard stop
                     // or a cut stream arrives as `incomplete`/`partial` and
                     // can never be mistaken for a deliberate interrupt.
-                    let end =
-                        cosh::harness::agent_coworkers::AgentCoworkerTurnEnd::parse(&stop_reason);
+                    let end = morpheus::harness::agent_coworkers::AgentCoworkerTurnEnd::parse(
+                        &stop_reason,
+                    );
                     let target =
                         either_split_mut(&mut self.agents_split, &mut self.parked_agents_split);
                     if let Some(split) = target {
@@ -655,9 +656,11 @@ impl App {
                         } else {
                             Ok(output.clone())
                         };
-                        cosh::harness::agent_coworkers::complete_request(
+                        morpheus::harness::agent_coworkers::complete_request(
                             &id,
-                            cosh::harness::agent_coworkers::AgentCoworkerReport::new(report, end),
+                            morpheus::harness::agent_coworkers::AgentCoworkerReport::new(
+                                report, end,
+                            ),
                         )
                     });
                     // The pane just freed: the user's OWN queues are served
@@ -1582,7 +1585,7 @@ impl App {
                         }
                     }
                     match event {
-                        cosh::harness::events::WeightsInstallEvent::Cached => {
+                        morpheus::harness::events::WeightsInstallEvent::Cached => {
                             // Cache hit: no download ran. Freeze any orphaned
                             // running install line (a crash mid-install
                             // persisted one) — nothing else will.
@@ -1595,7 +1598,7 @@ impl App {
                                 part.failed = Some(true);
                             }
                         }
-                        cosh::harness::events::WeightsInstallEvent::TextBegin(first) => {
+                        morpheus::harness::events::WeightsInstallEvent::TextBegin(first) => {
                             // A running install line at this point is an
                             // ORPHAN (a crash mid-install persisted it; the
                             // restored session re-read it): freeze it so a
@@ -1633,7 +1636,7 @@ impl App {
                                 model: None,
                             });
                         }
-                        cosh::harness::events::WeightsInstallEvent::TextDelta(delta) => {
+                        morpheus::harness::events::WeightsInstallEvent::TextDelta(delta) => {
                             // Append to the message the TextBegin opened:
                             // the sender guarantees delta chunks only ever
                             // follow one, and the pieces concatenate back
@@ -1647,7 +1650,7 @@ impl App {
                                 t.text.push_str(&delta);
                             }
                         }
-                        cosh::harness::events::WeightsInstallEvent::Progress {
+                        morpheus::harness::events::WeightsInstallEvent::Progress {
                             model,
                             bytes_done,
                             bytes_total,
@@ -1686,7 +1689,10 @@ impl App {
                                 part.bytes_total = bytes_total;
                             }
                         }
-                        cosh::harness::events::WeightsInstallEvent::Finished { repo, revision } => {
+                        morpheus::harness::events::WeightsInstallEvent::Finished {
+                            repo,
+                            revision,
+                        } => {
                             // Terminal (success): freeze the line at 100%
                             // and record the resolved SHA as the mirror pin
                             // — one revision per checkpoint, every later
@@ -1709,7 +1715,7 @@ impl App {
                                 self.setup.save();
                             }
                         }
-                        cosh::harness::events::WeightsInstallEvent::Failed(reason) => {
+                        morpheus::harness::events::WeightsInstallEvent::Failed(reason) => {
                             // Terminal (failure): freeze the line as failed
                             // and toast the reason — the bar itself stays
                             // one line.
@@ -1855,7 +1861,7 @@ impl App {
                                         )
                                         .with_retry(false);
                                     if let Some(title) =
-                                        cosh::harness::generate_title(&connector, &user_prompt)
+                                        morpheus::harness::generate_title(&connector, &user_prompt)
                                             .await
                                     {
                                         // Persist the updated title to disk.
@@ -1897,7 +1903,7 @@ impl App {
                 }
 
                 HarnessEvent::UserMessageInjected { text } => {
-                    self.telemetry_feature(cosh::telemetry::schema::Feature::Prompt);
+                    self.telemetry_feature(morpheus::telemetry::schema::Feature::Prompt);
                     // The running loop consumed a "next request" message:
                     // retire the in-flight marker and pop the deque head
                     // (FIFO — the harness drains the channel in order).
@@ -2050,8 +2056,8 @@ impl App {
                 HarnessEvent::McpStatus { servers } => {
                     // Same session-scoped model as LSP: the footer counts
                     // persist across turns until a newer snapshot arrives.
-                    self.state.mcp_count = cosh::mcp::ready_count(&servers);
-                    self.state.mcp_errors = cosh::mcp::failed_count(&servers);
+                    self.state.mcp_count = morpheus::mcp::ready_count(&servers);
+                    self.state.mcp_errors = morpheus::mcp::failed_count(&servers);
                 }
 
                 HarnessEvent::ContextSnapshot { context } => {
@@ -2072,7 +2078,7 @@ impl App {
 
                 HarnessEvent::CompactOnDemand { outcome } => {
                     use crate::ui::toast::{ToastOptions, ToastVariant};
-                    use cosh::harness::ManualCompactionOutcome as Outcome;
+                    use morpheus::harness::ManualCompactionOutcome as Outcome;
                     self.manual_compaction_active = false;
                     let (title, message, variant) = match outcome {
                         Outcome::Compacted => (
@@ -2103,7 +2109,7 @@ impl App {
                     // Route harness notifications (context-window overflow,
                     // exhausted retries) through the existing toast system.
                     use crate::ui::toast::{ToastOptions, ToastVariant as TuiToastVariant};
-                    use cosh::harness::events::ToastVariant as HarnessToastVariant;
+                    use morpheus::harness::events::ToastVariant as HarnessToastVariant;
                     let variant = match variant {
                         HarnessToastVariant::Info => TuiToastVariant::Info,
                         HarnessToastVariant::Success => TuiToastVariant::Success,
@@ -2171,7 +2177,7 @@ impl App {
                         // This event has no typed cause. Preserve Unknown rather
                         // than guessing a provider category from free-form text.
                         self.session_telemetry.record_error(
-                            cosh::telemetry::schema::ErrorCategory::Unknown,
+                            morpheus::telemetry::schema::ErrorCategory::Unknown,
                             "harness::core",
                             None,
                             &message,
@@ -2231,7 +2237,7 @@ impl App {
                             agent: None,
                             model: self.llm_config.model.clone(),
                         });
-                        if let Some(cosh::harness::context::ContextItem::Error { id, .. }) =
+                        if let Some(morpheus::harness::context::ContextItem::Error { id, .. }) =
                             context.as_ref().and_then(|ctx| ctx.items.back())
                             && let Some(message) = session.messages.last()
                         {
@@ -2305,7 +2311,7 @@ impl App {
                     self.update_model_cache(&models);
 
                     // Prepend "auto" entry
-                    let auto_entry = cosh::ModelEntry {
+                    let auto_entry = morpheus::ModelEntry {
                         provider: String::new(),
                         model: "auto".to_string(),
                     };

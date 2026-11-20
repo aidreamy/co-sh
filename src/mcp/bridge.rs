@@ -6,7 +6,7 @@ use rmcp::model::{
 };
 use serde::{Deserialize, Serialize};
 
-/// Cosh-side view of one MCP resource or resource template. Templates and
+/// Morpheus-side view of one MCP resource or resource template. Templates and
 /// concrete resources share one shape so the TUI can list them uniformly,
 /// but they are NOT interchangeable: a template's `uri` is its raw RFC 6570
 /// form and `is_template` is true. Callers must expand it with
@@ -24,7 +24,7 @@ pub struct ResourceInfo {
     pub is_template: bool,
 }
 
-/// Cosh-side view of one MCP prompt.
+/// Morpheus-side view of one MCP prompt.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PromptInfo {
     pub name: String,
@@ -33,7 +33,7 @@ pub struct PromptInfo {
     pub arguments: Vec<PromptArgumentInfo>,
 }
 
-/// Cosh-side view of one prompt argument.
+/// Morpheus-side view of one prompt argument.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PromptArgumentInfo {
     pub name: String,
@@ -92,7 +92,7 @@ pub const fn is_tool_error(result: &CallToolResult) -> bool {
     matches!(result.is_error, Some(true))
 }
 
-/// Expose one MCP resource to cosh: the identity, naming, and hints the TUI
+/// Expose one MCP resource to morpheus: the identity, naming, and hints the TUI
 /// and header need. Contents never appear here — those arrive per read.
 pub fn resource_to_info(resource: &Resource) -> ResourceInfo {
     ResourceInfo {

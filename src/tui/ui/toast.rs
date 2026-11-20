@@ -442,7 +442,7 @@ mod tests {
         }
     }
 
-    /// A real (event-driven) toast — e.g. "session open in another cosh
+    /// A real (event-driven) toast — e.g. "session open in another morpheus
     /// process" after a refused click — must survive the per-frame tooltip
     /// re-fire while the pointer rests on the same row.
     #[test]
@@ -553,7 +553,7 @@ mod tests {
         let mut state = ToastState::new();
         let mut cmd = toast(5_000);
         cmd.message =
-            "curl -fsSL https://raw.githubusercontent.com/aidreamy/co-sh/v0.1.2/download.sh | COSH_VERSION=v0.1.2 bash"
+            "curl -fsSL https://raw.githubusercontent.com/aidreamy/morpheus/v0.1.2/download.sh | MORPHEUS_VERSION=v0.1.2 bash"
                 .into();
         state.show(cmd);
 
@@ -570,14 +570,14 @@ mod tests {
             .collect();
 
         // The row holding the tail (`bash`) must ALSO hold the head
-        // (`curl`) and the middle (`COSH_VERSION=…`): one contiguous line,
+        // (`curl`) and the middle (`MORPHEUS_VERSION=…`): one contiguous line,
         // the whole command inline.
         let tail_row = rows
             .iter()
             .find(|r| r.contains("bash"))
             .expect("command tail must be rendered");
         assert!(
-            tail_row.contains("curl -fsSL") && tail_row.contains("COSH_VERSION=v0.1.2"),
+            tail_row.contains("curl -fsSL") && tail_row.contains("MORPHEUS_VERSION=v0.1.2"),
             "the whole command must sit on ONE row on a wide screen: {tail_row:?}"
         );
         // And the box must have exactly one message row (title + 1 line).
@@ -696,7 +696,7 @@ mod tests {
         let area = Rect::new(0, 0, 80, 12);
         let mut state = ToastState::new();
         let message =
-            "curl -fsSL https://raw.githubusercontent.com/aidreamy/co-sh/v0.1.2/download.sh | COSH_VERSION=v0.1.2 bash"
+            "curl -fsSL https://raw.githubusercontent.com/aidreamy/morpheus/v0.1.2/download.sh | MORPHEUS_VERSION=v0.1.2 bash"
                 .to_string();
         let mut cmd = toast(5_000);
         cmd.message = message.clone();

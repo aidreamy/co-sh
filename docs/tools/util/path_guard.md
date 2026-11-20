@@ -11,7 +11,7 @@ Every tool that accepts filesystem paths should use this guard to enforce a cons
 1. **Blocklist priority** — paths in the blocklist are always denied, regardless of other rules.
 2. **Project root containment** — paths outside the project root are denied unless explicitly allowed.
 3. **Allowlist exceptions** — paths in the allowlist are allowed even if outside the root.
-4. **Scratch directory exemption** — the harness scratch directory (`<OS temp>/cosh`) is allowed for tool-output logs, but still subject to the blocklist.
+4. **Scratch directory exemption** — the harness scratch directory (`<OS temp>/morpheus`) is allowed for tool-output logs, but still subject to the blocklist.
 5. **Symlink protection** — canonicalization catches symlink escapes from the project root.
 
 ---
@@ -150,7 +150,7 @@ pub fn validate_path(
 2. Check if the path is in the blocklist (prefix match or exact match).
 3. Check if the path is in the allowlist (exact match only).
 4. Check if the path is inside the project root (prefix match).
-5. Check if the path is in the harness scratch directory (`<OS temp>/cosh`).
+5. Check if the path is in the harness scratch directory (`<OS temp>/morpheus`).
 
 **Rules:**
 - Blocklist always has priority.
@@ -239,7 +239,7 @@ let asset = validate_asset_path(
 ### `HARNESS_SCRATCH_DIR`
 
 ```rust
-pub const HARNESS_SCRATCH_DIR: &str = "cosh";
+pub const HARNESS_SCRATCH_DIR: &str = "morpheus";
 ```
 
 The name of the harness scratch directory under the OS temp directory. The harness writes truncated tool-output logs here, and the model reads them back with `fs_read`/`find_grep`. This directory is exempt from the outside-root denial (but never from the blocklist).

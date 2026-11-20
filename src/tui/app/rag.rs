@@ -1,5 +1,5 @@
-use morpheus_tui::core::types::MouseEvent;
 use crossterm::event::KeyCode;
+use morpheus_tui::core::types::MouseEvent;
 use ratatui::layout::Rect;
 
 use super::App;
@@ -142,8 +142,8 @@ impl App {
     }
 
     #[cfg(feature = "embed")]
-    pub(super) fn recall_dbs_vec(&self) -> Vec<cosh::harness::tools::RecallDb> {
-        use cosh::harness::tools::{RecallDb, RecallEmbedderConfig};
+    pub(super) fn recall_dbs_vec(&self) -> Vec<morpheus::harness::tools::RecallDb> {
+        use morpheus::harness::tools::{RecallDb, RecallEmbedderConfig};
         self.rag_view
             .registry
             .dbs

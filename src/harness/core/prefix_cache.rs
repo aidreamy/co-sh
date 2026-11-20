@@ -105,7 +105,7 @@ impl PrefixCacheProbe {
         let Some(previous) = self.previous.take() else {
             // First request of this probe: nothing to compare, just seed.
             log::info!(
-                target: "cosh::harness",
+                target: "morpheus::harness",
                 "prefix cache probe: seeded (model={}, messages={})",
                 fingerprint.model,
                 fingerprint.message_hashes.len(),
@@ -145,7 +145,7 @@ impl PrefixCacheProbe {
             };
         }
         log::info!(
-            target: "cosh::harness",
+            target: "morpheus::harness",
             "prefix cache probe: verdict={verdict} msgs {}→{} system_changed={} | \
              totals: compared={} full_breaks={} mid_history={} shrinks={}",
             previous.message_hashes.len(),

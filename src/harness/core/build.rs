@@ -8,7 +8,7 @@ use crate::mcp::{McpConfig, McpManager};
 
 use aiface::connector::Connector;
 
-use crate::harness::tools::CoshTools;
+use crate::harness::tools::MorpheusTools;
 
 use super::{
     ContextManager, CorrectionMemory, Harness, MAX_CONTEXT_TOKENS, Mode, PrefixCacheProbe,
@@ -22,11 +22,11 @@ impl Harness {
     #[must_use]
     pub fn new(connector: Connector, cwd: &str, disabled_tools: HashSet<String>) -> Self {
         let user_disabled_tools = disabled_tools.clone();
-        let mut cosh_tools = CoshTools::new(cwd);
+        let mut morpheus_tools = MorpheusTools::new(cwd);
         // Interpolate the internal-sub-agent note into the `subagent_call`
         // tool description BEFORE the header is built: omitting `agent`
         // routes the call to an internal agent instead of an external CLI.
-        cosh_tools.set_subagent_note(SUBAGENT_INTERNAL_NOTE);
+        morpheus_tools.set_subagent_note(SUBAGENT_INTERNAL_NOTE);
         let mut harness = Self {
             connector,
             mcp: McpManager::new(),
@@ -34,7 +34,7 @@ impl Harness {
             header_context: String::new(),
             system_prompts: Vec::new(),
             harness_tools: default_harness_tools(),
-            cosh_tools: Some(cosh_tools),
+            morpheus_tools: Some(morpheus_tools),
             pending_images: Vec::new(),
             user_images: Vec::new(),
             attempt_reasoning: String::new(),
@@ -221,19 +221,19 @@ impl Harness {
     pub fn with_local_base_urls(mut self, urls: std::collections::HashMap<String, String>) -> Self {
         self.local_base_urls = urls.clone();
         #[cfg(feature = "embed")]
-        if let Some(cosh_tools) = self.cosh_tools.take() {
-            self.cosh_tools = Some(cosh_tools.with_local_base_urls(urls));
+        if let Some(morpheus_tools) = self.morpheus_tools.take() {
+            self.morpheus_tools = Some(morpheus_tools.with_local_base_urls(urls));
         }
         self
     }
 
     /// Configure skill discovery from a prebuilt skills wrapper (built by
     /// the TUI from the setup.json `skills` section; the plain
-    /// `CoshTools::new` default already covers `~/.skills`). Nested
+    /// `MorpheusTools::new` default already covers `~/.skills`). Nested
     /// sub-agent harnesses inherit the parent's wrapper.
     #[must_use]
     pub fn with_skills(mut self, skills: morpheus_tools::skills::Skills) -> Self {
-        if let Some(tools) = self.cosh_tools.as_mut() {
+        if let Some(tools) = self.morpheus_tools.as_mut() {
             tools.set_skills(skills);
         }
         self
@@ -375,7 +375,7 @@ impl Harness {
         self
     }
 
-    /// Mark this harness as the MANAGER loop (the `/agents` split's `cosh`
+    /// Mark this harness as the MANAGER loop (the `/agents` split's `morpheus`
     /// coworker, at any position):
     /// its `agents_call` requests are tagged [`super::agent_coworkers::MANAGER`] so a
     /// background coworker report is drained only by this loop — the main
@@ -388,13 +388,13 @@ impl Harness {
     }
 
     /// Bind this harness to the `/agents` coworker it runs in (the coworker's
-    /// registry id: `"cosh"`, `"cosh#2"`, …). A pane loop NEVER coordinates:
+    /// registry id: `"morpheus"`, `"morpheus#2"`, …). A pane loop NEVER coordinates:
     /// binding the id strips the `agents_call` tool (registered in `new`
     /// before the id was known) and the header's coworkers block (skipped in
     /// `format_header_context`). The reported replication bug lived exactly
-    /// here: a cosh coworker ran the manager instructions + the tool, so one
+    /// here: a morpheus coworker ran the manager instructions + the tool, so one
     /// delegation from the main agent made the coworker's own manager loop
-    /// re-delegate to EVERY sibling — the call propagated to all the cosh
+    /// re-delegate to EVERY sibling — the call propagated to all the morpheus
     /// agents instead of staying in the addressed one. Coordination belongs
     /// to the TOP-LEVEL agent alone; a coworker does its work and reports back.
     /// `None` for the MAIN loop, which owns no coworker and keeps the tool.
@@ -443,8 +443,8 @@ impl Harness {
     /// [`format_header_context`](Self::format_header_context).
     #[cfg(feature = "embed")]
     pub fn set_recall_context(&mut self, suffix: String) {
-        if let Some(ref mut cosh) = self.cosh_tools {
-            cosh.set_recall_context(suffix);
+        if let Some(ref mut morpheus) = self.morpheus_tools {
+            morpheus.set_recall_context(suffix);
         }
     }
 
@@ -455,8 +455,8 @@ impl Harness {
     /// before [`format_header_context`](Self::format_header_context).
     #[cfg(feature = "embed")]
     pub fn set_recall_dbs(&mut self, dbs: Vec<super::tools::RecallDb>) {
-        if let Some(ref mut cosh) = self.cosh_tools {
-            cosh.set_recall_dbs(dbs);
+        if let Some(ref mut morpheus) = self.morpheus_tools {
+            morpheus.set_recall_dbs(dbs);
         }
     }
 

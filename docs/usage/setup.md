@@ -23,13 +23,13 @@ keys, press Enter to edit, and Esc to go back.
 
 ## Where the file lives
 
-On Unix, the default path is `~/.config/cosh/setup.json`. On other platforms,
+On Unix, the default path is `~/.config/morpheus/setup.json`. On other platforms,
 Morpheus uses the operating system's application configuration directory. Set
-`COSH_CONFIG_DIR` to use another directory; Morpheus then reads and writes
+`MORPHEUS_CONFIG_DIR` to use another directory; Morpheus then reads and writes
 `<that-directory>/setup.json`.
 
 The file is JSON. Missing fields use their defaults. A missing or invalid file
-also starts with defaults. `COSH_DATA_DIR` changes the data directory for
+also starts with defaults. `MORPHEUS_DATA_DIR` changes the data directory for
 sessions and caches; it does not change the location of `setup.json`.
 
 ## Quick map
@@ -228,7 +228,7 @@ is file-only:
 }
 ```
 
-`COSH_ONNX_HUB_REPO` overrides `model_decision.hub.repo`. The legacy top-level
+`MORPHEUS_ONNX_HUB_REPO` overrides `model_decision.hub.repo`. The legacy top-level
 name `checkup` is still accepted when reading, but Morpheus writes
 `model_decision`.
 
@@ -236,9 +236,9 @@ name `checkup` is still accepted when reading, but Morpheus writes
 
 | Setting | Default | TUI / behavior |
 |---|---:|---|
-| `lsp` | `true` | `/settings` → Environment → Language servers. `COSH_LSP=off`, `0`, or `false` disables it for the process. |
+| `lsp` | `true` | `/settings` → Environment → Language servers. `MORPHEUS_LSP=off`, `0`, or `false` disables it for the process. |
 | `editor` | `""` | `/settings` → Environment → Editor. Empty auto-detects `nvim`, then `vim`, then `nano`; otherwise use a command such as `nvim -u NONE` or `code -w`. |
-| `telemetry` | `true` | `/settings` → General → Telemetry. This is opt-out and applies on the next launch; `COSH_TELEMETRY=off` disables it. CI is always off. |
+| `telemetry` | `true` | `/settings` → General → Telemetry. This is opt-out and applies on the next launch; `MORPHEUS_TELEMETRY=off` disables it. CI is always off. |
 
 ### `mcp`
 
@@ -339,13 +339,13 @@ These are convenience inputs, not additional JSON fields:
 
 | Variable | Affects |
 |---|---|
-| `COSH_CONFIG_DIR` | Directory containing `setup.json`. |
-| `COSH_DATA_DIR` | Session and data storage directory. |
-| `COSH_PROVIDER`, `COSH_MODEL`, `COSH_REASONING` | Initial model defaults before a persisted `/models` choice. |
-| `COSH_TOOL_CALL_MODE` | Initial tool-call mode before the persisted setting is applied. |
-| `COSH_LSP` | Runtime LSP override. |
-| `COSH_TELEMETRY` | Runtime telemetry override. |
-| `COSH_ONNX_HUB_REPO` | ONNX mirror override in ONNX builds. |
+| `MORPHEUS_CONFIG_DIR` | Directory containing `setup.json`. |
+| `MORPHEUS_DATA_DIR` | Session and data storage directory. |
+| `MORPHEUS_PROVIDER`, `MORPHEUS_MODEL`, `MORPHEUS_REASONING` | Initial model defaults before a persisted `/models` choice. |
+| `MORPHEUS_TOOL_CALL_MODE` | Initial tool-call mode before the persisted setting is applied. |
+| `MORPHEUS_LSP` | Runtime LSP override. |
+| `MORPHEUS_TELEMETRY` | Runtime telemetry override. |
+| `MORPHEUS_ONNX_HUB_REPO` | ONNX mirror override in ONNX builds. |
 
 For normal use, configure through the TUI and let Morpheus write the file. Edit
 `setup.json` directly for `skills` filters, custom decision checkpoints,

@@ -37,8 +37,8 @@ use aiface::connector::{
     assistant_tool_call_message, discover_context_window, effective_context_window,
     tool_result_message, tool_result_message_with_images, user_message,
 };
-use morpheus_tools::plan::types::TodoList;
 use error_catalog::save_error_catalog_window;
+use morpheus_tools::plan::types::TodoList;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashSet, VecDeque};
 use todo_ctxt::TodoContext;
@@ -708,7 +708,7 @@ impl ContextManager {
         // On-disk catalog caching under `~/.local/share/morpheus/cache`, so repeated
         // launches reuse the downloaded models.dev / OpenRouter catalogs.
         Self::from_window(
-            discover_context_window(model_name, Some("cosh/cache")).await,
+            discover_context_window(model_name, Some("morpheus/cache")).await,
             effective,
         )
     }
@@ -1864,7 +1864,7 @@ impl ContextManager {
     /// harness already owns via [`add_user`](Self::add_user)).
     pub fn build_messages(&self, current_input: &str) -> Vec<ChatMessage> {
         let mut messages = Vec::with_capacity(self.items.len() + 1);
-        // Token-source breakdown (file log, target `cosh::harness::context`):
+        // Token-source breakdown (file log, target `morpheus::harness::context`):
         // per-item-type counts and estimated tokens over the VISIBLE window —
         // the exact material this request is about to send. The point of the
         // log is answering "what is eating the budget" from the wire side:
@@ -1902,7 +1902,7 @@ impl ContextManager {
             }
             let largest_tool_result = bytes[3];
             log::info!(
-                target: "cosh::harness::context",
+                target: "morpheus::harness::context",
                 "request breakdown: items={} hidden={} steering_len={} | \
                  user={}B/{} assistant={}B/{} toolcall={}B/{} \
                  toolresult={}B/{} closure={}B/{} compaction={}B/{} \
@@ -1955,7 +1955,11 @@ impl ContextManager {
                     // User prompts are rendered verbatim.
                     messages.push(user_message(original));
                 }
-                ContextItem::Assistant { original, reasoning, .. } => {
+                ContextItem::Assistant {
+                    original,
+                    reasoning,
+                    ..
+                } => {
                     let mut msg = assistant_message(original);
                     if let Some(r) = reasoning
                         && !r.trim().is_empty()
@@ -2038,7 +2042,9 @@ impl ContextManager {
                         ));
                     }
                 }
-                ContextItem::Closure { content, reasoning, .. } => {
+                ContextItem::Closure {
+                    content, reasoning, ..
+                } => {
                     let mut msg = assistant_message(content);
                     if let Some(r) = reasoning
                         && !r.trim().is_empty()

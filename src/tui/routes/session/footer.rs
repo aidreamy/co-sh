@@ -101,7 +101,7 @@ impl FooterView {
 
         if state.current_session().is_some() {
             // The directory label reports where the MAIN AGENT works, not
-            // where cosh started: it sits beside the git branch badge, which
+            // where morpheus started: it sits beside the git branch badge, which
             // already follows the `/worktree` binding. Reading the startup
             // cwd here would pair one tree's path with another tree's branch.
             let dir = state.main_agent_cwd();
@@ -314,11 +314,11 @@ mod tests {
             agents_hidden: Vec::new(),
             input_history: Vec::new(),
             ctx_ids: Default::default(),
-            main_agent_worktree: Some(cosh::git::worktree::PaneWorktree {
+            main_agent_worktree: Some(morpheus::git::worktree::PaneWorktree {
                 path: "/tmp/wt/feature-x".into(),
                 branch: "feature-x".into(),
                 name: "feature-x".into(),
-                assigned_by: cosh::git::worktree::AssignedBy::User,
+                assigned_by: morpheus::git::worktree::AssignedBy::User,
             }),
             messages: vec![],
         });

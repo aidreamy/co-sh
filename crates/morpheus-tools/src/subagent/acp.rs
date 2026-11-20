@@ -6,13 +6,13 @@
 //! official [`agent_client_protocol`] crate.
 //!
 //! Instead of spawning a one-shot CLI process and scraping its stdout (a
-//! per-agent contract of flags that breaks on every CLI update), cosh acts
+//! per-agent contract of flags that breaks on every CLI update), morpheus acts
 //! as an ACP **client** and follows the protocol contract:
 //!
 //! 1. Spawns the agent harness as a subprocess speaking ACP over stdio.
 //! 2. `initialize` — negotiates the protocol version and capabilities.
 //! 3. `session/new` — opens a session rooted at the workspace directory.
-//!    Authentication is LAZY: when the agent advertises auth methods, cosh
+//!    Authentication is LAZY: when the agent advertises auth methods, morpheus
 //!    does NOT authenticate proactively — several harnesses treat an
 //!    `authenticate` call as a fresh interactive login even when they
 //!    already hold valid credentials (measured on `devin acp`: 19.5 s,
@@ -331,7 +331,7 @@ pub fn register_custom_agents(entries: &[(String, String)]) -> Result<(), String
 /// nothing contract ([`register_custom_agents`]) because there the user
 /// gets immediate feedback; a hand-edited `setup.json` must not disable
 /// every working harness because one entry rotted (e.g. a name that a
-/// later cosh release turned into a built-in).
+/// later morpheus release turned into a built-in).
 ///
 /// Returns one message per skipped entry, in entry order (empty when all
 /// entries were accepted).
@@ -871,11 +871,11 @@ pub fn validate_agent(agent: &str) -> Result<(), String> {
 /// `validate_absolute_cwd` rejects a relative path outright ("cwd must be
 /// an absolute path") and a directory that no longer exists ("invalid
 /// directory path", the `invalid_params` rejection behind a pane's
-/// "[replay failed] ACP session/load failed: Invalid params"), so cosh
+/// "[replay failed] ACP session/load failed: Invalid params"), so morpheus
 /// prepares the path before it ever reaches the wire:
 ///
 /// 1. `canonicalize` — the TUI stores the working directory as the user
-///    typed it (which may be relative, `.` in an in-place `cosh`) and
+///    typed it (which may be relative, `.` in an in-place `morpheus`) and
 ///    resolves symlinked roots lazily; the harness wants the resolved
 ///    absolute spelling.
 /// 2. When the path does not exist (or is not a directory) anymore, the
@@ -885,7 +885,7 @@ pub fn validate_agent(agent: &str) -> Result<(), String> {
 ///      turn's fs requests are served against the session cwd and
 ///      auto-approved under the pane's Yolo mode — silently substituting
 ///      a vanished workspace (the common case: a worktree under
-///      `<OS temp>/cosh-worktrees` a reboot's temp cleaner deleted) with
+///      `<OS temp>/morpheus-worktrees` a reboot's temp cleaner deleted) with
 ///      the user's home directory would run the agent in `~` and widen
 ///      the sandbox there without the user ever learning the workspace
 ///      is gone. Failing loudly preserves the exact pre-fix behavior
@@ -961,7 +961,7 @@ mod cwd_preparation_tests {
     /// An EXISTING directory canonicalizes: a RELATIVE spelling resolves
     /// against the process cwd, and a symlinked root resolves to its target
     /// — the harness receives the resolved absolute path, never the user's
-    /// typed shorthand (the `.`-in-place `cosh` shape). Built under the
+    /// typed shorthand (the `.`-in-place `morpheus` shape). Built under the
     /// process cwd so the relative branch is genuinely exercised.
     #[test]
     fn existing_directory_resolves_to_absolute_and_directory() {
@@ -990,7 +990,7 @@ mod cwd_preparation_tests {
     #[test]
     fn missing_directory_falls_back_to_home_when_lenient() {
         let ghost = std::env::temp_dir()
-            .join("cosh-cwd-test-missing")
+            .join("morpheus-cwd-test-missing")
             .join("definitely-gone");
         assert!(!ghost.exists());
         let prepared = prepare_session_cwd(&ghost, CwdStrictness::Substitute);
@@ -1013,7 +1013,7 @@ mod cwd_preparation_tests {
     #[test]
     fn missing_directory_stays_raw_when_strict() {
         let ghost = std::env::temp_dir()
-            .join("cosh-cwd-test-missing")
+            .join("morpheus-cwd-test-missing")
             .join("strictly-gone");
         assert!(!ghost.exists());
         let prepared = prepare_session_cwd(&ghost, CwdStrictness::Strict);
@@ -1189,7 +1189,7 @@ pub async fn call(
 /// `session/update` notifications (the same variants live turns stream —
 /// user/agent/thought chunks, tool calls, plans) before responding, so the
 /// mapped event stream reconstructs the visible timeline with no storage
-/// on cosh's side beyond the session id itself.
+/// on morpheus's side beyond the session id itself.
 ///
 /// Unlike a live pane (which shows only agent narration — the user's
 /// prompt echoes locally through the pane input), replay's
@@ -1260,7 +1260,7 @@ where
     let model_tx = chunk_tx.clone();
     Client
         .builder()
-        .name("cosh")
+        .name("morpheus")
         .on_receive_notification(
             async move |notification: SessionNotification, _cx| {
                 // Replay arrives as ordinary `session/update` notifications
@@ -1473,7 +1473,7 @@ where
     let notify_collector = collector.clone();
     Client
         .builder()
-        .name("cosh")
+        .name("morpheus")
         .on_receive_notification(
             async move |notification: SessionNotification, _cx| {
                 // Both probe-relevant updates land in the collector; nothing
@@ -2125,7 +2125,7 @@ where
     let load_window_sink = load_window.clone();
     Client
         .builder()
-        .name("cosh")
+        .name("morpheus")
         .on_receive_notification(
             async move |notification: SessionNotification, _cx| {
                 // Map every session update with a TUI representation into a
@@ -2467,7 +2467,7 @@ where
             // — a stale mapping (the agent dropped the mode) is skipped, a
             // transport rejection aborts the turn. `None` (no mapped mode)
             // binds nothing: gemini advertises no modes, and an unmapped
-            // cosh mode keeps the agent's own current.
+            // morpheus mode keeps the agent's own current.
             if let Some(mode_id) = mode.as_deref()
                 && opened
                     .modes

@@ -14,7 +14,7 @@ async fn main() {
     // Build a small scratch project in the OS temp directory. `Fs::cwd` sets
     // the project root that all path guards validate against. The directory is
     // wiped first so re-runs are deterministic.
-    let project = std::env::temp_dir().join("cosh-fs-read-example");
+    let project = std::env::temp_dir().join("morpheus-fs-read-example");
     let _ = std::fs::remove_dir_all(&project);
     std::fs::create_dir_all(&project).unwrap();
 

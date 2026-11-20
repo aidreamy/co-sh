@@ -453,7 +453,7 @@ async fn dispatch_next_routes_empty_agent_subagent_call_to_internal_path() {
         id: String::new(),
         name: "subagent_call".into(),
         // No `agent` → must take the INTERNAL path (new_test has no
-        // CoshTools, so the internal path reports it is unavailable).
+        // MorpheusTools, so the internal path reports it is unavailable).
         arguments: json!({ "input": "review this" }),
         thought_signature: String::new(),
     });
@@ -491,7 +491,7 @@ async fn dispatch_next_keeps_external_subagent_path_with_agent() {
         thought_signature: String::new(),
     });
     // Agent present → NOT intercepted: falls through to the tiers (new_test
-    // has no cosh tools or sessions, so it reaches the MCP tier).
+    // has no morpheus tools or sessions, so it reaches the MCP tier).
     let err = h.dispatch_next().await.unwrap_err();
     assert!(err.contains("no server found"), "got: {err}");
 }
@@ -990,7 +990,7 @@ async fn runtime_failure_is_not_schema_enriched() {
         name: "fs_edit".into(),
         arguments: json!({
             "targets": [{
-                "path": "/nonexistent/cosh_test_missing.rs",
+                "path": "/nonexistent/morpheus_test_missing.rs",
                 "file_hash": "0000",
                 "ops": "replace 1:\n+x"
             }]
@@ -1098,7 +1098,7 @@ fn handoff_notice_lists_each_stale_tool_once() {
 async fn agents_call_is_refused_from_a_pane_loop() {
     let mut h = Harness::new_test()
         .as_manager()
-        .with_own_coworker_id(Some("cosh".into()));
+        .with_own_coworker_id(Some("morpheus".into()));
 
     h.push_tool_call(ToolCallData {
         id: String::new(),
@@ -1122,7 +1122,7 @@ async fn agents_call_is_refused_from_a_pane_loop() {
 async fn agents_compact_is_refused_from_a_pane_loop() {
     let mut h = Harness::new_test()
         .as_manager()
-        .with_own_coworker_id(Some("cosh".into()));
+        .with_own_coworker_id(Some("morpheus".into()));
 
     h.push_tool_call(ToolCallData {
         id: String::new(),

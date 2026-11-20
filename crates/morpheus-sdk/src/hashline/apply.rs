@@ -40,10 +40,10 @@ static STRUCTURAL_CLOSER_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\s*[)\]}]+[;,]?\s*$").expect("valid structural-closer regex"));
 
 /// Decision trace for behavioral-parity runs against upstream. Off by
-/// default; enable with `COSH_HASHLINE_TRACE=1`.
+/// default; enable with `MORPHEUS_HASHLINE_TRACE=1`.
 macro_rules! trace {
     ($($arg:tt)*) => {
-        if std::env::var_os("COSH_HASHLINE_TRACE").is_some_and(|v| !v.is_empty()) {
+        if std::env::var_os("MORPHEUS_HASHLINE_TRACE").is_some_and(|v| !v.is_empty()) {
             eprintln!("[hashline] {}", format_args!($($arg)*));
         }
     };

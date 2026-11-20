@@ -1,7 +1,7 @@
 //! An IMPROPER stop — a loop that stopped with NOBODY asking it to — must not
 //! end a turn that owes a REPORT.
 //!
-//! The field defect this pins: a `/agents` cosh pane ended its turn right
+//! The field defect this pins: a `/agents` morpheus pane ended its turn right
 //! after a reasoning, its requester received "the pane produced no report",
 //! and the turn closed `incomplete` while the model was one attempt away from
 //! delivering it. For such a loop the only legitimate early end is the USER's
@@ -39,10 +39,10 @@ async fn drive(mut h: Harness) -> (Harness, Vec<HarnessEvent>) {
     (h, events)
 }
 
-/// A cosh pane: a loop bound to its own registry id — the shape whose stop
+/// A morpheus pane: a loop bound to its own registry id — the shape whose stop
 /// hands a blocked `agents_call` requester an `incomplete` report.
 fn pane() -> Harness {
-    Harness::new_test().with_own_coworker_id(Some("cosh".into()))
+    Harness::new_test().with_own_coworker_id(Some("morpheus".into()))
 }
 
 fn has_toast(events: &[HarnessEvent], needle: &str) -> bool {

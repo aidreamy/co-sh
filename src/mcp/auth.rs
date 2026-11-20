@@ -5,7 +5,7 @@
 //! credential is resolved at dial time with a strict priority:
 //!
 //! 1. **OS keyring** — the credential the registration wizard stored under
-//!    the cosh service, keyed `mcp:<server>` (same store as provider keys).
+//!    the morpheus service, keyed `mcp:<server>` (same store as provider keys).
 //!    This is the primary source: it never touches `setup.json` or process
 //!    environments.
 //! 2. **Environment variable** — the entry's `api_key_env` (set with

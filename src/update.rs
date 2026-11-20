@@ -8,7 +8,7 @@
 use serde::Deserialize;
 
 /// GitHub repo the releases are published under (matches `download.sh`).
-pub const REPO: &str = "aidreamy/co-sh";
+pub const REPO: &str = "aidreamy/morpheus";
 
 /// Split a release tag into the shape the installers accept:
 /// `^v?X.Y.Z(-suffix)?$` (`download.ps1`/`download.sh` both check exactly
@@ -27,9 +27,9 @@ fn release_tag_version(tag: &str) -> Option<&str> {
     let mut parts = core.split('.');
     let numeric = [parts.next(), parts.next(), parts.next()];
     if parts.next().is_some()
-        || numeric
-            .iter()
-            .any(|part| !part.is_some_and(|p| !p.is_empty() && p.chars().all(|c| c.is_ascii_digit())))
+        || numeric.iter().any(|part| {
+            !part.is_some_and(|p| !p.is_empty() && p.chars().all(|c| c.is_ascii_digit()))
+        })
     {
         return None;
     }
@@ -185,7 +185,7 @@ pub async fn fetch_latest_release() -> Option<LatestRelease> {
 ///
 /// Mirrors the installers' own check (`^v?[0-9]+\.[0-9]+\.[0-9]+(-.*)?$`), so
 /// a value that passes here is one `download.sh`/`download.ps1` accepts —
-/// the tag is then pinned into the installer URL and `COSH_VERSION`.
+/// the tag is then pinned into the installer URL and `MORPHEUS_VERSION`.
 pub fn normalize_tag(input: &str) -> Option<String> {
     let trimmed = input.trim();
     let version = release_tag_version(trimmed)?;
@@ -212,9 +212,9 @@ pub fn manual_update_command(latest_tag: &str) -> Option<String> {
 ///
 /// The command line is the single implementation of "install a release"
 /// (`crate::cli::update`): it downloads the pinned installer script, runs it
-/// with `COSH_VERSION`/`COSH_VARIANT` set, then installs the release. The
+/// with `MORPHEUS_VERSION`/`MORPHEUS_VARIANT` set, then installs the release. The
 /// installer runs after this process exits (so the running image is not locked
-/// on Windows) and the user reopens cosh themselves. This function only starts
+/// on Windows) and the user reopens morpheus themselves. This function only starts
 /// that process detached (own process group on Unix, no console window on
 /// Windows) and returns so the caller can close the TUI. Errors (failed spawn,
 /// invalid tag) are just logged; there is no in-app retry surface.

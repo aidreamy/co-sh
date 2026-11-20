@@ -1,4 +1,4 @@
-//! Diagnóstico de memória LSP: por que o cosh com LSP gasta muito mais RAM
+//! Diagnóstico de memória LSP: por que o morpheus com LSP gasta muito mais RAM
 //! que o opencode com LSP.
 //!
 //! Estes testes documentam (e quantificam sem precisar de `rust-analyzer`
@@ -8,7 +8,7 @@
 //!   servidores sobem de forma preguiçosa no primeiro toque de arquivo por
 //!   extensão, sem `didSave` automático (sem flycheck/`cargo check`
 //!   implícito).
-//! * **cosh (antes do fix)**: LSP ligado por omissão, `global_lsp` dispara
+//! * **morpheus (antes do fix)**: LSP ligado por omissão, `global_lsp` dispara
 //!   `ensure_for_root` ansioso no startup (N processos antes de qualquer
 //!   toque), cada `read` abre o documento no servidor (`touch_file`) e cada
 //!   `write`/`edit` ainda manda `didSave` (gatilho do flycheck do
@@ -205,7 +205,7 @@ async fn spawn_config_stays_null_for_other_servers() {
 
 /// Cada `touch_file` fixa o texto integral no servidor; a LRU segura 64 docs.
 ///
-/// Simula o agente lendo N arquivos (cada `read` do cosh faz `warm_lsp` →
+/// Simula o agente lendo N arquivos (cada `read` do morpheus faz `warm_lsp` →
 /// `touch_file`): após 70 toques distintos, 64 seguem abertos no servidor.
 /// 64 arquivos Rust completos + análise do workspace = working set de GBs no
 /// rust-analyzer real. O opencode abre sob demanda e não mantém esse

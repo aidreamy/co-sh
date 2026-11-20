@@ -94,12 +94,12 @@ pub async fn run(consented_in_config: bool, dry_run: bool) -> i32 {
 
 /// The persisted telemetry consent flag from `setup.json` (DEFAULT ON —
 /// opt-out, same semantics as the TUI's private `Setup` loader, which this
-/// standalone binary cannot see). Honors the same `COSH_CONFIG_DIR` override
+/// standalone binary cannot see). Honors the same `MORPHEUS_CONFIG_DIR` override
 /// the TUI uses so tests and power users get identical behavior. The
 /// effective consent still goes through `Telemetry::resolve` (env override +
 /// CI hard-off) — this is only the user's persisted choice.
 pub fn consented_in_config() -> bool {
-    let config_dir = match std::env::var("COSH_CONFIG_DIR") {
+    let config_dir = match std::env::var("MORPHEUS_CONFIG_DIR") {
         Ok(dir) if !dir.is_empty() => std::path::PathBuf::from(dir),
         _ => {
             match directories::ProjectDirs::from("", "", "morpheus") {
@@ -282,7 +282,7 @@ fn remove_own_image(exe: &Path) -> bool {
     true
 }
 
-/// Platform profile directories for cosh (the SAME resolution the telemetry
+/// Platform profile directories for morpheus (the SAME resolution the telemetry
 /// module and the rest of the app use).
 fn project_dirs() -> Option<directories::ProjectDirs> {
     directories::ProjectDirs::from("", "", "morpheus")
@@ -400,9 +400,9 @@ async fn enqueue_and_flush(
     telemetry.queue().pending_count() == 0
 }
 
-/// Remove the cosh PROVIDER API keys from the OS credential store (macOS
+/// Remove the morpheus PROVIDER API keys from the OS credential store (macOS
 /// Keychain, Windows Credential Manager, Linux Secret Service/gnome-keyring).
-/// The TUI stores provider keys under the service `"cosh"`, one entry per
+/// The TUI stores provider keys under the service `"morpheus"`, one entry per
 /// known provider (the entry "user" is the provider's env-var name). Scope
 /// note: MCP server credentials (`mcp:<server>` users under the same
 /// service) are NOT covered — server names are dynamic and not enumerable
@@ -472,7 +472,10 @@ mod tests {
     #[cfg(windows)]
     fn old_binary_path_appends_suffix() {
         let p = PathBuf::from("/opt/bin/morpheus.exe");
-        assert_eq!(old_binary_path(&p), PathBuf::from("/opt/bin/morpheus.exe.old"));
+        assert_eq!(
+            old_binary_path(&p),
+            PathBuf::from("/opt/bin/morpheus.exe.old")
+        );
         let p = PathBuf::from("/opt/bin/morpheus");
         assert_eq!(old_binary_path(&p), PathBuf::from("/opt/bin/morpheus.old"));
     }
@@ -510,7 +513,7 @@ mod tests {
         }
     }
 
-    /// `COSH_CONFIG_DIR` is process-global state: env-touching tests serialize
+    /// `MORPHEUS_CONFIG_DIR` is process-global state: env-touching tests serialize
     /// on this lock so parallel test threads cannot race each other's value.
     /// Shared crate-wide (the `setup` module's tests also redirect the var)
     /// so two env-mutating tests can never interleave.
@@ -525,7 +528,7 @@ mod tests {
         let path = config.join("setup.json");
         // SAFETY (edition 2024): single-threaded with respect to env mutation
         // via ENV_LOCK; the value is restored (removed) before returning.
-        unsafe { std::env::set_var("COSH_CONFIG_DIR", &config) };
+        unsafe { std::env::set_var("MORPHEUS_CONFIG_DIR", &config) };
 
         // Missing setup.json → default ON (opt-out).
         assert!(consented_in_config());
@@ -546,6 +549,6 @@ mod tests {
         std::fs::write(&path, b"not json").expect("write");
         assert!(consented_in_config());
 
-        unsafe { std::env::remove_var("COSH_CONFIG_DIR") };
+        unsafe { std::env::remove_var("MORPHEUS_CONFIG_DIR") };
     }
 }

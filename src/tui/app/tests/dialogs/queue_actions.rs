@@ -1,8 +1,8 @@
 use super::super::{App, HOME_LOCK, isolate_home};
 use crate::routes::session::queue_choice::QueueTarget;
 use crate::types::{Message, SessionStatus};
-use cosh::harness::Mode;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use morpheus::harness::Mode;
 
 fn key(code: KeyCode) -> KeyEvent {
     KeyEvent::new(code, KeyModifiers::NONE)
@@ -232,7 +232,7 @@ async fn requeue_position_tracks_delivered_heads() {
     app.queue_actions_grace_until = Some(Instant::now() - Duration::from_millis(1));
     app.pump_queued_messages();
     app.event_tx
-        .send(cosh::harness::HarnessEvent::UserMessageInjected {
+        .send(morpheus::harness::HarnessEvent::UserMessageInjected {
             text: "request-one".into(),
         })
         .unwrap();
@@ -262,7 +262,7 @@ async fn injection_ack_without_in_flight_marker_pops_nothing() {
     // No pump call → nothing in flight; a stray ack event must not retire
     // any queued entry.
     app.event_tx
-        .send(cosh::harness::HarnessEvent::UserMessageInjected {
+        .send(morpheus::harness::HarnessEvent::UserMessageInjected {
             text: "request-one".into(),
         })
         .unwrap();
@@ -423,7 +423,7 @@ async fn opening_queue_actions_holds_the_next_effective_message() {
     );
     // The harness acknowledges the injection: retire exactly that entry.
     app.event_tx
-        .send(cosh::harness::HarnessEvent::UserMessageInjected {
+        .send(morpheus::harness::HarnessEvent::UserMessageInjected {
             text: "request-one".into(),
         })
         .unwrap();

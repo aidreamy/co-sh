@@ -10,7 +10,7 @@ use ratatui::layout::Rect;
 use tokio::runtime::Handle;
 use tokio::sync::mpsc;
 
-use cosh::harness::HarnessEvent;
+use morpheus::harness::HarnessEvent;
 use morpheus_tui::core::lib::rgba::RGBA;
 
 use crate::component::any_spinner::AnySpinner as AgentSpinner;
@@ -69,10 +69,10 @@ mod tests;
 use terminal::{init_terminal, restore_terminal};
 
 /// The opaque cache-affinity session id (`x-session-id` / `x-session-affinity`)
-/// now lives in the library's harness assembly (`cosh::assembly`), which is
+/// now lives in the library's harness assembly (`morpheus::assembly`), which is
 /// what puts it on every connector. Re-exported here so the TUI's own
 /// header paths and tests keep the short `app::session_affinity_id` path.
-pub(crate) use cosh::assembly::session_affinity_id;
+pub(crate) use morpheus::assembly::session_affinity_id;
 
 /// The editable prompt text of a message: its non-synthetic text parts
 /// joined by a space (mirrors opencode's Revert/Copy text reconstruction).
@@ -105,7 +105,7 @@ pub(crate) fn dialog_preview_text(text: &str) -> String {
 /// Zero the alpha of a theme's base background when transparent mode is on
 /// (the `/background` toggle). RGB channels are preserved so luminance
 /// derivations keep working and toggling off restores the exact registry
-/// color. The diff-panel fill (a cosh-only snapshot of `background`, see
+/// color. The diff-panel fill (a morpheus-only snapshot of `background`, see
 /// `Theme::diff_panel_background`) follows the same treatment so the diff
 /// box stays invisible in transparent mode too.
 fn apply_background_preference(mut t: Theme, transparent_background: bool) -> Theme {
@@ -238,7 +238,7 @@ pub struct App {
     /// None: agent picker; Some(None): add summarizer; Some(Some(i)): edit.
     pub summarization_model_edit: Option<Option<usize>>,
     /// The focused pane whose per-pane model dialog is open: `Some(pane)`
-    /// while the model picker serves a focused cosh pane (the commit lands
+    /// while the model picker serves a focused morpheus pane (the commit lands
     /// on THAT pane only), `None` for the global picker. Same redirect
     /// pattern as `summarization_model_edit`.
     pub pane_model_edit: Option<usize>,
@@ -320,7 +320,7 @@ pub struct App {
     /// Up/Down/Enter/Esc and click resolution routes here instead of the
     /// harness `perm_tx` while this is `Some` — the ask is resolved
     /// App-side, never by the running loop.
-    pending_worktree_confirmation: Option<cosh::harness::agent_coworkers::WorktreeOp>,
+    pending_worktree_confirmation: Option<morpheus::harness::agent_coworkers::WorktreeOp>,
     /// Session-wide grant recorded when the user answers an
     /// `agents_worktree` permission box with "Allow": later agent asks may
     /// rebind User-assigned panes for the rest of this app run without
@@ -336,9 +336,10 @@ pub struct App {
     pub event_tx: mpsc::UnboundedSender<HarnessEvent>,
     event_rx: mpsc::UnboundedReceiver<HarnessEvent>,
     /// Sender for question answers back to the harness.
-    answer_tx: mpsc::UnboundedSender<Result<Vec<morpheus_tools::question::types::AnswerItem>, String>>,
+    answer_tx:
+        mpsc::UnboundedSender<Result<Vec<morpheus_tools::question::types::AnswerItem>, String>>,
     /// Sender for permission responses back to the harness.
-    perm_tx: mpsc::UnboundedSender<cosh::harness::PermissionAction>,
+    perm_tx: mpsc::UnboundedSender<morpheus::harness::PermissionAction>,
     /// Handle to the SHARED "next request" queue of the running agent loop
     /// (the harness drains it before every request and acknowledges each
     /// injection via `UserMessageInjected`). The TUI keeps ownership of every
@@ -347,7 +348,7 @@ pub struct App {
     /// the model ever sees it). Empty while no loop runs. `pub(crate)`:
     /// cleared by the session route's deletion lifecycle
     /// (`routes::session::delete`) when it stops a deleted session's loop.
-    pub(crate) queued_input: cosh::harness::queued_input::QueuedInput,
+    pub(crate) queued_input: morpheus::harness::queued_input::QueuedInput,
     /// True while the running main loop is parked in its pre-Done wait for
     /// `/agents` pane reports (`HarnessEvent::AwaitingCoworkerReports`).
     ///
@@ -460,7 +461,7 @@ pub struct App {
     /// that overshot self-corrects within one further event.
     pub(crate) agent_activity: crate::types::AgentActivity,
     /// Latest context manager info for the budget bar (None if no data yet).
-    context_info: Option<cosh::harness::ContextDisplayInfo>,
+    context_info: Option<morpheus::harness::ContextDisplayInfo>,
     /// What the left panel shows (history vs dashboard) and its dashboard
     /// period selection.
     left_panel: Mode,
@@ -487,27 +488,27 @@ pub struct App {
     /// (for cancel/restore).
     reasoning_dialog_original: Option<String>,
     /// Stale-while-revalidate cache for model listings, keyed by provider.
-    model_cache: crate::util::cache::StaleCache<String, Vec<cosh::ModelEntry>>,
+    model_cache: crate::util::cache::StaleCache<String, Vec<morpheus::ModelEntry>>,
     /// Structured user preferences (theme, tools, routing) persisted in
     /// `~/.config/morpheus/setup.json`.
-    setup: cosh::setup::Setup,
+    setup: morpheus::setup::Setup,
     /// The persisted per-agent model picks (the CLI-parity "remember my last
     /// model"): agent name → model id, written ONLY on a real user pick in a
     /// config box and read at turn dispatch to seed pane-less agents. The
     /// directory resolves from the data-dir override; the store itself lives
     /// in the sub-agent domain (morpheus-tools), which takes the directory as an
-    /// argument and owns nothing about cosh's paths.
+    /// argument and owns nothing about morpheus's paths.
     agents_model_picks: morpheus_tools::subagent::model_picks::ModelPicks,
     /// Telemetry facade: consent-resolved state (setup.json flag + env
     /// override + CI hard-off) plus the local event queue.
-    telemetry: cosh::telemetry::Telemetry,
+    telemetry: morpheus::telemetry::Telemetry,
     /// Per-session aggregate accumulator — one `session_summary` at exit.
-    session_telemetry: cosh::telemetry::session::SessionTelemetry,
+    session_telemetry: morpheus::telemetry::session::SessionTelemetry,
     /// Last rendered route; repeated frames must not inflate feature counts.
-    telemetry_last_feature: Option<cosh::telemetry::schema::Feature>,
+    telemetry_last_feature: Option<morpheus::telemetry::schema::Feature>,
     /// Persistent random install id (`None`: entropy/fs failed — events are
     /// dropped, fail closed, audit F04).
-    telemetry_install_id: Option<cosh::telemetry::events::UuidId>,
+    telemetry_install_id: Option<morpheus::telemetry::events::UuidId>,
     /// Session persistence store (JSONL files on disk). `pub(crate)`: the
     /// session route's deletion lifecycle removes the session file from it.
     pub(crate) session_store: SessionStore,
@@ -616,7 +617,7 @@ pub struct App {
     /// Fractional 30 Hz animation tick, independent of the draw cadence.
     animation_tick_remainder: f64,
     /// Rate-limited resolver for the git branch shown in the session footer.
-    branch_tracker: cosh::git::branch::BranchTracker,
+    branch_tracker: morpheus::git::branch::BranchTracker,
     /// Per-frame counter — rate-limits the PERF debug logs in the render hot
     /// path (bg_fill etc.) to one sample per ~60 frames (~1/sec) instead of
     /// one write per frame.
@@ -647,7 +648,7 @@ pub struct App {
     update_latest_version: Option<String>,
     /// Raw git tag of the announced release (e.g. `v0.1.2`), exactly as
     /// published on GitHub — the value `spawn_update_pipeline` pins the
-    /// installer script and `COSH_VERSION` to (kept verbatim: a tag
+    /// installer script and `MORPHEUS_VERSION` to (kept verbatim: a tag
     /// published without the `v` prefix must survive reconstruction-free
     /// into the pipeline, reconstruction-free).
     update_latest_tag: Option<String>,
@@ -693,7 +694,7 @@ impl App {
         state.session_summaries = session_store.list_sessions();
 
         let theme_registry = ThemeRegistry::new();
-        let setup = cosh::setup::Setup::load();
+        let setup = morpheus::setup::Setup::load();
 
         // Publish the user-registered ACP harnesses into the sub-agent
         // registry BEFORE any harness (or its tool description) is built:
@@ -729,7 +730,7 @@ impl App {
         let saved_prompt_corrector_fallbacks = fallback::load_prompt_corrector_fallbacks(&setup);
 
         // Load saved disabled tools for the scope persisted in setup.json
-        // (project by default: `<cwd>/.cosh-tools.json`; global: setup.json).
+        // (project by default: `<cwd>/.morpheus-tools.json`; global: setup.json).
         let scope_is_global = setup.tools.is_global();
         let saved_disabled_tools =
             crate::routes::tools::load_disabled_tools(&setup, &cwd, scope_is_global);
@@ -790,7 +791,7 @@ impl App {
         // harness consults when building language servers, and seed the app
         // state so the prompt footer reflects it even before the first agent
         // loop emits an LSP event.
-        cosh::harness::lsp::set_lsp_enabled(setup.lsp);
+        morpheus::harness::lsp::set_lsp_enabled(setup.lsp);
         state.lsp_available = setup.lsp;
 
         let usage_store = crate::usage::UsageStore::new();
@@ -798,8 +799,8 @@ impl App {
         // Telemetry: resolve consent (setup.json flag + env override + CI
         // hard-off) and load the persistent install id. Every capture point
         // is gated on `telemetry.enabled()`; nothing records when off.
-        let telemetry = cosh::telemetry::Telemetry::resolve(setup.telemetry);
-        let telemetry_install_id = cosh::telemetry::install_id();
+        let telemetry = morpheus::telemetry::Telemetry::resolve(setup.telemetry);
+        let telemetry_install_id = morpheus::telemetry::install_id();
 
         // (tx, rx) for update-related background tasks, created here so both
         // halves can be moved into the struct below.
@@ -905,16 +906,16 @@ impl App {
             model_cache: crate::util::cache::StaleCache::new("cache", "model.json"),
             agents_model_picks: {
                 // CLI parity for the panes' model picks: one global surface,
-                // separate from setup.json (domain state, not cosh config).
+                // separate from setup.json (domain state, not morpheus config).
                 // The data-dir override resolves the root (test isolation and
                 // portability stay one knob); the store itself lives in the
                 // sub-agent domain and takes the directory as an argument.
-                let dir = cosh::setup::data_dir_override().join("agents");
+                let dir = morpheus::setup::data_dir_override().join("agents");
                 morpheus_tools::subagent::model_picks::ModelPicks::new(&dir)
             },
             setup,
             telemetry,
-            session_telemetry: cosh::telemetry::session::SessionTelemetry::new(),
+            session_telemetry: morpheus::telemetry::session::SessionTelemetry::new(),
             telemetry_last_feature: None,
             telemetry_install_id,
             session_store,
@@ -948,7 +949,7 @@ impl App {
             event_rx,
             answer_tx,
             perm_tx,
-            queued_input: cosh::harness::queued_input::QueuedInput::default(),
+            queued_input: morpheus::harness::queued_input::QueuedInput::default(),
             awaiting_pane_reports: false,
             todo_wake_last_items: None,
             todo_wakes_left: crate::types::TODO_WAKE_BUDGET,
@@ -985,7 +986,7 @@ impl App {
             live_requested: false,
             last_frame_time: std::time::Instant::now(),
             animation_tick_remainder: 0.0,
-            branch_tracker: cosh::git::branch::BranchTracker::default(),
+            branch_tracker: morpheus::git::branch::BranchTracker::default(),
             perf_frame: 0,
             last_mouse_x: 0,
             last_mouse_y: 0,
@@ -1435,7 +1436,7 @@ impl App {
     // raw tool output, error text, paths or prompts (audit F01).
 
     /// Feature aggregate: a top-level screen was opened.
-    fn telemetry_feature(&mut self, feature: cosh::telemetry::schema::Feature) {
+    fn telemetry_feature(&mut self, feature: morpheus::telemetry::schema::Feature) {
         if self.telemetry.enabled() {
             self.session_telemetry.record_feature(feature);
         }
@@ -1443,7 +1444,7 @@ impl App {
 
     /// Count route visits at the shared render boundary (keyboard and mouse).
     fn telemetry_view(&mut self) {
-        use cosh::telemetry::schema::Feature;
+        use morpheus::telemetry::schema::Feature;
         if !self.telemetry.enabled() {
             return;
         }
@@ -1483,7 +1484,7 @@ impl App {
     fn telemetry_tool_error(&mut self, raw_error: &str) {
         if self.telemetry.enabled() {
             self.session_telemetry.record_error(
-                cosh::telemetry::schema::ErrorCategory::ToolFailed,
+                morpheus::telemetry::schema::ErrorCategory::ToolFailed,
                 "harness::core",
                 None,
                 raw_error,
@@ -1531,23 +1532,23 @@ impl App {
             return;
         };
         let Some(version) =
-            cosh::telemetry::events::AppVersion::validate(env!("CARGO_PKG_VERSION"))
+            morpheus::telemetry::events::AppVersion::validate(env!("CARGO_PKG_VERSION"))
         else {
             return;
         };
         // finish() consumes the accumulator — swap in a fresh one.
         let accumulator = std::mem::replace(
             &mut self.session_telemetry,
-            cosh::telemetry::session::SessionTelemetry::new(),
+            morpheus::telemetry::session::SessionTelemetry::new(),
         );
-        let envelope = cosh::telemetry::events::EventEnvelope::new(
-            cosh::telemetry::schema::EventType::SessionSummary,
+        let envelope = morpheus::telemetry::events::EventEnvelope::new(
+            morpheus::telemetry::schema::EventType::SessionSummary,
             &version,
             None,
             &install_id,
             None,
-            cosh::telemetry::events::OccurredAt::now(),
-            cosh::telemetry::events::EventPayload::SessionSummary(accumulator.finish()),
+            morpheus::telemetry::events::OccurredAt::now(),
+            morpheus::telemetry::events::EventPayload::SessionSummary(accumulator.finish()),
         );
         if let Some(envelope) = envelope {
             // enqueue re-validates and silently drops when disabled.
@@ -1556,7 +1557,7 @@ impl App {
         // Upload through the facade: consent re-checked at call time,
         // hardened HTTPS-only client, unforgeable consent token (re-audit
         // C02). Without ingest configuration nothing leaves the machine.
-        if let Some(config) = cosh::telemetry::sink::SinkConfig::from_env() {
+        if let Some(config) = morpheus::telemetry::sink::SinkConfig::from_env() {
             self.telemetry.flush(&config).await;
         }
     }

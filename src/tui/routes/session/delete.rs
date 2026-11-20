@@ -141,7 +141,7 @@ impl App {
         }
         self.state.remove_session(session_id);
         // A deleted session can no longer be open anywhere in this process:
-        // free its open-lock so another cosh instance may open the id (a
+        // free its open-lock so another morpheus instance may open the id (a
         // no-op when this process never held the lock).
         self.session_store.release_session_lock(session_id);
         self.session_store.delete_session(session_id);
@@ -355,7 +355,7 @@ mod tests {
             model: None,
             reasoning: None,
             agents_panes: Some(vec![crate::types::AgentPaneRef::Bound {
-                agent: "cosh".into(),
+                agent: "morpheus".into(),
                 session_id: pane_id.to_string(),
                 worktree: None,
             }]),
@@ -387,7 +387,7 @@ mod tests {
         };
         parent.messages = Vec::new();
         app.session_store = crate::session::store::SessionStore::with_dir(
-            std::env::temp_dir().join(format!("cosh-delete-test-{parent_id}")),
+            std::env::temp_dir().join(format!("morpheus-delete-test-{parent_id}")),
             "testhash".into(),
         );
         app.session_store.save_session(&parent);

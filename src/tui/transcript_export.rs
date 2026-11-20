@@ -2,7 +2,7 @@
 //!
 //! The export transpiles exactly the view the agent sees at this moment: the
 //! persisted context records replayed through
-//! [`cosh::harness::context::ContextManager::export_markdown`], whose
+//! [`morpheus::harness::context::ContextManager::export_markdown`], whose
 //! projection mirrors `build_messages` (the `visible_from` boundary, the
 //! `hidden` set, checkpoint coverage and masked tool results all apply).
 //! Nothing else reaches the file: no JSONL envelope, no event ids, no
@@ -16,7 +16,7 @@
 
 use std::path::{Path, PathBuf};
 
-use cosh::harness::context::ContextManager;
+use morpheus::harness::context::ContextManager;
 
 use crate::session::store::SessionStore;
 use crate::types::Session;
@@ -48,7 +48,7 @@ pub fn export_session_transcript(
             "the agent-visible transcript is empty",
         ));
     }
-    let uuid = cosh::telemetry::events::uuid_v4()
+    let uuid = morpheus::telemetry::events::uuid_v4()
         .ok_or_else(|| std::io::Error::other("OS entropy unavailable for the export file name"))?;
     let path = cwd.join(format!("{}-{uuid}.md", slugify(&session.title)));
     std::fs::write(&path, transcript)?;
@@ -99,7 +99,7 @@ fn slugify(title: &str) -> String {
 mod tests {
     use super::*;
     use crate::types::{Message, MessageRole, Part, TextPart};
-    use cosh::harness::context::{ContextItem, ContextManagerState};
+    use morpheus::harness::context::{ContextItem, ContextManagerState};
     use std::collections::{HashMap, HashSet, VecDeque};
 
     fn session(id: &str, title: &str) -> Session {

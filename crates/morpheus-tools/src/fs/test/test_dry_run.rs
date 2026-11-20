@@ -23,7 +23,7 @@ impl TempRoot {
             .duration_since(UNIX_EPOCH)
             .expect("system time is after UNIX_EPOCH")
             .as_nanos();
-        let dir = std::env::temp_dir().join(format!("cosh_fs_dryrun_{label}_{id}_{nanos}"));
+        let dir = std::env::temp_dir().join(format!("morpheus_fs_dryrun_{label}_{id}_{nanos}"));
         std::fs::create_dir_all(&dir).expect("create temp root");
         Self(dir)
     }
@@ -50,7 +50,7 @@ fn make_metadata(root: &Path) -> FsMetadata {
 fn fixture(root: &TempRoot, name: &str, text: &str) -> (String, String) {
     let path = root
         .0
-        .join(format!("cosh_test_dry_run_{name}"))
+        .join(format!("morpheus_test_dry_run_{name}"))
         .to_string_lossy()
         .into_owned();
     std::fs::write(&path, text).unwrap();

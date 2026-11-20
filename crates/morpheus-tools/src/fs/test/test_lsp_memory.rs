@@ -2,7 +2,7 @@
 //!
 //! * **opencode**: abre sob demanda no toque explícito; sem `didSave`
 //!   automático (sem `cargo check` implícito a cada edição).
-//! * **cosh**: `Fs::read` aquece (`touch_file` → didOpen), o `global_lsp` não
+//! * **morpheus**: `Fs::read` aquece (`touch_file` → didOpen), o `global_lsp` não
 //!   sobe servidores no startup (lazy) e o `Fs::write`/`edit` passivo nunca
 //!   manda `didSave` — sem flycheck/`cargo check` implícito (subprocesso +
 //!   GBs de RAM + lock em `target/`).

@@ -6,7 +6,7 @@ use crossterm::event::{KeyCode, KeyModifiers};
 /// A legacy config without a mode selection keeps starting in Build.
 #[tokio::test]
 async fn toggled_mode_persists_and_restores_for_new_sessions() {
-    use cosh::harness::Mode;
+    use morpheus::harness::Mode;
 
     let _home = HOME_LOCK.lock();
     isolate_home();
@@ -20,7 +20,7 @@ async fn toggled_mode_persists_and_restores_for_new_sessions() {
         .unwrap();
     assert_eq!(app.state.mode, Mode::Ask);
     assert_eq!(
-        cosh::setup::Setup::load().persisted_mode(),
+        morpheus::setup::Setup::load().persisted_mode(),
         Some(Mode::Ask),
         "the cycled-to mode must be saved as the preference"
     );
@@ -34,7 +34,7 @@ async fn toggled_mode_persists_and_restores_for_new_sessions() {
     );
 
     // A legacy setup.json without a mode selection starts in Build.
-    let dir = std::env::var("COSH_CONFIG_DIR").expect("HOME tests isolate the config dir");
+    let dir = std::env::var("MORPHEUS_CONFIG_DIR").expect("HOME tests isolate the config dir");
     std::fs::write(
         std::path::Path::new(&dir).join("setup.json"),
         r#"{"appearance": {}}"#,
@@ -59,7 +59,7 @@ async fn alt_digit_switches_pane_even_with_the_agents_picker_open() {
     app.state.add_empty_session("t".into(), "t".into(), 0);
     app.state.current_session_id = Some("t".into());
     app.agents_split = Some(crate::routes::session::agents_split::AgentsSplitState::new(
-        vec!["cosh".into(), "claude".into(), "kilo".into()],
+        vec!["morpheus".into(), "claude".into(), "kilo".into()],
     ));
 
     // The picker is open on top of the split (the re-open flow): digits
@@ -113,7 +113,7 @@ async fn alt_digit_switches_pane_through_the_slash_menu() {
     app.state.add_empty_session("t".into(), "t".into(), 0);
     app.state.current_session_id = Some("t".into());
     app.agents_split = Some(crate::routes::session::agents_split::AgentsSplitState::new(
-        vec!["cosh".into(), "claude".into(), "kilo".into()],
+        vec!["morpheus".into(), "claude".into(), "kilo".into()],
     ));
 
     app.slash_menu.visible = true;
@@ -135,7 +135,7 @@ async fn plain_digit_targets_the_pane_only_with_an_empty_draft() {
     app.state.add_empty_session("t".into(), "t".into(), 0);
     app.state.current_session_id = Some("t".into());
     app.agents_split = Some(crate::routes::session::agents_split::AgentsSplitState::new(
-        vec!["cosh".into(), "claude".into(), "kilo".into()],
+        vec!["morpheus".into(), "claude".into(), "kilo".into()],
     ));
 
     // Empty draft: plain '2' jumps to the second pane (1-based).
@@ -897,7 +897,7 @@ async fn alt_zero_unfocuses_through_the_open_picker() {
     app.state.add_empty_session("t".into(), "t".into(), 0);
     app.state.current_session_id = Some("t".into());
     app.agents_split = Some(crate::routes::session::agents_split::AgentsSplitState::new(
-        vec!["cosh".into(), "claude".into(), "kilo".into()],
+        vec!["morpheus".into(), "claude".into(), "kilo".into()],
     ));
     app.agents_picker.open();
     assert!(app.agents_picker.visible);
@@ -1028,7 +1028,7 @@ async fn alt_digit_focuses_through_the_open_picker() {
     app.state.add_empty_session("t".into(), "t".into(), 0);
     app.state.current_session_id = Some("t".into());
     app.agents_split = Some(crate::routes::session::agents_split::AgentsSplitState::new(
-        vec!["cosh".into(), "claude".into(), "kilo".into()],
+        vec!["morpheus".into(), "claude".into(), "kilo".into()],
     ));
     app.agents_picker.open();
     assert!(app.agents_picker.visible);
@@ -1421,7 +1421,7 @@ async fn ctrl_x_is_inert_without_a_running_focused_pane() {
 /// early on `!running`: the pane was uninterruptible.
 #[tokio::test]
 async fn a_stopped_turns_late_done_never_closes_the_pane_s_new_turn() {
-    use cosh::harness::HarnessEvent;
+    use morpheus::harness::HarnessEvent;
     use std::sync::Arc;
     use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -1539,7 +1539,7 @@ async fn backspace_hides_the_focused_pane_and_ctrl_z_restores_it() {
             instances: 1,
         },
         AgentPick {
-            name: "cosh".into(),
+            name: "morpheus".into(),
             instances: 1,
         },
     ]);

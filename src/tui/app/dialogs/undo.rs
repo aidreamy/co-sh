@@ -27,7 +27,7 @@ impl App {
     ///   and the only meaningful target is that agent's own conversation;
     /// - otherwise the native, store-backed list is unchanged: the current
     ///   session's pre-revert references (a manager pane included — its
-    ///   conversation IS a cosh session).
+    ///   conversation IS a morpheus session).
     pub(in crate::app) fn open_undo_dialog(&mut self) {
         if let Some(pane) = self.focused_external_pane() {
             self.open_pane_undo_dialog(pane);
@@ -60,7 +60,7 @@ impl App {
     }
 
     /// The focused ACP pane of the LIVE split, if any. A MANAGER pane is not
-    /// one: its turns run on a cosh session in the store, so the native list
+    /// one: its turns run on a morpheus session in the store, so the native list
     /// already answers for it.
     fn focused_external_pane(&self) -> Option<usize> {
         let split = self.agents_split.as_ref()?;

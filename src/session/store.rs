@@ -147,7 +147,7 @@ pub struct SessionStore {
 
 impl SessionStore {
     /// Create a new `SessionStore`, resolving the CWD and creating the
-    /// per-CWD sessions directory. Honours `COSH_DATA_DIR` (test isolation;
+    /// per-CWD sessions directory. Honours `MORPHEUS_DATA_DIR` (test isolation;
     /// see `crate::setup::data_dir_override`).
     ///
     /// # Panics
@@ -911,7 +911,11 @@ impl SessionStore {
             .ok()?
             .flatten()
             .filter(|entry| {
-                entry.path().extension().and_then(|extension| extension.to_str()) == Some("jsonl")
+                entry
+                    .path()
+                    .extension()
+                    .and_then(|extension| extension.to_str())
+                    == Some("jsonl")
             })
             .filter_map(|entry| {
                 let modified = entry.metadata().ok()?.modified().ok()?;
@@ -1085,7 +1089,7 @@ impl SessionStore {
     /// Backed by a per-session kernel lock file (`session-{id}.lock`, same
     /// `flock` mechanism as the store lock): releasing happens on drop AND
     /// automatically when the holder dies, so a crashed process can never
-    /// orphan the lock. Returns `false` when ANOTHER cosh process already
+    /// orphan the lock. Returns `false` when ANOTHER morpheus process already
     /// holds the session open; re-claims by this process are idempotent.
     pub fn try_lock_session(&self, session_id: &str) -> bool {
         let mut guards = self
@@ -1116,7 +1120,7 @@ impl SessionStore {
 
     /// Claim a brand-new session id for this process: atomically unique
     /// (never an existing file) AND exclusively locked against every OTHER
-    /// cosh process from the moment of creation.
+    /// morpheus process from the moment of creation.
     ///
     /// This is the entry funnel for every session-CREATION path (`/new`,
     /// the first-message and command-mode bootstraps).
@@ -1527,7 +1531,7 @@ fn single_accepted_segment(
 /// is dropped (the toast already told the user why).
 const LOCK_WAIT_TIMEOUT: Duration = Duration::from_secs(10);
 const LOCK_POLL_INTERVAL: Duration = Duration::from_millis(50);
-const LOCK_FILE_NAME: &str = ".cosh-session-store.lock";
+const LOCK_FILE_NAME: &str = ".morpheus-session-store.lock";
 
 /// Send a toast through the UI channel, ignoring a dead receiver.
 fn send_toast(
@@ -3113,7 +3117,7 @@ mod tests {
         std::fs::create_dir_all(&sessions_dir).ok();
         let session = make_test_session("open-lock", "Locked", vec![make_user_msg("m1", "hi")]);
 
-        // Simulate a foreign cosh process holding the session open.
+        // Simulate a foreign morpheus process holding the session open.
         let foreign = try_lock_session_file(&sessions_dir, &session.id).unwrap();
 
         let store = test_store(&dir);
@@ -3162,7 +3166,7 @@ mod tests {
     // ── Fresh-session claim (entry-funnel regression) ──────────────────────
 
     /// REGRESSION (multi-process session adoption): a freshly created
-    /// session used to be selectable-but-unlocked, so a second cosh process
+    /// session used to be selectable-but-unlocked, so a second morpheus process
     /// could adopt it through the sidebar switch while the creator kept
     /// writing to it — two projections appending divergent histories to the
     /// same JSONL. The claim must take the open-lock at CREATION time.
@@ -3780,7 +3784,7 @@ mod tests {
                 arguments: r#"{"path":"large.rs"}"#.into(),
                 thought_signature: String::new(),
                 thinking_blocks: Vec::new(),
-            reasoning: None,
+                reasoning: None,
             },
             ContextItem::ToolResult {
                 id: 2,
@@ -4054,7 +4058,7 @@ mod tests {
         let mut parent = make_test_session("7000", "Parent", vec![]);
         parent.agents_panes = Some(vec![
             crate::types::AgentPaneRef::Bound {
-                agent: "cosh".into(),
+                agent: "morpheus".into(),
                 session_id: "7000-pane".into(),
                 worktree: None,
             },
@@ -4536,7 +4540,7 @@ mod tests {
                 arguments: r#"{"path":"a.rs"}"#.into(),
                 thought_signature: String::new(),
                 thinking_blocks: Vec::new(),
-            reasoning: None,
+                reasoning: None,
             },
             ContextItem::ToolResult {
                 id: 3,
@@ -4594,7 +4598,7 @@ mod tests {
                 arguments: r#"{"path":"a.rs"}"#.into(),
                 thought_signature: String::new(),
                 thinking_blocks: Vec::new(),
-            reasoning: None,
+                reasoning: None,
             },
             ContextItem::ToolCall {
                 id: 3,
@@ -4603,7 +4607,7 @@ mod tests {
                 arguments: r#"{"path":"b.rs"}"#.into(),
                 thought_signature: String::new(),
                 thinking_blocks: Vec::new(),
-            reasoning: None,
+                reasoning: None,
             },
             ContextItem::ToolResult {
                 id: 4,

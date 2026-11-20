@@ -5,13 +5,13 @@ keywords = ["ai", "coding", "terminal", "agent"]
 license = "Apache-2.0"
 name = "morpheus-tools"
 readme = "README.md"
-repository = "https://github.com/aidreamy/co-sh"
+repository = "https://github.com/aidreamy/morpheus"
 version = "0.1.6"
 edition = "2024"
 
 [dependencies]
 # Unified multi-provider LLM connector (published standalone as `aiface`).
-aiface = "0.2.3"
+aiface = "0.2.6"
 morpheus-sdk = { path = "../morpheus-sdk", version = "0.1.6" }
 schemars = "1"
 thiserror = "2"

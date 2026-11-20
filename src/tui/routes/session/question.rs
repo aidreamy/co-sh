@@ -2954,8 +2954,8 @@ impl QuestionDialog {
 
 #[cfg(test)]
 mod tests {
-    use morpheus_tools::question::types::{QuestionItem, QuestionType};
     use crossterm::event::KeyCode;
+    use morpheus_tools::question::types::{QuestionItem, QuestionType};
 
     use super::{QuestionDialog, SelectionRegion};
 

@@ -36,7 +36,7 @@ impl TempRoot {
             .duration_since(UNIX_EPOCH)
             .expect("system time is after UNIX_EPOCH")
             .as_nanos();
-        let dir = std::env::temp_dir().join(format!("cosh_fs_trav_{label}_{id}_{nanos}"));
+        let dir = std::env::temp_dir().join(format!("morpheus_fs_trav_{label}_{id}_{nanos}"));
         std::fs::create_dir_all(&dir).expect("create temp root");
         Self(dir)
     }
@@ -50,7 +50,10 @@ impl TempRoot {
         static COUNTER: AtomicU64 = AtomicU64::new(0);
         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
         std::env::temp_dir()
-            .join(format!("cosh_trav_out_{label}_{id}_{}", std::process::id()))
+            .join(format!(
+                "morpheus_trav_out_{label}_{id}_{}",
+                std::process::id()
+            ))
             .to_string_lossy()
             .into_owned()
     }
@@ -111,7 +114,7 @@ async fn read_gap_dotdot_traversal_no_guard() {
     let root = TempRoot::new("dotdot");
     // Traverse above the temp root: guaranteed to escape any sane root.
     let traversal = format!(
-        "{}/../cosh_trav_escape_target_{}",
+        "{}/../morpheus_trav_escape_target_{}",
         root.path().to_string_lossy(),
         std::process::id()
     );
@@ -317,7 +320,7 @@ async fn write_gap_symlink_escape() {
     let outside_dir = root.outside("escape_dir");
     let symlink_path = root
         .path()
-        .join("cosh_sandbox_escape_link")
+        .join("morpheus_sandbox_escape_link")
         .to_string_lossy()
         .into_owned();
     let outside_file = format!("{outside_dir}/evil.txt");
@@ -373,7 +376,7 @@ async fn edit_gap_symlink_escape() {
     let outside_dir = root.outside("edit_escape_dir");
     let symlink_path = root
         .path()
-        .join("cosh_edit_escape_link")
+        .join("morpheus_edit_escape_link")
         .to_string_lossy()
         .into_owned();
     let outside_file = format!("{outside_dir}/target.txt");
@@ -429,7 +432,7 @@ async fn edit_traversal_via_dotdot_resolves_inside_root_and_succeeds() {
     let root = TempRoot::new("editdotdot");
     let real_path = root
         .path()
-        .join("cosh_traversal_edit_target.txt")
+        .join("morpheus_traversal_edit_target.txt")
         .to_string_lossy()
         .into_owned();
     std::fs::write(&real_path, "original\n").unwrap();
@@ -445,7 +448,7 @@ async fn edit_traversal_via_dotdot_resolves_inside_root_and_succeeds() {
                 .to_string_lossy()
                 .to_string(),
         )
-        .join("cosh_traversal_edit_target.txt")
+        .join("morpheus_traversal_edit_target.txt")
         .to_string_lossy()
         .into_owned();
 
@@ -476,7 +479,7 @@ async fn edit_traversal_escape_via_dotdot_is_denied() {
     let root = TempRoot::new("editescape");
     let real_path = root
         .path()
-        .join("cosh_traversal_edit_escape.txt")
+        .join("morpheus_traversal_edit_escape.txt")
         .to_string_lossy()
         .into_owned();
     std::fs::write(&real_path, "original\n").unwrap();
@@ -528,7 +531,7 @@ async fn rollback_traversal_via_dotdot_resolves_inside_root_and_succeeds() {
     let root = TempRoot::new("rbdotdot");
     let real_path = root
         .path()
-        .join("cosh_traversal_rb_target.txt")
+        .join("morpheus_traversal_rb_target.txt")
         .to_string_lossy()
         .into_owned();
     let traversal_path = root
@@ -541,7 +544,7 @@ async fn rollback_traversal_via_dotdot_resolves_inside_root_and_succeeds() {
                 .to_string_lossy()
                 .to_string(),
         )
-        .join("cosh_traversal_rb_target.txt")
+        .join("morpheus_traversal_rb_target.txt")
         .to_string_lossy()
         .into_owned();
 
@@ -566,7 +569,7 @@ async fn rollback_traversal_escape_via_dotdot_is_denied() {
     let root = TempRoot::new("rbescape");
     let real_path = root
         .path()
-        .join("cosh_traversal_rb_escape.txt")
+        .join("morpheus_traversal_rb_escape.txt")
         .to_string_lossy()
         .into_owned();
     let resolved = root.outside("rb_escape");

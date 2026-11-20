@@ -911,7 +911,7 @@ pub(crate) fn era_loop_failed(
     )
 }
 
-/// Open the stderr log for a stdio server: `<temp>/cosh/log/mcp_server_<label>_<ts>.log`.
+/// Open the stderr log for a stdio server: `<temp>/morpheus/log/mcp_server_<label>_<ts>.log`.
 ///
 /// The child's stderr would otherwise inherit the terminal and corrupt the
 /// TUI's alternate-screen buffer. The label is sanitized so a server name

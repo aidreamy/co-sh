@@ -115,7 +115,9 @@ pub async fn serve<A: Agent + 'static>(config: Config, agent: A) -> Result<()> {
                 log::warn!("morpheus-whatsapp: pairing failed: {reason}")
             }
             Event::Connected => log::info!("morpheus-whatsapp: connected"),
-            Event::Disconnected => log::warn!("morpheus-whatsapp: connection dropped, reconnecting"),
+            Event::Disconnected => {
+                log::warn!("morpheus-whatsapp: connection dropped, reconnecting")
+            }
             Event::LoggedOut => {
                 log::warn!("morpheus-whatsapp: device unlinked from the phone; stopping");
                 break Ok(());

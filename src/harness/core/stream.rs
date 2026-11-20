@@ -273,13 +273,13 @@ impl Harness {
         // stream end proves the response was CUT, whatever `finish_reason`
         // claims.
         self.last_stream_unfinished = extractor.has_unfinished_stream();
-        // Stream accounting (file log, target `cosh::harness`): what THIS
+        // Stream accounting (file log, target `morpheus::harness`): what THIS
         // attempt produced — streamed token count, reasoning bytes, finish
         // reason and the cut flag. The reasoning bytes are the promotion
         // fuel: if the reasoning-only veto fires repeatedly on the same
         // turn, this line shows how much thinking gets re-sent each retry.
         log::info!(
-            target: "cosh::harness",
+            target: "morpheus::harness",
             "stream done: tokens={} reasoning_bytes={} finish_reason={:?} cut={}",
             token_count,
             self.attempt_reasoning.len(),

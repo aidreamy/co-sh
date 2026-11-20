@@ -97,7 +97,7 @@ async fn probe_app_queue_after_block_hover_and_click() {
     // The loop consumes it: pump hands it to the harness; the harness acks.
     app.pump_queued_messages();
     app.event_tx
-        .send(cosh::harness::HarnessEvent::UserMessageInjected {
+        .send(morpheus::harness::HarnessEvent::UserMessageInjected {
             text: "queued follow-up".into(),
         })
         .ok();
@@ -273,7 +273,7 @@ async fn probe_app_real_order_hover_sweep() {
     // harness acks with UserMessageInjected (deque popped + message mirrored).
     app.pump_queued_messages();
     app.event_tx
-        .send(cosh::harness::HarnessEvent::UserMessageInjected {
+        .send(morpheus::harness::HarnessEvent::UserMessageInjected {
             text: "queued follow-up".into(),
         })
         .ok();

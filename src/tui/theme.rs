@@ -92,12 +92,12 @@ pub const MUTED_LIFT: f32 = 0.25;
 
 /// How far the `/agents` split pane's background floats above the theme
 /// background, expressed as a fraction of the 0–255 channel scale.
-/// Calibrated on the cosh reference pair — background `#07070A` → pane
+/// Calibrated on the morpheus reference pair — background `#07070A` → pane
 /// `#0A0A0D`, a +3 step per channel — the lift is `3/255` (~1.2%) of the
 /// scale, the same whisper in every theme: the fill derives from each
 /// theme's OWN `background` (a light theme lifts off its light
 /// background exactly as far as a dark one lifts off black) instead of
-/// cosh's dark tone staying hardcoded in the painter.
+/// morpheus's dark tone staying hardcoded in the painter.
 pub const AGENTS_PANE_LIFT: f32 = 3.0 / 255.0;
 
 impl Theme {
@@ -190,7 +190,7 @@ pub struct Theme {
     pub mode_build: Option<RGBA>,
     /// Foreground of the `✧ Thought` / `✦ Thought` reasoning header. Defaults
     /// to `accent` (the historical behavior); themes override it when the
-    /// accent tone would fight the panel — e.g. cosh keeps `accent` gold for
+    /// accent tone would fight the panel — e.g. morpheus keeps `accent` gold for
     /// actions but draws the thought header in violet, the color of
     /// introspection.
     pub reasoning_header: RGBA,
@@ -211,8 +211,8 @@ impl ThemeRegistry {
     pub fn new() -> Self {
         let themes = vec![
             ThemeDef {
-                name: "cosh",
-                theme: cosh(),
+                name: "morpheus",
+                theme: morpheus(),
             },
             ThemeDef {
                 name: "obsidian",
@@ -451,7 +451,7 @@ fn full_theme(
     }
 }
 
-/// The default `cosh` palette: a deep indigo night sky on the `#0F0F25` /
+/// The default `morpheus` palette: a deep indigo night sky on the `#0F0F25` /
 /// `#19192F` background pair.
 ///
 /// Color psychology: the whole chrome is a single hue-240 (indigo) ramp whose
@@ -474,7 +474,7 @@ fn full_theme(
 /// for state. The `Thought` header deliberately does *not* reuse the heading
 /// blue — it uses a deeper, grayer sky blue (`#7CB8E8`) so a reflection block
 /// never competes with a section title.
-fn cosh() -> Theme {
+fn morpheus() -> Theme {
     let mut t = full_theme(
         "#0F0F25", "#19192F", "#1D1D38", "#35356A", "#8F8FF2", "#24244A", "#E8E8F8", "#8F8FF2",
         "#B7A4FF", "#FFD28A", "#6FE3A8", "#F5C76B", "#FF7F96", "#6FC8FF", "#6FE3A8", "#FF7F96",
@@ -505,8 +505,8 @@ fn cosh() -> Theme {
     t
 }
 
-/// The old `cosh` palette: near-black (`#07070A`) chrome with neon magenta,
-/// amber and teal accents. Renamed when the indigo `cosh` theme took over the
+/// The old `morpheus` palette: near-black (`#07070A`) chrome with neon magenta,
+/// amber and teal accents. Renamed when the indigo `morpheus` theme took over the
 /// default slot — the obsidian-black base is what the name now describes.
 fn obsidian() -> Theme {
     let mut t = full_theme(
@@ -927,7 +927,7 @@ mod tests {
     #[test]
     fn agents_pane_background_lifts_each_theme_off_its_own_background() {
         let registry = ThemeRegistry::new();
-        // The old cosh palette (now `obsidian`) is the calibration pair: the
+        // The old morpheus palette (now `obsidian`) is the calibration pair: the
         // derived fill must reproduce the exact tone the painter used to
         // hardcode (background `#07070A` → pane `#0A0A0D`, a +3 step per
         // channel).

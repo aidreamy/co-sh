@@ -7,7 +7,7 @@ use morpheus_sdk::hashline::snapshots::SnapshotStore;
 /// Create a scratch directory rooted at itself, so the path guard accepts the
 /// fixtures inside it. Recreated fresh on each call.
 fn temp_dir(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("cosh_fs_read_{name}_{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("morpheus_fs_read_{name}_{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).expect("create temp test directory");
     dir

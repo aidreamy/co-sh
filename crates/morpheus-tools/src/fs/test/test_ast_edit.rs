@@ -11,7 +11,7 @@ static DIR_SEQ: AtomicU64 = AtomicU64::new(0);
 impl TempDir {
     fn new() -> Self {
         let dir = std::env::temp_dir().join(format!(
-            "cosh_ast_test_{}_{}",
+            "morpheus_ast_test_{}_{}",
             std::process::id(),
             DIR_SEQ.fetch_add(1, Ordering::Relaxed),
         ));
@@ -410,7 +410,7 @@ async fn ast_edit_does_not_follow_symlinks() {
     // escape the root or cycle), and a symlinked file must not be rewritten.
     let dir = TempDir::new();
     let target = std::env::temp_dir().join(format!(
-        "cosh_ast_outside_{}_{}",
+        "morpheus_ast_outside_{}_{}",
         std::process::id(),
         DIR_SEQ.fetch_add(1, Ordering::Relaxed),
     ));

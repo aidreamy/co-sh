@@ -1,13 +1,13 @@
 //! File-based logger for debugging the agent loop and tool dispatch.
 //!
-//! Writes structured log entries to `<tmpdir>/cosh/log/stdout.log` with
+//! Writes structured log entries to `<tmpdir>/morpheus/log/stdout.log` with
 //! timestamps — the same directory that receives the MCP stdio servers'
 //! stderr (`mcp_server_<label>_<ts>.log`), so everything observable about a
 //! broken MCP connection lives in one place.
 //!
 //! # Build behaviour
 //!
-//! - **Debug builds**: cosh workspace `log::debug!()` calls are routed to the
+//! - **Debug builds**: morpheus workspace `log::debug!()` calls are routed to the
 //!   file logger. Dependency debug chatter is filtered out. The shared file
 //!   is truncated at 16 MiB so a long session cannot fill the disk.
 //! - **Release builds**: `log::debug!()` and `log::trace!()` are stripped at
@@ -44,9 +44,9 @@ pub fn laya_log_path() -> PathBuf {
 ///
 /// Covers the two producers of decision-model activity: explicit
 /// `target: "laya"` call sites (the checkup and the harness review paths)
-/// and the daemon's own modules (`cosh::daemon::decision::*`).
+/// and the daemon's own modules (`morpheus::daemon::decision::*`).
 fn mirrors_laya(target: &str) -> bool {
-    target.starts_with("laya") || target.starts_with("cosh::daemon::decision")
+    target.starts_with("laya") || target.starts_with("morpheus::daemon::decision")
 }
 
 struct FileLogger {
@@ -61,7 +61,11 @@ impl Log for FileLogger {
                 && matches!(
                     metadata.target().split("::").next(),
                     Some(
-                        "cosh" | "morpheus_sdk" | "morpheus_tui" | "morpheus_tools" | "morpheus_recall"
+                        "morpheus"
+                            | "morpheus_sdk"
+                            | "morpheus_tui"
+                            | "morpheus_tools"
+                            | "morpheus_recall"
                             | "morpheus_whatsapp"
                     )
                 ))
@@ -111,7 +115,7 @@ impl Log for FileLogger {
 
 /// Initialize the debug file logger.
 ///
-/// Writes to `<tmpdir>/cosh/log/stdout.log` in append mode (creating the
+/// Writes to `<tmpdir>/morpheus/log/stdout.log` in append mode (creating the
 /// directory and the file as needed). The path comes from
 /// [`std::env::temp_dir`] — the std-native, cross-platform temp location —
 /// so every entry point funnels into the same stream the MCP server logs
@@ -177,7 +181,7 @@ pub fn try_init(scope: &str) -> Result<(), String> {
     // this is what makes each run's block attributable (and shows the
     // process started at all — the #1 question when "nothing happens").
     log::info!(
-        "──── cosh logger init (scope={scope}, pid={}) ────",
+        "──── morpheus logger init (scope={scope}, pid={}) ────",
         std::process::id()
     );
     Ok(())
@@ -189,7 +193,8 @@ mod tests {
 
     #[test]
     fn dependency_debug_is_filtered() {
-        let path = std::env::temp_dir().join(format!("cosh-logger-test-{}", std::process::id()));
+        let path =
+            std::env::temp_dir().join(format!("morpheus-logger-test-{}", std::process::id()));
         let logger = FileLogger {
             file: Mutex::new(
                 OpenOptions::new()
@@ -202,7 +207,7 @@ mod tests {
         };
         let own = Metadata::builder()
             .level(Level::Debug)
-            .target("cosh::app")
+            .target("morpheus::app")
             .build();
         let dependency = Metadata::builder()
             .level(Level::Debug)
@@ -221,7 +226,7 @@ mod tests {
     #[test]
     fn oversized_log_is_truncated_before_write() {
         let path =
-            std::env::temp_dir().join(format!("cosh-logger-cap-test-{}", std::process::id()));
+            std::env::temp_dir().join(format!("morpheus-logger-cap-test-{}", std::process::id()));
         let file = OpenOptions::new()
             .create(true)
             .append(true)
@@ -235,7 +240,7 @@ mod tests {
         let record = Record::builder()
             .args(format_args!("bounded"))
             .level(Level::Info)
-            .target("cosh")
+            .target("morpheus")
             .build();
         logger.log(&record);
         assert!(std::fs::metadata(&path).unwrap().len() < 100);

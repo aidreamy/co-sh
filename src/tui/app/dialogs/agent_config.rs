@@ -1,16 +1,16 @@
 //! The `/agents` standardized config box: a mapped command group (models /
-//! provider / mode) opens ONE cosh-style picker bound to the focused
+//! provider / mode) opens ONE morpheus-style picker bound to the focused
 //! pane's OWN ACP config option (matched by id or category — see
 //! `agent_command_map::ConfigTarget`). Confirming a row records the pick
 //! on the pane's config cache; every turn re-applies the pane's picks
 //! inside its own ACP connection (`apply_session_picks`), the only path
 //! that survives — ACP config options are per-connection state.
 //!
-//! Reasoning follows the cosh model-picker flow, not its own entry: a
+//! Reasoning follows the morpheus model-picker flow, not its own entry: a
 //! model pick chains the thought-level sub-box as a SECOND dialog when
 //! the harness advertises one with a real choice, and opens nothing when
 //! it does not (no synthesized levels, no fallback). That sub-box also
-//! renders the cosh reasoning shape: NO Search line (a level list never
+//! renders the morpheus reasoning shape: NO Search line (a level list never
 //! needs one) and the "Reasoning" title regardless of the harness's own
 //! spelling — the search flag rides the box ([`DialogType::
 //! AgentConfigList`]), the large option catalogs keep theirs.
@@ -31,15 +31,15 @@ impl App {
     /// flight, or the harness never advertised options) nothing opens — the
     /// pane's own state shows why.
     /// Whether an option's box carries the Search line: the large option
-    /// catalogs (the model list can publish 115 values) keep the cosh
+    /// catalogs (the model list can publish 115 values) keep the morpheus
     /// search; the thought-level box drops it — a level list is a handful
-    /// of rows, and the cosh reasoning picker has no search either.
+    /// of rows, and the morpheus reasoning picker has no search either.
     fn option_uses_search(option: &AgentConfigOption) -> bool {
         !(option.id == "reasoning" || option.category.as_deref() == Some("thought_level"))
     }
 
     /// The standardized box title for `option`: the harness's own name,
-    /// except the thought-level box — it renders "Reasoning" (the cosh
+    /// except the thought-level box — it renders "Reasoning" (the morpheus
     /// picker's title) however the harness spells its option (`Effort`,
     /// `Thought level` …), the one word the user never has to relearn.
     fn option_title(option: &AgentConfigOption) -> String {
@@ -64,7 +64,7 @@ impl App {
 
     /// Open the standardized box for a pane option already RESOLVED: the
     /// confirm path reuses it to chain the reasoning sub-box after a model
-    /// pick (the cosh flow), carrying the same open-time context capture.
+    /// pick (the morpheus flow), carrying the same open-time context capture.
     /// The search flag and the title come from the option shape
     /// ([`Self::option_uses_search`] / [`Self::option_title`]).
     fn show_agent_config_box(&mut self, pane: usize, agent: String, option: &AgentConfigOption) {
@@ -128,7 +128,7 @@ impl App {
     /// the (filtered) option rows with the component's wrap, Enter records
     /// the selected value as the pane's pick (every turn re-applies it),
     /// Esc closes, and typing/Backspace edits the shared Search filter
-    /// (resetting the selection to the first row — the cosh list-box
+    /// (resetting the selection to the first row — the morpheus list-box
     /// behavior). All three read/write `filter.selected` — the box's
     /// single source of truth, the same field the render arm and the
     /// confirm path use, so the highlight can never drift from what Enter
@@ -266,7 +266,7 @@ impl App {
             .as_ref()
             .and_then(|split| split.panes.get(pane))
             .and_then(|p| p.config_options.as_ref())
-            .and_then(|opts| cosh::coordinator::turn::model_option_id(opts))
+            .and_then(|opts| morpheus::coordinator::turn::model_option_id(opts))
             .map(str::to_string);
         let mut model_pick = false;
         if let Some(p) = self
@@ -310,7 +310,7 @@ impl App {
                     .map(|v| v.name.clone());
             }
         }
-        // The cosh reasoning flow, replicated: AFTER the model pick, the
+        // The morpheus reasoning flow, replicated: AFTER the model pick, the
         // pane's own thought-level option (when the harness advertises one
         // with a real choice) opens as a SECOND box — the same UX as the
         // model picker's reasoning sub-dialog, so the user never learns a

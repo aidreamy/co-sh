@@ -174,17 +174,17 @@ pub(crate) const LOOP_RETRY_BUDGET: u32 = 2;
 /// from aiface's typed `ConnectorError::ImageInputUnsupported`, whose
 /// classifier demands an unambiguous "text-only" body — never from a bare
 /// 400.
-pub(crate) const IMAGE_UNSUPPORTED_MARKER: &str = "__cosh_image_unsupported__";
+pub(crate) const IMAGE_UNSUPPORTED_MARKER: &str = "__morpheus_image_unsupported__";
 
 /// Internal marker returned by stream functions when the user presses Esc
 /// to stop the current generation. Compared by identity (constant), not by
 /// string value — prevents the fallback retry from misinterpreting a user
 /// cancellation as a connector error.
-pub(crate) const INTERRUPTED_MARKER: &str = "__cosh_interrupted__";
+pub(crate) const INTERRUPTED_MARKER: &str = "__morpheus_interrupted__";
 
 /// Internal marker returned by a stream function when the provider rejected
 /// the request because the prompt exceeds its context window. Compared by
 /// identity (constant), like [`INTERRUPTED_MARKER`] — the harness drains one
 /// tool chain and retries when it sees this. `pub(crate)` so tests can
 /// simulate the overflow through the mock paths.
-pub(crate) const CONTEXT_WINDOW_MARKER: &str = "__cosh_context_window_exceeded__";
+pub(crate) const CONTEXT_WINDOW_MARKER: &str = "__morpheus_context_window_exceeded__";

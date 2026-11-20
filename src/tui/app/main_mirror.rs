@@ -11,7 +11,7 @@
 //! rendering code.
 //!
 //! The translation mirrors `InternalEventBridge` and `manager_context_
-//! replay_events` (the two other projections of the cosh event vocabulary)
+//! replay_events` (the two other projections of the morpheus event vocabulary)
 //! with one deliberate difference: there is no STREAMING tool-output feed.
 //! The live path projects a tool call's FINAL result tail (`ToolResult`/`
 //! `ToolError` patch the row once, like a pane mirror's); the mid-stream
@@ -21,7 +21,7 @@
 //! the timeline from the session transcript (`backfill_from_transcript`)
 //! so a mirror opened after prior dialog shows that dialog too.
 
-use cosh::harness::events::HarnessEvent;
+use morpheus::harness::events::HarnessEvent;
 use morpheus_tools::subagent::events::{SubagentEvent, ToolCallStatus, ToolOutputBlock};
 
 use super::App;
@@ -84,7 +84,9 @@ fn mirror_events(bridge: &mut MirrorBridge, event: &HarnessEvent) -> Vec<Subagen
             let mut events = vec![bridge.tool_call(tool, input)];
             if tool == "plan_todo_write"
                 && let Some(plan) =
-                    morpheus_tools::subagent::internal::InternalEventBridge::plan_from_todo_write(input)
+                    morpheus_tools::subagent::internal::InternalEventBridge::plan_from_todo_write(
+                        input,
+                    )
             {
                 events.push(plan);
             }
@@ -99,10 +101,12 @@ fn mirror_events(bridge: &mut MirrorBridge, event: &HarnessEvent) -> Vec<Subagen
             .into_iter()
             .collect(),
         HarnessEvent::ContextInfo { info } => {
-            vec![morpheus_tools::subagent::internal::InternalEventBridge::usage(
-                info.total_tokens,
-                info.max_tokens,
-            )]
+            vec![
+                morpheus_tools::subagent::internal::InternalEventBridge::usage(
+                    info.total_tokens,
+                    info.max_tokens,
+                ),
+            ]
         }
         _ => Vec::new(),
     }

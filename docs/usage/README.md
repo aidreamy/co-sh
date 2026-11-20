@@ -6,5 +6,5 @@ Unlike the other `docs/` directories (which document implementation details for 
 
 ## Available Guides
 
-- [Lifecycle Hooks](hooks.md) — Run custom shell commands before each tool call (PreToolUse) or after each successful call (PostToolUse) to block, allow, rewrite, or inject context.
-- [Setup Reference](setup.md) — Complete reference for `setup.json`: TUI navigation, appearance, tools, routing, hooks, providers, models, modes, caching, skills, MCP, LSP, editor, telemetry, and ONNX-only decision settings.
+- [Lifecycle Hooks](hooks.md): run custom shell commands before each tool call (PreToolUse) or after each successful call (PostToolUse) to block, allow, rewrite, or inject context.
+- [Setup Reference](setup.md): complete reference for `setup.json`: TUI navigation, appearance, tools, routing, hooks, providers, models, modes, caching, skills, MCP, LSP, editor, telemetry, and ONNX-only decision settings.

@@ -13,7 +13,7 @@ use morpheus_sdk::rollback::{RestoreInput, record, restore};
 #[tokio::main]
 async fn main() {
     let path = std::env::temp_dir()
-        .join("cosh-rollback-example.txt")
+        .join("morpheus-rollback-example.txt")
         .to_string_lossy()
         .to_string();
 
@@ -100,7 +100,7 @@ async fn main() {
     println!("  unknown hash: {unknown}\n");
 
     let fresh = std::env::temp_dir()
-        .join("cosh-rollback-never-read.txt")
+        .join("morpheus-rollback-never-read.txt")
         .to_string_lossy()
         .to_string();
     std::fs::write(&fresh, "content\n").unwrap();

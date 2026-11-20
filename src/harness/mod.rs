@@ -29,4 +29,4 @@ pub use events::HarnessEvent;
 pub use guardrails::{PermissionAction, PermissionCheck, PermissionRequest, check_tool_permission};
 pub use hooks::{AggregateResult as HookAggregateResult, HookConfig, HookDecision, HookRunner};
 pub use title::generate_title;
-pub use tools::{CoshTools, Tools};
+pub use tools::{MorpheusTools, Tools};

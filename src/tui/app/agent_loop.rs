@@ -9,7 +9,7 @@ use super::App;
 use crate::component::any_spinner::AnySpinner as AgentSpinner;
 use crate::routes::session::queue_choice::QueueTarget;
 use crate::types::SessionStatus;
-use cosh::harness::HarnessEvent;
+use morpheus::harness::HarnessEvent;
 
 /// Grace window granted to the user when a Queue Actions box is opened:
 /// during the next 5 seconds the TUI may not hand the next queued message
@@ -28,9 +28,9 @@ static COMMAND_CALL_SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::Atomi
 /// the language servers' transport tasks must outlive individual turns —
 /// a per-turn runtime would kill them (and, via `kill_on_drop`, the server
 /// processes) the moment a turn ends. It lives in the library's harness
-/// assembly (`cosh::assembly`) and is re-exported here for the TUI's own
+/// assembly (`morpheus::assembly`) and is re-exported here for the TUI's own
 /// spawners.
-pub(super) use cosh::assembly::AGENT_RUNTIME;
+pub(super) use morpheus::assembly::AGENT_RUNTIME;
 
 impl App {
     /// True while the loop must not consume the next queued message: either
@@ -220,7 +220,7 @@ impl App {
         // Command mode: the TUI is a plain terminal. The input is dispatched
         // straight to the bash tool — the agent loop (and with it the LLM)
         // never runs, so there is no connector to build either.
-        if self.state.mode == cosh::harness::Mode::Command {
+        if self.state.mode == morpheus::harness::Mode::Command {
             self.start_command_execution(msg);
             return;
         }
@@ -237,7 +237,7 @@ impl App {
 
         if self.state.current_session_id.is_none() {
             // Entry funnel: the fresh session must be locked at creation,
-            // not left claimable by another cosh process (see
+            // not left claimable by another morpheus process (see
             // `claim_fresh_session_id` — the switch guard only refuses
             // EXISTING claims, and a brand-new id has none).
             let Some((id, now_ms)) = self.session_store.claim_fresh_session_id() else {
@@ -308,7 +308,7 @@ impl App {
         self.state.status = crate::types::SessionStatus::Working;
         // Telemetry aggregate: one full user-request → final-answer cycle.
         self.telemetry_turn();
-        self.telemetry_feature(cosh::telemetry::schema::Feature::Prompt);
+        self.telemetry_feature(morpheus::telemetry::schema::Feature::Prompt);
         // The loop starts in the generic state; the event intake narrows it
         // (pondering / searching / recalling) as harness events arrive.
         self.agent_activity = crate::types::AgentActivity::Working;
@@ -393,7 +393,7 @@ impl App {
         // or Edit reaches the loop (`QueuedInput::remove`/`replace`).
         // The reset MUST precede the clone: the thread gets the fresh queue,
         // never leftovers from the previous loop.
-        self.queued_input = cosh::harness::queued_input::QueuedInput::default();
+        self.queued_input = morpheus::harness::queued_input::QueuedInput::default();
         let queued_input = self.queued_input.clone();
         self.active_loop_session_id = self.state.current_session_id.clone();
 
@@ -436,7 +436,7 @@ impl App {
 
         // 2) DB registry (what the dispatch uses to resolve db_name → connect)
         #[cfg(feature = "embed")]
-        let recall_dbs: Vec<cosh::harness::tools::RecallDb> = self.recall_dbs_vec();
+        let recall_dbs: Vec<morpheus::harness::tools::RecallDb> = self.recall_dbs_vec();
         #[cfg(not(feature = "embed"))]
         let _recall_dbs = std::vec::Vec::<()>::new();
 
@@ -451,7 +451,7 @@ impl App {
         // into the context. No context records (a fresh session, or a file
         // that is missing/corrupt) means the loop starts with an empty
         // context — the user is told via toast below.
-        let ctx_state: Option<cosh::harness::ContextManagerState> = self
+        let ctx_state: Option<morpheus::harness::ContextManagerState> = self
             .state
             .current_session_id
             .as_ref()
@@ -461,13 +461,13 @@ impl App {
         std::thread::spawn(move || {
             use std::panic::AssertUnwindSafe;
 
-            let rt = cosh::assembly::agent_runtime();
+            let rt = morpheus::assembly::agent_runtime();
 
             let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
                 rt.block_on(async {
-                    use cosh::assembly::{HarnessAssembly, assemble, run_assembled_loop};
+                    use morpheus::assembly::{HarnessAssembly, assemble, run_assembled_loop};
 
-                    // ONE assembly (cosh::assembly): the connector,
+                    // ONE assembly (morpheus::assembly): the connector,
                     // cache headers, MCP, RAG, effective-context budget and
                     // skills are decided here and built by the shared
                     // assembler — the main loop adds only its own session
@@ -562,14 +562,14 @@ impl App {
     /// to the model), and the TUI renders the run through the existing
     /// bash_run event flow (ToolCall → ToolOutput stream → ToolResult).
     pub(super) fn start_command_execution(&mut self, cmd: String) {
-        use cosh::harness::Tools;
+        use morpheus::harness::Tools;
 
         // Session bootstrap identical to the agent-loop path: the first
         // command still needs a session to live in.
         if self.state.current_session_id.is_none() {
             // Entry funnel (command-mode path): same rule as the agent-loop
             // bootstrap — the fresh session must carry this process's
-            // open-lock from birth, or another cosh process could adopt it.
+            // open-lock from birth, or another morpheus process could adopt it.
             let Some((id, now_ms)) = self.session_store.claim_fresh_session_id() else {
                 log::error!("could not claim a fresh session id: command aborted");
                 return;
@@ -587,7 +587,7 @@ impl App {
         // `title_generated`: a session that later receives real agent turns
         // still gets its semantic title.
         self.command_mode_turn = true;
-        self.telemetry_feature(cosh::telemetry::schema::Feature::Prompt);
+        self.telemetry_feature(morpheus::telemetry::schema::Feature::Prompt);
 
         // C1: route the Done save to THIS session. Without an owner the
         // handler falls back to a stale `active_loop_session_id` from a
@@ -655,8 +655,9 @@ impl App {
         rt.spawn(async move {
             // Command-mode context: the restored session history plus the
             // hidden command item. The model never sees any of it.
-            let mut context =
-                cosh::harness::ContextManager::new(cosh::harness::context::MAX_CONTEXT_TOKENS);
+            let mut context = morpheus::harness::ContextManager::new(
+                morpheus::harness::context::MAX_CONTEXT_TOKENS,
+            );
             if let Some(state) = ctx_state {
                 context.restore_state(&state);
             }
@@ -673,7 +674,7 @@ impl App {
                 call_ref: None,
             });
 
-            let mut tools = cosh::harness::CoshTools::new(&cwd);
+            let mut tools = morpheus::harness::MorpheusTools::new(&cwd);
             tools.set_event_tx(event_tx.clone());
             tools.set_stop_signal(stop_signal.clone());
 
@@ -729,7 +730,7 @@ impl App {
     /// TODO.md task 4 routes more saves through the context-aware path).
     pub(super) fn warn_if_resuming_without_context(
         &mut self,
-        ctx_state: &Option<cosh::harness::ContextManagerState>,
+        ctx_state: &Option<morpheus::harness::ContextManagerState>,
     ) {
         let Some(id) = self.state.current_session_id.as_ref() else {
             return;
@@ -766,7 +767,7 @@ impl App {
     pub(super) fn handle_loop_end(&mut self, start_next: bool) -> bool {
         // Reset the shared queued-input queue: a finished loop drained
         // everything it injected; anything left must not leak into the next.
-        self.queued_input = cosh::harness::queued_input::QueuedInput::default();
+        self.queued_input = morpheus::harness::queued_input::QueuedInput::default();
         let Some(id) = self.state.current_session_id.clone() else {
             return false;
         };

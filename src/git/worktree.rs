@@ -346,7 +346,7 @@ pub fn validate_name(name: &str) -> Result<(), WorktreeError> {
 /// `git` runs with `current_dir(repo)`, so a RELATIVE path means "relative
 /// to the repo" — and the value this engine STORES must mean the same
 /// thing, because it later becomes a pane's session cwd, process cwd and
-/// sandbox root, all resolved against the cosh process's own cwd. Storing
+/// sandbox root, all resolved against the morpheus process's own cwd. Storing
 /// the raw text (`. /wt`) silently pinned the pane to a different tree.
 ///
 /// `.`/`..` components are folded LEXICALLY: the directory does not exist
@@ -550,7 +550,7 @@ mod tests {
     /// A RELATIVE explicit path means "relative to the repo" — the same
     /// thing git means when it runs with `current_dir(repo)` — and the value
     /// stored for the pane must say exactly that, because it later becomes a
-    /// session/process cwd rooted at the cosh process, not at the repo.
+    /// session/process cwd rooted at the morpheus process, not at the repo.
     #[test]
     fn a_relative_explicit_path_is_stored_absolute_against_the_repo() {
         let (_dir, repo) = repo();

@@ -12,7 +12,7 @@ use morpheus_tools::fs::{Fs, Target};
 
 #[tokio::main]
 async fn main() {
-    let project = std::env::temp_dir().join("cosh-fs-ast-edit-example");
+    let project = std::env::temp_dir().join("morpheus-fs-ast-edit-example");
     let _ = std::fs::remove_dir_all(&project);
     let src = project.join("src");
     std::fs::create_dir_all(src.join("util")).unwrap();

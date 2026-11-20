@@ -37,7 +37,7 @@ pub fn assemble_turn_input(
 /// session's working directory otherwise.
 ///
 /// The ACP turn's `cwd`, the pane harness's `HarnessAssembly::cwd` (harness
-/// root, `CoshTools` root, LSP, hooks) and the fs sandbox root all funnel
+/// root, `MorpheusTools` root, LSP, hooks) and the fs sandbox root all funnel
 /// through it, so a binding is either honored by every layer or by none.
 pub fn effective_cwd(worktree: Option<&Path>, session_cwd: &str) -> PathBuf {
     worktree

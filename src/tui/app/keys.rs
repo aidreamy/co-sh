@@ -693,9 +693,9 @@ impl App {
                         }
                         KeyCode::Enter => {
                             let action = match self.permission_dialog.selected {
-                                0 => cosh::harness::PermissionAction::Allow,
-                                1 => cosh::harness::PermissionAction::AllowOnce,
-                                _ => cosh::harness::PermissionAction::Deny,
+                                0 => morpheus::harness::PermissionAction::Allow,
+                                1 => morpheus::harness::PermissionAction::AllowOnce,
+                                _ => morpheus::harness::PermissionAction::Deny,
                             };
                             self.permission_dialog.visible = false;
                             let _ = self.perm_tx.send(action);
@@ -704,7 +704,7 @@ impl App {
                         }
                         KeyCode::Esc => {
                             self.permission_dialog.visible = false;
-                            let _ = self.perm_tx.send(cosh::harness::PermissionAction::Deny);
+                            let _ = self.perm_tx.send(morpheus::harness::PermissionAction::Deny);
                             self.prompt_view.focus();
                             return Ok(false);
                         }
@@ -931,7 +931,7 @@ impl App {
                             Some(crate::routes::settings::SettingsAction::LspToggled) => {
                                 // Keep the harness's process-wide LSP flag and
                                 // the prompt footer in sync with the new switch.
-                                cosh::harness::lsp::set_lsp_enabled(self.setup.lsp);
+                                morpheus::harness::lsp::set_lsp_enabled(self.setup.lsp);
                                 self.state.lsp_available = self.setup.lsp;
                                 // Disabling is the one user-driven
                                 // invalidation: drop the visible servers now
@@ -1597,7 +1597,8 @@ impl App {
                     // Capture any images attached to the draft BEFORE send_message
                     // clears them, so they ride along with this turn.
                     let attached = self.prompt_view.take_images();
-                    let sources: Vec<String> = attached.iter().map(|img| img.source.clone()).collect();
+                    let sources: Vec<String> =
+                        attached.iter().map(|img| img.source.clone()).collect();
                     let image_blocks: Vec<aiface::connector::ImageBlock> = attached
                         .into_iter()
                         .filter_map(|img| {
@@ -1834,7 +1835,7 @@ impl App {
                 }
                 Some(crate::keymap::Action::ToggleMode) => {
                     if matches!(self.mode(), AppMode::Session) {
-                        use cosh::harness::Mode;
+                        use morpheus::harness::Mode;
                         self.state.mode = match self.state.mode {
                             Mode::Build => Mode::Ask,
                             Mode::Ask => Mode::Yolo,
@@ -2300,7 +2301,7 @@ impl App {
         if ch.is_ascii_digit() && self.agents_split.is_some() {
             // The focus IS the slash-menu source switch: the focused pane's
             // own command list takes over (fetching its snapshot on first
-            // focus), unfocusing (`0`) restores the cosh set. The snapshot
+            // focus), unfocusing (`0`) restores the morpheus set. The snapshot
             // probe only seeds when a pane actually took the focus.
             let focused = self
                 .agents_split
@@ -2505,4 +2506,3 @@ impl App {
         }
     }
 }
-

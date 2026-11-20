@@ -116,7 +116,7 @@ mod act_validation_tests {
             ..step()
         };
         let type_step = ComputerAct {
-            text: Some("cosh-test".into()),
+            text: Some("morpheus-test".into()),
             then: Some(Box::new(enter)),
             ..step()
         };
@@ -303,7 +303,7 @@ mod control_validation_tests {
     fn mixed_pipeline_passes() {
         // The canonical pattern: click the field, type, submit.
         let type_step = ComputerControl {
-            text: Some("cosh-test".into()),
+            text: Some("morpheus-test".into()),
             ..step()
         };
         let enter_step = ComputerControl {
@@ -386,7 +386,7 @@ mod control_validation_tests {
             ..step()
         };
         let type_step = ComputerControl {
-            text: Some("cosh-test".into()),
+            text: Some("morpheus-test".into()),
             then: Some(Box::new(enter)),
             ..step()
         };

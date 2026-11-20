@@ -11,7 +11,7 @@ use super::Harness;
 impl Harness {
     /// Catalog names of every language server currently alive (Starting or
     /// Ready) across both managers this harness drives — its own passive
-    /// diagnostics manager and the one inside [`CoshTools`] used by the
+    /// diagnostics manager and the one inside [`MorpheusTools`] used by the
     /// `lsp_*` tools. Deduplicated, order not guaranteed. An empty slice means
     /// no server is running right now.
     pub(super) fn active_lsp_server_names(&self) -> Vec<String> {
@@ -32,14 +32,14 @@ impl Harness {
             }
         };
         collect(self.lsp.as_ref());
-        collect(self.cosh_tools.as_ref().and_then(|c| c.lsp()));
+        collect(self.morpheus_tools.as_ref().and_then(|c| c.lsp()));
         servers.into_iter().collect()
     }
 
-    /// Whether LSP is enabled at all (`COSH_LSP` not `off`): true when either
+    /// Whether LSP is enabled at all (`MORPHEUS_LSP` not `off`): true when either
     /// manager built a wrapper. Distinct from how many servers run right now.
     pub(super) fn lsp_available(&self) -> bool {
-        self.lsp.is_some() || self.cosh_tools.as_ref().and_then(|c| c.lsp()).is_some()
+        self.lsp.is_some() || self.morpheus_tools.as_ref().and_then(|c| c.lsp()).is_some()
     }
 
     /// Test-only access to the Claude thinking-block stash: the harness-test

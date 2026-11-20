@@ -20,7 +20,7 @@ mod ui;
 mod util;
 // Application modules that live in the library now (moved out of the TUI);
 // aliased at the bin root so `crate::x` paths in the app keep resolving.
-use cosh::{config, fallback, notification, session, types, update, usage};
+use morpheus::{config, fallback, notification, session, types, update, usage};
 
 #[cfg(test)]
 #[path = "test/rag_abort.rs"]
@@ -43,7 +43,10 @@ async fn main() {
 
     match invocation {
         cli::Invocation::Help(subject) => {
-            print!("{}", cli::help::render(subject.as_deref(), &Palette::load()));
+            print!(
+                "{}",
+                cli::help::render(subject.as_deref(), &Palette::load())
+            );
         }
         cli::Invocation::Version => println!("{} {}", cli::NAME, cli::VERSION),
         cli::Invocation::Paths => {
@@ -52,7 +55,7 @@ async fn main() {
         }
         cli::Invocation::WhatsApp => {
             prepare_plain_command("cli_whatsapp");
-            std::process::exit(cosh::whatsapp::run().await);
+            std::process::exit(morpheus::whatsapp::run().await);
         }
         cli::Invocation::Update(options) => {
             prepare_plain_command("cli_update");
@@ -67,7 +70,7 @@ async fn main() {
 /// cannot be opened must never block an update or a path lookup.
 fn prepare_plain_command(scope: &str) {
     dotenv().ok();
-    if let Err(reason) = cosh::util::logger::try_init(scope) {
+    if let Err(reason) = morpheus::util::logger::try_init(scope) {
         eprintln!("morpheus: logging disabled: {reason}");
     }
 }
@@ -77,9 +80,9 @@ async fn run_tui(options: cli::LaunchOptions) {
     dotenv().ok();
 
     // Initialize debug file logger.
-    // Logs are written to /tmp/cosh/log/stdout.log (shared with the MCP
+    // Logs are written to /tmp/morpheus/log/stdout.log (shared with the MCP
     // server stderr logs in the same directory).
-    cosh::util::logger::init("tui_main");
+    morpheus::util::logger::init("tui_main");
 
     // Resolved BEFORE the terminal is initialized, so the messages are plain
     // stderr lines: an unknown `-s` id exits, an empty `-c` falls back to a
@@ -119,7 +122,7 @@ async fn run_tui(options: cli::LaunchOptions) {
 /// Diagnostic for the OS credential store backing the API keys.
 ///
 /// Read-only: reports, per provider, whether a key is available from the
-/// environment and/or from the keyring (service `cosh`), plus a write/read/
+/// environment and/or from the keyring (service `morpheus`), plus a write/read/
 /// delete roundtrip through the native store to prove end-to-end connectivity.
 fn check_keyring() {
     use aiface::connector::{COSH_SERVICE, known_providers_with_env};
@@ -169,7 +172,7 @@ fn check_keyring() {
     }
 
     // Write/read/delete roundtrip to prove the native store works end to end.
-    let selftest_key = "__cosh_selftest";
+    let selftest_key = "__morpheus_selftest";
     let roundtrip = (|| -> Result<(), keyring::Error> {
         let entry = Entry::new(COSH_SERVICE, selftest_key)?;
         entry.set_password("roundtrip-ok")?;

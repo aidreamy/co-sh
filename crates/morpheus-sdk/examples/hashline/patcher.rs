@@ -166,7 +166,7 @@ insert tail:
 
     // ── 7. End to end on disk ───────────────────────────────────────────────
     println!("== 7. Patcher + DiskFilesystem ==");
-    let dir = std::env::temp_dir().join("cosh-hashline-example");
+    let dir = std::env::temp_dir().join("morpheus-hashline-example");
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("lib.rs");

@@ -287,7 +287,7 @@ async fn charm_usage_event_switches_header_to_credits_balance() {
             model: None,
         });
 
-    let usage = cosh::harness::HarnessEvent::Usage {
+    let usage = morpheus::harness::HarnessEvent::Usage {
         usage: TokenUsage::default(),
         provider: "charm".into(),
         model: "glm-5.3-flash".into(),
@@ -512,7 +512,7 @@ async fn scroll_to_bottom_pill_stays_put_when_the_spinner_appears() {
     app.agent_spinner = Some(AgentSpinner::new(
         "Working",
         &app.theme,
-        cosh::setup::SpinnerStyle::Bass,
+        morpheus::setup::SpinnerStyle::Bass,
     ));
     terminal.draw(|f| app.render(f, 0.016)).unwrap();
 
@@ -548,7 +548,7 @@ async fn prompt_correction_spinner_yields_to_the_agent_loop_spinner() {
     app.prompt_correction_spinner = Some(AgentSpinner::new(
         "",
         &app.theme,
-        cosh::setup::SpinnerStyle::Bass,
+        morpheus::setup::SpinnerStyle::Bass,
     ));
 
     let (w, h) = (80u16, 24u16);
@@ -581,7 +581,7 @@ async fn prompt_correction_spinner_yields_to_the_agent_loop_spinner() {
     app.agent_spinner = Some(AgentSpinner::new(
         "Working",
         &app.theme,
-        cosh::setup::SpinnerStyle::Bass,
+        morpheus::setup::SpinnerStyle::Bass,
     ));
     terminal.draw(|frame| app.render(frame, 0.016)).unwrap();
     let rendered: String = terminal

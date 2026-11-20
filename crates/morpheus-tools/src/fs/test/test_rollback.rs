@@ -20,7 +20,7 @@ impl TempRoot {
             .duration_since(UNIX_EPOCH)
             .expect("system time is after UNIX_EPOCH")
             .as_nanos();
-        let dir = std::env::temp_dir().join(format!("cosh_fs_rb_{label}_{id}_{nanos}"));
+        let dir = std::env::temp_dir().join(format!("morpheus_fs_rb_{label}_{id}_{nanos}"));
         std::fs::create_dir_all(&dir).expect("create temp root");
         Self(dir)
     }
@@ -41,7 +41,7 @@ static TEST_ID: AtomicU64 = AtomicU64::new(0);
 fn tmp(root: &TempRoot, label: &str) -> String {
     let id = TEST_ID.fetch_add(1, Ordering::Relaxed);
     root.0
-        .join(format!("cosh_test_rb_{label}_{id}.txt"))
+        .join(format!("morpheus_test_rb_{label}_{id}.txt"))
         .to_string_lossy()
         .into_owned()
 }
@@ -68,7 +68,7 @@ fn rm(path: &str) {
 async fn rollback_denied_when_path_is_outside_project_root() {
     let root = TempRoot::new("outside");
     let outside = std::env::temp_dir().join(format!(
-        "cosh_tool_rb_outside_{}.txt",
+        "morpheus_tool_rb_outside_{}.txt",
         TEST_ID.fetch_add(1, Ordering::Relaxed)
     ));
     let outside = outside.to_string_lossy().into_owned();
@@ -134,7 +134,7 @@ async fn rollback_returns_error_on_blocklist_allowlist_mismatch() {
 async fn rollback_allowed_outside_root_when_path_in_allowlist() {
     let root = TempRoot::new("allowlist");
     let outside = std::env::temp_dir().join(format!(
-        "cosh_tool_rb_allowlist_{}.txt",
+        "morpheus_tool_rb_allowlist_{}.txt",
         TEST_ID.fetch_add(1, Ordering::Relaxed)
     ));
     let outside = outside.to_string_lossy().into_owned();

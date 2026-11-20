@@ -7,7 +7,7 @@
 //! - keep the **tail** — the final lines and the exit status (or the
 //!   conclusion);
 //! - when the output exceeds the token budget, the **middle** is written
-//!   verbatim to a scratch log at `<OS temp>/cosh/<content-hash>.log` and
+//!   verbatim to a scratch log at `<OS temp>/morpheus/<content-hash>.log` and
 //!   replaced in the model-facing text with a structured notice pointing at
 //!   the file. The model can then read the omitted section back gradually
 //!   with `fs_read` (using `offset`/`limit`) or `find_grep` — no re-execution,
@@ -198,7 +198,7 @@ fn truncation_notice(
     )
 }
 
-/// The harness scratch directory (`<OS temp>/cosh`) for truncated-output logs.
+/// The harness scratch directory (`<OS temp>/morpheus`) for truncated-output logs.
 ///
 /// Uses the same constant as the path guard's scratch exemption, so the writer
 /// and the guards can never drift apart — the model can always read the logs
@@ -217,7 +217,7 @@ fn write_middle_log(middle: &str) -> Option<PathBuf> {
     let dir = scratch_log_dir();
     std::fs::create_dir_all(&dir).ok()?;
     let path = dir.join(format!("{:016x}.log", xxh64(middle.as_bytes(), 0)));
-    // Content-addressed name shared by every cosh process on the machine
+    // Content-addressed name shared by every morpheus process on the machine
     // (dedup by design). Write to a temp name and rename so a concurrent
     // reader never observes a half-written (or empty) file — `fs::write`
     // truncates first, so a racing reader could read an empty log.

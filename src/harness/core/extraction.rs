@@ -6,7 +6,7 @@ use morpheus_sdk::extract_action::{ExtractAction, Item, ToolCallData, ToolSchema
 use super::{Harness, Mode, background, tool_routing::is_manager_restricted};
 
 impl Harness {
-    /// Build an extractor with all registered MCP, cosh, and internal tools.
+    /// Build an extractor with all registered MCP, morpheus, and internal tools.
     pub(super) fn build_extractor(&self) -> ExtractAction {
         use crate::mcp::tool_to_schema;
 
@@ -20,20 +20,20 @@ impl Harness {
                 extractor.add_tool(tool_to_schema(tool));
             }
         }
-        if let Some(ref cosh) = self.cosh_tools {
+        if let Some(ref morpheus) = self.morpheus_tools {
             let schemas = match self.mode {
                 Mode::Build | Mode::Yolo | Mode::Command => {
-                    cosh.schemas_enabled(&self.disabled_tools)
+                    morpheus.schemas_enabled(&self.disabled_tools)
                 }
-                Mode::Manager => cosh
+                Mode::Manager => morpheus
                     .schemas_enabled(&self.disabled_tools)
                     .into_iter()
                     .filter(|schema| !is_manager_restricted(&schema.name))
                     .collect(),
-                Mode::Ask => cosh.schemas_filtered(&self.disabled_tools),
+                Mode::Ask => morpheus.schemas_filtered(&self.disabled_tools),
             };
             log::debug!(
-                "build_extractor: cosh.schemas() returned {} tools",
+                "build_extractor: morpheus.schemas() returned {} tools",
                 schemas.len()
             );
             for schema in schemas {
@@ -60,7 +60,7 @@ impl Harness {
     }
 
     /// The sorted, deduplicated names of every tool the model is allowed to
-    /// call in the current mode: harness + cosh + MCP, minus disabled, with
+    /// call in the current mode: harness + morpheus + MCP, minus disabled, with
     /// MCP hidden in Ask mode. Mirrors [`Self::build_extractor`] so the two
     /// stay in lockstep.
     pub(crate) fn effective_tool_names(&self) -> Vec<String> {
@@ -70,17 +70,17 @@ impl Harness {
                 names.push(tool.name.clone());
             }
         }
-        if let Some(ref cosh) = self.cosh_tools {
+        if let Some(ref morpheus) = self.morpheus_tools {
             let schemas = match self.mode {
                 Mode::Build | Mode::Yolo | Mode::Command => {
-                    cosh.schemas_enabled(&self.disabled_tools)
+                    morpheus.schemas_enabled(&self.disabled_tools)
                 }
-                Mode::Manager => cosh
+                Mode::Manager => morpheus
                     .schemas_enabled(&self.disabled_tools)
                     .into_iter()
                     .filter(|schema| !is_manager_restricted(&schema.name))
                     .collect(),
-                Mode::Ask => cosh.schemas_filtered(&self.disabled_tools),
+                Mode::Ask => morpheus.schemas_filtered(&self.disabled_tools),
             };
             for schema in schemas {
                 names.push(schema.name);

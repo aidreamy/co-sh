@@ -96,9 +96,9 @@ dependencies = [
 
 [[package]]
 name = "aiface"
-version = "0.2.5"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93251a0bdba2ec3e6b533d6b9f5509341bff9861e36cf574b01cbef1416b1355"
+checksum = "ce7e801a55fadec50f2e96fec32fd2f5c442b06384a80bf4adbda2779137cba6"
 dependencies = [
  "async-stream",
  "base64 0.22.1",
@@ -1677,57 +1677,6 @@ name = "core_detect"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f8f80099a98041a3d1622845c271458a2d73e688351bf3cb999266764b81d48"
-
-[[package]]
-name = "cosh"
-version = "1.0.0"
-dependencies = [
- "aiface",
- "arboard",
- "chrono",
- "crossterm",
- "directories",
- "dotenvy",
- "fastembed",
- "getrandom 0.3.4",
- "http",
- "image",
- "keyring",
- "libc",
- "log",
- "lru",
- "morpheus-onnx",
- "morpheus-recall",
- "morpheus-sdk",
- "morpheus-tools",
- "morpheus-tui",
- "morpheus-whatsapp",
- "notify-rust",
- "open",
- "parking_lot 0.12.5",
- "piper-phonemize",
- "ratatui",
- "rayon",
- "rcgen",
- "regex",
- "reqwest 0.13.5",
- "rmcp",
- "rustls",
- "serde",
- "serde_json",
- "sherpa-onnx",
- "tempfile",
- "thiserror 2.0.21",
- "tiktoken-rs",
- "tokio",
- "tokio-rustls",
- "tokio-stream",
- "unicode-width",
- "url",
- "webbrowser",
- "windows-sys 0.61.2",
- "xxhash-rust",
-]
 
 [[package]]
 name = "cpubits"
@@ -5847,6 +5796,57 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
+]
+
+[[package]]
+name = "morpheus"
+version = "1.0.0"
+dependencies = [
+ "aiface",
+ "arboard",
+ "chrono",
+ "crossterm",
+ "directories",
+ "dotenvy",
+ "fastembed",
+ "getrandom 0.3.4",
+ "http",
+ "image",
+ "keyring",
+ "libc",
+ "log",
+ "lru",
+ "morpheus-onnx",
+ "morpheus-recall",
+ "morpheus-sdk",
+ "morpheus-tools",
+ "morpheus-tui",
+ "morpheus-whatsapp",
+ "notify-rust",
+ "open",
+ "parking_lot 0.12.5",
+ "piper-phonemize",
+ "ratatui",
+ "rayon",
+ "rcgen",
+ "regex",
+ "reqwest 0.13.5",
+ "rmcp",
+ "rustls",
+ "serde",
+ "serde_json",
+ "sherpa-onnx",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tiktoken-rs",
+ "tokio",
+ "tokio-rustls",
+ "tokio-stream",
+ "unicode-width",
+ "url",
+ "webbrowser",
+ "windows-sys 0.61.2",
+ "xxhash-rust",
 ]
 
 [[package]]

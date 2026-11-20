@@ -57,9 +57,9 @@ fn resolve_prefers_env_when_keyring_holds_nothing() {
     // No keyring credential exists for this test-only name (the store is
     // not touched), so the env var decides.
     // SAFETY: test-only, serialized by ENV_LOCK (process-global env).
-    unsafe { std::env::set_var("COSH_TEST_MCP_KEY", "from-env") };
-    let resolved = resolve_key("cred-test-env", Some("COSH_TEST_MCP_KEY")).unwrap();
-    unsafe { std::env::remove_var("COSH_TEST_MCP_KEY") };
+    unsafe { std::env::set_var("MORPHEUS_TEST_MCP_KEY", "from-env") };
+    let resolved = resolve_key("cred-test-env", Some("MORPHEUS_TEST_MCP_KEY")).unwrap();
+    unsafe { std::env::remove_var("MORPHEUS_TEST_MCP_KEY") };
     assert_eq!(resolved.as_deref(), Some("from-env"));
 }
 
@@ -67,10 +67,10 @@ fn resolve_prefers_env_when_keyring_holds_nothing() {
 fn resolve_missing_env_is_a_typed_failure() {
     let _guard = ENV_LOCK.lock().unwrap();
     // SAFETY: single-threaded env access under ENV_LOCK (process-global).
-    unsafe { std::env::remove_var("COSH_TEST_MCP_KEY_MISSING") };
-    let err = resolve_key("cred-test-missing", Some("COSH_TEST_MCP_KEY_MISSING")).unwrap_err();
+    unsafe { std::env::remove_var("MORPHEUS_TEST_MCP_KEY_MISSING") };
+    let err = resolve_key("cred-test-missing", Some("MORPHEUS_TEST_MCP_KEY_MISSING")).unwrap_err();
     assert!(
-        err.to_string().contains("COSH_TEST_MCP_KEY_MISSING"),
+        err.to_string().contains("MORPHEUS_TEST_MCP_KEY_MISSING"),
         "error must name the variable so the user can fix it: {err}"
     );
     // The keyring lookup failure path must NOT mask the env absence.
@@ -90,9 +90,9 @@ fn resolve_without_declared_credential_is_none() {
 fn resolve_blank_env_value_counts_as_missing() {
     let _guard = ENV_LOCK.lock().unwrap();
     // SAFETY: single-threaded env access under ENV_LOCK (process-global).
-    unsafe { std::env::set_var("COSH_TEST_MCP_KEY_BLANK", "   ") };
-    let err = resolve_key("cred-test-blank", Some("COSH_TEST_MCP_KEY_BLANK")).unwrap_err();
-    unsafe { std::env::remove_var("COSH_TEST_MCP_KEY_BLANK") };
+    unsafe { std::env::set_var("MORPHEUS_TEST_MCP_KEY_BLANK", "   ") };
+    let err = resolve_key("cred-test-blank", Some("MORPHEUS_TEST_MCP_KEY_BLANK")).unwrap_err();
+    unsafe { std::env::remove_var("MORPHEUS_TEST_MCP_KEY_BLANK") };
     assert!(matches!(
         err,
         super::super::error::McpError::CredentialMissing(_, _)

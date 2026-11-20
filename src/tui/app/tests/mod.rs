@@ -31,10 +31,10 @@ static CLIPBOARD_LOCK: parking_lot::Mutex<()> = parking_lot::Mutex::new(());
 ///
 /// `$HOME` alone is NOT enough: on Windows `directories::ProjectDirs`
 /// resolves through the known-folders API (`APPDATA`), ignoring `HOME`
-/// entirely. The `COSH_CONFIG_DIR` / `COSH_DATA_DIR` overrides (read by
-/// `cosh::setup`) pin every consumer to the scratch dir on all platforms.
+/// entirely. The `MORPHEUS_CONFIG_DIR` / `MORPHEUS_DATA_DIR` overrides (read by
+/// `morpheus::setup`) pin every consumer to the scratch dir on all platforms.
 fn isolate_home() {
-    let home = std::env::temp_dir().join("cosh-hook-test-home");
+    let home = std::env::temp_dir().join("morpheus-hook-test-home");
     let _ = std::fs::remove_dir_all(&home);
     std::fs::create_dir_all(&home).expect("create scratch home");
     let cfg = home.join(".config").join("morpheus");
@@ -44,8 +44,8 @@ fn isolate_home() {
     // SAFETY: tests holding HOME_LOCK are the only threads reading these.
     unsafe {
         std::env::set_var("HOME", &home);
-        std::env::set_var("COSH_CONFIG_DIR", &cfg);
-        std::env::set_var("COSH_DATA_DIR", &data);
+        std::env::set_var("MORPHEUS_CONFIG_DIR", &cfg);
+        std::env::set_var("MORPHEUS_DATA_DIR", &data);
     }
 }
 

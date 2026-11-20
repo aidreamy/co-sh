@@ -18,7 +18,7 @@ impl TempRoot {
             .duration_since(UNIX_EPOCH)
             .expect("system time is after UNIX_EPOCH")
             .as_nanos();
-        let dir = std::env::temp_dir().join(format!("cosh_fs_edit_tools_{label}_{id}_{nanos}"));
+        let dir = std::env::temp_dir().join(format!("morpheus_fs_edit_tools_{label}_{id}_{nanos}"));
         std::fs::create_dir_all(&dir).expect("create temp root");
         Self(dir)
     }
@@ -48,7 +48,7 @@ fn fs_root(root: &Path) -> Fs {
 #[tokio::test]
 async fn fs_edit_replaces_exact_string() {
     let root = TempRoot::new("content");
-    let path = root.file("cosh_test_edit_content.txt");
+    let path = root.file("morpheus_test_edit_content.txt");
     let text = "alpha\nbeta\n";
     std::fs::write(&path, text).unwrap();
     let hash = morpheus_sdk::rollback::record(&path, text).unwrap();
@@ -69,7 +69,7 @@ async fn fs_edit_replaces_exact_string() {
 #[tokio::test]
 async fn fs_edit_without_file_hash_is_rejected_with_anchor_hint() {
     let root = TempRoot::new("content_notag");
-    let path = root.file("cosh_test_edit_notag.txt");
+    let path = root.file("morpheus_test_edit_notag.txt");
     std::fs::write(&path, "alpha\n").unwrap();
     let args = json!({
         "path": path,
@@ -104,7 +104,7 @@ async fn fs_edit_requires_old_string() {
 #[tokio::test]
 async fn fs_edit_lines_applies_flat_ops_shape() {
     let root = TempRoot::new("lines");
-    let path = root.file("cosh_test_edit_lines.txt");
+    let path = root.file("morpheus_test_edit_lines.txt");
     std::fs::write(&path, "line1\nline2\n").unwrap();
     let hash = compute_file_hash(&std::fs::read_to_string(&path).unwrap());
     let args = json!({
@@ -123,7 +123,7 @@ async fn fs_edit_lines_applies_flat_ops_shape() {
 #[tokio::test]
 async fn fs_edit_lines_keeps_legacy_targets_batch_form() {
     let root = TempRoot::new("lines_legacy");
-    let path = root.file("cosh_test_edit_lines_legacy.txt");
+    let path = root.file("morpheus_test_edit_lines_legacy.txt");
     std::fs::write(&path, "a\n").unwrap();
     let hash = compute_file_hash(&std::fs::read_to_string(&path).unwrap());
     let args = json!({
@@ -151,7 +151,7 @@ async fn fs_edit_lines_requires_path_and_ops() {
 #[tokio::test]
 async fn ast_edit_applies_flat_ops_shape() {
     let root = TempRoot::new("ast");
-    let path = root.file("cosh_test_edit_ast.rs");
+    let path = root.file("morpheus_test_edit_ast.rs");
     std::fs::write(&path, "fn main() { oldApi(1); }\n").unwrap();
     let args = json!({
         "path": path,
@@ -171,7 +171,7 @@ async fn ast_edit_applies_flat_ops_shape() {
 #[tokio::test]
 async fn ast_edit_keeps_legacy_ast_batch_form() {
     let root = TempRoot::new("ast_legacy");
-    let path = root.file("cosh_test_edit_ast_legacy.rs");
+    let path = root.file("morpheus_test_edit_ast_legacy.rs");
     std::fs::write(&path, "fn main() { foo(1); }\n").unwrap();
     let args = json!({
         "ast": { "ops": [{"pat": "foo($$$ARGS)", "out": "bar($$$ARGS)"}], "paths": [path] }

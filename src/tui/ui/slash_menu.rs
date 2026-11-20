@@ -64,7 +64,7 @@ pub enum CommandScope {
     Agent,
 }
 
-/// The command inventory: every cosh slash command, its [`CommandScope`] and
+/// The command inventory: every morpheus slash command, its [`CommandScope`] and
 /// what it actually mutates. This table IS the answer to "is this command
 /// global or per-agent?" — kept in ONE place so a new command must declare a
 /// side instead of inheriting a leaky default, and `run_slash_command` routes
@@ -111,9 +111,9 @@ pub const COMMAND_INVENTORY: &[(&str, CommandScope)] = &[
 
 /// The [`CommandScope`] of `name`. A name absent from [`COMMAND_INVENTORY`]
 /// is an AGENT's own published command (that agent's harness interprets it),
-/// never a cosh-owned global action — so an unknown command can never steal
+/// never a morpheus-owned global action — so an unknown command can never steal
 /// app-wide state. The guard test
-/// `every_cosh_command_declares_its_scope` keeps both lists in lockstep.
+/// `every_morpheus_command_declares_its_scope` keeps both lists in lockstep.
 #[must_use]
 pub fn command_scope(name: &str) -> CommandScope {
     COMMAND_INVENTORY
@@ -123,7 +123,7 @@ pub fn command_scope(name: &str) -> CommandScope {
         .unwrap_or(CommandScope::Agent)
 }
 
-/// The `/worktree` slash entry — a COSH-side command (a worktree is a cosh
+/// The `/worktree` slash entry — a MORPHEUS-side command (a worktree is a morpheus
 /// binding, never the agent's own command).
 ///
 /// It lives in the BASE command list because its target is whichever agent
@@ -145,7 +145,7 @@ pub fn worktree_command_entry() -> SlashCommand {
 ///
 /// `/undo` is a Global-scoped command (the App handles it, never the pane),
 /// but an ACP pane's menu is built from its OWN published commands — the
-/// harness has no notion of cosh checkpoints and never lists it. The entry is
+/// harness has no notion of morpheus checkpoints and never lists it. The entry is
 /// therefore synthesized for every ACP pane, exactly like `/worktree`; the
 /// manager pane gets `/undo` from the base list and must not append a second
 /// copy. Picking it with an ACP pane focused opens that pane's checkpoints.
@@ -167,7 +167,7 @@ pub enum SlashMenuMouseAction {
 /// OpenCode-faithful slash ("/") autocomplete menu.
 /// Renders inline above the prompt, not as a modal dialog.
 ///
-/// The command SOURCE is dynamic: the default cosh set, or the focused
+/// The command SOURCE is dynamic: the default morpheus set, or the focused
 /// `/agents` pane's own command list (the agent's exact spellings). While
 /// an agent snapshot is being fetched the menu renders a spinner row
 /// instead of commands — the probe takes seconds, so the user sees WHY the
@@ -179,8 +179,8 @@ pub enum SlashMenuMouseAction {
 /// routing decision.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Source {
-    /// The cosh harness's own set (the main agent / no pane focused).
-    Cosh,
+    /// The morpheus harness's own set (the main agent / no pane focused).
+    Morpheus,
     /// A focused agent pane's own list (already blocklist-filtered).
     Agent,
 }
@@ -207,15 +207,15 @@ impl SlashMenu {
             visible: false,
             query: String::new(),
             selected: 0,
-            commands: Self::cosh_commands(),
-            source: Source::Cosh,
+            commands: Self::morpheus_commands(),
+            source: Source::Morpheus,
             loading: false,
             spinner: SpinnerState::new(),
         }
     }
 
-    /// The cosh harness's own command set (the default source).
-    pub fn cosh_commands() -> Vec<SlashCommand> {
+    /// The morpheus harness's own command set (the default source).
+    pub fn morpheus_commands() -> Vec<SlashCommand> {
         vec![
             SlashCommand {
                 name: "models".into(),
@@ -290,10 +290,10 @@ impl SlashMenu {
         ]
     }
 
-    /// Every cosh-owned command name (the menu's own vocabulary, without the
+    /// Every morpheus-owned command name (the menu's own vocabulary, without the
     /// synthesized per-pane entries). The scope inventory is checked against
     /// this, and the router refuses a command missing from
-    /// [`COMMAND_INVENTORY`] as "not cosh's" — so this is the single list a
+    /// [`COMMAND_INVENTORY`] as "not morpheus's" — so this is the single list a
     /// new command must be added to twice (here and in the inventory), which
     /// the guard test enforces.
     /// Swap the command source to an agent's own list (the pane's cached
@@ -305,16 +305,16 @@ impl SlashMenu {
         self.selected = 0;
     }
 
-    /// Swap back to the cosh command set (unfocused / closed split).
-    pub fn set_cosh_commands(&mut self) {
-        self.commands = Self::cosh_commands();
-        self.source = Source::Cosh;
+    /// Swap back to the morpheus command set (unfocused / closed split).
+    pub fn set_morpheus_commands(&mut self) {
+        self.commands = Self::morpheus_commands();
+        self.source = Source::Morpheus;
         self.loading = false;
         self.selected = 0;
     }
 
     /// Flag the menu as fetching an agent's command snapshot: a spinner
-    /// row renders until `set_agent_commands` / `set_cosh_commands` swaps
+    /// row renders until `set_agent_commands` / `set_morpheus_commands` swaps
     /// the source in.
     pub fn set_loading(&mut self, loading: bool) {
         self.loading = loading;
@@ -668,15 +668,15 @@ mod tests {
     use crate::theme::ThemeRegistry;
 
     /// The scope inventory is the routing contract, so it must be COMPLETE:
-    /// every command the cosh menu offers declares a scope, and the
+    /// every command the morpheus menu offers declares a scope, and the
     /// inventory declares no command the menu does not offer (a stale row
     /// would silently classify a future command by an old name).
     #[test]
-    fn every_cosh_command_declares_its_scope() {
+    fn every_morpheus_command_declares_its_scope() {
         // `/worktree` is part of the base list: it belongs to the MAIN agent
         // (whose menu IS this list) as much as to any pane, so the pane
         // sources must not append a second copy.
-        let menu_names: Vec<String> = SlashMenu::cosh_commands()
+        let menu_names: Vec<String> = SlashMenu::morpheus_commands()
             .into_iter()
             .map(|command| command.name)
             .collect();
@@ -684,13 +684,13 @@ mod tests {
         for name in &menu_names {
             assert!(
                 inventory_names.contains(&name.as_str()),
-                "`/{name}` is in the cosh menu but declares no scope in COMMAND_INVENTORY"
+                "`/{name}` is in the morpheus menu but declares no scope in COMMAND_INVENTORY"
             );
         }
         for name in &inventory_names {
             assert!(
                 menu_names.iter().any(|menu| menu == name),
-                "COMMAND_INVENTORY declares `/{name}` which the cosh menu does not offer"
+                "COMMAND_INVENTORY declares `/{name}` which the morpheus menu does not offer"
             );
         }
         assert_eq!(
@@ -734,7 +734,7 @@ mod tests {
                 "`/{agent}` customizes the agent, and every pane is its own agent"
             );
         }
-        // An agent's own published command is never a cosh global action.
+        // An agent's own published command is never a morpheus global action.
         assert_eq!(command_scope("some_harness_command"), CommandScope::Agent);
     }
 
@@ -800,7 +800,7 @@ mod tests {
         // argument-taking command must keep it up and filter on the NAME
         // part, so typing the tail never loses the entry.
         let mut menu = SlashMenu::new();
-        // The /worktree entry is synthesized for AGENT panes (the cosh
+        // The /worktree entry is synthesized for AGENT panes (the morpheus
         // set does not carry it) — feed the agent source the same entry
         // the pane's `slash_source` produces.
         menu.set_agent_commands(vec![SlashCommand {

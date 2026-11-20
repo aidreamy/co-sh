@@ -156,7 +156,7 @@ pub(crate) enum MetadataDelta {
         reasoning: Option<String>,
     },
     /// The `/agents` split-pane mode left on this session: `Some` carries
-    /// the chosen pane set (cosh only when the user marked it) so reopening
+    /// the chosen pane set (morpheus only when the user marked it) so reopening
     /// the session restores the mode with the same panes — and, for panes
     /// that already ran, the SAME agent sessions (`AgentPaneRef` is
     /// serialized untagged: a bare name is byte-identical with the

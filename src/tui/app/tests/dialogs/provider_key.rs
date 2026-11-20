@@ -9,7 +9,7 @@ fn fake_cloud_entry() -> ProviderEntry {
     ProviderEntry {
         name: "testprovider",
         local: false,
-        hint: "COSH_TEST_NONEXISTENT_KEY".to_string(),
+        hint: "MORPHEUS_TEST_NONEXISTENT_KEY".to_string(),
     }
 }
 
@@ -54,7 +54,7 @@ async fn provider_key_choice_navigation_and_esc() {
     let mut app = App::new("/tmp".to_string());
     app.dialog.show(DialogType::ProviderKeyChoice {
         provider: "testprovider".into(),
-        env_var: "COSH_TEST_NONEXISTENT_KEY".into(),
+        env_var: "MORPHEUS_TEST_NONEXISTENT_KEY".into(),
     });
     // open_provider_dialog defaults to the safe option (index 1).
     if let Some(d) = app.dialog.current_mut() {
@@ -83,7 +83,7 @@ async fn provider_key_choice_overwrite_swaps_to_api_key_input() {
     let mut app = App::new("/tmp".to_string());
     app.dialog.show(DialogType::ProviderKeyChoice {
         provider: "testprovider".into(),
-        env_var: "COSH_TEST_NONEXISTENT_KEY".into(),
+        env_var: "MORPHEUS_TEST_NONEXISTENT_KEY".into(),
     });
     if let Some(d) = app.dialog.current_mut() {
         d.selected = 1;
@@ -97,7 +97,7 @@ async fn provider_key_choice_overwrite_swaps_to_api_key_input() {
             provider, env_var, ..
         }) => {
             assert_eq!(provider, "testprovider");
-            assert_eq!(env_var, "COSH_TEST_NONEXISTENT_KEY");
+            assert_eq!(env_var, "MORPHEUS_TEST_NONEXISTENT_KEY");
         }
         other => panic!("expected ApiKeyInput, got {other:?}"),
     }
@@ -112,7 +112,7 @@ async fn provider_key_choice_forget_gates_behind_confirm() {
     let mut app = App::new("/tmp".to_string());
     app.dialog.show(DialogType::ProviderKeyChoice {
         provider: "testprovider".into(),
-        env_var: "COSH_TEST_NONEXISTENT_KEY".into(),
+        env_var: "MORPHEUS_TEST_NONEXISTENT_KEY".into(),
     });
 
     app.handle_provider_key_choice_key(KeyCode::Enter);
@@ -140,7 +140,7 @@ async fn forget_confirmation_closes_confirm_and_picker() {
     let mut app = App::new("/tmp".to_string());
     app.dialog.show(DialogType::ProviderKeyChoice {
         provider: "testprovider".into(),
-        env_var: "COSH_TEST_NONEXISTENT_KEY".into(),
+        env_var: "MORPHEUS_TEST_NONEXISTENT_KEY".into(),
     });
     app.handle_provider_key_choice_key(KeyCode::Enter);
     assert_eq!(app.dialog.stack.len(), 2);
@@ -183,7 +183,7 @@ async fn failed_forget_keeps_the_persisted_model_selection() {
     // regression's trigger.
     app.dialog.show(DialogType::ProviderKeyChoice {
         provider: "openai".into(),
-        env_var: "COSH_TEST_NONEXISTENT_KEY".into(),
+        env_var: "MORPHEUS_TEST_NONEXISTENT_KEY".into(),
     });
     app.handle_provider_key_choice_key(KeyCode::Enter);
     assert!(app.process_key_event(key(KeyCode::Enter)).is_ok());
@@ -223,7 +223,7 @@ async fn successful_forget_of_last_key_clears_the_persisted_selection() {
 
     app.dialog.show(DialogType::ProviderKeyChoice {
         provider: "testprovider".into(),
-        env_var: "COSH_TEST_NONEXISTENT_KEY".into(),
+        env_var: "MORPHEUS_TEST_NONEXISTENT_KEY".into(),
     });
     app.handle_provider_key_choice_key(KeyCode::Enter);
     assert!(app.process_key_event(key(KeyCode::Enter)).is_ok());

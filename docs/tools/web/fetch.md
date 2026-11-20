@@ -35,7 +35,7 @@ constant `EXA_FIRST` (currently `false`):
 
 ### 1. The local extractor (tried first)
 
-1. **Download** — `reqwest` GETs the URL with the `Cosh/0.1` user agent.
+1. **Download** — `reqwest` GETs the URL with the `Morpheus/0.1` user agent.
 2. **Extract** — the HTML goes through `rs_trafilatura`, a readability-style
    extractor, which returns the main content plus an `extraction_quality`
    score (0.0–1.0).

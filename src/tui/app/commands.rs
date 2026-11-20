@@ -1,4 +1,4 @@
-use cosh::harness::HarnessEvent;
+use morpheus::harness::HarnessEvent;
 use morpheus_tui::core::lib::rgba::RGBA;
 use std::sync::atomic::Ordering;
 
@@ -25,8 +25,8 @@ impl App {
     /// preference (same write the Tab cycle does) so an app restart inside
     /// the split does not restore the hidden mode.
     pub(super) fn hide_command_mode_for_split(&mut self) {
-        if self.state.mode == cosh::harness::Mode::Command {
-            self.state.mode = cosh::harness::Mode::Build;
+        if self.state.mode == morpheus::harness::Mode::Command {
+            self.state.mode = morpheus::harness::Mode::Build;
             self.setup.set_mode_selection(self.state.mode);
         }
     }
@@ -35,9 +35,9 @@ impl App {
     /// confirmed, in the order they were marked. Each pick carries its own
     /// instance count: the pane list receives `instances` copies of the
     /// agent so two Claude panes are two INDEPENDENT sessions (the
-    /// per-pane binding lands in task "binding"). The `cosh` manager pane is
-    /// NOT inserted automatically: the Cosh Manager belongs to the user's
-    /// own split choice: only an explicitly marked `cosh` entry creates
+    /// per-pane binding lands in task "binding"). The `morpheus` manager pane is
+    /// NOT inserted automatically: the Morpheus Manager belongs to the user's
+    /// own split choice: only an explicitly marked `morpheus` entry creates
     /// its block. The MAIN agent needs no pane: `Alt+0` unfocuses every
     /// pane and the shared prompt targets the normal-mode loop (running
     /// as manager while the split is open). Opening the split does NOT spawn any session — panes
@@ -141,7 +141,7 @@ impl App {
         // keeps landing in the shared list (same routing as live panes).
         self.sync_agents_pane_mirrors();
         // The slash menu follows the panes into the PARKED slot: no live
-        // split serves the screen, so the cosh set returns (a parked
+        // split serves the screen, so the morpheus set returns (a parked
         // split's stale `focused` must never hijack the menu — see
         // `sync_slash_source`, which only trusts the LIVE split).
         super::agents_dispatch::sync_slash_source(self);
@@ -190,13 +190,13 @@ impl App {
             // alive); one sync re-affirms their state for the re-open.
             self.sync_agents_pane_mirrors();
             // The manager panes' own model selections hydrate from their
-            // bound sessions' markers (one disk read per cosh pane): a pick
+            // bound sessions' markers (one disk read per morpheus pane): a pick
             // made in a previous run shows on the pane's prompt badge the
             // moment the mode re-attaches, not only on its next turn.
             self.hydrate_manager_pane_model_selections();
             // The re-attached pane set carries its focus (pane 0 on a
             // rebuilt one): the slash menu's source follows it — agent
-            // list when the pane was already probed, spinner/cosh
+            // list when the pane was already probed, spinner/morpheus
             // otherwise, and a fresh probe seed when the cache is empty.
             super::agents_dispatch::ensure_pane_snapshot(self, 0);
             super::agents_dispatch::sync_slash_source(self);
@@ -227,7 +227,7 @@ impl App {
     /// registry: each pane's registry id (the agent name, `name#k` for
     /// same-CLI duplicates; the manager pane is addressable like every
     /// other agent) becomes
-    /// a [`cosh::harness::agent_coworkers::AgentCoworkerDescriptor`], with the pane's bound
+    /// a [`morpheus::harness::agent_coworkers::AgentCoworkerDescriptor`], with the pane's bound
     /// state as the context block reports it. Called on EVERY split
     /// lifecycle change — open, replace, park, re-attach, close — so the
     /// registry tracks the LIVE or PARKED set exactly (a parked split keeps
@@ -235,7 +235,7 @@ impl App {
     /// closed). `set_coworkers` fails queued/orphaned requests of panes that
     /// left the set, so a removed pane never strands a waiter.
     pub(super) fn sync_agents_pane_registry(&mut self) {
-        // The manager (cosh) pane is the main agent itself: its bridge never
+        // The manager (morpheus) pane is the main agent itself: its bridge never
         // emits an ACP `SessionModel` report, so `session_info` stays `None`
         // for it no matter how many turns it ran — the model its turns run
         // with is the GLOBAL config (the same `llm_config` the main loop
@@ -247,7 +247,7 @@ impl App {
             .model
             .clone()
             .filter(|model| !model.is_empty());
-        let panes: Vec<cosh::harness::agent_coworkers::AgentCoworkerDescriptor> =
+        let panes: Vec<morpheus::harness::agent_coworkers::AgentCoworkerDescriptor> =
             either_split(&self.agents_split, &self.parked_agents_split)
                 .map(|split| {
                     split
@@ -258,59 +258,63 @@ impl App {
                             let id = split.pane_registry_id(i)?;
                             let is_manager =
                                 p.agent == crate::routes::session::agents_split::MANAGER_LABEL;
-                            Some(cosh::harness::agent_coworkers::AgentCoworkerDescriptor {
-                                id,
-                                // The pane's IDENTITY rides the descriptor:
-                                // the registry reconciles by it, so a label
-                                // recycled by a sibling's removal can never
-                                // vouch for a dead pane's traffic (Issue 3).
-                                coworker_id: p.id,
-                                agent: p.agent.clone(),
-                                is_manager,
-                                bound: p.session_id.is_some(),
-                                // The worktree NAME (not the path) — the
-                                // context block renders it next to the pane
-                                // id, and `agents_call` requesters read the
-                                // same listing. `/worktree` keeps this in
-                                // sync right after each binding change.
-                                worktree: p.worktree.as_ref().map(|w| w.name.clone()),
-                                // The model the pane's session runs with —
-                                // what the ACP harness reported last
-                                // (`session_info`), falling back to the
-                                // pane's committed `/models` pick when the
-                                // harness has not reported yet. `None`
-                                // before the first turn: the context block
-                                // renders nothing rather than a guess.
-                                // An EMPTY reported model (a harness that
-                                // names its models with empty strings)
-                                // renders nothing either — same contract.
-                                model: p
-                                    .session_info
-                                    .as_ref()
-                                    .and_then(|info| info.model.clone())
-                                    .filter(|model| !model.is_empty())
-                                    .or_else(|| {
-                                        p.model_selection
-                                            .as_ref()
-                                            .map(|sel| sel.model.clone())
-                                            .filter(|model| !model.is_empty())
-                                    })
-                                    // A manager pane's turns run on the
-                                    // GLOBAL config (its bridge never
-                                    // reports a model, and a `/models`
-                                    // pick is optional) — the global model
-                                    // is the truthful answer for it, even
-                                    // rendered as `auto` (the routing chain
-                                    // serves the pane). ACP panes keep the
-                                    // no-guess contract: nothing reported,
-                                    // nothing rendered.
-                                    .or_else(|| is_manager.then(|| global_model.clone()).flatten()),
-                            })
+                            Some(
+                                morpheus::harness::agent_coworkers::AgentCoworkerDescriptor {
+                                    id,
+                                    // The pane's IDENTITY rides the descriptor:
+                                    // the registry reconciles by it, so a label
+                                    // recycled by a sibling's removal can never
+                                    // vouch for a dead pane's traffic (Issue 3).
+                                    coworker_id: p.id,
+                                    agent: p.agent.clone(),
+                                    is_manager,
+                                    bound: p.session_id.is_some(),
+                                    // The worktree NAME (not the path) — the
+                                    // context block renders it next to the pane
+                                    // id, and `agents_call` requesters read the
+                                    // same listing. `/worktree` keeps this in
+                                    // sync right after each binding change.
+                                    worktree: p.worktree.as_ref().map(|w| w.name.clone()),
+                                    // The model the pane's session runs with —
+                                    // what the ACP harness reported last
+                                    // (`session_info`), falling back to the
+                                    // pane's committed `/models` pick when the
+                                    // harness has not reported yet. `None`
+                                    // before the first turn: the context block
+                                    // renders nothing rather than a guess.
+                                    // An EMPTY reported model (a harness that
+                                    // names its models with empty strings)
+                                    // renders nothing either — same contract.
+                                    model: p
+                                        .session_info
+                                        .as_ref()
+                                        .and_then(|info| info.model.clone())
+                                        .filter(|model| !model.is_empty())
+                                        .or_else(|| {
+                                            p.model_selection
+                                                .as_ref()
+                                                .map(|sel| sel.model.clone())
+                                                .filter(|model| !model.is_empty())
+                                        })
+                                        // A manager pane's turns run on the
+                                        // GLOBAL config (its bridge never
+                                        // reports a model, and a `/models`
+                                        // pick is optional) — the global model
+                                        // is the truthful answer for it, even
+                                        // rendered as `auto` (the routing chain
+                                        // serves the pane). ACP panes keep the
+                                        // no-guess contract: nothing reported,
+                                        // nothing rendered.
+                                        .or_else(|| {
+                                            is_manager.then(|| global_model.clone()).flatten()
+                                        }),
+                                },
+                            )
                         })
                         .collect()
                 })
                 .unwrap_or_default();
-        cosh::harness::agent_coworkers::set_coworkers(panes);
+        morpheus::harness::agent_coworkers::set_coworkers(panes);
     }
 
     /// Mirror the `/agents` panes into the right panel's SHARED subagent
@@ -447,7 +451,7 @@ impl App {
             })
             .unwrap_or_default();
         for id in ids {
-            cosh::harness::agent_coworkers::fail_serving(
+            morpheus::harness::agent_coworkers::fail_serving(
                 &id,
                 "the pane's set was replaced or torn down".into(),
             );
@@ -478,7 +482,7 @@ impl App {
             })
             .unwrap_or_default();
         for id in ids {
-            cosh::harness::agent_coworkers::fail_coworker(
+            morpheus::harness::agent_coworkers::fail_coworker(
                 &id,
                 "the session switched away — this pane's set is gone".into(),
             );
@@ -583,7 +587,7 @@ impl App {
             // here.
             self.trigger_agents_pane_replays();
             // The manager panes' own model selections hydrate from their
-            // bound sessions' markers (one disk read per cosh pane): a pick
+            // bound sessions' markers (one disk read per morpheus pane): a pick
             // made in a previous run shows on the pane's prompt badge the
             // moment the split takes the screen, not only on its next turn.
             self.hydrate_manager_pane_model_selections();
@@ -597,9 +601,9 @@ impl App {
         }
         // The slash menu's source follows the pane set on EVERY change
         // (open, replace, close): a fresh confirm leaves pane 0 focused, a
-        // teardown restores the cosh set. Without this the menu would keep
+        // teardown restores the morpheus set. Without this the menu would keep
         // serving a dead set's command list (and a fresh confirm would
-        // leave the cosh list routing into the pane — see
+        // leave the morpheus list routing into the pane — see
         // `route_agent_slash_command`, which trusts the menu's source).
         if mode_open {
             super::agents_dispatch::ensure_pane_snapshot(self, 0);
@@ -711,7 +715,7 @@ impl App {
             // the empty live state is dropped, the main-agent mirror leaves
             // with the screen, the pane mirrors drop with the mode, an idle
             // app loses the stale spinner and the slash menu serves the
-            // cosh set again. The HIDDEN STACK is untouched — restore rides
+            // morpheus set again. The HIDDEN STACK is untouched — restore rides
             // `restore_last_hidden_agents_pane`.
             self.agents_split = None;
             self.close_main_mirror();
@@ -904,7 +908,7 @@ impl App {
     /// Click on the session footer's update button (`v0.1.2` in
     /// `v0.1.1 → v0.1.2`): `spawn_update_pipeline` hands the tag to
     /// `morpheus update`, which installs that exact release and exits; closing
-    /// the TUI is the whole feedback, and the user reopens cosh afterwards.
+    /// the TUI is the whole feedback, and the user reopens morpheus afterwards.
     pub(super) fn click_footer_update(&mut self) {
         // The RAW release tag (`v0.1.2`) straight from the GitHub check,
         // never a reconstruction: `spawn_update_pipeline` passes it to
@@ -987,7 +991,7 @@ impl App {
     }
 
     /// Switch to a session, refusing the switch when it is already open in
-    /// another cosh process (toast warning). The shared tail of every
+    /// another morpheus process (toast warning). The shared tail of every
     /// sidebar keyboard/mouse switch: the guarded [`AppState::
     /// switch_to_session`] plus the panel reset/rehydrate pair.
     ///
@@ -1001,7 +1005,7 @@ impl App {
     /// switch does not: the session's own model becomes the live selection,
     /// and the prompt takes focus so the user can type immediately.
     ///
-    /// Returns `false` when another cosh process holds the session open; the
+    /// Returns `false` when another morpheus process holds the session open; the
     /// caller reports that and leaves the user at home.
     pub fn open_session_at_startup(&mut self, session_id: &str) -> bool {
         if !self.switch_session_locked(session_id) {
@@ -1098,15 +1102,13 @@ impl App {
                 // whose timelines died with the process — rehydrate them.
                 self.trigger_agents_pane_replays();
                 // The manager panes' own model selections hydrate from
-                // their bound sessions' markers (one disk read per cosh
+                // their bound sessions' markers (one disk read per morpheus
                 // pane): a pick made in a previous run shows on the pane's
                 // prompt badge the moment the session takes the screen,
                 // not only on its next turn.
                 self.hydrate_manager_pane_model_selections();
             }
-            Some((Some(panes), false, _))
-                if !panes.is_empty() =>
-            {
+            Some((Some(panes), false, _)) if !panes.is_empty() => {
                 // An EMPTY persisted set is the legacy emptied-split shape
                 // (pre-auto-close): it is NOT a parkable set — a rebuilt
                 // parked split would hold no panes and a later re-attach
@@ -1141,7 +1143,7 @@ impl App {
         self.finalize_stale_compaction_lines();
         // The slash menu follows the rebuilt pane set: a session restored
         // with the mode open leaves pane 0 focused (agent list, fresh probe
-        // seed), every other outcome returns the cosh set. Without this a
+        // seed), every other outcome returns the morpheus set. Without this a
         // stale agent list from the OLD session would keep serving the
         // menu into the new one.
         if self.agents_split.is_some() {
@@ -1170,7 +1172,7 @@ impl App {
     pub(crate) fn start_new_session(&mut self) {
         // Entry funnel: claim the id (unique + exclusively locked for this
         // process) BEFORE the session becomes selectable. A created-but-
-        // unlocked session let a second cosh process adopt it via the
+        // unlocked session let a second morpheus process adopt it via the
         // sidebar switch — the per-session open-lock only refuses when a
         // claim already exists, so a fresh session had none to refuse.
         let Some((id, now_ms)) = self.session_store.claim_fresh_session_id() else {
@@ -1187,7 +1189,7 @@ impl App {
         // becomes current: a process keeps a claim only while the session
         // is its selected one. Without this, a process that opened session
         // X and then ran /new kept holding X's lock until it died — every
-        // other cosh process trying to open X was refused with "already
+        // other morpheus process trying to open X was refused with "already
         // open in another process" while nothing here was using it.
         self.persist_and_release_current_session();
         self.state.add_empty_session(id.clone(), title, now_ms);
@@ -1316,7 +1318,7 @@ impl App {
             return;
         }
         // `/worktree` for the MAIN agent (normal chat, no `/agents` split).
-        // A cosh-owned command (`CommandScope::Agent`), so it is handled
+        // A morpheus-owned command (`CommandScope::Agent`), so it is handled
         // HERE and never dispatched to an agent as prose. Reached only when
         // the pane router above declined — i.e. no live split, or no pane
         // focused — which is exactly the main agent's situation. The
@@ -1468,13 +1470,13 @@ impl App {
                             " (snapshot as of the last persisted turn; the agent is still working)",
                         );
                     }
-                    (message, cosh::harness::events::ToastVariant::Info)
+                    (message, morpheus::harness::events::ToastVariant::Info)
                 }
                 Err(error) => {
                     log::warn!("transcript export failed: {error}");
                     (
                         format!("Export: could not write the transcript: {error}"),
-                        cosh::harness::events::ToastVariant::Warning,
+                        morpheus::harness::events::ToastVariant::Warning,
                     )
                 }
             };
@@ -1553,7 +1555,7 @@ impl App {
         let event_tx = self.event_tx.clone();
         self.manual_compaction_active = true;
         self.tokio_handle.spawn(async move {
-            use cosh::harness::ManualCompactionOutcome;
+            use morpheus::harness::ManualCompactionOutcome;
             let outcome = match build_manual_compaction_harness(
                 &provider,
                 model.as_deref(),
@@ -1609,7 +1611,7 @@ pub(super) fn build_manual_compaction_harness(
     reasoning: Option<String>,
     cache_key: &str,
     cwd: &str,
-) -> Result<cosh::harness::Harness, String> {
+) -> Result<morpheus::harness::Harness, String> {
     let connector = if !summarization_models.is_empty() {
         summarization_models
             .iter()
@@ -1655,7 +1657,7 @@ pub(super) fn build_manual_compaction_harness(
         connector = connector.with_prompt_cache_retention(retention);
     }
     Ok(
-        cosh::harness::Harness::new(connector, cwd, std::collections::HashSet::new())
+        morpheus::harness::Harness::new(connector, cwd, std::collections::HashSet::new())
             .with_summarization_models(summarization_models)
             .with_local_base_urls(local_base_urls),
     )

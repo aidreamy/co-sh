@@ -5,7 +5,7 @@ edition = "2024"
 description = "ONNX decision-engine crate for Morpheus - coding agent for the terminal"
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/aidreamy/co-sh"
+repository = "https://github.com/aidreamy/morpheus"
 keywords = ["ai", "coding", "terminal", "agent"]
 categories = ["development-tools"]
 

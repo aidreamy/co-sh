@@ -36,7 +36,7 @@ pub fn explanation(display_name: &str) -> String {
     format!(
         "I'm fetching {name} — a small classifier that runs entirely on your machine.\
 \n\n\
-cosh ships a family of local models for judgment calls the main agent \
+morpheus ships a family of local models for judgment calls the main agent \
 shouldn't spend tokens on: classifying user preferences, scoring options, \
 reading intent from a message. Right now I'm wiring it up as a second \
 opinion on my own decisions — when I'm about to end a turn on an \
@@ -381,7 +381,7 @@ mod tests {
 
     #[test]
     fn local_custom_kind_needs_no_install() {
-        let dir = std::env::temp_dir().join("cosh-weights-local-test");
+        let dir = std::env::temp_dir().join("morpheus-weights-local-test");
         std::fs::create_dir_all(&dir).unwrap();
         let model = DecisionModel::Custom {
             repo: dir.to_string_lossy().into_owned(),

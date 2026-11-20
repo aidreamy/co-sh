@@ -1,6 +1,6 @@
 # LSP Tools Reference
 
-Language-server tools for the cosh agent. All tools follow the same
+Language-server tools for the morpheus agent. All tools follow the same
 conventions as `fs` and `find`: a shared-state wrapper (`Lsp`), free-function
 engines, and JsonSchema-annotated input/output types.
 
@@ -57,5 +57,5 @@ soft-skip without blocking other servers for the same file.
 
 ## MCP wiring
 
-`cosh-server` exposes all tools over MCP. The wrapper binds to the process
-working directory; opt-out via `COSH_LSP=off`.
+`morpheus-server` exposes all tools over MCP. The wrapper binds to the process
+working directory; opt-out via `MORPHEUS_LSP=off`.

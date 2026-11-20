@@ -321,7 +321,7 @@ pub enum HookEvent {
 }
 
 impl HookEvent {
-    /// Canonical event name surfaced to hook scripts (`COSH_EVENT` and the
+    /// Canonical event name surfaced to hook scripts (`MORPHEUS_EVENT` and the
     /// stdin payload) and used as the `setup.json` section key.
     pub const fn name(self) -> &'static str {
         match self {
@@ -466,8 +466,8 @@ impl HookRunner {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
-            .env("COSH_EVENT", payload_event(payload))
-            .env("COSH_TOOL_NAME", &tool_name);
+            .env("MORPHEUS_EVENT", payload_event(payload))
+            .env("MORPHEUS_TOOL_NAME", &tool_name);
 
         // Own process group so a timeout kill takes grandchildren (jq, cargo,
         // …) down together with the `sh` wrapper.
@@ -628,7 +628,7 @@ fn build_payload(
     payload.to_string()
 }
 
-/// Event name carried inside a payload (used for `COSH_EVENT`).
+/// Event name carried inside a payload (used for `MORPHEUS_EVENT`).
 fn payload_event(payload: &str) -> String {
     serde_json::from_str::<serde_json::Value>(payload)
         .ok()

@@ -1,8 +1,8 @@
-use super::super::tools::{CoshTools, Tools};
+use super::super::tools::{MorpheusTools, Tools};
 use serde_json::json;
 
-fn make_tools() -> CoshTools {
-    CoshTools::new(".")
+fn make_tools() -> MorpheusTools {
+    MorpheusTools::new(".")
 }
 
 #[tokio::test]

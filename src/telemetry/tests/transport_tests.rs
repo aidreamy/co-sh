@@ -408,13 +408,13 @@ async fn consent_cannot_be_overridden_by_a_caller() {
     // is `pub(crate)` (called exclusively by the enabled facade), so no
     // external caller can pass a hand-made `true` anymore.
     const NAME: &str = concat!(module_path!(), "::consent_cannot_be_overridden_by_a_caller");
-    if std::env::var("COSH_TRANSPORT_CHILD").as_deref() != Ok(NAME) {
+    if std::env::var("MORPHEUS_TRANSPORT_CHILD").as_deref() != Ok(NAME) {
         let root = tempfile::tempdir().unwrap();
         let output = Command::new(std::env::current_exe().unwrap())
             // libtest names omit the crate prefix included by module_path!().
             .args(["--exact", NAME.split_once("::").unwrap().1, "--nocapture"])
-            .env("COSH_TRANSPORT_CHILD", NAME)
-            .env("COSH_TELEMETRY", "off")
+            .env("MORPHEUS_TRANSPORT_CHILD", NAME)
+            .env("MORPHEUS_TELEMETRY", "off")
             .env("CI", "1")
             .env("XDG_DATA_HOME", root.path())
             .output()

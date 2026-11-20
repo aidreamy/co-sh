@@ -21,7 +21,7 @@ impl Harness {
             header_context: String::new(),
             system_prompts: Vec::new(),
             harness_tools: default_harness_tools(),
-            cosh_tools: None,
+            morpheus_tools: None,
             pending_images: Vec::new(),
             user_images: Vec::new(),
             attempt_reasoning: String::new(),

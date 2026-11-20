@@ -11,10 +11,10 @@ use crate::theme::{Theme, rgba_color};
 use crate::util::draw::draw_text_line;
 use crate::util::list_selection::ListSelection;
 
-/// Per-project tool-blocklist file, stored in the directory cosh was started
+/// Per-project tool-blocklist file, stored in the directory morpheus was started
 /// from. Keeps one project's blocklist from leaking into another's — the
 /// global scope (`setup.json`) is opt-in via the Global toggle.
-const PROJECT_TOOLS_FILE: &str = ".cosh-tools.json";
+const PROJECT_TOOLS_FILE: &str = ".morpheus-tools.json";
 
 #[derive(Debug, Default, serde::Deserialize, serde::Serialize)]
 struct ProjectTools {
@@ -29,13 +29,17 @@ fn project_tools_path(cwd: &str) -> PathBuf {
 /// Load the disabled-tool set for the selected scope.
 ///
 /// - Global: the `setup.json` blocklist, shared by every project.
-/// - Project: `<cwd>/.cosh-tools.json`. While that file does not exist yet,
+/// - Project: `<cwd>/.morpheus-tools.json`. While that file does not exist yet,
 ///   a non-empty global blocklist keeps applying (migration: users who had
 ///   tools disabled before the scope existed do not silently lose them);
 ///   the first project-scope save takes over from there. A corrupt file
 ///   fails open (nothing disabled) rather than blocking the session.
 #[must_use]
-pub fn load_disabled_tools(setup: &cosh::setup::Setup, cwd: &str, global: bool) -> HashSet<String> {
+pub fn load_disabled_tools(
+    setup: &morpheus::setup::Setup,
+    cwd: &str,
+    global: bool,
+) -> HashSet<String> {
     if global {
         return setup.tools.disabled.iter().cloned().collect();
     }
@@ -57,10 +61,10 @@ pub fn load_disabled_tools(setup: &cosh::setup::Setup, cwd: &str, global: bool) 
 }
 
 /// Persist the disabled set to the scope's storage: `setup.json` for the
-/// global scope, `<cwd>/.cosh-tools.json` for the project scope (the global
+/// global scope, `<cwd>/.morpheus-tools.json` for the project scope (the global
 /// `setup.json` is left untouched so a project list never clobbers it).
 pub fn save_disabled_tools(
-    setup: &mut cosh::setup::Setup,
+    setup: &mut morpheus::setup::Setup,
     disabled: &HashSet<String>,
     cwd: &str,
     global: bool,
@@ -92,8 +96,8 @@ pub fn save_disabled_tools(
 ///   `disabled` from the newly selected scope's stored set — the toggle
 ///   survives a restart even before any tool is toggled in that scope.
 /// - Tool row: persist the set to the active scope (`setup.json` when
-///   global, `<cwd>/.cosh-tools.json` otherwise).
-pub fn toggle_entry(view: &mut InternalToolsView, setup: &mut cosh::setup::Setup, cwd: &str) {
+///   global, `<cwd>/.morpheus-tools.json` otherwise).
+pub fn toggle_entry(view: &mut InternalToolsView, setup: &mut morpheus::setup::Setup, cwd: &str) {
     let scope_row = view.selection.selected_index == GLOBAL_ROW_INDEX;
     view.toggle_current();
     if scope_row {
@@ -108,14 +112,17 @@ pub fn toggle_entry(view: &mut InternalToolsView, setup: &mut cosh::setup::Setup
 /// Load the persisted tool-call mode. Unknown/missing values fall back to
 /// `Native` (the default contract).
 #[must_use]
-pub fn load_tool_call_mode(setup: &cosh::setup::Setup) -> aiface::connector::ToolCallMode {
+pub fn load_tool_call_mode(setup: &morpheus::setup::Setup) -> aiface::connector::ToolCallMode {
     match setup.tools.tool_call_mode.as_str() {
         "inline" => aiface::connector::ToolCallMode::Inline,
         _ => aiface::connector::ToolCallMode::Native,
     }
 }
 
-pub fn save_tool_call_mode(setup: &mut cosh::setup::Setup, mode: aiface::connector::ToolCallMode) {
+pub fn save_tool_call_mode(
+    setup: &mut morpheus::setup::Setup,
+    mode: aiface::connector::ToolCallMode,
+) {
     setup.tools.tool_call_mode = match mode {
         aiface::connector::ToolCallMode::Native => "native".to_string(),
         aiface::connector::ToolCallMode::Inline => "inline".to_string(),
@@ -201,7 +208,7 @@ pub struct InternalToolsView {
     pub disabled: HashSet<String>,
     /// When `true` the blocklist is written to the global `setup.json` and
     /// applies to every project; when `false` (the default) it is scoped to
-    /// the cwd via `.cosh-tools.json`. Rendered as the toggle row above the
+    /// the cwd via `.morpheus-tools.json`. Rendered as the toggle row above the
     /// tool list — default OFF, hence the ✗ symbol.
     pub global: bool,
     pub changed: bool,
@@ -598,10 +605,10 @@ mod tests {
         // The scope toggle itself calls setup.save(); pin the config dir to
         // a scratch dir so the developer's real setup.json is never touched.
         let scratch = tempfile::tempdir().unwrap();
-        let previous_cfg = std::env::var("COSH_CONFIG_DIR").ok();
-        unsafe { std::env::set_var("COSH_CONFIG_DIR", scratch.path()) };
+        let previous_cfg = std::env::var("MORPHEUS_CONFIG_DIR").ok();
+        unsafe { std::env::set_var("MORPHEUS_CONFIG_DIR", scratch.path()) };
 
-        let mut setup = cosh::setup::Setup::default();
+        let mut setup = morpheus::setup::Setup::default();
         setup.tools.disabled = vec!["web_fetch".to_string()];
 
         // Project scope (default): one tool disabled locally.
@@ -624,7 +631,7 @@ mod tests {
             "the project-only set must not leak into the global view"
         );
         assert!(
-            !std::path::Path::new("/definitely/not/a/real/cwd/.cosh-tools.json").exists(),
+            !std::path::Path::new("/definitely/not/a/real/cwd/.morpheus-tools.json").exists(),
             "toggling the scope itself must not write the project file"
         );
 
@@ -637,20 +644,20 @@ mod tests {
         assert_eq!(view.disabled.iter().collect::<Vec<_>>(), ["web_fetch"]);
 
         match previous_cfg {
-            Some(value) => unsafe { std::env::set_var("COSH_CONFIG_DIR", value) },
-            None => unsafe { std::env::remove_var("COSH_CONFIG_DIR") },
+            Some(value) => unsafe { std::env::set_var("MORPHEUS_CONFIG_DIR", value) },
+            None => unsafe { std::env::remove_var("MORPHEUS_CONFIG_DIR") },
         }
     }
 
     /// Project scope (the default): a tool toggle persists to
-    /// `<cwd>/.cosh-tools.json` and leaves the global setup.json untouched;
+    /// `<cwd>/.morpheus-tools.json` and leaves the global setup.json untouched;
     /// a fresh load from the same cwd reads the set back.
     #[test]
     fn project_scope_persists_to_the_cwd_and_keeps_setup_intact() {
         let dir = tempfile::tempdir().unwrap();
         let cwd = dir.path().to_string_lossy().to_string();
 
-        let mut setup = cosh::setup::Setup::default();
+        let mut setup = morpheus::setup::Setup::default();
         setup.tools.disabled = vec!["web_fetch".to_string()];
 
         // The Global row is index 0; select the FIRST TOOL (index 1 =

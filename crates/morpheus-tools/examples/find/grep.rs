@@ -29,7 +29,7 @@ fn show(label: &str, out: &morpheus_tools::find::GrepOutput) {
 #[tokio::main]
 async fn main() {
     // A small scratch project, searched with `Find` scoped to its root.
-    let project = std::env::temp_dir().join("cosh-find-grep-example");
+    let project = std::env::temp_dir().join("morpheus-find-grep-example");
     let _ = std::fs::remove_dir_all(&project);
     std::fs::create_dir_all(project.join("src/util")).unwrap();
 

@@ -562,7 +562,7 @@ async fn whole_item_exceeding_the_actual_window_fails_without_slicing_or_committ
 /// IGNORED (hangs, pre-existing): in the full sequential suite this test
 /// blocks forever after earlier tests have run — it passes in isolation and
 /// inside its own module, so some earlier test leaves cross-test state that
-/// deadlocks `run_agent_loop` when real `CoshTools` are attached. Unrelated
+/// deadlocks `run_agent_loop` when real `MorpheusTools` are attached. Unrelated
 /// to the bash liveness watchdog (reproduces on a clean tree without it).
 #[tokio::test]
 #[ignore = "hangs in the full sequential suite (passes in isolation); pre-existing deadlock, see comment"]
@@ -574,7 +574,7 @@ async fn resumed_plan_rehydrates_tools_before_the_first_loop() {
     }]}))
     .unwrap();
     let mut harness = Harness::new_test().with_mock_stream(Ok(vec!["Ready"]));
-    harness.cosh_tools = Some(super::CoshTools::new("."));
+    harness.morpheus_tools = Some(super::MorpheusTools::new("."));
     harness.context_manager.set_todo_list(plan.clone());
     let state = harness.context_manager.save_state();
     harness.context_manager.restore_state(&state);
@@ -591,7 +591,7 @@ async fn resumed_plan_rehydrates_tools_before_the_first_loop() {
         )
         .await;
     assert_eq!(
-        serde_json::to_value(harness.cosh_tools.as_ref().unwrap().todo_list()).unwrap(),
+        serde_json::to_value(harness.morpheus_tools.as_ref().unwrap().todo_list()).unwrap(),
         serde_json::to_value(&plan).unwrap()
     );
     assert_eq!(
@@ -618,7 +618,7 @@ async fn resumed_plan_rehydrates_tools_before_the_first_loop() {
         .await;
     assert!(
         harness
-            .cosh_tools
+            .morpheus_tools
             .as_ref()
             .unwrap()
             .todo_list()

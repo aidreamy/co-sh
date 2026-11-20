@@ -6,7 +6,7 @@
 //! before the terminal is initialized, which is why the messages are plain
 //! stderr lines instead of toasts.
 
-use cosh::session::store::SessionStore;
+use morpheus::session::store::SessionStore;
 
 use crate::cli::LaunchOptions;
 

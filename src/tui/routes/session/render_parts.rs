@@ -82,10 +82,11 @@ impl SessionView {
         // box's own `background_panel` (NOT the chat `background`): the border
         // box already fills its whole area with the panel color, so painting
         // the body with the chat background would leave a visible darker
-        // strip inside the box (default cosh: #07070A vs #0B0B12).
+        // strip inside the box (default morpheus: #07070A vs #0B0B12).
         let body_h = estimate_height(&part.text, wrap_w).max(1);
         let content = sanitize_text(&part.text);
-        let mut md = morpheus_tui::core::renderables::markdown::MarkdownRenderable::new(Some(content));
+        let mut md =
+            morpheus_tui::core::renderables::markdown::MarkdownRenderable::new(Some(content));
         md.set_fg(Some(ColorInput::RGBA(theme.text)));
         md.set_bg(Some(ColorInput::RGBA(theme.background_panel)));
         crate::util::markdown::apply_theme(&mut md, theme);
@@ -546,7 +547,9 @@ impl SessionView {
                     break;
                 }
                 let mut line_x = x_off;
-                for (grapheme, w) in morpheus_tui::core::lib::unicode_util::graphemes_with_width(line) {
+                for (grapheme, w) in
+                    morpheus_tui::core::lib::unicode_util::graphemes_with_width(line)
+                {
                     if line_x > x_off + max_w {
                         break;
                     }

@@ -195,7 +195,10 @@ fn main() {
     // ── 9. Utility helpers ─────────────────────────────────────────────────
     set_debug(true);
     println!("== 9. utils ==");
-    println!("  is_debug: {}", morpheus_tui::solid::utils::log::is_debug());
+    println!(
+        "  is_debug: {}",
+        morpheus_tui::solid::utils::log::is_debug()
+    );
     println!("  get_next_id(\"span\"): {}", get_next_id("span"));
     println!("  get_next_id(\"span\"): {}", get_next_id("span"));
     println!("  get_next_id(\"box\"): {}", get_next_id("box"));

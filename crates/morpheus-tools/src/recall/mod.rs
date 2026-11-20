@@ -3,7 +3,7 @@
 //! [`Recall`] provides a semantic search operation that looks up entries
 //! in a `LanceDB` vector store. The tool is a **low-level building block**
 //! — it accepts a pre-computed embedding vector directly and returns matching
-//! entries. The harness (`CoshTools` dispatch) wraps this with embedding logic
+//! entries. The harness (`MorpheusTools` dispatch) wraps this with embedding logic
 //! so the LLM only sees a simple `{ db_name, query, limit }` interface.
 //!
 //! # Design decisions

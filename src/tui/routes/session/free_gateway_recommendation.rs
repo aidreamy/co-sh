@@ -69,17 +69,17 @@ pub const PLACEHOLDER: GatewayRecommendationContent = GatewayRecommendationConte
 const GATEWAY_PITCH: &str = "No provider key is configured, so this model cannot be reached. \
 Two gateways are offered as alternatives — select a tab and choose Yes to sign in.\n\n\
 **Charm** is free and ready to use. **GitHub Copilot** is available if you already have a \
-Copilot subscription. These are recommendations only: cosh has no sponsorship, affiliation \
+Copilot subscription. These are recommendations only: morpheus has no sponsorship, affiliation \
 or agreement with either provider.\n\n\
-Choosing Yes opens your browser to authorize cosh with a device code. The token is stored \
+Choosing Yes opens your browser to authorize morpheus with a device code. The token is stored \
 in your OS keyring. Choosing No closes this dialog; \u{2190} \u{2192} switch tabs to \
 compare the gateways.";
 
-/// Charm Hyper — the free gateway cosh recommends.
+/// Charm Hyper — the free gateway morpheus recommends.
 ///
 /// The recommendation is editorial, not sponsored: Charm is recommended
 /// because it is good, practical, fairly priced for what it offers and,
-/// above all, honest about its contracts — the device protocol cosh speaks
+/// above all, honest about its contracts — the device protocol morpheus speaks
 /// is the same one Charm's own CLI uses, in the open, with no surprise
 /// deprecations or silent contract changes.
 pub const CHARM: GatewayRecommendationContent = GatewayRecommendationContent {
@@ -396,8 +396,9 @@ impl FreeGatewayRecommendationDialog {
     /// The wrapped plain-text body rows the renderer draws — the same wrap
     /// for layout, render and hit-test in every phase.
     fn body_rows(&self, inner_w: u16) -> Vec<String> {
-        let plain =
-            morpheus_tui::core::renderables::markdown::markdown_to_visible_text(self.revealed_text());
+        let plain = morpheus_tui::core::renderables::markdown::markdown_to_visible_text(
+            self.revealed_text(),
+        );
         wrap_plain(&plain, inner_w)
     }
 

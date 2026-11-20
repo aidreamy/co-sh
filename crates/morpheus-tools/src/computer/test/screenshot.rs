@@ -170,8 +170,10 @@ mod screenshot_annotate_tests {
     fn save_png_creates_parents_overwrites_and_echoes_raw() {
         use crate::computer::screenshot::save_png;
 
-        let dir =
-            std::env::temp_dir().join(format!("morpheus-tools-savepng-test-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!(
+            "morpheus-tools-savepng-test-{}",
+            std::process::id()
+        ));
         std::fs::remove_dir_all(&dir).ok();
         let target = dir.join("even-deeper").join("shot.png");
         let padded = format!("  {}  ", target.to_string_lossy());

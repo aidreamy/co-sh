@@ -9,25 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Breaking:** the application binaries were renamed. `cosh` is now
-  `morpheus`, `cosh-uninstall` is `morpheus-uninstall` and `cosh-decisiond`
-  is `morpheus-decisiond`. Builds, release assets (`morpheus-v<version>-…`),
-  the installers, the self-update pipeline and the help pages all use the new
-  names, so scripts that invoke the old binary must be updated. The data and
-  config directories, the `COSH_*` environment variables and the session
-  store keep the old names, so existing installations keep their sessions,
-  settings and credentials.
+- **Breaking:** the project was renamed to Morpheus. The application
+  binaries (`morpheus`, `morpheus-uninstall`, `morpheus-decisiond`), release
+  assets (`morpheus-v<version>-…`), installers, self-update pipeline, help
+  pages, environment variables (`MORPHEUS_*`), project-local files and the
+  session store all use the new name.
 
-- The library crates moved to the `morpheus-*` names (`morpheus-onnx`,
+- The library crates use the `morpheus-*` names (`morpheus-onnx`,
   `morpheus-recall`, `morpheus-sdk`, `morpheus-tools`, `morpheus-tui`,
-  `morpheus-whatsapp`). Code that depended on the `cosh-*` crates or on their
-  `cosh_*` crate paths must switch to `morpheus-*` / `morpheus_*`.
+  `morpheus-whatsapp`). Code that depended on the old crate names or on
+  their crate paths must switch to `morpheus-*` / `morpheus_*`.
 
 ## [0.3.0]
 
 ### Added
 
-- `cosh whatsapp`: a WhatsApp interface for the agent. It links a personal
+- `morpheus whatsapp`: a WhatsApp interface for the agent. It links a personal
   account as a companion device (the pairing QR code is printed to the
   terminal; no TUI is opened) and answers the linked chats through the same
   harness assembly as the TUI, with per-chat context, configurable harness
@@ -69,18 +66,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   other tools. Usage errors exit with status 2.
 
 - Revert, Copy and Fork now answer for `/agents` pane messages, routed by
-  what backs the pane. A cosh pane runs the store's branch machinery over
+  what backs the pane. A morpheus pane runs the store's branch machinery over
   its own session, so a revert really truncates what the next turn sends
   and the transcript is rebuilt from the kept context. An ACP pane runs
   them over its own transcript: Revert drops the clicked prompt and
   everything after it, hands the prompt back for editing and opens a
   fresh agent session primed with the kept prefix (the protocol cannot
-  truncate an agent's history); Fork branches a new cosh session from
+  truncate an agent's history); Fork branches a new morpheus session from
   that prefix. Copy now also works on an agent's replies.
 
 - `/undo` on a focused ACP pane lists that pane's checkpoints - one per
   user prompt, newest selected - and rewinds to the picked one. The
-  native, store-backed list is unchanged and still answers for the cosh
+  native, store-backed list is unchanged and still answers for the morpheus
   pane, whose conversation is a real session.
 
 - Input history (Ctrl+↑/↓) is now shared linearly between the main agent
@@ -91,7 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Each `/agents` pane now has its own user queue, with the same "next
   request" and "next loop" choices as the main agent. The pane serves the
-  human queue before the agents' RPC queue; a cosh pane drains its steering
+  human queue before the agents' RPC queue; a morpheus pane drains its steering
   handle before the next request, while an ACP pane consumes the message as
   soon as its current prompt completes. The pending strip is shared with the
   chat, and the queue dialog offers both choices whenever the pane has a live
@@ -99,7 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- A cosh pane now runs the user's own mode with its write tools restored, so
+- A morpheus pane now runs the user's own mode with its write tools restored, so
   a worker pinned to a worktree can edit files instead of only reading them.
   The manager-only write restriction stays at harness depth; a pane still
   cannot ask the user, drive the computer or stop its own loop.
@@ -112,18 +109,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `morpheus update` no longer relaunches morpheus when it finishes: it starts
   the installer and exits, so the running `morpheus.exe` is not locked while the
   installer replaces it (that used to fail on Windows with "access denied").
-  The user reopens cosh once the install completes, and the command's exit
+  The user reopens morpheus once the install completes, and the command's exit
   status now means "installer started".
 
 ### Fixed
 
-- Inputs sent to `/agents` panes no longer vanish when cosh exits. They
+- Inputs sent to `/agents` panes no longer vanish when morpheus exits. They
   never enter the session transcript (the conversation belongs to another
   agent), so they are now recorded on the session and persisted as an
   append-only metadata delta the moment they are sent — Ctrl+↑ finds them
   in the next process instead of only in the one that typed them.
 
-- Revert and Fork on the `/agents` cosh pane no longer fail with "Could
+- Revert and Fork on the `/agents` morpheus pane no longer fail with "Could
   not record the revert" / "Could not create the branch". The pane's
   persisted display carried only prompts and replies, so any turn that
   used a tool broke the message-context group count the store requires
@@ -144,7 +141,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its own reference, with the pin required so a malformed name-only
   object still fails to parse.
 
-- A cosh pane whose stored session cannot be read is refused ("Could not
+- A morpheus pane whose stored session cannot be read is refused ("Could not
   load this pane's session.") instead of being treated as an ACP pane,
   which silently dropped the binding and rewrote the pane as unbound.
 
@@ -200,7 +197,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The multi-provider LLM connector (client, callers, OAuth device flow,
   cost, discovery, retry and usage) left `morpheus-sdk` as the standalone
   `aiface` crate, published and consumed as an external dependency.
-  `coshsdk` keeps only the text-processing halves (ast, extract_action,
+  `morpheussdk` keeps only the text-processing halves (ast, extract_action,
   find, hashline) and drops its transport dependencies (reqwest, base64);
   every consumer - the harness, the TUI, mcp, morpheus-tools and morpheus-recall's
   cloud embeddings - imports connector types from `aiface::connector`.
@@ -217,7 +214,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   project's tool choices applied to every other environment. A Global toggle
   now sits as the screen's first row — OFF by default, with the same
   check/cross contract as the disable toggles: with it off, the disabled set
-  persists to `.cosh-tools.json` in the directory cosh was started from, so
+  persists to `.morpheus-tools.json` in the directory morpheus was started from, so
   each project keeps its own tool set; with it on, the old global behavior
   applies. The scope choice itself persists to `setup.json` (`tools.scope`),
   so it survives a restart. While a project has no blocklist file yet, a
@@ -231,7 +228,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   relative path ("cwd must be an absolute path") and a directory that no
   longer exists ("invalid directory path"). The panes carried exactly the
   fragile spelling: worktrees default under the OS temp root
-  (`<temp>/cosh-worktrees`), which a reboot's temp cleaner deletes, and
+  (`<temp>/morpheus-worktrees`), which a reboot's temp cleaner deletes, and
   the TUI stores the working directory as the user typed it, which can be
   relative.
 
@@ -334,12 +331,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Multi-agent orchestration under the cosh TUI: external ACP agents and
-  nested cosh agents working side by side with the main chat, addressed and
+- Multi-agent orchestration under the morpheus TUI: external ACP agents and
+  nested morpheus agents working side by side with the main chat, addressed and
   coordinated as one workspace.
 
   - The `/agents` split. A multi-select picker over the ACP harness
-    registry (plus a synthetic cosh manager entry) divides the chat area
+    registry (plus a synthetic morpheus manager entry) divides the chat area
     into one pane per chosen agent, and a single shared prompt fans out to
     all of them at once. Every pane carries the session's interaction
     contract — per-pane scroll with sticky-bottom semantics, selection
@@ -376,7 +373,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     stripped from their loops and they only report.
 
   - Opt-in worktree isolation. Any pane — and the main agent itself — can
-    work in its own git worktree instead of the shared checkout. cosh
+    work in its own git worktree instead of the shared checkout. morpheus
     adopts existing worktrees and lists them, resolves explicit paths,
     refuses to run two agents in one checkout, quotes paths with spaces,
     and the main agent's isolation carries an exit path back to the shared
@@ -495,7 +492,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   classification, the gates, and the region resolution.
 
 - The decision to NOT take on the full `aws-sdk-bedrockruntime`: the
-  OpenAI-compatible endpoint covers everything cosh needs today, and the SDK
+  OpenAI-compatible endpoint covers everything morpheus needs today, and the SDK
   would pull dozens of crates into the slim build. Users who later need the
   native Bedrock surface (Converse, Guardrails, Titan embeddings) will get an
   opt-in `bedrock-sdk` feature gate wrapping the SDK — the integration stays
@@ -556,7 +553,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `tui::app::tests::history_panic_probe`.
 
 - Setup settings no longer vanish during sessions. `setup.json` saves were
-  a plain whole-file rewrite with no locking: two cosh processes running
+  a plain whole-file rewrite with no locking: two morpheus processes running
   side by side performed a lost update (the last save silently discarded
   the other's changes to providers, mode selection and everything else), a
   crash or concurrent write mid-serialization could truncate the file, and
@@ -573,7 +570,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   overwrites the developer's real config (an isolated config-dir guard
   covers the setup and uninstall tests).
 
-- Sessions no longer vanish from the sidebar while another cosh process is
+- Sessions no longer vanish from the sidebar while another morpheus process is
   still using them. The per-session flock was only claimed when switching
   to a session — every path that CREATED one assigned it directly, so a
   second process could adopt a brand-new session and both went on writing
@@ -654,7 +651,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Free gateway with OAuth 2.0 sign-in. When a message fails for missing
-  credentials — or a provider key is broken, revoked or out of quota — cosh
+  credentials — or a provider key is broken, revoked or out of quota — morpheus
   offers its free gateway once, right in the session. Opting in runs the
   Charm device sign-in entirely in the interface: the recommendation dialog
   becomes the sign-in screen with the verification URL and a drag-copyable
@@ -667,7 +664,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to back other providers.
 - In-app update announcement. When a newer release is detected, the session
   footer shows a `current → new` version hint whose version button updates
-  cosh in place — the same install pipeline as the Home banner's button —
+  morpheus in place — the same install pipeline as the Home banner's button —
   and the announcement toast carries a copy button with the manual install
   command, so updating never requires retyping a curl one-liner.
 
@@ -701,7 +698,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2026-10-01
 
-Initial release of **cosh** — a coding agent for the terminal.
+Initial release of **morpheus** — a coding agent for the terminal.
 
 ### Agent core
 
@@ -773,13 +770,13 @@ The agent's building blocks are published as reusable libraries:
 - Linux and Windows are tested. macOS builds are published but untested —
   report any issues with details.
 
-[1.0.0]: https://github.com/aidreamy/co-sh/compare/v0.3.0...v1.0.0
-[0.3.0]: https://github.com/aidreamy/co-sh/compare/v0.2.2...v0.3.0
-[0.2.2]: https://github.com/aidreamy/co-sh/compare/v0.2.1...v0.2.2
-[0.2.1]: https://github.com/aidreamy/co-sh/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/aidreamy/co-sh/compare/v0.1.4...v0.2.0
-[0.1.4]: https://github.com/aidreamy/co-sh/compare/v0.1.3...v0.1.4
-[0.1.3]: https://github.com/aidreamy/co-sh/compare/v0.1.2...v0.1.3
-[0.1.2]: https://github.com/aidreamy/co-sh/compare/v0.1.1...v0.1.2
-[0.1.1]: https://github.com/aidreamy/co-sh/releases/tag/v0.1.1
-[0.1.0]: https://github.com/aidreamy/co-sh/releases/tag/v0.1.0
+[1.0.0]: https://github.com/aidreamy/morpheus/compare/v0.3.0...v1.0.0
+[0.3.0]: https://github.com/aidreamy/morpheus/compare/v0.2.2...v0.3.0
+[0.2.2]: https://github.com/aidreamy/morpheus/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/aidreamy/morpheus/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/aidreamy/morpheus/compare/v0.1.4...v0.2.0
+[0.1.4]: https://github.com/aidreamy/morpheus/compare/v0.1.3...v0.1.4
+[0.1.3]: https://github.com/aidreamy/morpheus/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/aidreamy/morpheus/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/aidreamy/morpheus/releases/tag/v0.1.1
+[0.1.0]: https://github.com/aidreamy/morpheus/releases/tag/v0.1.0

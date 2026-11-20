@@ -1,7 +1,7 @@
-# The `src/harness/context` module — Cosh's conversation context manager
+# The `src/harness/context` module — Morpheus's conversation context manager
 
 > **Scope of this document.** This document describes, in increasing depth, the
-> `src/harness/context` module of Cosh: the `ContextManager`, its conversation
+> `src/harness/context` module of Morpheus: the `ContextManager`, its conversation
 > items, the visibility model, the protected blocks, the three compaction
 > contingencies (one-shot, hierarchical MapReduce, and the legacy *split*), and
 > the provider-error window catalog. The **TUI persistence layer** (the
@@ -43,7 +43,7 @@ Every LLM-based coding agent faces the same physical constraint: the model can
 only read what fits inside its **context window**, and a long software
 engineering session — dozens of file reads, command executions, edits and
 reasoning steps — grows far faster than any window. The `src/harness/context`
-module is Cosh's answer to that problem.
+module is Morpheus's answer to that problem.
 
 It is the **single owner** of the conversation: every event that must reach
 the model — the user's request, each assistant response, each tool call and
@@ -483,7 +483,7 @@ Why each one exists:
   any model's window and must not be "shrunk" as if it were.
 - `with_discovered_context(model, effective)` — discovers the window via
   public APIs (the models.dev catalog, OpenRouter, Anthropic; catalogs cached
-  on disk under `~/.local/share/cosh/cosh/cache`) and delegates to
+  on disk under `~/.local/share/morpheus/morpheus/cache`) and delegates to
   `from_window`.
 - `resolve_window(window, effective)` — pure: the effective value
   (`effective_context_window` from the SDK, §19.1) or the full window.
@@ -874,7 +874,7 @@ per appended history turn costs nothing: prefix matching only needs the
 
 ### 13.1 `TodoContext` (`todo_ctxt.rs`)
 
-A dedicated mini-manager for the plan (Cosh's `plan_todo_write` tool of the
+A dedicated mini-manager for the plan (Morpheus's `plan_todo_write` tool of the
 `plan_*` family). The *harness* mirrors the tools' state via `set_todo_list`
 at loop start and after every `plan_*` dispatch; `sync` stores the structured
 list **and** memoizes the rendering (`tokens()` is read on **every** budget
@@ -1342,7 +1342,7 @@ never write to it.
 
 ### 17.3 The catalog (`error_catalog.rs`)
 
-`~/.local/share/cosh/api_errors.json` — a `model → window` map. Deliberate
+`~/.local/share/morpheus/api_errors.json` — a `model → window` map. Deliberate
 decisions:
 
 - **Location**: at the top level of the data dir, **not** under the `cache/`
@@ -1426,7 +1426,7 @@ closes the accounts precisely.
 ### 19.1 The effective window (ECW)
 
 The advertised window (MCW, *maximum context window*) is not the window the
-model actually reasons over (MECW, *maximum effective context window*). Cosh
+model actually reasons over (MECW, *maximum effective context window*). Morpheus
 uses the logarithmic decay curve (Paulsen 2025, §21):
 
 $$

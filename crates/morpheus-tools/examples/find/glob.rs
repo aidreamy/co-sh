@@ -49,7 +49,7 @@ fn sorted() -> GlobCallOptions {
 fn main() {
     // A small scratch project. `Find::cwd` sets the root that path guards
     // validate against AND the base that output paths are rebased to.
-    let project = std::env::temp_dir().join("cosh-find-glob-example");
+    let project = std::env::temp_dir().join("morpheus-find-glob-example");
     let _ = std::fs::remove_dir_all(&project);
     for dir in ["src/util", "src/bin", "tests", "docs"] {
         std::fs::create_dir_all(project.join(dir)).unwrap();

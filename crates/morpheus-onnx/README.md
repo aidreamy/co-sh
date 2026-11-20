@@ -1,22 +1,22 @@
 # morpheus-onnx
 
 [![Crates.io](https://img.shields.io/crates/v/morpheus-onnx.svg)](https://crates.io/crates/morpheus-onnx)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/aidreamy/co-sh/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/aidreamy/morpheus/blob/main/LICENSE)
 
-ONNX decision-engine crate for [Morpheus](https://github.com/aidreamy/co-sh) — a coding agent for the terminal. A Rust port of the laya "System 1" decision engine core.
+ONNX decision-engine crate for [Morpheus](https://github.com/aidreamy/morpheus), a coding agent for the terminal. A Rust port of the laya "System 1" decision engine core.
 
-`morpheus-onnx` runs small ONNX decision models on CPU (`ort` + HuggingFace `tokenizers` — no torch, no CUDA) and answers structured questions (`choice` / `score` / `noul`) against a JSON state, with calibrated confidence numbers. In the Morpheus workspace it is gated behind the `onnx` feature so the main binary never links ONNX Runtime unless you opt in.
+`morpheus-onnx` runs small ONNX decision models on CPU (`ort` and HuggingFace `tokenizers`, no torch, no CUDA) and answers structured questions (`choice` / `score` / `noul`) against a JSON state, with calibrated confidence numbers. In the Morpheus workspace it is gated behind the `onnx` feature, so the main binary never links ONNX Runtime unless you opt in.
 
 ## Highlights
 
-- **One facade, three checkpoints** — `load(ModelKind, &LoadOptions)` returns an `Arc<dyn DecisionModel>` (English, Multilingual — 100+ languages, TypedDecisions) or a custom/local checkpoint.
-- **`Router`** — automatic multi-checkpoint routing with script detection and LRU residency; multiple consumers share one resident model.
-- **Question presets** — router, triage, guard, moderation and email question builders, plus JSON-schema → questions mapping (`decide`).
-- **Calibrated confidence** — `answer_confidence`, `confidence_from_probs`, `ece_score`, with Python-parity numerics (`pycompat`) for bit-stable results.
-- **Prediction hooks** — opt-in lifecycle hooks with timeout and concurrency controls.
-- **Supply-chain integrity** — cache-first HF hub downloads with opt-in revision pins and SHA-256 digest verification; a mismatch evicts the cache.
-- **Fail-open design** — the decision model is an improver, never a single point of failure: on any failure the verdict falls back with confidence 0.0.
-- **Extensible by contract** — `AgentLike` and `DecisionModel` are trait-seamed and contract-tested to be implementable outside the crate.
+- **One facade, three checkpoints**: `load(ModelKind, &LoadOptions)` returns an `Arc<dyn DecisionModel>` (English, Multilingual with 100+ languages, TypedDecisions) or a custom/local checkpoint.
+- **`Router`**: automatic multi-checkpoint routing with script detection and LRU residency; multiple consumers share one resident model.
+- **Question presets**: router, triage, guard, moderation and email question builders, plus JSON-schema to questions mapping (`decide`).
+- **Calibrated confidence**: `answer_confidence`, `confidence_from_probs`, `ece_score`, with Python-parity numerics (`pycompat`) for bit-stable results.
+- **Prediction hooks**: opt-in lifecycle hooks with timeout and concurrency controls.
+- **Supply-chain integrity**: cache-first HF hub downloads with opt-in revision pins and SHA-256 digest verification; a mismatch evicts the cache.
+- **Fail-open design**: the decision model is an improver, never a single point of failure; on any failure the verdict falls back with confidence 0.0.
+- **Extensible by contract**: `AgentLike` and `DecisionModel` are trait-seamed and contract-tested to be implementable outside the crate.
 
 ## Usage
 
@@ -38,21 +38,21 @@ Use `Router::new()` instead of `load` when you want automatic routing between ch
 ## Requirements
 
 - Rust 2024 edition (≥ 1.85)
-- ONNX Runtime: shipped via `download-binaries` (prebuilt static link, no system lib needed) — CPU only
-- Model files: laya checkpoints (~1.3 GB per graph) are downloaded from the HuggingFace hub on first use, or served from a local directory via `ModelKind::Custom`
+- ONNX Runtime: shipped via `download-binaries` (prebuilt static link, no system lib needed), CPU only
+- Model files: laya checkpoints (about 1.3 GB per graph) are downloaded from the HuggingFace hub on first use, or served from a local directory via `ModelKind::Custom`
 
 ## Integration notes
 
-In the morpheus app, this crate is enabled by the `onnx` feature (`morpheus --features onnx`), which also builds the `morpheus-decisiond` daemon — a decision daemon that owns the resident model once for all running morpheus instances and serves decisions over IPC. Without the feature, dependents never link ONNX Runtime.
+In the morpheus app, this crate is enabled by the `onnx` feature (`morpheus --features onnx`), which also builds the `morpheus-decisiond` daemon. The daemon owns the resident model once for all running morpheus instances and serves decisions over IPC. Without the feature, dependents never link ONNX Runtime.
 
 Standalone use is supported: the hub installer is repo-agnostic and `ModelKind::Custom` accepts any repo, subfolder or local directory.
 
 ## Related crates
 
-- [`morpheus-tools`](https://crates.io/crates/morpheus-tools) — tool implementations
-- [`morpheus-sdk`](https://crates.io/crates/morpheus-sdk) — agent harness SDK
-- [`morpheus-recall`](https://crates.io/crates/morpheus-recall) — memory and context recall
+- [`morpheus-tools`](https://crates.io/crates/morpheus-tools): tool implementations
+- [`morpheus-sdk`](https://crates.io/crates/morpheus-sdk): agent harness SDK
+- [`morpheus-recall`](https://crates.io/crates/morpheus-recall): memory and context recall
 
 ## License
 
-Apache-2.0. See [LICENSE](https://github.com/aidreamy/co-sh/blob/main/LICENSE).
+Apache-2.0. See [LICENSE](https://github.com/aidreamy/morpheus/blob/main/LICENSE).

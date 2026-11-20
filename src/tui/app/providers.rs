@@ -122,7 +122,7 @@ pub(super) fn provider_has_device_login(provider: &str) -> bool {
 }
 
 /// Persist a provider API key in the OS credential store (keyring) under the
-/// `cosh` service keyed by the provider's API key environment variable name.
+/// `morpheus` service keyed by the provider's API key environment variable name.
 ///
 /// The key is stored via the native store (Secret Service on Linux, Keychain
 /// on macOS, Credential Manager on Windows). Errors are returned to the caller
@@ -134,9 +134,9 @@ pub(super) fn save_provider_api_key(env_var: &str, api_key: &str) -> Result<(), 
 }
 
 /// Whether the OS keyring currently holds a saved key for `env_var` under
-/// the cosh service. Unlike [`aiface::connector::has_api_key`] this ignores
+/// the morpheus service. Unlike [`aiface::connector::has_api_key`] this ignores
 /// environment variables, so the forget/overwrite picker only appears for
-/// keys cosh itself stored — an env-var-provided key cannot be forgotten
+/// keys morpheus itself stored — an env-var-provided key cannot be forgotten
 /// from here.
 pub(super) fn keyring_has_provider_key(env_var: &str) -> bool {
     keyring::Entry::new(aiface::connector::COSH_SERVICE, env_var)
@@ -156,7 +156,7 @@ pub(super) fn provider_has_credential(provider: &str) -> bool {
 
 /// Remove a provider API key from the OS credential store through the
 /// keyring's own deletion API (`Entry::delete_credential`) — the library's
-/// recommended, store-agnostic way to drop a credential cleanly; cosh never
+/// recommended, store-agnostic way to drop a credential cleanly; morpheus never
 /// touches the keyring's storage directly. The in-process key cache is
 /// invalidated too, so the removal takes effect immediately.
 pub(super) fn forget_provider_api_key(env_var: &str) -> Result<(), keyring::Error> {

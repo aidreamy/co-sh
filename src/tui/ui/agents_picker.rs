@@ -1,7 +1,7 @@
 use std::time::SystemTime;
 
-use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType};
 use crossterm::event::{KeyCode, KeyModifiers};
+use morpheus_tui::core::types::{MouseButton, MouseEvent, MouseEventType};
 use ratatui::buffer::{Buffer, CellDiffOption};
 use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};
@@ -12,7 +12,7 @@ use crate::util::draw::draw_text_line_compact;
 use crate::util::list_selection::ListSelection;
 
 /// One row of the picker: a fixed listing entry plus the user's mark. The
-/// synthetic `cosh` manager entry and every ACP harness share this shape so
+/// synthetic `morpheus` manager entry and every ACP harness share this shape so
 /// keyboard, mouse and render can treat them uniformly.
 #[derive(Clone, Debug)]
 pub struct AgentEntry {
@@ -99,7 +99,7 @@ pub enum AgentsPickerAction {
     /// A mark toggled under the cursor; the picker stays open.
     Toggled,
     /// Enter confirmed. Carries the marked agents WITH their instance
-    /// counts in listing order, `cosh` first when marked.
+    /// counts in listing order, `morpheus` first when marked.
     Confirmed(Vec<AgentPick>),
     /// Esc: close and discard the marks.
     Cancelled,
@@ -108,7 +108,7 @@ pub enum AgentsPickerAction {
 /// Central multi-select dialog for the `/agents` command: pick which agent
 /// CLIs may receive delegated work.
 ///
-/// The first entry is always the synthetic `cosh` manager — the top-level
+/// The first entry is always the synthetic `morpheus` manager — the top-level
 /// agent that delegates to the ACP harnesses below it. The remaining entries
 /// mirror [`morpheus_tools::subagent::acp::ACP_AGENTS`] in registry order.
 ///
@@ -146,7 +146,7 @@ impl Default for AgentsPicker {
 }
 
 impl AgentsPicker {
-    /// Build the picker from the crate's agent registry: the synthetic `cosh`
+    /// Build the picker from the crate's agent registry: the synthetic `morpheus`
     /// manager entry on top, then every registered ACP harness with its
     /// installation status. Built-in availability comes from the cached
     /// [`morpheus_tools::subagent::acp::detect_installed`] snapshot; user-
@@ -156,7 +156,7 @@ impl AgentsPicker {
     pub fn new() -> Self {
         let installed = morpheus_tools::subagent::acp::detect_installed();
         let mut entries = vec![AgentEntry {
-            name: "cosh".to_string(),
+            name: "morpheus".to_string(),
             installed: true,
             selected: false,
             instances: String::new(),
@@ -217,7 +217,7 @@ impl AgentsPicker {
             .collect()
     }
 
-    /// Names of the marked entries in listing order (`cosh` first). Marks
+    /// Names of the marked entries in listing order (`morpheus` first). Marks
     /// survive filter edits, so a narrowed view still confirms everything.
     #[must_use]
     pub fn selected_names(&self) -> Vec<String> {
@@ -800,7 +800,7 @@ mod tests {
             instances: String::new(),
         };
         picker.entries = vec![
-            entry("cosh"),
+            entry("morpheus"),
             entry("gemini"),
             entry("goose"),
             entry("kilo"),
@@ -835,14 +835,14 @@ mod tests {
             AgentsPickerAction::Toggled
         );
 
-        assert_eq!(picker.selected_names()[0], "cosh");
+        assert_eq!(picker.selected_names()[0], "morpheus");
         assert_eq!(picker.selected_names()[1], picker.entries[2].name);
     }
 
     #[test]
     fn digits_on_a_marked_row_fill_the_instance_field_not_the_filter() {
         let mut marked = picker();
-        // Mark cosh (cursor row 0), then type digits.
+        // Mark morpheus (cursor row 0), then type digits.
         marked.handle_key(KeyCode::Char(' '), KeyModifiers::NONE);
         marked.handle_key(KeyCode::Char('2'), KeyModifiers::NONE);
         // An over-ceiling digit is NOT discarded: "2" then "5" would read
@@ -861,7 +861,7 @@ mod tests {
         assert_eq!(
             action,
             AgentsPickerAction::Confirmed(vec![AgentPick {
-                name: "cosh".to_string(),
+                name: "morpheus".to_string(),
                 instances: 5,
             }])
         );
@@ -894,7 +894,7 @@ mod tests {
     #[test]
     fn digits_on_an_unmarked_row_edit_the_count_and_auto_mark() {
         let mut picker = picker();
-        // Cursor on cosh but UNMARKED: the count field is a per-row input
+        // Cursor on morpheus but UNMARKED: the count field is a per-row input
         // the user types into directly — a digit fills the field AND marks
         // the row, making "claude, 2, Enter" a complete pick without
         // touching Space. (The filter is search text for LETTERS only.)
@@ -987,7 +987,7 @@ mod tests {
         assert_eq!(
             action,
             AgentsPickerAction::Confirmed(vec![AgentPick {
-                name: "cosh".to_string(),
+                name: "morpheus".to_string(),
                 instances: DEFAULT_INSTANCES,
             }])
         );
@@ -1020,7 +1020,7 @@ mod tests {
         assert_eq!(
             picker.handle_key(KeyCode::Enter, KeyModifiers::NONE),
             AgentsPickerAction::Confirmed(vec![AgentPick {
-                name: "cosh".to_string(),
+                name: "morpheus".to_string(),
                 instances: DEFAULT_INSTANCES,
             }])
         );
@@ -1107,7 +1107,7 @@ mod tests {
     #[test]
     fn render_draws_box_title_search_and_indicators() {
         let mut picker = picker();
-        picker.handle_key(KeyCode::Char(' '), KeyModifiers::NONE); // mark cosh
+        picker.handle_key(KeyCode::Char(' '), KeyModifiers::NONE); // mark morpheus
         let area = picker_area();
         let theme = ThemeRegistry::new().default_theme().clone();
         let mut buf = Buffer::empty(area);
@@ -1141,7 +1141,7 @@ mod tests {
             "marked ● on cursor row: {first_row}"
         );
         assert!(
-            first_row.contains("cosh"),
+            first_row.contains("morpheus"),
             "agent name on cursor row: {first_row}"
         );
 
@@ -1155,9 +1155,9 @@ mod tests {
     }
 
     #[test]
-    fn cosh_entry_leads_and_registry_entries_follow() {
+    fn morpheus_entry_leads_and_registry_entries_follow() {
         let picker = AgentsPicker::new();
-        assert_eq!(picker.entries[0].name, "cosh");
+        assert_eq!(picker.entries[0].name, "morpheus");
         assert!(picker.entries[0].installed);
         assert!(
             picker.entries[1..]
@@ -1175,7 +1175,7 @@ mod tests {
             AgentsPickerAction::Consumed
         );
         assert_eq!(picker.filter, "g");
-        // gemini + goose match by name; cosh and kilo do not.
+        // gemini + goose match by name; morpheus and kilo do not.
         let filtered = picker.filtered_indices();
         assert_eq!(filtered, vec![1, 2]); // gemini, goose
         assert_eq!(picker.selection.selected_index, 0); // reset on filter edit
@@ -1189,7 +1189,7 @@ mod tests {
     #[test]
     fn filter_edits_never_touch_marks() {
         let mut picker = small_picker();
-        // Mark goose (it is entry index 2 → Down ×2, since cosh starts under
+        // Mark goose (it is entry index 2 → Down ×2, since morpheus starts under
         // the cursor), then narrow away and back: the mark survives because
         // the filter only reorders the view.
         for _ in 0..2 {

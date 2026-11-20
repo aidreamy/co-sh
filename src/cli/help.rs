@@ -155,7 +155,10 @@ const UPDATE_PAGE: Page = Page {
             rows: &[
                 Row::Example("morpheus update", "install the latest release"),
                 Row::Example("morpheus update v0.2.3", "pin a specific release"),
-                Row::Example("morpheus update --yes", "unattended: scripts and containers"),
+                Row::Example(
+                    "morpheus update --yes",
+                    "unattended: scripts and containers",
+                ),
             ],
         },
         Section {
@@ -164,7 +167,7 @@ const UPDATE_PAGE: Page = Page {
                 Row::Note(
                     "The update replaces the running binary; start morpheus again when it finishes.",
                 ),
-                Row::Note("Set COSH_BIN_DIR to install into a different directory."),
+                Row::Note("Set MORPHEUS_BIN_DIR to install into a different directory."),
             ],
         },
     ],
@@ -196,7 +199,7 @@ const PATHS_PAGE: Page = Page {
         Section {
             title: "Notes",
             rows: &[Row::Note(
-                "COSH_DATA_DIR and COSH_CONFIG_DIR override the first two.",
+                "MORPHEUS_DATA_DIR and MORPHEUS_CONFIG_DIR override the first two.",
             )],
         },
     ],
@@ -317,7 +320,7 @@ impl Page {
         }
 
         // Footer: where the project lives, for anyone who wants the source.
-        let repo = format!("https://github.com/{}", cosh::update::REPO);
+        let repo = format!("https://github.com/{}", morpheus::update::REPO);
         out.push_str(&format!("{}\n", palette.border(&format!("├{rule}┤"))));
         out.push_str(&framed(
             palette,
@@ -332,8 +335,20 @@ impl Page {
     fn render_row(&self, row: &Row, palette: &Palette, inner: usize) -> String {
         let indent = " ".repeat(ROW_INDENT);
         match row {
-            Row::Prose(text) => wrapped(text, |palette, line| palette.body(line), palette, inner, &indent),
-            Row::Note(text) => wrapped(text, |palette, line| palette.muted(line), palette, inner, &indent),
+            Row::Prose(text) => wrapped(
+                text,
+                |palette, line| palette.body(line),
+                palette,
+                inner,
+                &indent,
+            ),
+            Row::Note(text) => wrapped(
+                text,
+                |palette, line| palette.muted(line),
+                palette,
+                inner,
+                &indent,
+            ),
             Row::Item(left, desc) => {
                 let desc_width = inner.saturating_sub(ROW_INDENT + LABEL_WIDTH);
                 wrap(desc, desc_width)
@@ -342,8 +357,7 @@ impl Page {
                     .map(|(line_index, line)| {
                         let cell = if line_index == 0 { *left } else { "" };
                         let padding = LABEL_WIDTH.saturating_sub(display_width(cell));
-                        let plain =
-                            format!("{indent}{cell}{}{line}", " ".repeat(padding));
+                        let plain = format!("{indent}{cell}{}{line}", " ".repeat(padding));
                         framed(
                             palette,
                             &format!(
@@ -487,8 +501,12 @@ mod tests {
         let page = plain(None);
         let lines: Vec<&str> = page.lines().collect();
         // No leftover mark glyph anywhere on the page.
-        for row in [" ▄███▄ ", "█▌ ▅ ▐█", "█▌ ▀ ▐█", " ▀███▀ "] {
-            assert!(!page.contains(row), "page still carries the logo mark: {row:?}");
+        for row in [" ▄███▄ ", "█▌ ▅ ▐█", "█▌ ▀ ▐█", " ▀███▀ "]
+        {
+            assert!(
+                !page.contains(row),
+                "page still carries the logo mark: {row:?}"
+            );
         }
         // Title + version on the first row, Usage on the second, and the two
         // Usage rows on the third and fourth, so no empty row is left over.
@@ -525,10 +543,7 @@ mod tests {
     #[test]
     fn coloured_output_keeps_the_same_visible_width() {
         let coloured = Palette::new(ThemeRegistry::new().default_theme().clone(), true);
-        let widths: Vec<usize> = render(None, &coloured)
-            .lines()
-            .map(display_width)
-            .collect();
+        let widths: Vec<usize> = render(None, &coloured).lines().map(display_width).collect();
         assert!(widths.iter().all(|width| *width == widths[0]), "{widths:?}");
     }
 

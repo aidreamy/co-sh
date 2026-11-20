@@ -141,7 +141,7 @@ pub struct Session {
     /// this session. Persisted by metadata deltas.
     pub reasoning: Option<String>,
     /// The `/agents` split-pane mode left OPEN on this session: `Some(panes)`
-    /// carries the chosen pane set (cosh only when the user marked it) so
+    /// carries the chosen pane set (morpheus only when the user marked it) so
     /// reopening the session restores the mode with the SAME panes — and,
     /// for panes that already ran, the SAME agent sessions (`AgentPaneRef` is
     /// serialized untagged: a bare name is byte-identical with the
@@ -696,9 +696,9 @@ mod tests {
         // Old histories (and old MetadataDelta payloads) stored a pane set
         // as plain strings. The untagged repr must still accept those
         // bytes, byte-for-byte, and load them as unbound `Name` panes.
-        let legacy = r#"["cosh","claude"]"#;
+        let legacy = r#"["morpheus","claude"]"#;
         let refs: Vec<AgentPaneRef> = serde_json::from_str(legacy).expect("legacy payload");
-        assert_eq!(refs[0].agent(), "cosh");
+        assert_eq!(refs[0].agent(), "morpheus");
         assert_eq!(refs[0].session_id(), None);
         assert_eq!(refs[1].agent(), "claude");
 
@@ -751,7 +751,7 @@ mod tests {
             agent: "claude".to_string(),
             session_id: "sess-42".to_string(),
             worktree: Some(crate::git::worktree::PaneWorktree {
-                path: "/tmp/cosh-worktrees/fix-issue".into(),
+                path: "/tmp/morpheus-worktrees/fix-issue".into(),
                 branch: "fix-issue".to_string(),
                 name: "fix-issue".to_string(),
                 assigned_by: crate::git::worktree::AssignedBy::User,
@@ -800,7 +800,7 @@ mod tests {
         let pinned = AgentPaneRef::Unbound {
             agent: "claude".to_string(),
             worktree: crate::git::worktree::PaneWorktree {
-                path: "/tmp/cosh-worktrees/fix".into(),
+                path: "/tmp/morpheus-worktrees/fix".into(),
                 branch: "fix".to_string(),
                 name: "fix".to_string(),
                 assigned_by: crate::git::worktree::AssignedBy::User,

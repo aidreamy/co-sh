@@ -136,7 +136,7 @@ impl StreamBatcher {
     }
 }
 
-pub struct CoshTools {
+pub struct MorpheusTools {
     bash: Bash,
     fs: Fs,
     find: Find,
@@ -204,7 +204,7 @@ fn default_skill_sources_for(home: Option<&str>) -> Vec<SkillSource> {
     }
 }
 
-impl CoshTools {
+impl MorpheusTools {
     #[must_use]
     pub fn new(cwd: &str) -> Self {
         let lsp = build_lsp(cwd);
@@ -828,7 +828,7 @@ fn extract_schema(desc: &serde_json::Value) -> ToolSchema {
 ///
 /// Cloud providers hold the schemas in their native function-calling
 /// mechanism, so the harness omits the inline `Schema:` block for them (see
-/// [`CoshTools::write_tool_descriptions_enabled`]) — re-sending it would
+/// [`MorpheusTools::write_tool_descriptions_enabled`]) — re-sending it would
 /// duplicate every schema on each request. Local model servers without
 /// reliable native calling keep the schemas because the model emits inline
 /// JSON the extractor parses.
@@ -892,7 +892,7 @@ fn write_tool_if_enabled(
 ///
 /// Shares the process-wide singleton ([`crate::harness::lsp::global_lsp`]) with
 /// the passive diagnostics path — one server process per language, not one per
-/// wrapper. Returns `None` when `COSH_LSP=off|0|false`, the config-driven LSP
+/// wrapper. Returns `None` when `MORPHEUS_LSP=off|0|false`, the config-driven LSP
 /// switch is off, no tokio runtime is active, or under `cfg(test)`.
 fn build_lsp(cwd: &str) -> Option<Arc<Lsp>> {
     #[cfg(test)]
@@ -904,7 +904,7 @@ fn build_lsp(cwd: &str) -> Option<Arc<Lsp>> {
     {
         if !crate::harness::lsp::lsp_enabled()
             || matches!(
-                std::env::var("COSH_LSP").as_deref(),
+                std::env::var("MORPHEUS_LSP").as_deref(),
                 Ok("off" | "0" | "false")
             )
         {
@@ -914,10 +914,10 @@ fn build_lsp(cwd: &str) -> Option<Arc<Lsp>> {
     }
 }
 
-impl Tools for CoshTools {
+impl Tools for MorpheusTools {
     fn write_tool_descriptions(&self, out: &mut String) {
         // This trait method always renders the full schema (the harness uses
-        // the `include_schema`-aware writers on `CoshTools` directly).
+        // the `include_schema`-aware writers on `MorpheusTools` directly).
         write_single_tool(out, &self.bash.description_run, true);
         write_single_tool(out, &self.fs.description_read, true);
         write_single_tool(out, &self.fs.description_write, true);
@@ -1597,8 +1597,10 @@ impl Tools for CoshTools {
                 // (reused raw input) never double-appends it. The same
                 // review decision is kept for the report side: a finished
                 // review turn's report gets the header ENFORCED below.
-                let is_review =
-                    morpheus_tools::subagent::severity::is_review_task(&call_input, input.code_review);
+                let is_review = morpheus_tools::subagent::severity::is_review_task(
+                    &call_input,
+                    input.code_review,
+                );
                 // Right-panel list entry description: explicit values pass
                 // through; a code-review call may omit it (the harness infers
                 // `code-review-NN`), non-review calls must carry one. The
@@ -2020,7 +2022,7 @@ impl Tools for CoshTools {
                 serde_json::to_string(&output).map_err(|e| e.to_string())
             }
 
-            _ => Err(format!("unknown cosh tool: {name}")),
+            _ => Err(format!("unknown morpheus tool: {name}")),
         }
     }
 }

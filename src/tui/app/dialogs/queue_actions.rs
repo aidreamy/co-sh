@@ -311,7 +311,7 @@ impl App {
     ///
     /// A "next request" message needs a LIVE loop to be the next request OF:
     /// the pane must be running. How that delivery happens is the turn's own
-    /// business and is the ONE difference between pane kinds — a cosh pane's
+    /// business and is the ONE difference between pane kinds — a morpheus pane's
     /// harness drains its steering handle before the next request of the same
     /// turn ([`super::super::agents_dispatch`], `pump_agents_pane_queued_requests`),
     /// while an ACP pane's turn is one prompt, so the message goes out the

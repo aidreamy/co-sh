@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 const API_ERROR_CATALOG_FILE: &str = "api_errors.json";
 
 /// Resolve the directory holding the provider-error catalog:
-/// `{data_local_dir}/cosh`.
+/// `{data_local_dir}/morpheus`.
 fn resolve_error_catalog_dir() -> Option<PathBuf> {
     directories::BaseDirs::new().map(|b| b.data_local_dir().join("morpheus"))
 }

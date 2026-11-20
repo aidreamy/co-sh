@@ -239,7 +239,7 @@ impl SubAgent {
                 "{common}\n\
                  ## Supported agents\n\
                  (None detected — install one of the ACP-capable agents \
-                  (gemini, goose, opencode, kilo, claude, codex) and restart cosh.)\n\
+                  (gemini, goose, opencode, kilo, claude, codex) and restart morpheus.)\n\
                  {usage}"
             )
         } else {

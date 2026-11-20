@@ -35,7 +35,10 @@ pub(crate) fn play(speech: &Speech) -> Result<(), SpeakError> {
 
 fn temp_path() -> PathBuf {
     let unique = COUNTER.fetch_add(1, Ordering::Relaxed);
-    std::env::temp_dir().join(format!("cosh-speak-{}-{unique}.wav", std::process::id()))
+    std::env::temp_dir().join(format!(
+        "morpheus-speak-{}-{unique}.wav",
+        std::process::id()
+    ))
 }
 
 /// Try each player in turn. A player that is absent is skipped; one that

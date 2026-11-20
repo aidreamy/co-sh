@@ -2,12 +2,12 @@ use std::io;
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
-use morpheus_tui::core::types::MouseEvent;
-use morpheus_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
 use crossterm::event::{
     KeyCode, KeyModifiers, MouseButton as CrosstermMouseButton, MouseEvent as CrosstermMouseEvent,
     MouseEventKind,
 };
+use morpheus_tui::core::types::MouseEvent;
+use morpheus_tui::core::types::{MouseButton, MouseEventType, MouseModifiers};
 use ratatui::layout::Rect;
 
 use super::{App, AppMode, MIN_PROMPT_RESERVE_ROWS, PendingSessionDelete};
@@ -1979,7 +1979,7 @@ impl App {
                         self.setup.save();
                     }
                     Some(crate::routes::settings::SettingsAction::LspToggled) => {
-                        cosh::harness::lsp::set_lsp_enabled(self.setup.lsp);
+                        morpheus::harness::lsp::set_lsp_enabled(self.setup.lsp);
                         self.state.lsp_available = self.setup.lsp;
                         // Disabling is the one user-driven invalidation: drop
                         // the visible servers now instead of waiting for the
@@ -2004,11 +2004,9 @@ impl App {
                     Some(crate::routes::settings::SettingsAction::OpenSkillsInput) => {
                         self.open_skills_input();
                     }
-                    Some(
-                        crate::routes::settings::SettingsAction::OpenWhatsAppListInput {
-                            list,
-                        },
-                    ) => {
+                    Some(crate::routes::settings::SettingsAction::OpenWhatsAppListInput {
+                        list,
+                    }) => {
                         self.open_whatsapp_list_input(list);
                     }
                     #[cfg(feature = "onnx")]
