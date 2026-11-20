@@ -489,7 +489,7 @@ pub struct App {
     /// Stale-while-revalidate cache for model listings, keyed by provider.
     model_cache: crate::util::cache::StaleCache<String, Vec<cosh::ModelEntry>>,
     /// Structured user preferences (theme, tools, routing) persisted in
-    /// `~/.config/cosh/setup.json`.
+    /// `~/.config/morpheus/setup.json`.
     setup: cosh::setup::Setup,
     /// The persisted per-agent model picks (the CLI-parity "remember my last
     /// model"): agent name → model id, written ONLY on a real user pick in a
@@ -1012,12 +1012,12 @@ impl App {
     }
 
     /// Welcome toast, shown only the first time the TUI runs: a marker
-    /// file in the local data dir (`~/.local/share/cosh/welcome`) records
+    /// file in the local data dir (`~/.local/share/morpheus/welcome`) records
     /// that it has already been displayed.
     pub fn show_welcome_toast(&mut self) {
         use crate::ui::toast::{ToastOptions, ToastVariant};
         use directories::BaseDirs;
-        let marker = BaseDirs::new().map(|d| d.data_local_dir().join("cosh/welcome"));
+        let marker = BaseDirs::new().map(|d| d.data_local_dir().join("morpheus/welcome"));
         let Some(marker) = marker.filter(|m| !m.exists()) else {
             return;
         };

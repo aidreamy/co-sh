@@ -58,7 +58,7 @@ pub enum GuardResult {
 /// The exemption is shared by every tool using this guard (reads AND writes):
 /// writes into the scratch dir are still gated by the harness approval dialog
 /// in Build/Ask modes — the guard alone no longer blocks them.
-pub const HARNESS_SCRATCH_DIR: &str = "cosh";
+pub const HARNESS_SCRATCH_DIR: &str = "morpheus";
 
 pub struct PathGuard {
     root: PathBuf,

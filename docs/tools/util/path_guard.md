@@ -275,7 +275,7 @@ This ensures consistent path spelling across the codebase.
 - `validate_path` is the core validation logic (no filesystem canonicalization, used by `resolve`).
 - `assert_editable_file` refuses to modify auto-generated files (scans first 10 lines for conventional markers).
 - `validate_asset_path` validates skill asset paths (must be relative, no `..`, must stay within base directory).
-- `HARNESS_SCRATCH_DIR = "cosh"` is the harness scratch directory name (exempt from outside-root denial).
+- `HARNESS_SCRATCH_DIR = "morpheus"` is the harness scratch directory name (exempt from outside-root denial).
 - Windows verbatim prefixes are stripped to maintain consistent path spelling.
 
 Next: [fs — filesystem tools](../fs/fs.md).

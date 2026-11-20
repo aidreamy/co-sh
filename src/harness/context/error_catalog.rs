@@ -6,7 +6,7 @@
 //! HERE, in the harness, deliberately isolated from `morpheus-sdk`'s discovery: it
 //! records the user's own observed maxima (private, per-machine state), not a
 //! public model listing. It is stored at the TOP level of the data dir
-//! (`~/.local/share/cosh`), not under the `cache/` subdir the public catalogs
+//! (`~/.local/share/morpheus`), not under the `cache/` subdir the public catalogs
 //! use — a record, not a cache.
 
 use std::collections::HashMap;
@@ -18,7 +18,7 @@ const API_ERROR_CATALOG_FILE: &str = "api_errors.json";
 /// Resolve the directory holding the provider-error catalog:
 /// `{data_local_dir}/cosh`.
 fn resolve_error_catalog_dir() -> Option<PathBuf> {
-    directories::BaseDirs::new().map(|b| b.data_local_dir().join("cosh"))
+    directories::BaseDirs::new().map(|b| b.data_local_dir().join("morpheus"))
 }
 
 /// Read the provider-error catalog map from `path`. `None` when the file is

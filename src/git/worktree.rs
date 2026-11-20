@@ -8,7 +8,7 @@
 //!
 //! Design constraints (from the approved plan):
 //!
-//! - Worktrees live under `<OS temp>/cosh-worktrees/<slug>` by default. The
+//! - Worktrees live under `<OS temp>/morpheus-worktrees/<slug>` by default. The
 //!   tool layer never accepts a path from the agent — the agent can only
 //!   ever pin a pane into this managed directory (an explicit path comes
 //!   exclusively from the user's `/worktree add <path> <branch>`).
@@ -22,12 +22,12 @@ use std::process::Command;
 use serde::{Deserialize, Serialize};
 
 /// The managed root under the OS temp dir where default-path worktrees live
-/// (`<OS temp>/cosh-worktrees`). Explicit paths (`/worktree add <path> …`)
+/// (`<OS temp>/morpheus-worktrees`). Explicit paths (`/worktree add <path> …`)
 /// may point anywhere the USER chooses; agent-driven assignment is limited
 /// to this root by never accepting a path at the tool layer.
 #[must_use]
 pub fn worktrees_root() -> PathBuf {
-    std::env::temp_dir().join("cosh-worktrees")
+    std::env::temp_dir().join("morpheus-worktrees")
 }
 
 /// Who assigned a pane's worktree. Drives the permission rule: an

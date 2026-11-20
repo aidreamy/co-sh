@@ -33,8 +33,8 @@
 //! ```text
 //! curl -L -o kokoro.tar.bz2 \
 //!   https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_1.tar.bz2
-//! mkdir -p ~/.cache/cosh/models
-//! tar xf kokoro.tar.bz2 -C ~/.cache/cosh/models
+//! mkdir -p ~/.cache/morpheus/models
+//! tar xf kokoro.tar.bz2 -C ~/.cache/morpheus/models
 //! ```
 //!
 //! The directory must contain `model.onnx` (or the int8 `model.int8.onnx`),

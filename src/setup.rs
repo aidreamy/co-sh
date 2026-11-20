@@ -1,4 +1,4 @@
-//! Structured user preferences stored in `~/.config/cosh/setup.json`.
+//! Structured user preferences stored in `~/.config/morpheus/setup.json`.
 //!
 //! Each category groups related settings so new fields have a natural home
 //! and the on-disk format stays readable. The [`Setup`] struct is the single
@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 
 // Top-level struct
 
-/// Root object persisted as `~/.config/cosh/setup.json`.
+/// Root object persisted as `~/.config/morpheus/setup.json`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Setup {
@@ -895,7 +895,7 @@ fn default_true() -> bool {
 
 // Persistence
 
-/// Resolve the config directory path (`~/.config/cosh/`).
+/// Resolve the config directory path (`~/.config/morpheus/`).
 ///
 /// `COSH_CONFIG_DIR` overrides the location when set — the test harness
 /// uses this because `directories::ProjectDirs` resolves through the
@@ -909,12 +909,12 @@ fn config_dir() -> PathBuf {
     {
         return PathBuf::from(dir);
     }
-    let proj = ProjectDirs::from("", "", "cosh")
+    let proj = ProjectDirs::from("", "", "morpheus")
         .expect("could not determine project directories (is $HOME set?)");
     proj.config_dir().to_path_buf()
 }
 
-/// Resolve the data directory path (`~/.local/share/cosh/` on Unix).
+/// Resolve the data directory path (`~/.local/share/morpheus/` on Unix).
 ///
 /// `COSH_DATA_DIR` overrides the location when set — same rationale as
 /// [`config_dir`]'s `COSH_CONFIG_DIR` override. Public: the TUI's session
@@ -925,7 +925,7 @@ pub fn data_dir_override() -> PathBuf {
     {
         return PathBuf::from(dir);
     }
-    let proj = ProjectDirs::from("", "", "cosh")
+    let proj = ProjectDirs::from("", "", "morpheus")
         .expect("could not determine project directories (is $HOME set?)");
     proj.data_dir().to_path_buf()
 }
@@ -1353,7 +1353,7 @@ mod tests {
     /// Redirect `setup.json` to a scratch config dir for the test's
     /// lifetime. Every `save()` reached through a test MUST run under this:
     /// without it the test persists DEFAULTS over the developer's real
-    /// `~/.config/cosh/setup.json` — a settings-vanishing bug caused by the
+    /// `~/.config/morpheus/setup.json` — a settings-vanishing bug caused by the
     /// test suite itself (found while investigating the multi-process
     /// lost-update regression; same symptom, third distinct cause).
     struct IsolatedConfig {

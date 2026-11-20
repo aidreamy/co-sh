@@ -87,7 +87,7 @@ pub(crate) fn extract_paths_from_args(tool_name: &str, args: &Value) -> Vec<Stri
 }
 
 /// True when `path` lives under the harness scratch directory
-/// (`<OS temp>/cosh`), where truncated tool-output logs are written.
+/// (`<OS temp>/morpheus`), where truncated tool-output logs are written.
 ///
 /// Scratch logs are ephemeral by definition — reading them back is part of
 /// the truncation contract (the model is told to inspect them), so they must

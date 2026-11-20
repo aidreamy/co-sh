@@ -38,7 +38,7 @@ pub fn default_model_dir() -> PathBuf {
     let root = directories::BaseDirs::new()
         .map(|dirs| dirs.cache_dir().to_path_buf())
         .unwrap_or_else(env::temp_dir);
-    root.join("cosh")
+    root.join("morpheus")
         .join("models")
         .join(DEFAULT_MODEL_DIR_NAME)
 }

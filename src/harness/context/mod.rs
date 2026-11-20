@@ -705,7 +705,7 @@ impl ContextManager {
     /// A new ContextManager with the effective discovered context window, or the
     /// default [`MAX_CONTEXT_TOKENS`] if discovery fails.
     pub async fn with_discovered_context(model_name: &str, effective: bool) -> Self {
-        // On-disk catalog caching under `~/.local/share/cosh/cache`, so repeated
+        // On-disk catalog caching under `~/.local/share/morpheus/cache`, so repeated
         // launches reuse the downloaded models.dev / OpenRouter catalogs.
         Self::from_window(
             discover_context_window(model_name, Some("cosh/cache")).await,
@@ -756,7 +756,7 @@ impl ContextManager {
     /// launches discover it before ever paying another overflow.
     ///
     /// Persistence is skipped under `cfg(test)`: tests run against the real
-    /// `~/.local/share/cosh` data dir and must never write to it.
+    /// `~/.local/share/morpheus` data dir and must never write to it.
     pub fn record_provider_window(&mut self, model: Option<&str>, window: usize, effective: bool) {
         self.set_max_tokens(Self::resolve_window(window, effective));
         let Some(model) = model else {

@@ -54,7 +54,7 @@ impl Config {
     /// example when `HOME` is unset), in which case callers should pass an
     /// explicit path to [`Config::new`].
     pub fn default_store_path() -> Option<PathBuf> {
-        directories::ProjectDirs::from("", "", "cosh")
+        directories::ProjectDirs::from("", "", "morpheus")
             .map(|dirs| dirs.data_dir().join("whatsapp").join("device.db"))
     }
 

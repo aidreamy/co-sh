@@ -120,7 +120,7 @@ struct QueuedStoreJob {
 #[derive(Clone)]
 pub struct SessionStore {
     /// Resolved path to the per-CWD sessions directory
-    /// (e.g. `~/.local/share/cosh/sessions/{hash}/`).
+    /// (e.g. `~/.local/share/morpheus/sessions/{hash}/`).
     sessions_dir: PathBuf,
     /// The hash of the current working directory.
     /// Parity with the bin's former root-level `#![allow(dead_code)]`.

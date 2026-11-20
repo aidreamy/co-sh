@@ -132,7 +132,7 @@ impl RagRegistry {
         directories::BaseDirs::new()
             .map(|d| d.data_dir().to_path_buf())
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("cosh")
+            .join("morpheus")
     }
 
     /// Path to the registry JSON file.

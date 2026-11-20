@@ -102,7 +102,7 @@ pub fn consented_in_config() -> bool {
     let config_dir = match std::env::var("COSH_CONFIG_DIR") {
         Ok(dir) if !dir.is_empty() => std::path::PathBuf::from(dir),
         _ => {
-            match directories::ProjectDirs::from("", "", "cosh") {
+            match directories::ProjectDirs::from("", "", "morpheus") {
                 Some(proj) => proj.config_dir().to_path_buf(),
                 // No resolvable config dir → no persisted opt-out → default ON.
                 None => return true,
@@ -285,7 +285,7 @@ fn remove_own_image(exe: &Path) -> bool {
 /// Platform profile directories for cosh (the SAME resolution the telemetry
 /// module and the rest of the app use).
 fn project_dirs() -> Option<directories::ProjectDirs> {
-    directories::ProjectDirs::from("", "", "cosh")
+    directories::ProjectDirs::from("", "", "morpheus")
 }
 
 /// Best-effort recursive removal: a missing path counts as removed, a failure
@@ -520,7 +520,7 @@ mod tests {
     fn consented_in_config_reads_telemetry_flag() {
         let _guard = ENV_LOCK.lock();
         let dir = tempfile::tempdir().expect("tempdir");
-        let config = dir.path().join("cosh-config");
+        let config = dir.path().join("morpheus-config");
         std::fs::create_dir_all(&config).expect("mkdir");
         let path = config.join("setup.json");
         // SAFETY (edition 2024): single-threaded with respect to env mutation

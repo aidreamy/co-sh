@@ -137,11 +137,11 @@ pub fn install_id() -> Option<events::UuidId> {
 /// Directory holding the local queue file (platform data dir).
 fn queue_dir() -> std::path::PathBuf {
     if let Some(dir) =
-        directories::ProjectDirs::from("", "", "cosh").map(|d| d.data_dir().to_path_buf())
+        directories::ProjectDirs::from("", "", "morpheus").map(|d| d.data_dir().to_path_buf())
     {
         dir.join("telemetry")
     } else {
-        std::env::temp_dir().join("cosh-telemetry")
+        std::env::temp_dir().join("morpheus-telemetry")
     }
 }
 

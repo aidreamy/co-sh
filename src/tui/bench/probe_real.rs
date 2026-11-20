@@ -1,5 +1,5 @@
 //! Reproduces the real agent-loop workload against a REAL session file:
-//! - loads ~/.local/share/cosh/sessions/<hash>/session-*.jsonl
+//! - loads ~/.local/share/morpheus/sessions/<hash>/session-*.jsonl
 //! - simulates the exact sequence that happens when the agent works:
 //!   ToolCall (spinner active → per-frame re-render), streaming tokens,
 //!   subagent_call (right panel appears → main width shrinks),
@@ -14,7 +14,7 @@ use cosh::harness::HarnessEvent;
 use super::App;
 
 fn load_latest_real_session() -> Option<(String, Vec<u8>)> {
-    let dir = directories::ProjectDirs::from("", "", "cosh")?
+    let dir = directories::ProjectDirs::from("", "", "morpheus")?
         .data_dir()
         .join("sessions");
     let mut best: Option<(std::path::PathBuf, std::time::SystemTime)> = None;

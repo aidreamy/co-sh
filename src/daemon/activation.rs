@@ -24,7 +24,7 @@ use std::time::Duration;
 
 use super::ipc_error::Lifecycle;
 
-/// The runtime socket directory: `$XDG_RUNTIME_DIR/cosh/daemon`, falling
+/// The runtime socket directory: `$XDG_RUNTIME_DIR/morpheus/daemon`, falling
 /// back to what `directories` computes when the runtime dir is not set
 /// (some containers drop it).
 ///
@@ -32,16 +32,16 @@ use super::ipc_error::Lifecycle;
 /// logout — the right home for a per-user socket with `0600` perms.
 pub(crate) fn socket_dir() -> PathBuf {
     if let Some(runtime) = std::env::var_os("XDG_RUNTIME_DIR") {
-        return Path::new(&runtime).join("cosh").join("daemon");
+        return Path::new(&runtime).join("morpheus").join("daemon");
     }
-    directories::ProjectDirs::from("", "", "cosh")
+    directories::ProjectDirs::from("", "", "morpheus")
         .map(|dirs| {
             dirs.runtime_dir().map_or_else(
                 || dirs.data_dir().join("daemon"),
-                |runtime| runtime.join("cosh").join("daemon"),
+                |runtime| runtime.join("morpheus").join("daemon"),
             )
         })
-        .unwrap_or_else(|| std::env::temp_dir().join("cosh-daemons"))
+        .unwrap_or_else(|| std::env::temp_dir().join("morpheus-daemons"))
 }
 
 /// The socket path for a daemon named `name` (e.g. `decision`).

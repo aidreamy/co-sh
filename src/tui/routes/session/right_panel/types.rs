@@ -2088,7 +2088,7 @@ impl RightPanelState {
             .map(|d| d.as_nanos())
             .unwrap_or(0);
         std::env::temp_dir()
-            .join("cosh")
+            .join("morpheus")
             .join("right-panel")
             .join(format!("{}-{nanos}", std::process::id()))
     }

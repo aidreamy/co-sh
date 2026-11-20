@@ -14,11 +14,11 @@ use serde::{Deserialize, Serialize};
 /// - Persists the in-memory data to disk as JSON on every update.
 ///
 /// The cache directory is resolved via [`ProjectDirs`] as:
-/// `{data_dir}/{cache_subdir}/{filename}` (e.g. `~/.local/share/cosh/cache/model.json`).
+/// `{data_dir}/{cache_subdir}/{filename}` (e.g. `~/.local/share/morpheus/cache/model.json`).
 ///
 /// Callers must provide a `cache_subdir` relative to the data dir (e.g. `"cache"`).
-/// The data dir already includes the app name (`cosh`), so callers should NOT
-/// prefix paths with `"cosh/"`.
+/// The data dir already includes the app name (`morpheus`), so callers should NOT
+/// prefix paths with `"morpheus/"`.
 ///
 /// # Type parameters
 /// - `K`: Cache key type (must be `Eq + Hash + Clone + Serialize + DeserializeOwned`).
@@ -74,7 +74,7 @@ where
     /// # Panics
     /// Panics if the `ProjectDirs` cannot be determined (e.g. no $HOME set).
     pub fn new(cache_subdir: &str, filename: &str) -> Self {
-        let proj_dirs = ProjectDirs::from("", "", "cosh")
+        let proj_dirs = ProjectDirs::from("", "", "morpheus")
             .expect("could not determine project directories (is $HOME set?)");
         let cache_dir = proj_dirs.data_dir().join(cache_subdir);
         std::fs::create_dir_all(&cache_dir).ok();

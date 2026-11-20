@@ -803,7 +803,7 @@ fn build_fs_read_scratch_log_is_allowed_without_approval() {
     // Truncated-output logs live under <temp>/cosh — reading them back is part
     // of the truncation contract and must never trigger the approval dialog.
     let tmp_root = std::env::temp_dir().join("cosh_test_perm_scratch_root");
-    let scratch_dir = std::env::temp_dir().join("cosh");
+    let scratch_dir = std::env::temp_dir().join("morpheus");
     let _ = std::fs::create_dir_all(&scratch_dir);
     let log = scratch_dir.join("cosh_test_perm_scratch.log");
     let _ = std::fs::write(&log, b"truncated middle content");

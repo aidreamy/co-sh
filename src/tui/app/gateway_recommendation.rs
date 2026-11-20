@@ -98,7 +98,7 @@ impl App {
 
     fn gateway_offer_marker() -> Option<Vec<u8>> {
         let dirs = directories::BaseDirs::new()?;
-        std::fs::read(dirs.data_local_dir().join("cosh/gateway-recommendation")).ok()
+        std::fs::read(dirs.data_local_dir().join("morpheus/gateway-recommendation")).ok()
     }
 
     fn gateway_offer_marker_exists() -> bool {
@@ -110,7 +110,7 @@ impl App {
     /// the next launch.
     fn burn_gateway_offer_marker(&self, answer: &[u8]) {
         if let Some(dirs) = directories::BaseDirs::new() {
-            let marker = dirs.data_local_dir().join("cosh/gateway-recommendation");
+            let marker = dirs.data_local_dir().join("morpheus/gateway-recommendation");
             let _ = std::fs::create_dir_all(marker.parent().unwrap_or(&marker));
             let _ = std::fs::write(&marker, answer);
         }

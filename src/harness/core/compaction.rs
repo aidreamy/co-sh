@@ -197,7 +197,7 @@ pub(super) async fn discovered_context_window(model: Option<&str>) -> Option<usi
     {
         return *window;
     }
-    // On-disk catalog caching under `~/.local/share/cosh/cache` (see `morpheus-sdk`'s
+    // On-disk catalog caching under `~/.local/share/morpheus/cache` (see `morpheus-sdk`'s
     // `discover_context_window`), so repeated launches reuse the downloaded
     // models.dev / OpenRouter catalogs instead of re-fetching them.
     let window = tokio::time::timeout(

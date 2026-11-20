@@ -37,8 +37,8 @@ fn isolate_home() {
     let home = std::env::temp_dir().join("cosh-hook-test-home");
     let _ = std::fs::remove_dir_all(&home);
     std::fs::create_dir_all(&home).expect("create scratch home");
-    let cfg = home.join(".config").join("cosh");
-    let data = home.join(".local").join("share").join("cosh");
+    let cfg = home.join(".config").join("morpheus");
+    let data = home.join(".local").join("share").join("morpheus");
     std::fs::create_dir_all(&cfg).expect("create scratch config dir");
     std::fs::create_dir_all(&data).expect("create scratch data dir");
     // SAFETY: tests holding HOME_LOCK are the only threads reading these.

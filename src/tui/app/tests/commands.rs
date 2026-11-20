@@ -826,7 +826,7 @@ async fn background_preference_loads_from_setup_on_startup() {
     // isolate_home wipes <scratch>/.config first, so write AFTER it runs.
     let cfg = std::env::temp_dir()
         .join("cosh-hook-test-home")
-        .join(".config/cosh");
+        .join(".config/morpheus");
     std::fs::create_dir_all(&cfg).unwrap();
     std::fs::write(
         cfg.join("setup.json"),
@@ -3413,7 +3413,7 @@ async fn slash_worktree_add_without_a_path_uses_the_default_temp_root() {
 
     let pane = &app.agents_split.as_ref().unwrap().panes[0];
     let pin = pane.worktree.as_ref().expect("the pane got pinned");
-    let expected_root = std::env::temp_dir().join("cosh-worktrees");
+    let expected_root = std::env::temp_dir().join("morpheus-worktrees");
     assert_eq!(
         pin.path.parent().map(|p| p.to_path_buf()),
         Some(expected_root),
@@ -3637,7 +3637,7 @@ async fn agents_worktree_assign_executes_on_the_app_drain() {
     );
     assert!(
         pin.path
-            .starts_with(std::env::temp_dir().join("cosh-worktrees")),
+            .starts_with(std::env::temp_dir().join("morpheus-worktrees")),
         "the agent NEVER picks a path — cosh's temp root only"
     );
     // The registry knows the pin (the main agent's listing sees it).

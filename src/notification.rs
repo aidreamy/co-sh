@@ -23,14 +23,14 @@ const ICON_BYTES: &[u8] = include_bytes!("../assets/cosh-icon.png");
 
 /// Return the path to the app icon, extracting it from the binary on first
 /// call.  The icon is written to an XDG-compliant cache directory
-/// (`~/.cache/cosh/cosh-icon.png`) so it persists across runs.
+/// (`~/.cache/morpheus/cosh-icon.png`) so it persists across runs.
 fn icon_path() -> &'static PathBuf {
     ICON_PATH.get_or_init(|| {
         let dir = directories::BaseDirs::new()
-            .map(|d| d.cache_dir().join("cosh"))
+            .map(|d| d.cache_dir().join("morpheus"))
             .unwrap_or_else(|| {
                 let mut p = std::env::temp_dir();
-                p.push("cosh-cache");
+                p.push("morpheus-cache");
                 p
             });
         let path = dir.join("cosh-icon.png");
