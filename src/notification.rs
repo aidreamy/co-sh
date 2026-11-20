@@ -7,9 +7,9 @@
 //! If the terminal IS focused, no notification fires (the user is already
 //! looking at the terminal).
 //!
-//! The app logo icon is embedded in the binary at compile time and extracted
-//! to a cache directory on first use, so the notification always shows the
-//! consistent branding regardless of platform.
+//! Notifications currently go out without an icon: no logo asset ships with
+//! the project. The icon plumbing is still in place, so compiling a PNG back
+//! in is all it takes to restore the branding.
 
 use notify_rust::Notification;
 use std::path::PathBuf;
@@ -19,13 +19,23 @@ use std::sync::OnceLock;
 static ICON_PATH: OnceLock<PathBuf> = OnceLock::new();
 
 /// Raw PNG bytes of the app logo icon (128×128), embedded at compile time.
-const ICON_BYTES: &[u8] = include_bytes!("../assets/morpheus-icon.png");
+///
+/// `None` while the project ships no icon asset, which keeps notifications
+/// icon-less. To bring the logo back, add the PNG at
+/// `assets/morpheus-icon.png` and replace the line below with:
+///
+/// ```ignore
+/// const ICON_BYTES: Option<&[u8]> = Some(include_bytes!("../assets/morpheus-icon.png"));
+/// ```
+const ICON_BYTES: Option<&[u8]> = None;
 
 /// Return the path to the app icon, extracting it from the binary on first
-/// call.  The icon is written to an XDG-compliant cache directory
-/// (`~/.cache/morpheus/morpheus-icon.png`) so it persists across runs.
-fn icon_path() -> &'static PathBuf {
-    ICON_PATH.get_or_init(|| {
+/// call, or `None` when no icon is compiled in. The icon is written to an
+/// XDG-compliant cache directory (`~/.cache/morpheus/morpheus-icon.png`) so
+/// it persists across runs.
+fn icon_path() -> Option<&'static PathBuf> {
+    let bytes = ICON_BYTES?;
+    Some(ICON_PATH.get_or_init(|| {
         let dir = directories::BaseDirs::new()
             .map(|d| d.cache_dir().join("morpheus"))
             .unwrap_or_else(|| {
@@ -38,15 +48,15 @@ fn icon_path() -> &'static PathBuf {
         // changed (e.g. a newer build ships a different logo). Comparing
         // bytes avoids stale cached icons from previous versions.
         let needs_write = match std::fs::read(&path) {
-            Ok(existing) => existing != ICON_BYTES,
+            Ok(existing) => existing != bytes,
             Err(_) => true,
         };
         if needs_write {
             let _ = std::fs::create_dir_all(&dir);
-            let _ = std::fs::write(&path, ICON_BYTES);
+            let _ = std::fs::write(&path, bytes);
         }
         path
-    })
+    }))
 }
 
 /// Send a desktop notification.
@@ -68,12 +78,13 @@ pub fn notify(terminal_focused: bool, title: &str, message: &str) {
     notification.appname("Morpheus");
     notification.timeout(notify_rust::Timeout::Milliseconds(8000));
 
-    // Attach the app logo icon when available.  On Linux (freedesktop) this
-    // renders the PNG directly in the notification bubble; on macOS/Windows
-    // the parameter is largely ignored (those platforms use the app bundle /
-    // pinned-tile icon instead).
-    let icon = icon_path();
-    notification.icon(&icon.to_string_lossy());
+    // Attach the app logo icon when one is compiled in.  On Linux (freedesktop)
+    // this renders the PNG directly in the notification bubble; on
+    // macOS/Windows the parameter is largely ignored (those platforms use the
+    // app bundle / pinned-tile icon instead).
+    if let Some(icon) = icon_path() {
+        notification.icon(&icon.to_string_lossy());
+    }
 
     let _ = notification.show();
 }
