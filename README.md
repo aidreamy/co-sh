@@ -2,6 +2,8 @@
 
 **English** | [Português](./docs/readme/README.pt-BR.md) | [Español](./docs/readme/README.es.md) | [Русский](./docs/readme/README.ru.md) | [中文](./docs/readme/README.zh-CN.md) | [日本語](./docs/readme/README.ja.md)
 
+<img width="2000" height="1099" alt="image(2)" src="https://github.com/user-attachments/assets/3f4f4876-8bba-4bed-a198-eb5dea51a80b" />
+
 > [!WARNING]
 > **WhatsApp is under development.** The WhatsApp feature (`morpheus-whatsapp`) is still experimental and is **not recommended for use** yet.
 
