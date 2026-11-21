@@ -525,6 +525,7 @@ pub(super) fn create_cloud_embedder(
     use morpheus_recall::embed::Embedder;
     let mut connector = Connector::new(provider)
         .map_err(|e| format!("Failed to create connector: {e}"))?
+        .with_service_keyring(morpheus::KEYRING_SERVICE)
         .with_model(model);
     if let Some(url) = base_urls.get(provider) {
         connector = connector.with_base_url(url.clone());

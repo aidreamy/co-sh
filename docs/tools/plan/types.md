@@ -74,7 +74,7 @@ pub struct TodoItemInput {
 ```
 
 It exists so the harness can deserialize the tool call arguments straight
-into typed values. The submitted list is the FULL desired state — see
+into typed values. The submitted list is the FULL desired state - see
 [full-state writes](plan.md#2-full-state-writes).
 
 ---
@@ -103,7 +103,7 @@ pub struct Nag {
 ```
 
 An advisory message the caller should read and act on. Nags never prevent an
-operation from succeeding — see [nags are advice, errors are
+operation from succeeding - see [nags are advice, errors are
 rejections](plan.md#1-nags-are-advice-errors-are-rejections) on the module
 page.
 

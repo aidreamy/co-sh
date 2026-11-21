@@ -121,25 +121,26 @@ pub(super) fn provider_has_device_login(provider: &str) -> bool {
     matches!(provider, "charm" | "copilot")
 }
 
-/// Persist a provider API key in the OS credential store (keyring) under the
-/// `morpheus` service keyed by the provider's API key environment variable name.
+/// Persist a provider API key in the OS credential store (keyring) under
+/// [`KEYRING_SERVICE`](morpheus::KEYRING_SERVICE), keyed by the provider's API
+/// key environment variable name.
 ///
 /// The key is stored via the native store (Secret Service on Linux, Keychain
 /// on macOS, Credential Manager on Windows). Errors are returned to the caller
 /// so it can surface them instead of failing silently.
 pub(super) fn save_provider_api_key(env_var: &str, api_key: &str) -> Result<(), keyring::Error> {
-    let entry = keyring::Entry::new(aiface::connector::COSH_SERVICE, env_var)?;
+    let entry = keyring::Entry::new(morpheus::KEYRING_SERVICE, env_var)?;
     entry.set_password(api_key)?;
     Ok(())
 }
 
 /// Whether the OS keyring currently holds a saved key for `env_var` under
-/// the morpheus service. Unlike [`aiface::connector::has_api_key`] this ignores
+/// Morpheus's service. Unlike [`aiface::connector::has_api_key`] this ignores
 /// environment variables, so the forget/overwrite picker only appears for
 /// keys morpheus itself stored — an env-var-provided key cannot be forgotten
 /// from here.
 pub(super) fn keyring_has_provider_key(env_var: &str) -> bool {
-    keyring::Entry::new(aiface::connector::COSH_SERVICE, env_var)
+    keyring::Entry::new(morpheus::KEYRING_SERVICE, env_var)
         .and_then(|entry| entry.get_password())
         .is_ok()
 }
@@ -160,7 +161,7 @@ pub(super) fn provider_has_credential(provider: &str) -> bool {
 /// touches the keyring's storage directly. The in-process key cache is
 /// invalidated too, so the removal takes effect immediately.
 pub(super) fn forget_provider_api_key(env_var: &str) -> Result<(), keyring::Error> {
-    let entry = keyring::Entry::new(aiface::connector::COSH_SERVICE, env_var)?;
+    let entry = keyring::Entry::new(morpheus::KEYRING_SERVICE, env_var)?;
     entry.delete_credential()?;
     aiface::connector::invalidate_api_key(env_var);
     Ok(())

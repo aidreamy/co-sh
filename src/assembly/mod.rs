@@ -157,7 +157,7 @@ fn build_connector(a: &HarnessAssembly) -> Result<(Connector, Vec<(String, Strin
     if a.model.as_deref() == Some("auto") {
         let mut last_err = String::new();
         for (i, (fb_provider, fb_model)) in a.fallbacks.iter().enumerate() {
-            match Connector::new(fb_provider) {
+            match Connector::new(fb_provider).map(|c| c.with_service_keyring(crate::KEYRING_SERVICE)) {
                 Ok(c) => {
                     let mut c = c.with_model(fb_model).with_tool_call_mode(a.tool_call_mode);
                     // Honor a configured local server URL for this
@@ -189,7 +189,9 @@ fn build_connector(a: &HarnessAssembly) -> Result<(Connector, Vec<(String, Strin
         }
         return Err(format!("auto: no fallback available ({last_err})"));
     }
-    let c = Connector::new(&a.provider).map_err(|e| format!("connector: {e}"))?;
+    let c = Connector::new(&a.provider)
+        .map(|c| c.with_service_keyring(crate::KEYRING_SERVICE))
+        .map_err(|e| format!("connector: {e}"))?;
     let with_model = if let Some(ref m) = a.model {
         c.with_model(m)
     } else {

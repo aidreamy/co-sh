@@ -1,4 +1,4 @@
-# `utils` — text attribute helpers
+# `utils` - text attribute helpers
 
 Small pure functions for packing and unpacking the `u32` text-attribute value
 carried by [`TextChunk`](lib/styled_text.md) and renderables. The layout of
@@ -53,4 +53,4 @@ assert_eq!(get_link_id(attrs), 42);
 `attributes_with_link` masks the base to the low 8 bits, shifts the link id
 up by 8 (masked to 24 bits), and ORs them together.
 
-Next: [lib/ — colors, borders, text, unicode](lib/primitives.md).
+Next: [lib/ - colors, borders, text, unicode](lib/primitives.md).

@@ -1,4 +1,4 @@
-# `language` — mapping paths to grammars
+# `language` - mapping paths to grammars
 
 `detect_language(path)` maps a file path to the tree-sitter
 [`Language`] for its extension:
@@ -73,5 +73,5 @@ Plus the special case: a file literally named `Dockerfile` (any case) maps
 to the Dockerfile grammar.
 
 The extension set deliberately mirrors the ast-grep registry in
-[`crate::ast`](../ast/ast.md) — kept independent so the low-level parse
+[`crate::ast`](../ast/ast.md) - kept independent so the low-level parse
 cache does not depend on the structural-matching engine.

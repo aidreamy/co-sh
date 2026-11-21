@@ -1,11 +1,11 @@
-# `find::fs_cache` — the shared scan cache
+# `find::fs_cache` - the shared scan cache
 
 `fs_cache` is a process-global, TTL-based cache of scanned directory entries.
 Both [`glob`](glob.md) and [`grep`](grep.md) use it when you pass
 `cache: true`: a second search of the same directory with the same visibility
 settings reuses the earlier scan instead of re-walking the tree.
 
-It exists because directory scans are the expensive part of discovery — the
+It exists because directory scans are the expensive part of discovery - the
 matching itself is cheap. Caching the scan amortizes the walk across many
 queries (think: an agent running a dozen `find_glob` calls against the same
 project in a session).
@@ -21,10 +21,10 @@ project in a session).
 
 - `FS_SCAN_CACHE_TTL_MS = 0` disables caching entirely (always fresh scans).
 - The cache is keyed by (root, `include_hidden`, `use_gitignore`,
-  `skip_node_modules`, `ScanDetail`) — a scan with different visibility
+  `skip_node_modules`, `ScanDetail`) - a scan with different visibility
   settings is a different cache entry.
 - The oldest entry is evicted when the cache exceeds `max_cache_entries`.
-- **Partial (timed-out) scans are never cached** — a snapshot that was cut
+- **Partial (timed-out) scans are never cached** - a snapshot that was cut
   short must not be served later as a complete scan.
 
 ## The three cache operations
@@ -36,12 +36,12 @@ pub fn invalidate_path(target: &Path)   // drop entries whose root is a prefix o
 pub fn invalidate_all()                 // clear everything
 ```
 
-- `get_or_scan` — serve from cache if fresh, otherwise scan and store. The
+- `get_or_scan` - serve from cache if fresh, otherwise scan and store. The
   returned `ScanResult` carries `cache_age_ms` (how stale the served data was)
   and `timed_out`.
-- `force_rescan` — always scan fresh; `store: false` returns the result
+- `force_rescan` - always scan fresh; `store: false` returns the result
   without repopulating the cache.
-- `invalidate_path` / `invalidate_all` — call these after **mutating** files
+- `invalidate_path` / `invalidate_all` - call these after **mutating** files
   so subsequent searches see the new state. This is exactly what the
   `morpheus-tools` wrappers do after every `fs_edit`.
 
@@ -54,7 +54,7 @@ a cached scan yields **zero** matches and the cache is older than
 empty. This keeps "create file, then immediately search for it" flows working
 without paying for a fresh scan on every query.
 
-## `ScanDetail` — how much metadata
+## `ScanDetail` - how much metadata
 
 | Detail | Collects |
 |---|---|
@@ -62,7 +62,7 @@ without paying for a fresh scan on every query.
 | `Full` | path + `file_type` + `mtime` (ms) + `size` |
 
 `glob` uses `Full` only when `sort_by_mtime` is on (it needs mtimes to rank);
-otherwise it scans `Minimal`. `grep` always scans `Minimal` — it only needs
+otherwise it scans `Minimal`. `grep` always scans `Minimal` - it only needs
 the file list.
 
 ## Types
@@ -80,4 +80,4 @@ pub struct ScanResult { entries: Vec<GlobMatch>, cache_age_ms: u64, timed_out: b
 
 ---
 
-Next: [task — cancellation](task.md).
+Next: [task - cancellation](task.md).

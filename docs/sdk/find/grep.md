@@ -1,4 +1,4 @@
-# `find::grep` — searching by content
+# `find::grep` - searching by content
 
 `grep` searches file *contents* with ripgrep's regex engine, across a
 directory (walked in parallel) or a single file (searched in memory).
@@ -17,7 +17,7 @@ pub struct GrepOptions {
     pub r#type: Option<String>,       // language type filter, e.g. "rust", "py"
     pub ignore_case: Option<bool>,
     pub multiline: Option<bool>,
-    pub hidden: Option<bool>,         // default: true  (SDK default — see find.md)
+    pub hidden: Option<bool>,         // default: true  (SDK default - see find.md)
     pub gitignore: Option<bool>,      // default: true
     pub cache: Option<bool>,          // use the shared scan cache
     pub max_count: Option<u32>,       // global match cap
@@ -77,7 +77,7 @@ let result = grep(GrepOptions {
   `max_count` it gives you paging: `offset=20, max_count=20` returns the next
   page.
 - `max_count_per_file` caps matches per file *before* the global budget is
-  applied — it keeps one hot file from exhausting `max_count` before other
+  applied - it keeps one hot file from exhausting `max_count` before other
   files are reached.
 
 ## Type and glob filters
@@ -96,11 +96,11 @@ let result = grep(GrepOptions {
 Two niceties for callers who pass *literal text fragments* instead of
 carefully-written regexes:
 
-- **Braces that aren't valid repetition quantifiers are escaped** — a pattern
+- **Braces that aren't valid repetition quantifiers are escaped** - a pattern
   like `${platform}` would fail to compile (`{p` is not a quantifier); it is
   silently rewritten to `$\{platform\}`. Valid quantifiers (`a{2,4}`) and
   Unicode property escapes (`\p{Greek}`, `\x{41}`) pass through unchanged.
-- **After a group-syntax error, unescaped parentheses are escaped** — a
+- **After a group-syntax error, unescaped parentheses are escaped** - a
   trailing `(` from a snippet like `fetchAnthropicProvider(` is treated as a
   literal, retrying with `fetchAnthropicProvider\(`.
 
@@ -114,7 +114,7 @@ pub struct GrepResult {
     pub files_searched: u32,
     pub limit_reached: Option<bool>,
     pub skipped_oversized: Option<u32>,  // files > 4 MiB skipped
-    pub timed_out: bool,             // partial results — search was cut short
+    pub timed_out: bool,             // partial results - search was cut short
 }
 ```
 
@@ -135,7 +135,7 @@ skipped and counted in `skipped_oversized` rather than silently missing.
 
 ---
 
-Next: [fs_cache — the shared scan cache](fs_cache.md), or [task —
+Next: [fs_cache - the shared scan cache](fs_cache.md), or [task -
 cancellation](task.md).
 
 ---

@@ -1,8 +1,8 @@
-# `solid::types` — props and constructor traits
+# `solid::types` - props and constructor traits
 
 Marker traits and placeholder types ported from the TypeScript original's
 type-level machinery (conditional types over props). **Port status:
-scaffolded** — these exist to carry the API shape; the concrete widget prop
+scaffolded** - these exist to carry the API shape; the concrete widget prop
 types are commented out pending the widget-port work.
 
 ## `NonStyledProps`
@@ -11,7 +11,7 @@ types are commented out pending the widget-port work.
 pub trait NonStyledProps {}
 ```
 
-Marker for property types that should be excluded from the style prop —
+Marker for property types that should be excluded from the style prop -
 the Rust stand-in for the TS `NonStyledProps` union (which used
 `on${string}` template-literal types).
 
@@ -35,7 +35,7 @@ pub trait RenderableConstructor<TOptions, TRenderable> {
 }
 ```
 
-The base trait for any renderable constructor — the analogue of the TS
+The base trait for any renderable constructor - the analogue of the TS
 `RenderableConstructor`. Implementors create an instance given a
 [`RenderContext`](../../core/types.md#rendercontexttrenderable) and options.
 
@@ -60,4 +60,4 @@ through the builder setters on each
 [`core::renderables`](../../core/renderables/renderables.md) widget rather
 than prop structs.
 
-Back to [solid — module overview](../solid.md).
+Back to [solid - module overview](../solid.md).

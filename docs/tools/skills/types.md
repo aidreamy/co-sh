@@ -11,7 +11,7 @@ types implement `Serialize`; the input types additionally derive
 
 ## Output types
 
-### `SkillInfo` — lightweight metadata
+### `SkillInfo` - lightweight metadata
 
 ```rust
 pub struct SkillInfo {
@@ -20,11 +20,11 @@ pub struct SkillInfo {
 }
 ```
 
-Name + description only — the "card" for a skill. `list` and `match_skills`
+Name + description only - the "card" for a skill. `list` and `match_skills`
 return these; the body is deliberately not included (listing 50 skills must
 not dump 50 bodies into context).
 
-### `SkillContent` — the full skill
+### `SkillContent` - the full skill
 
 ```rust
 pub struct SkillContent {
@@ -35,7 +35,7 @@ pub struct SkillContent {
 
 Returned by `read`: the metadata plus the instructions body.
 
-### `SkillOutput` — the discriminated result
+### `SkillOutput` - the discriminated result
 
 ```rust
 pub enum SkillOutput {
@@ -64,7 +64,7 @@ pub enum SkillSource {
 
 Where to look for skills. `Directory` points at a parent directory whose
 subdirectories contain `SKILL.md` files; `Embedded` provides one skill
-directly in memory. The ordering of the `sources` vector matters — the first
+directly in memory. The ordering of the `sources` vector matters - the first
 source wins on name collision.
 
 ### `EmbeddedSkill`
@@ -98,7 +98,7 @@ pub enum SkillAction { List, Read, ReadAsset, Match }
 The four operations, as data. Each variant maps to one
 [action](actions.md).
 
-### `SkillSchema` — the full policy
+### `SkillSchema` - the full policy
 
 ```rust
 pub struct SkillSchema {
@@ -115,7 +115,7 @@ pub struct SkillSchema {
 
 The module has **zero hardcoded policy**: every path, name, and filter is
 carried in the schema. The [`Skills`](skills.md#the-skills-wrapper) wrapper
-builds one of these per call from its configuration — callers normally never
+builds one of these per call from its configuration - callers normally never
 construct one by hand, but the free form exists for direct engine use.
 
 ---
@@ -124,7 +124,7 @@ construct one by hand, but the free form exists for direct engine use.
 
 `SkillsReadInput { name }`, `SkillsReadAssetInput { name, asset_path }`, and
 `SkillsMatchInput { match_paths }` are thin wrappers matching the tool call
-arguments — one field per argument, deserialized straight from JSON.
+arguments - one field per argument, deserialized straight from JSON.
 
 ---
 
@@ -140,6 +140,6 @@ pub enum SkillError {
 ```
 
 The single error type. The variants tell the caller *which kind* of problem
-occurred — a missing skill (`NotFound`) is a normal "nothing here" case,
+occurred - a missing skill (`NotFound`) is a normal "nothing here" case,
 while `PathTraversal` is a security rejection. The `Display` messages are
 meant to be actionable (`"skill not found: foo"`).

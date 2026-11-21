@@ -1,4 +1,4 @@
-# `discover` — finding skills and applying filters
+# `discover` - finding skills and applying filters
 
 Every action starts by discovering skills from the configured
 [`SkillSource`](types.md#skillsource)s. This page is about that pipeline:
@@ -10,7 +10,7 @@ pub fn discover_skills(schema: &SkillSchema) -> Result<Vec<RawSkill>, SkillError
 ```
 
 `discover_skills` iterates the sources **in order**, discovers each one's
-skills, filters them, and deduplicates — producing the list every action then
+skills, filters them, and deduplicates - producing the list every action then
 works from.
 
 ---
@@ -72,7 +72,7 @@ Discovered skills are cached **per source** for the lifetime of the process:
   (or a skill directory is added or removed), the module keeps serving the
   snapshot from the first scan of that source.
 
-This is what makes repeated `skills_*` calls cheap in a long session — the
+This is what makes repeated `skills_*` calls cheap in a long session - the
 filesystem is only touched once per source. It also means new skills require
 a new process (or a source path change) to appear.
 
@@ -83,7 +83,7 @@ sources contribute a skill with the **same name**, the first occurrence wins
 and the later one is dropped with a warning log:
 
 ```
-duplicate skill name 'git' from source 'dir:/home/user/extra' — keeping first occurrence from 'dir:/home/user/.skills'
+duplicate skill name 'git' from source 'dir:/home/user/extra' - keeping first occurrence from 'dir:/home/user/.skills'
 ```
 
 Order your `sources` by priority: the most authoritative source first.
@@ -99,6 +99,6 @@ The two filters apply to skill **names** after discovery:
 | `ignore` | Glob-style patterns; a skill whose name matches any pattern is dropped. Patterns support `*` wildcards (`"deprecated-*"`) plus exact names and the catch-all `"*"`. |
 | `include` | Allowlist of exact names. **Empty = everything passes**; non-empty = only listed names survive. |
 
-Both are simple name matchers (not path globs) — see
+Both are simple name matchers (not path globs) - see
 [match_util](match_util.md). Filters apply uniformly across all four actions,
 so a skill excluded here is invisible to `list`, `read`, and `match` alike.

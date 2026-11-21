@@ -2,7 +2,7 @@
 
 `web` gives the agent two network tools: fetch a URL's content as clean,
 readable markdown, and search the web for current information. It is the
-module's only source of *external* knowledge — everything else works on the
+module's only source of *external* knowledge - everything else works on the
 local filesystem.
 
 | Tool | What it does |
@@ -10,10 +10,10 @@ local filesystem.
 | [`web_fetch`](fetch.md) | Fetch a URL and extract its content as LLM-friendly markdown (boilerplate stripped). |
 | [`web_search`](search.md) | Search the web for a query and return results with titles, snippets, and URLs. |
 
-The design follows the module pattern: a builder-style wrapper —
-[`Web`](#the-web-wrapper) — holds the configuration (result count), and the
+The design follows the module pattern: a builder-style wrapper -
+[`Web`](#the-web-wrapper) - holds the configuration (result count), and the
 operations are thin async methods on it. Both operations are **asynchronous**
-and return `Result<String, String>` — the output is a ready-to-read markdown
+and return `Result<String, String>` - the output is a ready-to-read markdown
 string, not a structured payload.
 
 ---
@@ -35,8 +35,8 @@ fields `description_fetch` and `description_search` carry the ready-to-serve
 MCP tool descriptions for `web_fetch` and `web_search`, exactly like the
 other modules. `Web::default()` is `Web::new()`.
 
-Each operation also exists as a free async function — `fetch(&WebFetch)` and
-`search(&WebSearch)` — that the wrapper methods delegate to.
+Each operation also exists as a free async function - `fetch(&WebFetch)` and
+`search(&WebSearch)` - that the wrapper methods delegate to.
 
 ---
 
@@ -54,7 +54,7 @@ extraction** fallback for fetching. Which path is used depends on two knobs:
 
 The practical consequence: `web_fetch` works entirely locally (reqwest +
 `rs_trafilatura` extraction) when Exa is unreachable or unconfigured, while
-`web_search` always needs Exa (REST or MCP) — there is no local search
+`web_search` always needs Exa (REST or MCP) - there is no local search
 engine. See [fetch](fetch.md) and [search](search.md) for each pipeline.
 
 ---
@@ -64,13 +64,13 @@ engine. See [fetch](fetch.md) and [search](search.md) for each pipeline.
 Both tools return `Result<String, String>`, and the error strings are meant
 to be read by the model: e.g. `"query required"`,
 `"fetch: error sending request …"`, or `"contents 401: …"`. Failures are
-ordinary `Err`s — there is no silent fallback beyond the documented
+ordinary `Err`s - there is no silent fallback beyond the documented
 backends, and no retrying inside the module.
 
 Outputs are deliberately compact markdown:
 
-- **fetch** — the extracted article/content text.
-- **search** — one block per result (`Title:`, `URL:`, `Highlights:` lines),
+- **fetch** - the extracted article/content text.
+- **search** - one block per result (`Title:`, `URL:`, `Highlights:` lines),
   separated by `---`.
 
 Both are sized for the model's context, not for a browser.
@@ -81,7 +81,7 @@ Both are sized for the model's context, not for a browser.
 
 `web_fetch` and `web_search` are **read-only**, so both are exposed in Ask
 mode alongside Build/Yolo. They are not gated by the permission system in
-Build mode (no paths to approve) — only the tools that execute or write
+Build mode (no paths to approve) - only the tools that execute or write
 things require approval.
 
 ---

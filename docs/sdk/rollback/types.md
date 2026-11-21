@@ -6,7 +6,7 @@ from `hashline::snapshots`, reused as-is.
 
 ---
 
-## `RestoreInput` — what to restore
+## `RestoreInput` - what to restore
 
 ```rust
 pub struct RestoreInput {
@@ -24,10 +24,10 @@ pub struct RestoreInput {
 The two fields encode a four-way decision (see the
 [resolution table](core.md#resolution-table)):
 
-- `hash: Some(h)` — restore exactly version `h`.
-- `hash: None` — "step back one" from whatever is currently on disk.
+- `hash: Some(h)` - restore exactly version `h`.
+- `hash: None` - "step back one" from whatever is currently on disk.
 
-## `RestoreOutput` — what happened
+## `RestoreOutput` - what happened
 
 ```rust
 pub struct RestoreOutput {
@@ -49,14 +49,14 @@ pub struct RestoreOutput {
 
 Field-by-field usage:
 
-- **`file_hash` / `header`** — the new anchor. After a restore, an agent
+- **`file_hash` / `header`** - the new anchor. After a restore, an agent
   continues editing from *this* version: `header` is a ready-to-use
   `¶path#HASH` for the next hashline edit.
-- **`replaced_hash`** — the undo handle. Restoring `replaced_hash` puts the
+- **`replaced_hash`** - the undo handle. Restoring `replaced_hash` puts the
   file back where it was before this restore. It is `""` when the file did
-  not exist before the restore (nothing to return to) — never pass it back
+  not exist before the restore (nothing to return to) - never pass it back
   as a hash in that case.
-- **`warning`** — always `Some` when an anomaly was tolerated (external
+- **`warning`** - always `Some` when an anomaly was tolerated (external
   modification, file recreated from history) and `None` on a clean restore.
 
 ## Constants
@@ -74,7 +74,7 @@ singleton at first use (via `InMemorySnapshotStoreOptions`).
 
 ## The store itself
 
-`session_store()` returns `Arc<Mutex<InMemorySnapshotStore>>` — the same
+`session_store()` returns `Arc<Mutex<InMemorySnapshotStore>>` - the same
 type family documented in `hashline::snapshots`.
 The rollback module adds nothing to it: recording, deduplication, per-path
 history, LRU eviction, and `by_hash` lookups are all the store's own

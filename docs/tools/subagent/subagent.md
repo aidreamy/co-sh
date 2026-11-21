@@ -1,6 +1,6 @@
 # The `subagent` module: calling sub-agents
 
-`subagent` lets the agent delegate a task to another agent — either an
+`subagent` lets the agent delegate a task to another agent - either an
 **external ACP agent harness** (gemini, goose, opencode, kilo, claude, codex,
 …) driven through the [Agent Client Protocol](https://agentclientprotocol.com/),
 or the **internal sub-agent** (a nested harness that runs the task with a
@@ -13,13 +13,13 @@ fresh, empty context). Both are reached through a *single* visible tool,
 
 The module has three pieces:
 
-- [`SubAgent`](#the-subagent-wrapper) — the wrapper. Owns the tool
+- [`SubAgent`](#the-subagent-wrapper) - the wrapper. Owns the tool
   description (tailored to the harnesses actually installed) and the
   last-input storage.
-- [`acp`](acp.md) — the external-harness engine: the ACP registry, PATH
+- [`acp`](acp.md) - the external-harness engine: the ACP registry, PATH
   detection, and the full ACP client turn (initialize → session/new →
   session/prompt).
-- [`types`](types.md) — the input and output structs.
+- [`types`](types.md) - the input and output structs.
 
 ---
 
@@ -33,8 +33,8 @@ sub.resolve_input(Some("review this PR".into()))?;   // stores + returns
 sub.resolve_input(None)?;                            // reuses the stored message
 ```
 
-`SubAgent::new()` builds a `description_call` — the ready-to-serve MCP tool
-description for `subagent_call` — and an empty last-input store.
+`SubAgent::new()` builds a `description_call` - the ready-to-serve MCP tool
+description for `subagent_call` - and an empty last-input store.
 `SubAgent::default()` is `SubAgent::new()`.
 
 The wrapper's public surface:
@@ -57,17 +57,17 @@ The wrapper's public surface:
   yet and asking for an `input` argument.
 
 The store is per-instance, and the harness creates one `SubAgent` per agent
-loop — so stored input never leaks across sessions, and no `clean()` is
+loop - so stored input never leaks across sessions, and no `clean()` is
 needed.
 
 ### The tool schema
 
-`description_call`'s `inputSchema` is deliberately permissive — **neither
+`description_call`'s `inputSchema` is deliberately permissive - **neither
 argument is required**:
 
-- `agent` — optional string, restricted to an `enum` of the agent names.
+- `agent` - optional string, restricted to an `enum` of the agent names.
   When omitted (or empty), the call routes to the internal agent.
-- `input` — optional string; falls back to the stored last message.
+- `input` - optional string; falls back to the stored last message.
 
 The `enum` is computed from [`detect_installed()`](acp.md#detect_installed):
 only harnesses found in `PATH` are listed. If none are installed, the enum
@@ -87,7 +87,7 @@ harness advertises auth methods) → `session/new` (rooted at the workspace
 directory) → `session/prompt` with the task as the user message. Agent
 message chunks stream back in real time; the turn ends when the prompt
 response arrives with a stop reason. The engine is documented on the
-[acp page](acp.md). Only agents with **ACP support** are registered — the
+[acp page](acp.md). Only agents with **ACP support** are registered - the
 protocol contract replaces the fragile per-CLI flag scraping of the old
 one-shot integration, so any harness in the official ACP registry works.
 
@@ -97,8 +97,8 @@ The harness intercepts the call and runs a **nested harness** instead:
 
 - starts with an **empty context** (no conversation history, no parent
   state);
-- runs in **auto-approve (Yolo) mode** — no permission dialogs;
-- **persists nothing** — the sub-agent's session state does not survive;
+- runs in **auto-approve (Yolo) mode** - no permission dialogs;
+- **persists nothing** - the sub-agent's session state does not survive;
 - **returns only its final report** as the tool result; its streaming text is
   forwarded live to the TUI;
 - cannot ask the user questions or stop the loop: `ask_questions` and
@@ -133,5 +133,5 @@ The harness wires the module together:
 - The internal sub-agent is a clean-room nested harness: empty context,
   auto-approve, no persistence, final report only.
 
-Next: the [data types](types.md), then the [acp engine](acp.md) — the agent
+Next: the [data types](types.md), then the [acp engine](acp.md) - the agent
 registry and the ACP client turn.

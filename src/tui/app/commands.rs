@@ -1622,6 +1622,7 @@ pub(super) fn build_manual_compaction_harness(
                 aiface::connector::Connector::new(provider)
                     .ok()
                     .map(|mut connector| {
+                        connector = connector.with_service_keyring(morpheus::KEYRING_SERVICE);
                         connector = connector.with_model(model);
                         if let Some(url) = local_base_urls.get(provider) {
                             connector = connector.with_base_url(url.clone());
@@ -1633,8 +1634,9 @@ pub(super) fn build_manual_compaction_harness(
     } else if model == Some("auto") {
         return Err("Auto has no configured models.".to_string());
     } else {
-        let mut connector =
-            aiface::connector::Connector::new(provider).map_err(|error| error.to_string())?;
+        let mut connector = aiface::connector::Connector::new(provider)
+            .map_err(|error| error.to_string())?
+            .with_service_keyring(morpheus::KEYRING_SERVICE);
         if let Some(m) = model {
             connector = connector.with_model(m);
         }

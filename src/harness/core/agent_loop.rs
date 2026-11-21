@@ -810,7 +810,9 @@ impl Harness {
                 let mut switched = false;
                 while !self.fallbacks.is_empty() {
                     let (provider, model) = self.fallbacks.remove(0);
-                    match Connector::new(&provider) {
+                    match Connector::new(&provider)
+                        .map(|c| c.with_service_keyring(crate::KEYRING_SERVICE))
+                    {
                         Ok(c) => {
                             // Carry the session-level prompt-cache settings
                             // across the rebuild: the TTL choice, the cache-

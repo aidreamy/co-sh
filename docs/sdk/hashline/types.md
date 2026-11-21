@@ -1,12 +1,12 @@
 # Hashline data types
 
 The pipeline passes a handful of pure data types around. Everything here is
-plain, `Clone`-able data — no filesystem, no runtime, no schema library.
+plain, `Clone`-able data - no filesystem, no runtime, no schema library.
 This is the vocabulary the rest of the module speaks.
 
 ---
 
-## `Anchor` and `ParsedRange` — line references
+## `Anchor` and `ParsedRange` - line references
 
 ```rust
 pub struct Anchor { pub line: u32 }                       // 1-indexed
@@ -27,9 +27,9 @@ let range_5_to_7 = ParsedRange {
 Line numbers are **1-indexed and inclusive**. `replace 5..7:` names lines 5,
 6, and 7. A range may be a single line (`replace 5:` → `start == end`).
 Out-of-bounds anchors are caught at apply time (`Line N does not exist (file
-has M lines)`), not at parse time — parsing is purely lexical.
+has M lines)`), not at parse time - parsing is purely lexical.
 
-## `Cursor` — where an insert lands
+## `Cursor` - where an insert lands
 
 ```rust
 pub enum Cursor {
@@ -43,11 +43,11 @@ pub enum Cursor {
 `Bof`/`Eof` are **position-stable**: "start of file" and "end of file"
 cannot move with content drift, so `insert head:`/`insert tail:` edits are
 safe to apply even when the section's hash tag is stale (the patcher applies
-them with a warning instead of rejecting — see
+them with a warning instead of rejecting - see
 `HEADTAIL_DRIFT_WARNING`). The anchor forms are the opposite:
 they name a concrete line, so drift makes them suspect.
 
-## `Edit` — one low-level operation
+## `Edit` - one low-level operation
 
 ```rust
 pub enum Edit {
@@ -85,13 +85,13 @@ Edits are produced by the `parser` and consumed by the
   its line span until the file text and language are available, so the
   parser emits a `Block` edit. [`resolve_block_edits`](block.md) expands it
   into the same inserts + deletes that an explicit `replace start..end:`
-  would produce. `apply_edits` panics if it ever sees a `Block` variant —
+  would produce. `apply_edits` panics if it ever sees a `Block` variant -
   that's a wiring bug (`internal error: unresolved \`replace block\` edit
   reached the applier`).
 - **`index` is advisory.** The applier re-derives ordering from array order;
   the parser assigns increasing indices so diagnostics are stable.
 
-## `ApplyResult` — what applying produced
+## `ApplyResult` - what applying produced
 
 ```rust
 pub struct ApplyResult {
@@ -119,25 +119,25 @@ pub struct BlockResolverRequest {
 pub type BlockResolver = fn(BlockResolverRequest) -> Option<BlockSpan>;
 ```
 
-The hashline core declares the contract — "given a file and a line, return
-the syntactic block that begins there" — and lets the host inject the
+The hashline core declares the contract - "given a file and a line, return
+the syntactic block that begins there" - and lets the host inject the
 implementation (a tree-sitter backed resolver, for instance). `None` means
 "no block can be resolved" (unsupported language, blank/out-of-range line,
 no node begins there, syntax error). See [block](block.md) for how the
 result is used and what `Throw` vs `Drop` mean.
 
-## `Replacement` / `ResolveAction` — small markers
+## `Replacement` / `ResolveAction` - small markers
 
 ```rust
 pub enum Replacement { Replacement }        // tags replacement-mode inserts
 pub enum ResolveAction { Throw, Drop }      // what to do with unresolvable blocks
 ```
 
-`Throw` (the default) makes an unresolvable block a hard error — used by the
-authoritative apply and final preview paths. `Drop` silently skips the edit —
+`Throw` (the default) makes an unresolvable block a hard error - used by the
+authoritative apply and final preview paths. `Drop` silently skips the edit -
 used by streaming previews where a half-written file must not throw.
 
-## `SplitOptions` / `StreamOptions` — input knobs
+## `SplitOptions` / `StreamOptions` - input knobs
 
 ```rust
 pub struct SplitOptions {
@@ -155,7 +155,7 @@ pub struct StreamOptions {
 `SplitOptions` feeds [`Patch::parse`](input.md). `cwd` lets a patch authored
 with absolute paths (the common case for model output) be stored with
 cwd-relative paths; `path` provides a fallback header for input that has
-recognizable ops but no `¶PATH` yet — useful for streaming previews before
+recognizable ops but no `¶PATH` yet - useful for streaming previews before
 the model writes the header. `StreamOptions` feeds
 `stream_hash_lines`.
 
@@ -170,7 +170,7 @@ pub struct CompactDiffPreview {
 pub struct CompactDiffOptions { pub max_unchanged_run: Option<u32> }  // default 2
 ```
 
-Produced by `build_compact_diff_preview` — a bounded
+Produced by `build_compact_diff_preview` - a bounded
 preview of the change with unchanged-run truncation.
 
 ---

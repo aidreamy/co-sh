@@ -1,4 +1,4 @@
-# `border` — border characters and styles
+# `border` - border characters and styles
 
 The building blocks for drawing boxes and tables: a set of 11 characters per
 border style, four named styles, and the per-side toggles.
@@ -45,8 +45,8 @@ pub fn parse_border_style(value: Option<&str>, fallback: BorderStyle) -> BorderS
 
 ```rust
 pub struct BorderSidesConfig { pub top: bool, pub right: bool, pub bottom: bool, pub left: bool }
-// BorderSidesConfig::ALL — all four on
-// BorderSidesConfig::NONE — all four off
+// BorderSidesConfig::ALL - all four on
+// BorderSidesConfig::NONE - all four off
 
 pub enum BorderSide { Top, Right, Bottom, Left }
 pub fn get_border_from_sides(sides: BorderSidesConfig) -> Vec<BorderSide>
@@ -80,13 +80,13 @@ pub struct BoxDrawOptions {
 pub enum TitleAlignment { Left, Center, Right }
 ```
 
-`BoxDrawOptions` is a complete description of a bordered box — the same
+`BoxDrawOptions` is a complete description of a bordered box - the same
 information `BoxRenderable` holds, but as a plain struct. `TitleAlignment`
 controls where a box title sits along its border.
 
 ---
 
-## Example — a custom border with only some sides
+## Example - a custom border with only some sides
 
 ```rust,ignore
 use morpheus_tui::core::lib::border::{
@@ -108,4 +108,4 @@ let custom = BorderCharacters { top_left: '+', top_right: '+', bottom_left: '+',
 types directly: `set_border_sides(BorderSidesConfig::ALL)`,
 `set_border_style(BorderStyle::Rounded)`, `set_custom_border_chars(..)`.
 
-Next: [styled_text — chunks and styled strings](styled_text.md).
+Next: [styled_text - chunks and styled strings](styled_text.md).

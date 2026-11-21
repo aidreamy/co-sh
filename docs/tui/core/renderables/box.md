@@ -1,4 +1,4 @@
-# `BoxRenderable` — bordered container
+# `BoxRenderable` - bordered container
 
 A flexbox container with an optional border, background, and titles. This is
 the workhorse *structure* widget: it holds children (which stack vertically
@@ -50,7 +50,7 @@ layout.
 
 `render_self` draws, in order: background fill (if any), then the border
 (with the selected or custom characters), then the top/bottom titles. If
-there is no border and no visible fill, it draws nothing — so a bare
+there is no border and no visible fill, it draws nothing - so a bare
 `BoxRenderable` with no children is an invisible container.
 
 > **Children are not drawn by `render_self`.** Like all container widgets,

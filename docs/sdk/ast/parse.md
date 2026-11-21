@@ -1,4 +1,4 @@
-# `ast::parse` — grammar parsers
+# `ast::parse` - grammar parsers
 
 The simplest module in the crate: one function per language, each returning
 the tree-sitter grammar as an ast-grep `TSLanguage`.
@@ -13,7 +13,7 @@ pub fn language_javascript() -> TSLanguage;
 Every `SupportLang` variant in [`lang`](lang.md) dispatches to exactly one
 of these functions (via the `LanguageExt` impl), so you almost never call
 them directly. They exist as the single place where each grammar crate is
-mapped into ast-grep's `TSLanguage` type — `tree_sitter_rust::LANGUAGE.into()`,
+mapped into ast-grep's `TSLanguage` type - `tree_sitter_rust::LANGUAGE.into()`,
 `tree_sitter_python::LANGUAGE.into()`, and so on (with a few special cases:
 Dockerfile uses `tree_sitter_dockerfile::language()`, PHP the
 `LANGUAGE_PHP_ONLY` variant, TypeScript/TSX their respective
@@ -39,4 +39,4 @@ registry), these functions are the direct access point.
 - Every `SupportLang` variant dispatches to exactly one of these functions via the `LanguageExt` implementation.
 - These functions are the single mapping point from grammar crates to ast-grep's `TSLanguage` type.
 - Most use the standard `LANGUAGE.into()` pattern; special cases exist for Dockerfile, PHP, TypeScript/TSX, OCaml, and XML.
-- Direct use is rare — callers typically use `SupportLang` which dispatches automatically — but these functions exist for direct `TSLanguage` access when needed.
+- Direct use is rare - callers typically use `SupportLang` which dispatches automatically - but these functions exist for direct `TSLanguage` access when needed.

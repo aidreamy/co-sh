@@ -1837,7 +1837,9 @@ impl App {
                                 let event_tx = self.event_tx.clone();
                                 self.tokio_handle.spawn(async move {
                                     let Ok(mut connector) =
-                                        aiface::connector::Connector::new(&provider)
+                                        aiface::connector::Connector::new(&provider).map(|c| {
+                                            c.with_service_keyring(morpheus::KEYRING_SERVICE)
+                                        })
                                     else {
                                         return;
                                     };

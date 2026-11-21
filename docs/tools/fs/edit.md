@@ -1,4 +1,4 @@
-# `edit` — the hashline replace engine
+# `edit` - the hashline replace engine
 
 `edit` applies targeted changes to one or more files. It is the surgical
 alternative to `write`: instead of replacing a whole file, it changes specific
@@ -28,12 +28,12 @@ and compares it with the `file_hash` you passed in:
 
 This is what prevents editing a stale view of a file. It is also why the
 `file_hash` must be copied *verbatim* from the `¶path#TAG` header of a read or
-search result — never re-typed.
+search result - never re-typed.
 
 Order carries intention. Targets are applied **in the order you list them**; an
 edit may build on the result of a previous one. When a target fails, the batch
 stops: earlier targets stay applied (returned with fresh hash tags), and later
-targets are skipped as a consequence of the failure — see
+targets are skipped as a consequence of the failure - see
 [`EditBatchError`](types.md#editbatcherror).
 
 ---
@@ -57,7 +57,7 @@ carries an `ops` string: one operation per line. The operations are:
 Each payload line must begin with `+` (the payload sigil). Multi-line payloads
 repeat the `+` prefix on every line. The parser is deliberately lenient about
 separators (`..`, `-`, `…`, or spaces between range endpoints are all accepted;
-a trailing `:` on `replace`/`insert` headers is optional — for `delete` it is an
+a trailing `:` on `replace`/`insert` headers is optional - for `delete` it is an
 error) but a line that starts with `+` when no body is expected is an error.
 
 A complete `ops` string for a two-part edit:
@@ -72,7 +72,7 @@ insert after 15:
 +// new comment
 ```
 
-Line numbers refer to the file **as it was when you read it** — the hashline
+Line numbers refer to the file **as it was when you read it** - the hashline
 numbers in the `N| text` output. The engine maps them through the content hash
 anchor, so intervening edits to the file are detected rather than silently
 mis-applied.
@@ -111,7 +111,7 @@ telling you the AST schema belongs in `ast`. See
 ## What you get back
 
 Each applied target yields an [`EditResult`](types.md#editresult): the fresh
-hash tag (your new anchor — keep editing without re-reading), the 1-based
+hash tag (your new anchor - keep editing without re-reading), the 1-based
 `first_changed_line`, any `warnings`, and a unified `diff` of the change (only
 when something actually changed). A target whose edit produced no change returns
 a result with `diff: None`.
@@ -129,20 +129,20 @@ A complete runnable example is provided at
 writes a small source file, reads it back to capture its hashline tag, then
 applies a multi-operation edit and prints the resulting diff.
 
-Next: [ast_edit — the AST structural engine](ast_edit.md).
+Next: [ast_edit - the AST structural engine](ast_edit.md).
 
 ---
 
-## Dry run — preview before applying
+## Dry run - preview before applying
 
 Both `targets` and `edits` accept `"dry_run": true` at the top level of the
 arguments. The edit is then applied **in memory only**: the response carries
 the unified `diff`, the fresh `¶path#TAG` header the real edit would produce,
-and the syntax probe's verdict — including the
+and the syntax probe's verdict - including the
 *"This edit introduced a syntax error near line N"* advisory when the result
 would no longer parse. Nothing is written: no file changes, no rollback
 record, no passive LSP pull. The result's warnings end with
-*"Dry run: nothing was written — reissue without `dry_run` to apply"* and the
+*"Dry run: nothing was written - reissue without `dry_run` to apply"* and the
 `dry_run: true` marker is set on the result so a preview can never be
 mistaken for an applied edit.
 
@@ -152,7 +152,7 @@ advisory, fix the range if needed, then re-issue the same arguments without
 
 ---
 
-## The `edits` argument — the content replace engine
+## The `edits` argument - the content replace engine
 
 `targets` addresses lines; **`edits` addresses content**. Each edit replaces an
 exact `old_string` with `new_string`:
@@ -171,8 +171,8 @@ let results = fs.edit(args).await?;
 
 Rules and behavior:
 
-- **Exact, unique match.** `old_string` must match the file verbatim — all
-  whitespace and newlines included — and must occur exactly once, unless
+- **Exact, unique match.** `old_string` must match the file verbatim - all
+  whitespace and newlines included - and must occur exactly once, unless
   `replace_all: true` is set. Use the smallest snippet that is unique; add
   surrounding context to disambiguate.
 - **Still hash-anchored.** `file_hash` is required (for the first edit of each
@@ -184,19 +184,19 @@ Rules and behavior:
 - **Line-granular translation.** A partial-line match keeps its surrounding
   context (`prefix + replacement + suffix` on the affected lines); empty
   `new_string` deletes the matched text. After applying, the result is
-  verified against the exact character-level replacement — if the hashline
+  verified against the exact character-level replacement - if the hashline
   engine's boundary/indent repair would alter it, the edit is rejected
   (nothing is written) and the model is pointed at `targets`.
 - **Line-terminator boundaries.** A match ending with a newline followed by
   `new_string` without one joins the replacement with the next line (exact
   character semantics); when there is no following line (the file's final
-  newline), only a whole-line deletion is expressible — anything else is
+  newline), only a whole-line deletion is expressible - anything else is
   rejected with a diagnostic instead of silently dropping the trailing
   newline.
 - **Rejections teach.** Zero matches run a fuzzy closest-match search over
   the file (whitespace/typo-tolerant similarity, ported from oh-my-pi) and
   report the nearest region: similarity %, line, and the first differing
-  line as `-`/`+` — or the preview windows of every occurrence when the text
+  line as `-`/`+` - or the preview windows of every occurrence when the text
   is ambiguous. The fuzzy result is advisory only: it NEVER substitutes
   anything; the model re-issues with the corrected exact text.
 

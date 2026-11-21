@@ -1,4 +1,4 @@
-# `elements::hooks` — event-callback registration
+# `elements::hooks` - event-callback registration
 
 Hooks register callbacks for UI events (resize, keyboard, paste, focus,
 selection). **Port status: mostly scaffolded.** Only `on_resize` actually
@@ -40,4 +40,4 @@ own event loop (e.g. the `InputRenderable`/`TextareaRenderable` methods in
 [`core::renderables`](../../core/renderables/renderables.md)) rather than
 these hooks.
 
-Next: [slot — slot placeholder system](slot.md).
+Next: [slot - slot placeholder system](slot.md).

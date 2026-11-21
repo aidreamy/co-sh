@@ -1,4 +1,4 @@
-# `DiffRenderable` — unified and split diffs
+# `DiffRenderable` - unified and split diffs
 
 Renders a unified-diff text (as produced by `git diff` / `diff -u`) with
 per-line coloring, line numbers, and a choice of **unified** or **split**
@@ -15,9 +15,9 @@ pub enum DiffViewMode { Unified, Split }
 // set_view_mode(DiffViewMode)
 ```
 
-- **Unified** — one column; added lines on their own rows, removed lines on
+- **Unified** - one column; added lines on their own rows, removed lines on
   their own, context lines shared.
-- **Split** — two side-by-side panels: removed lines on the left, added on
+- **Split** - two side-by-side panels: removed lines on the left, added on
   the right, aligned into paired change blocks.
 
 ## Content
@@ -75,4 +75,4 @@ view.set_view_mode(DiffViewMode::Unified);
 // view.render_self(&mut buf, area);
 ```
 
-Next: [text_table — bordered grid table](text_table.md).
+Next: [text_table - bordered grid table](text_table.md).

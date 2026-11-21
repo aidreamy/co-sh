@@ -1,7 +1,7 @@
-# `match_util` — glob matching helpers
+# `match_util` - glob matching helpers
 
 Two small matching helpers power the rest of the module. They are public so
-the sibling modules can share them, but they are **engine internals** — the
+the sibling modules can share them, but they are **engine internals** - the
 [`Skills`](skills.md#the-skills-wrapper) wrapper's `match_skills` is the
 user-facing API that uses them.
 
@@ -10,7 +10,7 @@ pub fn globs_match_any(globs: &[String], paths: &[String]) -> bool
 pub fn name_matches_glob(pattern: &str, name: &str) -> bool
 ```
 
-## `globs_match_any` — path globs (for `match_skills`)
+## `globs_match_any` - path globs (for `match_skills`)
 
 Returns `true` when **any** glob in `globs` matches **any** path in `paths`.
 This is the matcher behind the `Match` action:
@@ -22,12 +22,12 @@ This is the matcher behind the `Match` action:
   is empty or contains no compiling pattern matches nothing.
 
 This is why a skill declares `globs: ["**/*.sql"]` and then matches any
-workspace containing a `.sql` file — one call to `globs_match_any` decides it.
+workspace containing a `.sql` file - one call to `globs_match_any` decides it.
 
-## `name_matches_glob` — name patterns (for `ignore`/`include`)
+## `name_matches_glob` - name patterns (for `ignore`/`include`)
 
 A deliberately **simple** matcher for skill *names*, used by the discovery
-filters. It is not a full glob engine — just enough for human-readable name
+filters. It is not a full glob engine - just enough for human-readable name
 patterns:
 
 | Pattern | Matches |

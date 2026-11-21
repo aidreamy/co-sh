@@ -1,4 +1,4 @@
-# `search` — the vector search pipeline
+# `search` - the vector search pipeline
 
 `search` turns a `RecallSearchInput` into a ranked list of matching entries.
 It is a thin, well-defined pipeline over the `morpheus-recall` `VecDb` wrapper:
@@ -24,7 +24,7 @@ code.
    vector dimension mismatch: input has 5, but table schema has 3
    ```
 
-   This is a hard error, not a truncation — a wrong dimension means the
+   This is a hard error, not a truncation - a wrong dimension means the
    caller used the wrong embedding model, and the results would be
    meaningless. The input's `vector_dim` is metadata (it tells the caller
    which model to use); the table schema is the source of truth.
@@ -50,7 +50,7 @@ code.
 
 A `query_vector` whose length does not match the table dimension is handled
 by the underlying `VecDb::get`, which returns an empty result set rather
-than an error — the dimension check on `vector_dim` is the guard that
+than an error - the dimension check on `vector_dim` is the guard that
 catches the mismatch up front.
 
 ---

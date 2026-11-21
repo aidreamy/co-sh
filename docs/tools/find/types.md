@@ -4,15 +4,15 @@ Both find tools are driven by plain, `serde`-derived structs that double as
 the JSON schema for the MCP tool arguments. This page is the reference for
 those types. It is organized in three parts:
 
-1. Request types — what you pass **in** to `glob` and `grep`.
-2. Config structs — the internal `Glob`/`Grep` option bundles.
-3. Response types — what you get **back**.
+1. Request types - what you pass **in** to `glob` and `grep`.
+2. Config structs - the internal `Glob`/`Grep` option bundles.
+3. Response types - what you get **back**.
 
 ---
 
 ## Request types
 
-### `GlobInput` — the `find_glob` arguments
+### `GlobInput` - the `find_glob` arguments
 
 ```rust
 pub struct GlobInput {
@@ -35,7 +35,7 @@ its own glob characters (`src/*.rs`), the target's glob wins and `pattern` is
 ignored. When the target is a plain directory, `pattern` applies within it.
 See [glob](glob.md#how-targets-and-patterns-combine) for the full rules.
 
-### `GrepInput` — the `find_grep` arguments
+### `GrepInput` - the `find_grep` arguments
 
 ```rust
 pub struct GrepInput {
@@ -47,7 +47,7 @@ pub struct GrepInput {
     pub file_type: Option<String>,  // restrict by language, e.g. "rust"
     pub ignore_case: Option<bool>,  // default: false
     pub max_count: Option<u32>,     // match cap; disables file-window paging
-    pub skip: Option<u32>,          // files to skip — page past the window
+    pub skip: Option<u32>,          // files to skip - page past the window
     pub context_before: Option<u32>,// context lines before each match
     pub context_after: Option<u32>, // context lines after each match
     pub hidden: Option<bool>,       // effective default: true
@@ -79,7 +79,7 @@ morpheus_tools::find::glob(&glob, "**", "src")?;
 `GlobCallOptions` is the schema-driven bundle for `Find::glob_full`, so the
 call signature stays small as the schema grows. It carries `file_type`,
 `hidden`, `gitignore`, `max_results`, `format`, `sort_by_mtime`, and
-`timeout_ms` — each `Option`, falling back to the builder value, then to the
+`timeout_ms` - each `Option`, falling back to the builder value, then to the
 tool default.
 
 ---
@@ -110,7 +110,7 @@ pub struct GlobOutput {
 }
 ```
 
-`formatted` is **always present**, even for empty results — the model never has
+`formatted` is **always present**, even for empty results - the model never has
 to reconstruct grouping from the structured entries. When no `format` was
 requested it is the plain newline-joined paths. Directories are rendered with a
 trailing `/`.
@@ -138,8 +138,8 @@ pub struct GrepMatchEntry {
 
 pub struct GrepFileEntry {
     pub path: String,       // same form as the match paths
-    pub file_hash: String,  // 4-hex tag — the `file_hash` for `fs_edit`
-    pub header: String,     // "¶abs/path#TAG" — the hashline anchor
+    pub file_hash: String,  // 4-hex tag - the `file_hash` for `fs_edit`
+    pub header: String,     // "¶abs/path#TAG" - the hashline anchor
 }
 
 pub struct GrepOutput {
@@ -159,11 +159,11 @@ pub struct GrepOutput {
 `total_matches` is the deduplicated per-line union across targets *before* the
 per-file caps and window trim (so two matches on the same line of the same file
 count once; itself bounded by the engine's per-file fetch and per-target
-ceiling) — a reliable lower bound even when matches were trimmed. With
+ceiling) - a reliable lower bound even when matches were trimmed. With
 `line_range`, it is the count of in-range matches.
 
 The `files` array is the bridge to editing: each shown file within the anchor
 window (the first 20 in encounter order) carries a `path`, a `file_hash`, and a
 `header` like `¶/abs/path#TAG`. Pair a match's `path` with the matching
-`file_hash` and pass both to `fs_edit` — no re-read needed. See
+`file_hash` and pass both to `fs_edit` - no re-read needed. See
 [grep](grep.md#editing-matches-directly).

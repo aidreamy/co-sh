@@ -122,17 +122,17 @@ async fn run_tui(options: cli::LaunchOptions) {
 /// Diagnostic for the OS credential store backing the API keys.
 ///
 /// Read-only: reports, per provider, whether a key is available from the
-/// environment and/or from the keyring (service `morpheus`), plus a write/read/
-/// delete roundtrip through the native store to prove end-to-end connectivity.
+/// environment and/or from the keyring, plus a write/read/delete roundtrip
+/// through the native store to prove end-to-end connectivity.
 fn check_keyring() {
-    use aiface::connector::{COSH_SERVICE, known_providers_with_env};
+    use aiface::connector::known_providers_with_env;
     use keyring::Entry;
 
     let mut rows: Vec<(String, bool, bool)> = Vec::new();
     let mut read_errors = 0usize;
     for (provider, env_var) in known_providers_with_env() {
         let env = std::env::var(env_var).is_ok();
-        let keyring = match Entry::new(COSH_SERVICE, env_var) {
+        let keyring = match Entry::new(morpheus::KEYRING_SERVICE, env_var) {
             Ok(entry) => entry.get_password().is_ok(),
             Err(err) => {
                 read_errors += 1;
@@ -151,8 +151,9 @@ fn check_keyring() {
             .unwrap_or_else(|| "<unset>".to_string())
     );
     println!(
-        "  keys : {} stored under service \"{COSH_SERVICE}\"",
-        rows.iter().filter(|(_, _, kr)| *kr).count()
+        "  keys : {} stored under service \"{}\"",
+        rows.iter().filter(|(_, _, kr)| *kr).count(),
+        morpheus::KEYRING_SERVICE
     );
     println!();
     println!("{:<16} {:<6} {:<8} source", "provider", "env", "keyring");
@@ -174,7 +175,7 @@ fn check_keyring() {
     // Write/read/delete roundtrip to prove the native store works end to end.
     let selftest_key = "__morpheus_selftest";
     let roundtrip = (|| -> Result<(), keyring::Error> {
-        let entry = Entry::new(COSH_SERVICE, selftest_key)?;
+        let entry = Entry::new(morpheus::KEYRING_SERVICE, selftest_key)?;
         entry.set_password("roundtrip-ok")?;
         let value = entry.get_password()?;
         let ok = value == "roundtrip-ok";

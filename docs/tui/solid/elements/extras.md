@@ -1,7 +1,7 @@
-# `elements::extras` — `DynamicRenderable`
+# `elements::extras` - `DynamicRenderable`
 
 `DynamicRenderable` wraps another renderable that is resolved **at
-construction time** from the [component catalogue](catalogue.md) by name —
+construction time** from the [component catalogue](catalogue.md) by name -
 the morpheus-tui analogue of SolidJS's `<Dynamic>` component.
 
 ```rust
@@ -36,4 +36,4 @@ Because the inner widget is resolved once at construction, this is a
 convenience for name-based component selection, not a live indirection
 mechanism.
 
-Next: [hooks — event-callback registration](hooks.md).
+Next: [hooks - event-callback registration](hooks.md).

@@ -1,8 +1,8 @@
-# `frontmatter` — the `SKILL.md` format
+# `frontmatter` - the `SKILL.md` format
 
 A skill's `SKILL.md` starts with a small YAML-like frontmatter block between
 `---` delimiters, followed by the skill body. The module ships its own
-purpose-built parser for this format — deliberately a subset of YAML, enough
+purpose-built parser for this format - deliberately a subset of YAML, enough
 for the fields the skill standard needs:
 
 ```markdown
@@ -15,7 +15,7 @@ alwaysApply: true
 ---
 # Git skill
 
-The body — the actual instructions the agent follows.
+The body - the actual instructions the agent follows.
 ```
 
 The four recognized fields:
@@ -40,7 +40,7 @@ above:
 - **CRLF is normalized to LF** first, so Windows-written skill files parse
   correctly.
 - **No opening `---`:** the whole content is treated as body, with default
-  (empty) frontmatter. The skill still exists — its name falls back to the
+  (empty) frontmatter. The skill still exists - its name falls back to the
   directory name and its description is empty.
 - **No closing `---`:** the frontmatter fields up to the end of the file are
   parsed, and the body is **empty**. (A malformed file gives you metadata but
@@ -49,7 +49,7 @@ above:
   lines inside the frontmatter.
 - **Quoted values** have their surrounding quotes stripped.
 - **`description: |` block scalars** collect the following indented lines,
-  dedented to their common indentation and joined with newlines — useful for
+  dedented to their common indentation and joined with newlines - useful for
   multi-sentence descriptions.
 
 A few formats are *not* supported: inline lists (`globs: ["a", "b"]`),

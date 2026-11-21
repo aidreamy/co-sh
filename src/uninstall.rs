@@ -157,7 +157,7 @@ fn report_dry_run(reason: Option<&str>) {
     let mut stored = 0usize;
     say("  - remove these provider API keys from the OS credential store:");
     for (provider, env_var) in aiface::connector::known_providers_with_env() {
-        let has_key = keyring::Entry::new(aiface::connector::COSH_SERVICE, env_var)
+        let has_key = keyring::Entry::new(crate::KEYRING_SERVICE, env_var)
             .ok()
             .and_then(|e| e.get_password().ok())
             .is_some();
@@ -413,7 +413,7 @@ async fn enqueue_and_flush(
 fn remove_keyring_credentials() -> bool {
     let mut failures = 0usize;
     for (_provider, env_var) in aiface::connector::known_providers_with_env() {
-        let removed = match keyring::Entry::new(aiface::connector::COSH_SERVICE, env_var) {
+        let removed = match keyring::Entry::new(crate::KEYRING_SERVICE, env_var) {
             Ok(entry) => match entry.delete_credential() {
                 Ok(()) => true,
                 // NoEntry is the normal case for providers whose key was

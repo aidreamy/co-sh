@@ -1,4 +1,4 @@
-# `TextNodeRenderable` — a tree of styled text
+# `TextNodeRenderable` - a tree of styled text
 
 A tree model for styled text. Unlike `TextRenderable` (a flat list of
 chunks), `TextNodeRenderable` lets you build **nested** text: a root node
@@ -10,7 +10,7 @@ parents (like CSS inheritance). Flattening the tree produces the
 TextNodeRenderable::new(options: TextNodeOptions) -> Self
 ```
 
-`TextNodeRenderable` does **not** implement `Renderable` — it's a data model
+`TextNodeRenderable` does **not** implement `Renderable` - it's a data model
 for text, not a widget. You flatten it to chunks and feed those to a
 `TextRenderable`, or use it directly in logic that builds styled output.
 
@@ -67,7 +67,7 @@ pub struct InheritedStyle {
     pub attributes: u32,
     pub link: Option<UrlLink>,
 }
-// InheritedStyle::new() — all defaults
+// InheritedStyle::new() - all defaults
 
 pub fn merge_styles(&self, parent_style: &InheritedStyle) -> InheritedStyle
 pub fn gather_with_inherited_style(&mut self, parent_style: &InheritedStyle) -> Vec<TextChunk>
@@ -76,9 +76,9 @@ pub fn to_chunks(&mut self, parent_style: &InheritedStyle) -> Vec<TextChunk>
 
 Inheritance rules in `merge_styles`:
 
-- `fg` / `bg` / `link` — the node's value wins; `None` falls through to the
+- `fg` / `bg` / `link` - the node's value wins; `None` falls through to the
   parent's.
-- `attributes` — **bitwise OR** of node and parent (attributes accumulate).
+- `attributes` - **bitwise OR** of node and parent (attributes accumulate).
 
 `gather_with_inherited_style` walks the tree depth-first: each text leaf
 becomes a `TextChunk` styled with its effective inherited style, and each
@@ -118,4 +118,4 @@ assert_eq!(chunks.len(), 2);
 assert_ne!(chunks[1].attributes & morpheus_tui::core::types::TextAttributes::BOLD.bits(), 0);
 ```
 
-Next: [markdown — the full markdown renderer](markdown/markdown.md).
+Next: [markdown - the full markdown renderer](markdown/markdown.md).

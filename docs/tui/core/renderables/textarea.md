@@ -1,4 +1,4 @@
-# `TextareaRenderable` — multi-line editor
+# `TextareaRenderable` - multi-line editor
 
 A full multi-line text editor widget: cursor movement, selection, line
 operations, undo/redo, configurable key bindings, and a submit callback.
@@ -19,7 +19,7 @@ TextareaRenderable::new(options: TextareaOptions) -> Self
 | `placeholder_color` | muted | Placeholder color. |
 | `key_bindings` | `None` (defaults) | [`TextareaKeyBinding`](#textareaaction--key-bindings) list. |
 | `wrap` | `true` | Word-wrap long lines. |
-| `min_height` / `max_height` | — | Editor height bounds. |
+| `min_height` / `max_height` | - | Editor height bounds. |
 
 ```rust
 pub struct TextareaKeyBinding {
@@ -70,7 +70,7 @@ set_placeholder(Option<String>)
 
 ## Editing commands
 
-All return `bool` — `true` when the command changed state:
+All return `bool` - `true` when the command changed state:
 
 | Group | Methods |
 |---|---|
@@ -80,7 +80,7 @@ All return `bool` — `true` when the command changed state:
 | History | `undo()`, `redo()` |
 | Select | `select_all()` |
 
-Example — a small "submit on Enter" loop:
+Example - a small "submit on Enter" loop:
 
 ```rust,ignore
 use morpheus_tui::core::renderables::textarea::{TextareaRenderable, TextareaOptions};
@@ -98,4 +98,4 @@ assert_eq!(editor.value(), "line one\nline two");
 Styling: `set_focused_background_color` / `set_focused_text_color` take
 `Option<ColorInput>`.
 
-Next: [select — vertical option list](select.md).
+Next: [select - vertical option list](select.md).

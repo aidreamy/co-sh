@@ -23,12 +23,12 @@ earlier message selection.
 1. Mask tool results ONLY on the model's explicit `mask_tool_result` request
    (tail masking): the newest tool result is replaced by a typed reference,
    retaining its raw payload and source ID in history. Masking never runs
-   deterministically and never touches mid-history positions — a mutation at
+   deterministically and never touches mid-history positions - a mutation at
    position *k* invalidates the exact-prefix prompt cache of every provider
    for everything after *k*, while a tail mutation is cache-neutral. User
    instructions and the live TODO block are not masking targets. The tool
    lives only in the tool schema (part of the cached `tools → system` prefix);
-   forgetting to call it is harmless — the LLM compaction below stays the
+   forgetting to call it is harmless - the LLM compaction below stays the
    structural fallback.
 2. Reserve a recent raw window (20% of the effective context budget), preserving
    native tool-call/result pairs. Automatic checkpointing covers the older

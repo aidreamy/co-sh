@@ -1,6 +1,6 @@
-# `reconciler` — DOM-node operations
+# `reconciler` - DOM-node operations
 
-Free functions that mutate a renderable tree the way a DOM API would —
+Free functions that mutate a renderable tree the way a DOM API would -
 create, insert, remove, and set properties on nodes. The "DOM" here is the
 [`Renderable`](../core/renderable.md) tree, and every node is a
 `Box<dyn Renderable>`:
@@ -10,7 +10,7 @@ pub type DomNode = Box<dyn Renderable>;
 ```
 
 These are the operations a virtual-DOM reconciler (or a SolidJS-style
-framework) would call. **Port status: partially implemented** — creation,
+framework) would call. **Port status: partially implemented** - creation,
 insertion, removal, and a few property setters work; several inspection
 helpers are stubs.
 
@@ -34,7 +34,7 @@ pub fn insert_node(parent: &mut DomNode, node: &mut DomNode, anchor: Option<&str
 pub fn remove_node(parent: &mut DomNode, node_id: &str)
 ```
 
-`insert_node` attaches `node` to `parent` — before the child whose `id()`
+`insert_node` attaches `node` to `parent` - before the child whose `id()`
 equals `anchor` when given, otherwise appended. The node is moved out of its
 old box (`std::mem::replace` with a fresh `RootRenderable`), so the caller's
 variable is left as a harmless placeholder. `remove_node` detaches by id.
@@ -69,7 +69,7 @@ complete:
 | `is_text_node(_node) -> bool` | Always `false`. |
 | `get_parent_node(_node) -> Option<&DomNode>` | Always `None`. |
 | `get_next_sibling(_node) -> Option<&DomNode>` | Always `None`. |
-| `get_first_child(node)` | **Implemented** — the node's first child, or `None`. |
+| `get_first_child(node)` | **Implemented** - the node's first child, or `None`. |
 
 ## Example
 
@@ -96,4 +96,4 @@ assert!(root.children().len() == 1);
 remove_node(&mut root, root.children()[0].id());
 ```
 
-Next: [renderer — the renderer traits](renderer/renderer.md).
+Next: [renderer - the renderer traits](renderer/renderer.md).

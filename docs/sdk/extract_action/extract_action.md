@@ -4,7 +4,7 @@
 generates text; somewhere in that text there may be a JSON object describing a
 tool to invoke (`{"name": "fs.read", "arguments": {...}}`). This module finds
 those objects, **validates them against the registered tool schemas**, and
-yields clean, typed call data — in one shot over a full response
+yields clean, typed call data - in one shot over a full response
 ([`extract_batch`](extract.md)) or incrementally as the stream arrives
 ([`extract_stream`](extract.md)).
 
@@ -26,14 +26,14 @@ markdown fences, prefix it with prose, split it across stream chunks, quote
 their own strings, and invent envelope shapes. `extract_action` is built for
 that reality:
 
-- **Tolerant JSON** — through the vendored [`jsonish`](jsonish.md) parser,
+- **Tolerant JSON** - through the vendored [`jsonish`](jsonish.md) parser,
   malformed JSON gets repaired rather than rejected.
-- **Envelope flexibility** — `name`/`tool`/`function` are accepted as the
+- **Envelope flexibility** - `name`/`tool`/`function` are accepted as the
   tool-name key; `arguments`/`input`/`args`/`parameters` as the arguments key.
-- **Schema validation** — a candidate must match the registered tool's input
+- **Schema validation** - a candidate must match the registered tool's input
   schema (`required` fields, `type`/`const`/`oneOf` checks) before it is
   surfaced as a call.
-- **Fence awareness** — JSON inside a *real* markdown code fence (opening
+- **Fence awareness** - JSON inside a *real* markdown code fence (opening
   backticks at a line start) is display text, never a tool call. A `` ``` ``
   merely *quoted* mid-line does not toggle fence state.
 
@@ -60,8 +60,8 @@ as correction feedback.
 
 For schema failures the warning carries a **repair hint**: the rejected
 payload (truncated) plus an "expected arguments" line. When the failing
-tool's `ToolSchema.example_args` is set — the harness populates it from a
-tool description's curated `exampleArgs` — the hint shows that complete,
+tool's `ToolSchema.example_args` is set - the harness populates it from a
+tool description's curated `exampleArgs` - the hint shows that complete,
 copy-pasteable example; otherwise it falls back to a type-only skeleton
 derived from the schema. The example is the stronger feedback: it encodes
 optional fields and conditional rules the skeleton cannot express, letting
@@ -87,7 +87,7 @@ it registers schemas, runs batch and streaming extractions over realistic
 model output, shows validation failures, and drives the jsonish parser
 directly.
 
-Next: [extract — the extractor](extract.md), then [jsonish — the tolerant
+Next: [extract - the extractor](extract.md), then [jsonish - the tolerant
 parser](jsonish.md).
 
 ---

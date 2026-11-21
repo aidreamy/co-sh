@@ -1,4 +1,4 @@
-# `lib` — the shared building blocks
+# `lib` - the shared building blocks
 
 The `lib` module collects the low-level primitives that widgets, the
 renderer, and applications all share. Each one is a small, focused module:
@@ -12,13 +12,13 @@ renderer, and applications all share. Each one is a small, focused module:
 | `lib/detect_links.rs` | [detect_links](detect_links.md) | URL detection in highlighted text. |
 | `lib/terminal_palette.rs` | [terminal_palette](terminal_palette.md) | OSC-4 terminal palette detection. |
 
-These types appear everywhere in the core API — a `TextChunk` carries
+These types appear everywhere in the core API - a `TextChunk` carries
 `RGBA` colors and a `u32` attribute mask; a `BoxRenderable` draws its border
 from `BorderCharacters`; the markdown and code renderables rely on
 `unicode_util` to lay out graphemes and on `rgba` to interpret color inputs.
 
 Start with [rgba](rgba.md) (colors) and [unicode_util](unicode_util.md)
-(widths) — nearly every renderable touches both.
+(widths) - nearly every renderable touches both.
 
 ---
 
@@ -31,4 +31,4 @@ Start with [rgba](rgba.md) (colors) and [unicode_util](unicode_util.md)
 - `unicode_util`: grapheme display widths, `word_wrap` for proper text measurement and wrapping.
 - `detect_links`: URL detection in highlighted text for interactive links.
 - `terminal_palette`: OSC-4 terminal palette detection for color theming.
-- These types appear throughout the core API — `TextChunk` carries `RGBA` colors and attribute masks, `BoxRenderable` draws borders from `BorderCharacters`, markdown/code renderables rely on `unicode_util` for layout and `rgba` for color interpretation.
+- These types appear throughout the core API - `TextChunk` carries `RGBA` colors and attribute masks, `BoxRenderable` draws borders from `BorderCharacters`, markdown/code renderables rely on `unicode_util` for layout and `rgba` for color interpretation.

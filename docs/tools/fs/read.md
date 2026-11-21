@@ -1,8 +1,8 @@
-# `read` — reading files, symbols, and line ranges
+# `read` - reading files, symbols, and line ranges
 
 `read` displays the contents of one or more files for the model. It is the
-foundation of the whole [`fs` module](fs.md): everything you do — editing,
-rolling back — begins by reading a file and copying the hashline tag and line
+foundation of the whole [`fs` module](fs.md): everything you do - editing,
+rolling back - begins by reading a file and copying the hashline tag and line
 numbers from its output.
 
 ```
@@ -24,10 +24,10 @@ what the output looks like.
 A [`Target`](types.md#target--one-read-request) selects *how much* of a file to
 show. Remember the precedence rules:
 
-1. `symbol` — a definition by name, checked first, wins over everything.
-2. `line_range` — exact lines, plain slice, checked before `line`.
-3. `line` — the syntactic block containing a line.
-4. neither — the whole file.
+1. `symbol` - a definition by name, checked first, wins over everything.
+2. `line_range` - exact lines, plain slice, checked before `line`.
+3. `line` - the syntactic block containing a line.
+4. neither - the whole file.
 
 ### 1. Whole-file read
 
@@ -54,11 +54,11 @@ The `¶src/main.rs#3C4D` header is your anchor: copy the tag `3C4D` when you edi
 the file later. Whole-file reads record every line as "seen", so later edits
 anchoring any of those lines are safe.
 
-### 2. Read by line — a syntactic block
+### 2. Read by line - a syntactic block
 
 Set `line` to a 1-based line number. The reader does **not** return just that
-line: it uses tree-sitter to resolve the *syntactic block containing it* — the
-enclosing function, struct, impl, enum, trait, or module — and returns the whole
+line: it uses tree-sitter to resolve the *syntactic block containing it* - the
+enclosing function, struct, impl, enum, trait, or module - and returns the whole
 block. This is the right tool when you want, say, "the function around line 40".
 
 ```rust,ignore
@@ -69,7 +69,7 @@ If the line does not begin a valid block, or the file has no grammar for the
 line to resolve against, the read falls back to the whole file and reports a
 warning explaining the likely causes.
 
-### 3. Read by symbol — a definition by name
+### 3. Read by symbol - a definition by name
 
 Set `symbol` to the name of a function, struct, class, or variable. The reader
 searches the file for the definition and returns its block. When `path` is a
@@ -84,13 +84,13 @@ Target { path: "src/greeter.rs".into(), line: None, symbol: Some("greet".into())
 Target { path: "src".into(), line: None, symbol: Some("main".into()), line_range: None }
 ```
 
-A directory read without a `symbol` is an error — the tool refuses to dump an
+A directory read without a `symbol` is an error - the tool refuses to dump an
 entire tree. If the symbol is not found anywhere, one result is returned with a
 warning telling you to verify the spelling.
 
-### 4. Read by `line_range` — exact lines, no AST
+### 4. Read by `line_range` - exact lines, no AST
 
-Sometimes you already know precisely which lines you need — for example, a block
+Sometimes you already know precisely which lines you need - for example, a block
 was elided in a previous read and the footer told you to re-read lines `30-80`.
 `line_range` gives you a plain slice with **no AST resolution**:
 
@@ -113,9 +113,9 @@ Every result is one [`ReadResult`](types.md#readresult): a `path`, the content
 hash `file_hash`, the hashline `header`, the numbered `content`, and optional
 `warnings`. The `content` is composed of three parts:
 
-1. **The hashline header** — `¶path#TAG`, the anchor for edits.
-2. **Numbered lines** — `N| text`, 1-based, the numbers you reference in edits.
-3. **Content notices** — appended after the body, informing the model about
+1. **The hashline header** - `¶path#TAG`, the anchor for edits.
+2. **Numbered lines** - `N| text`, 1-based, the numbers you reference in edits.
+3. **Content notices** - appended after the body, informing the model about
    elision and how to continue. These are *not* warnings; warnings are reserved
    for delivery problems (missing file, bad range, symbol not found).
 
@@ -153,7 +153,7 @@ block, notice it is elided, re-read the exact range, edit precisely.
 
 Every line the read surfaces is recorded against the file's hash tag in the
 session's rollback history. This matters for safety: if an edit later anchors a
-line the model never actually saw — for example an elided interior — the
+line the model never actually saw - for example an elided interior - the
 recovery path can warn instead of silently applying an edit against an unknown
 body.
 
@@ -184,6 +184,6 @@ when a result's `content` is missing or surprising.
 A complete runnable example is provided at
 [`examples/fs/read.rs`](../../../crates/morpheus-tools/examples/fs/read.rs). It
 creates a scratch project, writes a small source file, and demonstrates all four
-read modes — whole file, line block, symbol, and exact ranges.
+read modes - whole file, line block, symbol, and exact ranges.
 
-Next: [write — creating and overwriting files](write.md).
+Next: [write - creating and overwriting files](write.md).

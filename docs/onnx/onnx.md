@@ -1,8 +1,8 @@
 # The `morpheus-onnx` crate: making a decision from structured state
 
 `morpheus-onnx` runs a small ONNX decision model over JSON state. It is useful
-when an application needs a bounded answer — a choice, a score or a yes/no
-probability — rather than an open-ended generation.
+when an application needs a bounded answer - a choice, a score or a yes/no
+probability - rather than an open-ended generation.
 
 The crate is split into two layers:
 

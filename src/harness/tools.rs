@@ -732,6 +732,7 @@ fn config_to_embedder(
         } => {
             let mut connector = aiface::connector::Connector::new(provider)
                 .map_err(|e| format!("connector error: {e}"))?
+                .with_service_keyring(crate::KEYRING_SERVICE)
                 .with_model(model);
             if let Some(url) = _base_urls.get(provider) {
                 connector = connector.with_base_url(url.clone());

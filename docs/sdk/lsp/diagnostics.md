@@ -24,7 +24,7 @@ always absolute with a leading `/`.
 
 ## Change tracking
 
-A global `AtomicU64` version bumps on every **real** mutation — identical
+A global `AtomicU64` version bumps on every **real** mutation - identical
 re-publishes (tsserver re-emitting on file events) are detected by equality
 and do NOT bump. A `watch` channel mirrors the version for cheap change
 detection without polling the map itself.
@@ -34,8 +34,8 @@ detection without polling the map itself.
 `wait_for_settle(cap)` sleeps one full debounce window (300 ms), compares
 the global version before vs after, and returns:
 
-- `true` — no mutation during the window (quiet)
-- `false` — cap elapsed while still churning
+- `true` - no mutation during the window (quiet)
+- `false` - cap elapsed while still churning
 
 The cap may overshoot by up to one debounce window: the sleep always runs to
 completion before the deadline is consulted.

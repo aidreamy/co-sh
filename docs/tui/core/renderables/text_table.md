@@ -1,4 +1,4 @@
-# `TextTableRenderable` — bordered grid table
+# `TextTableRenderable` - bordered grid table
 
 Draws a grid of styled cells with an optional box-drawing border, computed
 column widths, and padding. Use it for tabular data.
@@ -63,4 +63,4 @@ table.set_padding_x(2);
 // table.render_self(&mut buf, area);
 ```
 
-Next: [ascii_font — ASCII-art font](ascii_font.md).
+Next: [ascii_font - ASCII-art font](ascii_font.md).

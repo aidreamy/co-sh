@@ -93,7 +93,7 @@ PostToolUse hooks run **after** a successful tool execution and **before** the r
 ### Key differences from PreToolUse
 
 - The stdin payload includes a `tool_output` field with the raw tool result.
-- `updated_input` is ignored — the tool already ran, so rewriting its input has no effect.
+- `updated_input` is ignored - the tool already ran, so rewriting its input has no effect.
 - `deny` **cannot un-run the tool**. Instead, it appends a `[hook] <reason>` warning line to the output the model sees. This is useful for flagging suspicious output without blocking execution.
 - `context` is appended to the tool output the model sees.
 - `halt` stops the turn immediately (same as PreToolUse).
@@ -107,7 +107,7 @@ PostToolUse hooks run **after** a successful tool execution and **before** the r
       {
         "name": "Flag large file reads",
         "matcher": "fs_read",
-        "command": "output_len=$(echo '{\"tool_output\":\"\"}' | wc -c); if [ \"$output_len\" -gt 10000 ]; then echo '{\"decision\": \"deny\", \"reason\": \"Large output detected — review before trusting\"}'; fi"
+        "command": "output_len=$(echo '{\"tool_output\":\"\"}' | wc -c); if [ \"$output_len\" -gt 10000 ]; then echo '{\"decision\": \"deny\", \"reason\": \"Large output detected - review before trusting\"}'; fi"
       }
     ]
   }
@@ -206,7 +206,7 @@ Tool Execution → Hooks (context/deny-as-warning/halt) → History
 
 ## Notes
 
-- Hooks run **synchronously** — keep them fast.
+- Hooks run **synchronously** - keep them fast.
 - Invalid regex in `matcher` is silently skipped (hook won't run).
 - Duplicate commands are deduplicated (first wins).
 - The `timeout` field kills the hook process after N seconds if it hasn't finished.

@@ -1,4 +1,4 @@
-# `rgba` — colors
+# `rgba` - colors
 
 `RGBA` is the color type used throughout morpheus-tui. It stores an 8-bit-per-
 channel color plus an *intent* (how the color was specified) and an optional
@@ -26,19 +26,19 @@ Hex parsing quirks worth knowing:
 - A leading `#` is optional and stripped.
 - `#abc` expands to `#aabbcc`; `#abcd` expands to `#aabbccdd`.
 - Invalid input (bad length or non-hex digits) returns **magenta**
-  `RGBA::from_values(1.0, 0.0, 1.0, 1.0)` — the classic "invalid color"
-  sentinel — rather than failing.
+  `RGBA::from_values(1.0, 0.0, 1.0, 1.0)` - the classic "invalid color"
+  sentinel - rather than failing.
 - `rgb_to_hex(&RGBA) -> String` produces `#rrggbb` (or `#rrggbbaa` when
   alpha ≠ 255).
 
 ## Reading colors
 
-- `to_ints() -> (u8, u8, u8, u8)` — raw channels.
-- `r() / g() / b() / a() -> f32` — normalized `0.0..=1.0`.
-- `map(f) -> (R, R, R, R)` — apply a function to all four channels.
-- `equals(other: Option<&Self>) -> bool` — equality against an `Option`
+- `to_ints() -> (u8, u8, u8, u8)` - raw channels.
+- `r() / g() / b() / a() -> f32` - normalized `0.0..=1.0`.
+- `map(f) -> (R, R, R, R)` - apply a function to all four channels.
+- `equals(other: Option<&Self>) -> bool` - equality against an `Option`
   (handy for `Option<RGBA>` fields).
-- `Display` — prints `rgba(0.50, 0.20, 0.10, 1.00)`.
+- `Display` - prints `rgba(0.50, 0.20, 0.10, 1.00)`.
 
 Setters `set_r/set_g/set_b/set_a(f32)` mutate a channel, clamping to
 `0.0..=1.0`.
@@ -54,7 +54,7 @@ palette, 16–231 are the 6×6×6 color cube, 232–255 are the grayscale ramp.
 `normalize_indexed_color_index(index)` is the identity today but exists so the
 index can be normalized centrally.
 
-## `ColorInput` — where colors come from
+## `ColorInput` - where colors come from
 
 Widgets accept colors as `Option<ColorInput>`:
 
@@ -104,4 +104,4 @@ assert_eq!(transparent.to_ints(), (0, 0, 0, 0));
 assert_eq!(RGBA::from_hex("#nope").to_ints(), (255, 0, 255, 255)); // magenta sentinel
 ```
 
-Next: [border — border characters and styles](border.md).
+Next: [border - border characters and styles](border.md).

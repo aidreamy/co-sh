@@ -1,9 +1,9 @@
-# `recovery` — rescuing stale edits
+# `recovery` - rescuing stale edits
 
 When an edit's hash tag no longer matches the live file, the patcher hands
 the situation to [`Recovery`](recovery.md). Recovery's job: decide whether
-the edit can be **replayed safely** onto drifted content, and if so, do it
-— producing the merged result plus warnings that tell the caller what
+the edit can be **replayed safely** onto drifted content, and if so, do it -
+producing the merged result plus warnings that tell the caller what
 happened.
 
 Recovery is stateless apart from the `SnapshotStore` it
@@ -15,7 +15,7 @@ queries. `Recovery::new(store)` and `Recovery::try_recover(&RecoveryArgs)`.
 file), `file_hash` (the stale tag), and `edits`:
 
 1. **Look up the snapshot the tag names.** If no snapshot was ever recorded
-   for that tag, recovery declines — the tag is unrecognized (fabricated or
+   for that tag, recovery declines - the tag is unrecognized (fabricated or
    cross-session), and the caller surfaces the "hash is not from this
    session" mismatch.
 2. **Replay + 3-way merge.** Apply the edits to the *snapshot's* text (the
@@ -28,7 +28,7 @@ file), `file_hash` (the stale tag), and `edits`:
 3. **Session-chain fallback.** If the tagged version was *not* the most
    recent snapshot (a prior in-session edit advanced the hash), and the
    3-way merge refused, try replaying the edits onto the live content
-   directly — but only when **line counts match** and **every anchor line's
+   directly - but only when **line counts match** and **every anchor line's
    content is identical** between the snapshot and the live file. Both
    guards together still don't fully prove correctness (a coincidental
    insert+delete pair on duplicate rows can land on the wrong row), so this
@@ -43,13 +43,13 @@ file), `file_hash` (the stale tag), and `edits`:
 
 | Warning | When |
 |---|---|
-| `Recovered from a stale file hash using a previous read snapshot (file changed externally between read and edit).` | The tagged snapshot is the head — the file drifted because of an *external* write. |
-| `Recovered from a stale file hash using an earlier in-session snapshot (the file hash advanced after a prior edit in this session).` | The tagged snapshot is *not* the head — a prior in-session edit advanced the hash. |
-| `Recovered by replaying your edits onto the current file content — your previous edit in this session changed line(s) you re-targeted with a stale hash. Verify the diff matches your intent before continuing.` | The session-chain fallback was taken (the less-certain mode). |
+| `Recovered from a stale file hash using a previous read snapshot (file changed externally between read and edit).` | The tagged snapshot is the head - the file drifted because of an *external* write. |
+| `Recovered from a stale file hash using an earlier in-session snapshot (the file hash advanced after a prior edit in this session).` | The tagged snapshot is *not* the head - a prior in-session edit advanced the hash. |
+| `Recovered by replaying your edits onto the current file content - your previous edit in this session changed line(s) you re-targeted with a stale hash. Verify the diff matches your intent before continuing.` | The session-chain fallback was taken (the less-certain mode). |
 
 ## When recovery declines
 
-Recovery returns `None` — and the patcher rejects with a `MismatchError` —
+Recovery returns `None` - and the patcher rejects with a `MismatchError` -
 when:
 
 - the tag resolves to no snapshot (`hash_recognized: false`),

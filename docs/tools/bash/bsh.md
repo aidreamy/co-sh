@@ -1,4 +1,4 @@
-# `bsh` — the bash executor engine
+# `bsh` - the bash executor engine
 
 `bsh` is the part of the module that actually talks to the operating system.
 While the [`Bash`](bash.md#the-bash-wrapper) wrapper holds configuration and is
@@ -13,17 +13,17 @@ The engine exposes one public function and two internal spawners:
 | [`run(timeout_ms, env, pty, command, cwd)`](#run--the-free-function) | Validate, then stream the command; dispatches to a spawner. |
 | `spawn_bash(env, cwd, command, timeout_ms)` | The piped (non-PTY) spawner. |
 | `spawn_bash_pty(env, cwd, command, timeout_ms)` | The PTY spawner (Unix and Windows). |
-| `liveness.rs` — watchdog | Samples the child's process tree (CPU time, I/O counters, output) and kills it when no progress signal fires for the quiescence window. |
+| `liveness.rs` - watchdog | Samples the child's process tree (CPU time, I/O counters, output) and kills it when no progress signal fires for the quiescence window. |
 
 Both spawners return `Pin<Box<dyn Stream<Item = Result<SpawnOutput,
-io::Error>>>>` — note the `Result` per item. `run` wraps whichever spawner
+io::Error>>>>` - note the `Result` per item. `run` wraps whichever spawner
 was chosen and **filters out the `Err` items**, so its stream only yields
 `Ok(SpawnOutput)`. This is the source of the "stream errors are dropped" note
 on the [types page](types.md).
 
 ---
 
-## `run` — the free function
+## `run` - the free function
 
 ```rust,ignore
 pub fn run<'a>(
@@ -55,9 +55,9 @@ On Windows, `spawn_bash` and `spawn_bash_pty` never spawn a bare `"bash"`:
 ignoring the Windows `cwd`. Instead, the executor resolves a Git Bash
 (`bash.exe`) once, in this order:
 
-1. `where.exe bash.exe` — the first hit that is not `System32\…` or a
+1. `where.exe bash.exe` - the first hit that is not `System32\…` or a
    `WindowsApps` store alias (respects the user's `PATH`);
-2. the standard Git-for-Windows locations — `…\Git\bin\bash.exe` preferred
+2. the standard Git-for-Windows locations - `…\Git\bin\bash.exe` preferred
    (a login wrapper that puts Git's POSIX tools on the child's `PATH`), then
    `…\Git\usr\bin\bash.exe`.
 
@@ -86,7 +86,7 @@ A few notes on how they are written:
 
 - The `rm`/`chmod`/`chown` patterns demand a literal `/` right after the
   flags (`\b` only anchors the start of the command word), so `rm -rf /` and
-  `rm -rf /tmp/x` are caught while `rm -rf ./vendor` passes — `./vendor`
+  `rm -rf /tmp/x` are caught while `rm -rf ./vendor` passes - `./vendor`
   starts with `.`, not `/`.
 - The `> /etc/…` and `> /dev/sd…` patterns are unanchored: they match any
   `>` immediately followed by the path, so **both** the truncating
@@ -101,7 +101,7 @@ A few notes on how they are written:
 
 ---
 
-## `spawn_bash` — the piped path
+## `spawn_bash` - the piped path
 
 `spawn_bash` builds a `tokio::process::Command::new("bash")` and runs
 `bash -c <command>` with `cwd`, `stdin` from `/dev/null`, and piped
@@ -121,28 +121,28 @@ Ordering and flags:
 
 ### Timeout mechanics (hard runtime cap)
 
-`timeout_ms = Some(ms)` is the **hard runtime cap** — the last line of
+`timeout_ms = Some(ms)` is the **hard runtime cap** - the last line of
 defense, not the primary hang guard. It arms a `sleep_until(now + ms)`
 deadline; when it fires the child is killed, a `runtime cap: …` stderr item
 explains the kill, and the stream yields a final `signal: Some(-1)`,
 `exit_code: None`, empty-buffers item. The special case `Some(0)` never reads
-output — the child is spawned and killed immediately — so the result is
+output - the child is spawned and killed immediately - so the result is
 exactly one deterministic kill item. (The PTY path short-circuits even
 earlier, before spawning; see below.)
 
-With a nonzero cap, output already read before the deadline is preserved —
+With a nonzero cap, output already read before the deadline is preserved -
 the cap items always come last, after any chunks the child managed to write.
 
 ### Liveness watchdog (the primary hang guard)
 
 Every spawner arms the liveness watchdog from `bash/liveness.rs`. It samples
 the child's whole process tree (descendants included, via parent-link walk)
-for three progress signals — new output, growing accumulated CPU time,
-growing I/O counters — and kills the tree when **none** fires for 120
+for three progress signals - new output, growing accumulated CPU time,
+growing I/O counters - and kills the tree when **none** fires for 120
 seconds (`liveness watchdog: …` stderr item + final `signal: Some(-1)`
 item). Any signal resets the counter, so active long runs (builds,
 downloads) are never cut; a CPU-burning busy loop is the one thing it cannot
-detect — that is what the hard runtime cap above is for.
+detect - that is what the hard runtime cap above is for.
 
 A second, immediate escape covers the orphan case: when the main child has
 **exited** but orphaned descendants keep the output channel open (piped fd
@@ -161,7 +161,7 @@ empty stream through the wrapper.
 
 ---
 
-## `spawn_bash_pty` — the PTY path
+## `spawn_bash_pty` - the PTY path
 
 The PTY path uses `portable_pty` to give the child a real terminal. It differs
 from the piped path in several ways:
@@ -172,7 +172,7 @@ from the piped path in several ways:
 - **Sizing.** The PTY is 24 rows × 80 columns.
 - **Bridging.** `portable_pty`'s I/O is synchronous, so the reader runs in a
   `tokio::task::spawn_blocking` task and sends chunks through an unbounded
-  `mpsc` channel — one extra buffer copy per chunk.
+  `mpsc` channel - one extra buffer copy per chunk.
 - **Signal mapping.** `portable_pty::ExitStatus::signal()` returns the libc
   `strsignal(3)` *description* (e.g. `"Killed"`), not the constant name; a
   table maps each description back to the numeric signal so PTY and piped
@@ -180,12 +180,12 @@ from the piped path in several ways:
   `None`. As in the piped path, `exit_code` is `None` when the process died
   by a signal, `Some(n)` otherwise.
 
-### Timeouts — platform split
+### Timeouts - platform split
 
 Because the reader blocks inside a blocking thread, the async cap cannot
 just abort it; how the blocking side is interrupted differs per platform:
 
-**Unix — the self-pipe trick.** A `pipe2` created before the blocking task
+**Unix - the self-pipe trick.** A `pipe2` created before the blocking task
 unblocks the blocking `poll(2)`:
 
 1. The read end moves into the blocking task; the write end stays on the
@@ -197,12 +197,12 @@ unblocks the blocking `poll(2)`:
    pipe fd readable, breaks out, kills and reaps the child, then sends the
    final `signal: Some(-1)` item.
 
-The unsafe code is confined to three sites — pipe creation (`pipe2`), the
-timeout-side `write` + `close`, and the blocking-side `poll`/`read`/`close` —
+The unsafe code is confined to three sites - pipe creation (`pipe2`), the
+timeout-side `write` + `close`, and the blocking-side `poll`/`read`/`close` -
 and each fd is created once, consumed on one side, and closed exactly once
 (verified by inspection in the source).
 
-**Windows — ConPTY.** The ConPTY output pipe never reaches EOF when the child
+**Windows - ConPTY.** The ConPTY output pipe never reaches EOF when the child
 exits (the conhost side keeps the pipe handle open), so termination is driven
 by the child's status rather than by EOF:
 
@@ -210,7 +210,7 @@ by the child's status rather than by EOF:
    `ChildKiller` lets the async side kill the child on cap or watchdog kill
    (`TerminateProcess`).
 2. bash under ConPTY emits a DSR cursor query (`ESC[6n`) at startup and
-   blocks until the terminal answers — the stream detects the sequence in
+   blocks until the terminal answers - the stream detects the sequence in
    the output and replies `ESC[1;1R` through the PTY writer.
 3. When the watcher reports the reaped child, the reader gets a short drain
    window for in-flight chunks, then the final status item is emitted and

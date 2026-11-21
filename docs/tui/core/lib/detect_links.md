@@ -1,4 +1,4 @@
-# `detect_links` — URL detection in highlighted text
+# `detect_links` - URL detection in highlighted text
 
 Turns syntax-highlighter output into clickable text. Given the raw content, a
 set of highlight ranges (with their token scopes), and the already-built
@@ -54,4 +54,4 @@ assert_eq!(linked[0].link.as_ref().map(|l| l.url.as_str()), Some("https://exampl
 The label pull-in means a `[label](url)` markdown pair highlights both the
 label and the URL as the same link target.
 
-Next: [terminal_palette — OSC-4 palette detection](terminal_palette.md).
+Next: [terminal_palette - OSC-4 palette detection](terminal_palette.md).

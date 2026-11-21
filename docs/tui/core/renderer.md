@@ -1,4 +1,4 @@
-# `renderer` — driving the frame loop
+# `renderer` - driving the frame loop
 
 `Renderer` owns the terminal and the renderable tree, and pushes one frame to
 the screen per call. It is the "managed" render path: you give it a
@@ -13,7 +13,7 @@ Renderer::new(terminal: Terminal<B>, config: RendererConfig) -> Self   // B: rat
 
 ## Configuration
 
-`RendererConfig` is a plain struct with a `Default` — start from
+`RendererConfig` is a plain struct with a `Default` - start from
 `RendererConfig::default()` and override what you need:
 
 | Field | Default | Meaning |
@@ -65,11 +65,11 @@ renderer.root_mut().add_child(Box::new(my_widget));
 
 `render_frame` does three things:
 
-1. **Measure** — read the terminal's current size.
-2. **Layout** — rebuild a `LayoutTree`, walk the renderable tree calling
+1. **Measure** - read the terminal's current size.
+2. **Layout** - rebuild a `LayoutTree`, walk the renderable tree calling
    `build_style()` on every node, solve layout at the measured size, and
    hand each node its computed `taffy::Layout` via `apply_layout`.
-3. **Draw** — call `terminal.draw`, rendering the root into the frame's
+3. **Draw** - call `terminal.draw`, rendering the root into the frame's
    `Buffer` via `render_self`.
 
 ## Typical app loop
@@ -96,4 +96,4 @@ When `gather_stats` is on, `RendererStats` holds `fps`, `frame_count`,
 `frame_times`, and `average/min/max_frame_time`. `RendererFrameEvent` carries
 `frame_id` for per-frame hooks.
 
-Next: [syntax_style — the style registry](syntax_style.md).
+Next: [syntax_style - the style registry](syntax_style.md).

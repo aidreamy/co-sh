@@ -1,8 +1,8 @@
-# `renderables` — the widget library
+# `renderables` - the widget library
 
 Ready-made [`Renderable`](../renderable.md) implementations. Each widget owns
 its state, draws itself into a [`Buffer`](https://docs.rs/ratatui) within a
-given `Rect`, and — for interactive widgets — exposes methods to mutate its
+given `Rect`, and - for interactive widgets - exposes methods to mutate its
 state (typing, moving a selection, scrolling).
 
 | Widget | Source file | Page | Focusable |
@@ -28,17 +28,17 @@ state (typing, moving a selection, scrolling).
 Every widget follows the same pattern (documented in
 [`renderable`](../renderable.md)):
 
-1. **Construct** — `Widget::new(..)` mints a unique `num`, an `id` like
+1. **Construct** - `Widget::new(..)` mints a unique `num`, an `id` like
    `"box-1"`, and default styling.
-2. **Configure** — builder-style `set_*` methods for content, colors,
+2. **Configure** - builder-style `set_*` methods for content, colors,
    behavior. Colors are `Option<ColorInput>` (see [`rgba`](../lib/rgba.md)).
-3. **Compose** — container widgets (`BoxRenderable`, `ScrollBoxRenderable`)
+3. **Compose** - container widgets (`BoxRenderable`, `ScrollBoxRenderable`)
    accept children via `add_child(Box<dyn Renderable>) -> usize`.
-4. **Draw** — `render_self(&self, buf, area)` writes into the buffer.
+4. **Draw** - `render_self(&self, buf, area)` writes into the buffer.
 
 Interactive widgets (input, select, tab select, textarea, scroll bar,
-slider) additionally expose **state mutation methods** — `insert_text`,
-`move_down`, `move_left` — that an application drives from its input loop.
+slider) additionally expose **state mutation methods** - `insert_text`,
+`move_down`, `move_left` - that an application drives from its input loop.
 
 ## Composing a screen
 

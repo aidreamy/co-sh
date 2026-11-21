@@ -2,7 +2,7 @@
 
 `hashline` is the **edit engine** behind `morpheus-tools`' `fs_edit` tool. It
 parses a small, line-anchored patch language and applies the resulting edits
-to files — safely, with content-hash validation against drift and, when the
+to files - safely, with content-hash validation against drift and, when the
 file changed between read and edit, automatic 3-way-merge recovery against a
 cached snapshot.
 
@@ -11,7 +11,7 @@ morpheus-tools fs_edit  ──  hashline text  ──▶  Patch::parse  ──�
                     (¶path#TAG + ops)      (sections)          (validate + apply)
 ```
 
-If you only ever use `morpheus-tools`, you never touch this module directly —
+If you only ever use `morpheus-tools`, you never touch this module directly -
 `fs_edit` is the wrapper. This documentation exists for anyone embedding the
 engine in their own tool (an editor, a CI linter, an agent harness), and to
 explain *why* `fs_edit` behaves the way it does.
@@ -37,7 +37,7 @@ replace 5..7:
 Three properties follow from this design:
 
 1. **No searching.** `replace 5..7:` means "lines 5 through 7", nothing more.
-   The payload is only the *final desired content* — never both old and new.
+   The payload is only the *final desired content* - never both old and new.
 2. **Staleness is detectable.** The `#0A3` tag is a 4-hex fingerprint of the
    whole file's normalized text (see [`format`](format.md)). If the live file
    hashes to something else, the edit is *known* to be stale.
@@ -46,7 +46,7 @@ Three properties follow from this design:
    engine replays the edit against that snapshot and 3-way-merges the result
    onto the live file (see [recovery](recovery.md)).
 
-The tag is **required** on every section that edits an existing file — the
+The tag is **required** on every section that edits an existing file - the
 engine refuses edits that can't be validated (`Missing hashline snapshot tag
 for edit to …`). New files are created with `write`, not `edit`.
 
@@ -92,14 +92,14 @@ Hashline is deliberately split into stages with a clean boundary between
 | Resolve blocks | [block](block.md) | yes | Expand `replace block N:` against file text + language |
 | Apply | [apply](apply.md) | yes | Execute the edits on a text body in memory |
 | Normalize | `normalize` | yes | BOM stripping, LF normalization, line-ending round-trip |
-| Store snapshots | `snapshots` | — | Record full-file versions + their tags (trait, LRU default) |
+| Store snapshots | `snapshots` | - | Record full-file versions + their tags (trait, LRU default) |
 | Validate + write | [patcher](patcher.md) | no | Read file → check tag → recover → write back |
-| Recover | [recovery](recovery.md) | — | 3-way-merge stale edits onto drifted content |
+| Recover | [recovery](recovery.md) | - | 3-way-merge stale edits onto drifted content |
 
 The boundary matters: `Patch::parse` and `apply_edits` never touch the
 filesystem, so they're trivially testable and usable in memory-only
 settings. The `Patcher` is the only stage that performs I/O, through the
-[`Filesystem`](fs.md) trait — which is why a single patch against a
+[`Filesystem`](fs.md) trait - which is why a single patch against a
 directory, a database, or an in-memory map looks identical to the parser.
 
 ---
@@ -110,7 +110,7 @@ directory, a database, or an in-memory map looks identical to the parser.
   [`Filesystem`](fs.md) trait (`DiskFilesystem` and `InMemoryFilesystem`
   ship).
 - **It does not create files.** `Patcher::prepare` errors on a missing
-  target (`File not found: … Use the write tool to create new files.`) —
+  target (`File not found: … Use the write tool to create new files.`) -
   creation is the `write` tool's job. (At the *parsing* level, pure
   `insert head:`/`insert tail:` literals are flagged as safe-for-new-files
   via `PatchSection::has_anchor_scoped_edit`, but the patcher still rejects
@@ -137,7 +137,7 @@ Next: the [types](types.md) the pipeline passes around, then the
 ## Summary
 
 - `hashline` is the edit engine behind `morpheus-tools`' `fs_edit` tool, parsing a line-anchored patch language and applying edits with content-hash validation and 3-way-merge recovery.
-- Core design: anchored edits (line numbers + content-hash tag) instead of diffs — no searching, staleness detectable, stale edits often rescueable via 3-way merge.
+- Core design: anchored edits (line numbers + content-hash tag) instead of diffs - no searching, staleness detectable, stale edits often rescueable via 3-way merge.
 - Language constructs: section headers (`¶path#TAG`), replace/delete/insert operations (with line ranges), and block operations (resolve syntactic blocks).
 - Pipeline stages: tokenize → parse → split → resolve blocks → apply → normalize → store snapshots → validate + write → recover.
 - Pure parsing/I/O boundary: `Patch::parse` and `apply_edits` never touch filesystem (testable, memory-only); `Patcher` is the only I/O stage through `Filesystem` trait.

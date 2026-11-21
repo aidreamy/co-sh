@@ -1,9 +1,9 @@
-# `renderable` — the trait and node model
+# `renderable` - the trait and node model
 
 Every element that can appear on screen implements the `Renderable` trait.
 This page is the contract those widgets live by: what a renderable *is*, the
-methods the framework calls, and the two ready-made implementations —
-[`RenderableNode`](#renderablenode) and [`RootRenderable`](#rootrenderable) —
+methods the framework calls, and the two ready-made implementations -
+[`RenderableNode`](#renderablenode) and [`RootRenderable`](#rootrenderable) -
 that most widgets build on.
 
 ```rust
@@ -31,14 +31,14 @@ pub trait Renderable {
 
 ## Identity: `id`, `num`, `parent_num`
 
-- **`id()`** — a stable string identifier, unique among siblings, used by
+- **`id()`** - a stable string identifier, unique among siblings, used by
   `remove_child`/`insert_child_before` to find a child. Widgets mint ids like
   `"box-1"`, `"text-2"`, `"md-3"` from an atomic counter.
-- **`num()`** — a globally unique `u64` assigned at construction (also from an
+- **`num()`** - a globally unique `u64` assigned at construction (also from an
   atomic counter). `num` is the *parent link* currency: `set_parent_num` /
   `parent_num` track which renderable adopted this one, so a widget can find
   its ancestors without holding references.
-- **`parent_num()`** — `Some(num)` once adopted by another renderable, `None`
+- **`parent_num()`** - `Some(num)` once adopted by another renderable, `None`
   for the root.
 
 ## Lifecycle flags
@@ -65,8 +65,8 @@ Every widget returns `self` for both.
 ## Drawing: `render_self` / `render`
 
 `render_self(&self, buf, area)` is the core drawing method: write the widget's
-visuals into the ratatui `Buffer` within `area` (a `Rect`). It takes `&self`
-— the widget must be internally consistent at draw time.
+visuals into the ratatui `Buffer` within `area` (a `Rect`). It takes `&self` -
+the widget must be internally consistent at draw time.
 
 `render(buf, area, delta_time)` is the per-frame wrapper the renderer calls:
 by default it just forwards to `render_self`, but a widget can override it to
@@ -86,7 +86,7 @@ fn insert_child_before(&mut self, child: Box<dyn Renderable>, anchor_id: &str) -
 by `id`. `insert_child_before` inserts before the child whose `id()` is
 `anchor_id`, returning the insertion index, or `None` if the anchor isn't a
 child. The default `children_mut` returns an empty slice, so widgets that
-don't hold children (like `TextRenderable`) need not override it — but any
+don't hold children (like `TextRenderable`) need not override it - but any
 widget that *does* hold children must, or layout and traversal will never see
 them.
 
@@ -102,16 +102,16 @@ The managed renderer drives layout through these defaulted methods:
 
 ## Focus & interaction
 
-- `focus()` / `blur()` — called by the framework when focus moves.
-- `process_mouse_event(&mut self, event: &MouseEvent) -> bool` — handle a mouse
+- `focus()` / `blur()` - called by the framework when focus moves.
+- `process_mouse_event(&mut self, event: &MouseEvent) -> bool` - handle a mouse
   event; return `true` if consumed (stops propagation).
-- `request_render()` — ask the renderer to redraw.
-- `opacity()` / `set_opacity(v)` — blend factor, default `1.0`.
-- `z_index()` / `set_z_index(v)` — stacking order, default `0`.
-- `live()` / `set_live(v)` — whether the widget wants continuous redraws.
-- `on_update(delta_time)` — per-frame update hook.
-- `on_resize(width, height)` — resize notification.
-- `destroy()` — teardown.
+- `request_render()` - ask the renderer to redraw.
+- `opacity()` / `set_opacity(v)` - blend factor, default `1.0`.
+- `z_index()` / `set_z_index(v)` - stacking order, default `0`.
+- `live()` / `set_live(v)` - whether the widget wants continuous redraws.
+- `on_update(delta_time)` - per-frame update hook.
+- `on_resize(width, height)` - resize notification.
+- `destroy()` - teardown.
 
 ---
 
@@ -139,7 +139,7 @@ pub fn adopt_child(
 ## `RenderableNode`
 
 A concrete, reusable implementation of the trait's bookkeeping. It stores the
-identity, flags, parent link, children, and layout node — everything except
+identity, flags, parent link, children, and layout node - everything except
 the drawing itself. Widgets can either embed a `RenderableNode` and delegate,
 or replicate the pattern directly (most widgets in this crate replicate it,
 since they add their own fields).
@@ -157,7 +157,7 @@ node.set_layout_node(node)
 
 ## `RootRenderable`
 
-The top of the tree. It's a `Renderable` whose `render_self` does nothing —
+The top of the tree. It's a `Renderable` whose `render_self` does nothing -
 its job is to be the parent every top-level widget is attached to, so the
 renderer has a single root to walk:
 
@@ -185,7 +185,7 @@ renderer.render_frame(0.0)?;
 
 The minimal widget needs: an identity, the lifecycle flags, `as_any`/`as_any_mut`,
 `render_self`, and child management. Everything else has a sensible default.
-A tiny example — a label that draws "hello" at the area's top-left:
+A tiny example - a label that draws "hello" at the area's top-left:
 
 ```rust,ignore
 struct Label { id: String, num: u64 }
@@ -214,12 +214,12 @@ impl Renderable for Label {
 }
 ```
 
-In practice you rarely write a renderable from scratch — the
+In practice you rarely write a renderable from scratch - the
 [`renderables`](renderables/renderables.md) library already covers text, boxes,
 markdown, inputs, selects, scrollbars, tables, and more, and `RenderableNode`
 handles the bookkeeping if you do.
 
-Next: [types — attributes, mouse events, selection](types.md).
+Next: [types - attributes, mouse events, selection](types.md).
 
 ---
 
@@ -235,4 +235,4 @@ Next: [types — attributes, mouse events, selection](types.md).
 - Focus & interaction: `focus()`/`blur()`, `process_mouse_event()` (return true if consumed), `request_render()`, opacity/z-index/live flags, `on_update`/`on_resize`/`destroy` hooks.
 - Free helpers: `adopt_child`/`adopt_child_before` set parent link and push child; widgets typically delegate to these.
 - `RenderableNode`: concrete reusable implementation of bookkeeping (identity, flags, parent link, children, layout node); widgets can embed it or replicate the pattern.
-- `RootRenderable`: top of tree with `render_self` that does nothing — parent for all top-level widgets so renderer has single root to walk.
+- `RootRenderable`: top of tree with `render_self` that does nothing - parent for all top-level widgets so renderer has single root to walk.

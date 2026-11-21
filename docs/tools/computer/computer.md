@@ -9,11 +9,11 @@ on:
 |---|---|
 | [`apps`](apps.md) | List running applications, or resolve which element holds keyboard focus. |
 | [`snapshot`](snapshot.md) | Read an application's accessibility tree as an outline or JSON. |
-| [`screenshot`](screenshot.md) | Capture the desktop — optionally drawing boxes on elements and returning copy-ready selectors. |
+| [`screenshot`](screenshot.md) | Capture the desktop - optionally drawing boxes on elements and returning copy-ready selectors. |
 | [`windows`](windows.md) | List an application's windows and manage ONE of them (activate, minimize, close, move…). |
 | [`wait`](wait.md) | Block until an element reaches a state, a value lands, or an event arrives; time out with a diagnosis. |
 | [`act`](act.md) | Invoke an element's semantic action layer (press, toggle, set_value, …). |
-| [`control`](control.md) | Chain pointer and keyboard steps — real clicks, real typing. |
+| [`control`](control.md) | Chain pointer and keyboard steps - real clicks, real typing. |
 | [`surface`](surface.md) | Target the desktop itself: menu bar, taskbar, tray, flyouts. |
 | [`errors`](errors.md) | How failures are rendered: every error teaches the next step. |
 
@@ -24,18 +24,18 @@ on:
 Almost every desktop task follows the same loop, and the module is shaped
 around it:
 
-1. **See** what is there — [`computer_snapshot`](snapshot.md) for the
+1. **See** what is there - [`computer_snapshot`](snapshot.md) for the
    accessibility tree (the structured truth), [`computer_screenshot`](screenshot.md)
    for pixels (what the user actually perceives).
 2. **Address** the element you care about. Every tool accepts the same
-   CSS-like selector grammar — `button[name='Export']`,
-   `window[name='Main'] > group`, `list_item:nth(3)` — so a snapshot line
+   CSS-like selector grammar - `button[name='Export']`,
+   `window[name='Main'] > group`, `list_item:nth(3)` - so a snapshot line
    converts directly into an act or control call.
-3. **Act** on it — [`computer_act`](act.md) when the element exposes a
+3. **Act** on it - [`computer_act`](act.md) when the element exposes a
    semantic action (most buttons, fields and toggles do);
    [`computer_control`](control.md) when you need a real OS click (the one
    reliable way to move keyboard focus) or raw pointer work.
-4. **Wait** for the consequence — [`computer_wait`](wait.md) blocks on the
+4. **Wait** for the consequence - [`computer_wait`](wait.md) blocks on the
    element state you expect (a dialog appearing, a spinner detaching), a
    VALUE landing (`value: "100%"`), or a GRAPHICAL EVENT
    (`event: "window_opened"`) instead of re-polling in a loop.
@@ -52,7 +52,7 @@ let shot = computer.screenshot(&ComputerScreenshot {
     ..Default::default()
 }).await?;
 
-// 2. Address it — the screenshot legend hands you selectors:
+// 2. Address it - the screenshot legend hands you selectors:
 //    "B7 → button[name='Export']"
 
 // 3. Act on it (auto-waits for the element to be visible + enabled).
@@ -81,28 +81,28 @@ selected by the scope fields it was given:
 | Root | Fields | Means |
 |---|---|---|
 | Application | `name` or `pid` | The accessibility tree of one running app. |
-| Shell surface | `surface` | Part of the desktop itself — [`surface`](surface.md). |
+| Shell surface | `surface` | Part of the desktop itself - [`surface`](surface.md). |
 | Whole tree | *(none)* | Unscoped (screenshot only): the full desktop. |
 
 The **element form** (`scope` + `selector`) is tree-grounded: the point of
 interaction resolves from the element's *current* bounds at dispatch time and
 can never go stale. The **coordinate form** (`x`/`y` desktop pixels) exists
-for node-less targets — canvas widgets, a point measured off a screenshot —
+for node-less targets - canvas widgets, a point measured off a screenshot -
 and is position-dependent, so [guardrails](#permissions) confine it.
 
 > **Why clicks matter.** Keyboard focus is the resource every keystroke
 > spends. The only mechanism that reliably moves OS keyboard focus across
-> toolkits is a real synthetic click — which is why the canonical
+> toolkits is a real synthetic click - which is why the canonical
 > [`computer_control`](control.md) pipeline is *click the field, then type*.
 
 ---
 
 ## Permissions
 
-Read-only tools (`apps`, `snapshot`) are safe in every mode — they move
+Read-only tools (`apps`, `snapshot`) are safe in every mode - they move
 nothing and hand back no coordinates. `screenshot` is the subtle one: its
 plain captures (full display / `region`) hand the model **pixel
-coordinates**, so Build mode denies them — while `annotate: true` captures
+coordinates**, so Build mode denies them - while `annotate: true` captures
 are allowed (selector-grounded: the model acts via the legend's selectors,
 never via pixels). Input tools are gated by mode:
 
@@ -111,7 +111,7 @@ never via pixels). Input tools are gated by mode:
   move the pointer between measure and click, so coordinates go stale).
 - **Yolo / Command**: everything dispatches without a dialog.
 
-Failures are never bare errors — [`errors`](errors.md) renders each failure
+Failures are never bare errors - [`errors`](errors.md) renders each failure
 with the next-step guidance and, for waits, the last observed state.
 
 Window management is split the same way: [`computer_windows`](windows.md)
@@ -131,7 +131,7 @@ The source tree is the index:
 | `apps.rs` | [apps.md](apps.md) | `cargo run --example computer-apps` |
 | `snapshot.rs` | [snapshot.md](snapshot.md) | `cargo run --example computer-snapshot` |
 | `screenshot.rs` | [screenshot.md](screenshot.md) | `cargo run --example computer-screenshot` |
-| `windows.rs` | [windows.md](windows.md) | — (fixture-driven: `cargo test -p morpheus-tools -- computer::test::windows`) |
+| `windows.rs` | [windows.md](windows.md) | none (fixture-driven: `cargo test -p morpheus-tools -- computer::test::windows`) |
 | `wait.rs` | [wait.md](wait.md) | `cargo run --example computer-wait` |
 | `act.rs` (the touch engine) | [act.md](act.md) | `cargo run --example computer-act` |
 | `control.rs` | [control.md](control.md) | `cargo run --example computer-control` |

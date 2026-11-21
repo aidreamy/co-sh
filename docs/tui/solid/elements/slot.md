@@ -1,13 +1,13 @@
-# `elements::slot` — slot placeholder system
+# `elements::slot` - slot placeholder system
 
-Slots are placeholders that can host children routed by their parent —
+Slots are placeholders that can host children routed by their parent -
 analogous to SolidJS portals / slot components. Two public renderables live
 here, plus an internal leaf base.
 
-## `SlotRenderable` — multi-parent placeholder
+## `SlotRenderable` - multi-parent placeholder
 
 A placeholder that can host **multiple** children, keyed by the parent's
-`num` — used by the reconciler for Portal-style re-parenting. It draws
+`num` - used by the reconciler for Portal-style re-parenting. It draws
 nothing itself.
 
 ```rust
@@ -23,10 +23,10 @@ SlotRenderable::new() -> Self             // id "slot-{n}", invisible
 | `clear()` | Drop all children. |
 | `child_count() -> usize` | Number of attached children. |
 
-Like `TextSlotRenderable`, it's a leaf for mutation purposes — `add_child`
+Like `TextSlotRenderable`, it's a leaf for mutation purposes - `add_child`
 is a no-op returning `0`, and `render_self` draws nothing.
 
-## `TextSlotRenderable` — re-parentable text child
+## `TextSlotRenderable` - re-parentable text child
 
 A slot child that can be **moved between parents without being destroyed**.
 It's an invisible leaf renderable (`id "slot-text-{n}"`, not visible).
@@ -38,7 +38,7 @@ TextSlotRenderable::new() -> Self
 | Method | Behavior |
 |---|---|
 | `set_slot_parent(parent_num)` / `slot_parent_num()` | Record which `SlotRenderable` owns it. |
-| `detach_from_slot()` | Clear the slot-parent link **without** destroying the node — allows re-attachment elsewhere. |
+| `detach_from_slot()` | Clear the slot-parent link **without** destroying the node - allows re-attachment elsewhere. |
 | `dispose_without_slot_cascade()` | Mark destroyed and detach, without destroying the slot. |
 | `destroy_with_slot()` | Mark destroyed and detach (future: cascades to the slot). |
 
@@ -74,4 +74,4 @@ let mut detached = slot.remove_child(parent_num).expect("has a child");
 slot.register_child(99, detached);
 ```
 
-Next: [plugins — slot registry](../plugins/slot.md).
+Next: [plugins - slot registry](../plugins/slot.md).

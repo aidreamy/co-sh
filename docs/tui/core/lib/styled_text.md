@@ -1,4 +1,4 @@
-# `styled_text` — styled strings
+# `styled_text` - styled strings
 
 The model for text with inline styling. A `StyledText` is a list of
 `TextChunk`s; each chunk is a run of text with its own foreground,
@@ -22,7 +22,7 @@ pub struct StyledText {
 }
 ```
 
-Why chunks? A paragraph rarely has one style — "the **bold** word" is three
+Why chunks? A paragraph rarely has one style - "the **bold** word" is three
 runs (`the `, `bold`, ` word`). Chunks let you mix styles inline, exactly like
 an editor token stream, and renderables like
 [`TextRenderable`](../renderables/text.md) draw each chunk with its own
@@ -31,7 +31,7 @@ style.
 ## The `None` convention
 
 `fg: None` / `bg: None` on a chunk means **inherit the renderable's default**.
-Renderables resolve chunk colors as `chunk.fg.unwrap_or(default_fg)` — so a
+Renderables resolve chunk colors as `chunk.fg.unwrap_or(default_fg)` - so a
 chunk with `None` colors renders with the widget's configured colors, and a
 chunk with `Some(rgba)` overrides them. Alpha 0 colors render as "reset"
 (see [`rgba`](rgba.md)).
@@ -43,7 +43,7 @@ pub fn string_to_styled_text(content: &str) -> StyledText
 ```
 
 Wraps the whole string in a single chunk with `fg: None`, `bg: None`,
-`attributes: 0`, `link: None` — i.e. "render with defaults". This is what
+`attributes: 0`, `link: None` - i.e. "render with defaults". This is what
 `TextRenderable::new(None)` uses for its empty default, and the quick way to
 get plain text into a styled widget.
 
@@ -77,12 +77,12 @@ let styled = StyledText {
 
 ## Related
 
-- [`TextRenderable`](../renderables/text.md) — the widget that draws
+- [`TextRenderable`](../renderables/text.md) - the widget that draws
   `StyledText` (accepts chunks with per-chunk colors/attributes/links).
-- [`TextNodeRenderable`](../renderables/text_node.md) — a tree of styled
+- [`TextNodeRenderable`](../renderables/text_node.md) - a tree of styled
   text nodes that flattens to `Vec<TextChunk>` via inherited styles.
-- [`detect_links`](detect_links.md) — annotates existing chunks with URLs.
-- [`attributes_with_link`](../utils.md) — packs a link id into the attribute
+- [`detect_links`](detect_links.md) - annotates existing chunks with URLs.
+- [`attributes_with_link`](../utils.md) - packs a link id into the attribute
   bits (a different, id-based link mechanism than `UrlLink`).
 
-Next: [unicode_util — display widths and wrapping](unicode_util.md).
+Next: [unicode_util - display widths and wrapping](unicode_util.md).

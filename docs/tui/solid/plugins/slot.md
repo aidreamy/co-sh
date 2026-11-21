@@ -1,10 +1,10 @@
-# `plugins::slot` — the slot registry
+# `plugins::slot` - the slot registry
 
-`SlotRegistry` maps slot names to lists of registered renderer closures —
+`SlotRegistry` maps slot names to lists of registered renderer closures -
 the morpheus-tui analogue of `createSlotRegistry` from `@opentui/core`. Plugins
 register UI fragments under named slots; the host resolves them, possibly
 filtering by [`SlotMode`](#slotmode). This is the **most functional part of
-the plugin system** — fully implemented and synchronous.
+the plugin system** - fully implemented and synchronous.
 
 ```rust
 SlotRegistry::new() -> Self
@@ -77,4 +77,4 @@ let winner = registry.resolve("statusbar", SlotMode::SingleWinner);
 assert_eq!(winner.len(), 1);
 ```
 
-Back to [solid — module overview](../solid.md).
+Back to [solid - module overview](../solid.md).

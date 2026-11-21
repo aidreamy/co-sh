@@ -1,4 +1,4 @@
-# `ASCIIFontRenderable` — ASCII-art font
+# `ASCIIFontRenderable` - ASCII-art font
 
 Renders text using an ASCII-art font (default `"tiny"`), one character per
 column in the area's top row. Use it for decorative headers or logos.
@@ -26,7 +26,7 @@ set_background_color(ColorInput)
 
 `render_self` draws each character of the text at increasing x positions on
 the area's first row, in the configured color (or background color), clipped
-to the area width. The `font` name is stored for future rendering — the
+to the area width. The `font` name is stored for future rendering - the
 current implementation draws characters one-per-cell rather than expanding
 to a multi-row bitmap font.
 
@@ -43,5 +43,5 @@ let mut logo = ASCIIFontRenderable::new(
 // logo.render_self(&mut buf, area);
 ```
 
-Back to [renderables — the widget library](renderables.md), or
-[core — module overview](../core.md).
+Back to [renderables - the widget library](renderables.md), or
+[core - module overview](../core.md).

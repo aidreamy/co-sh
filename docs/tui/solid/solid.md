@@ -1,28 +1,28 @@
-# `solid` — the reactive rendering layer
+# `solid` - the reactive rendering layer
 
 `solid` is a port of the *OpenTUI* (formerly "solid-tui") SolidJS-style
 reactive rendering layer: components, a component catalogue, slots,
 reconciliation against a renderable tree, and renderer abstractions. It sits
-on top of [`core`](../core/core.md) — every "DOM node" here is a
+on top of [`core`](../core/core.md) - every "DOM node" here is a
 [`Renderable`](../core/renderable.md).
 
 ```text
 morpheus-tui/src/solid/
-├── elements/            — component hooks, widgets, and the catalogue
-│   ├── catalogue.rs     — Span/BR/Link widgets + component registry   → elements/catalogue.md
-│   ├── extras.rs        — DynamicRenderable                          → elements/extras.md
-│   ├── hooks.rs         — event-callback registrations               → elements/hooks.md
-│   └── slot.rs          — slot placeholder system                    → elements/slot.md
-├── plugins/slot.rs      — SlotRegistry for plugin-provided UI        → plugins/slot.md
-├── renderer/            — Renderer / RendererOptions traits          → renderer/renderer.md
-├── reconciler.rs        — DOM-node insert/remove/property ops        → reconciler.md
-├── scrollback.rs        — scrollback snapshot writer                 → scrollback.md
-├── time_to_first_draw.rs— TTFD marker renderable                     → time_to_first_draw.md
-├── types/               — marker traits (props, constructors)        → types/elements.md
-└── utils/               — id_counter, debug logging                  → utils/utils.md
+├── elements/            - component hooks, widgets, and the catalogue
+│   ├── catalogue.rs     - Span/BR/Link widgets + component registry   → elements/catalogue.md
+│   ├── extras.rs        - DynamicRenderable                          → elements/extras.md
+│   ├── hooks.rs         - event-callback registrations               → elements/hooks.md
+│   └── slot.rs          - slot placeholder system                    → elements/slot.md
+├── plugins/slot.rs      - SlotRegistry for plugin-provided UI        → plugins/slot.md
+├── renderer/            - Renderer / RendererOptions traits          → renderer/renderer.md
+├── reconciler.rs        - DOM-node insert/remove/property ops        → reconciler.md
+├── scrollback.rs        - scrollback snapshot writer                 → scrollback.md
+├── time_to_first_draw.rs - TTFD marker renderable                    → time_to_first_draw.md
+├── types/               - marker traits (props, constructors)        → types/elements.md
+└── utils/               - id_counter, debug logging                  → utils/utils.md
 ```
 
-## Port status — read this first
+## Port status - read this first
 
 `solid` is an **in-progress port** of the TypeScript original, and the
 modules are at very different levels of completeness:
@@ -40,7 +40,7 @@ modules are at very different levels of completeness:
   as API surface with TODO comments and no reactive engine behind them yet.
 
 The crate's public entry points (re-exported from `lib.rs`) are the catalogue
-widgets, `DynamicRenderable`, and the slot types — those are what applications
+widgets, `DynamicRenderable`, and the slot types - those are what applications
 actually use today.
 
 ## How the pieces fit
@@ -58,4 +58,4 @@ The SolidJS mental model maps onto morpheus-tui like this:
 | Renderer interface | [`Renderer` / `RendererOptions`](renderer/renderer.md) traits |
 | Reactive signals/effects | not yet ported (hooks are stubs) |
 
-Next: [elements — the component widgets and catalogue](elements/catalogue.md).
+Next: [elements - the component widgets and catalogue](elements/catalogue.md).

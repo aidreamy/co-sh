@@ -1,6 +1,6 @@
-# `TextRenderable` — styled multi-line text
+# `TextRenderable` - styled multi-line text
 
-Draws a [`StyledText`](../lib/styled_text.md) — a list of styled chunks —
+Draws a [`StyledText`](../lib/styled_text.md) - a list of styled chunks -
 into an area, with word wrapping, scrolling, and truncation. The basic "put
 text on screen" widget.
 
@@ -18,10 +18,10 @@ text, wrap it first: `string_to_styled_text("…")`.
 | `set_content(StyledText)` | Replace all chunks (marks the text as manually styled). |
 | `content() -> &StyledText` | Read the current text. |
 | `chunks() -> &[TextChunk]` | The raw chunk list. |
-| `plain_text() -> String` | Concatenated chunk text — the unstyled view. |
+| `plain_text() -> String` | Concatenated chunk text - the unstyled view. |
 | `clear()` | Reset to empty text and drop children. |
 
-Chunk colors resolve as `chunk.fg.unwrap_or(default_fg)` — `None` inherits
+Chunk colors resolve as `chunk.fg.unwrap_or(default_fg)` - `None` inherits
 the widget's default, `Some(rgba)` overrides (see
 [`styled_text`](../lib/styled_text.md)).
 
@@ -84,4 +84,4 @@ text.set_wrap_mode(morpheus_tui::core::renderables::text::WrapMode::Word);
 // text.render_self(&mut buf, area);
 ```
 
-Next: [text_node — a tree of styled text](text_node.md).
+Next: [text_node - a tree of styled text](text_node.md).

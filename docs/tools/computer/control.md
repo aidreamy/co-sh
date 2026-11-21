@@ -1,4 +1,4 @@
-# `control` — pointer and keyboard pipelines
+# `control` - pointer and keyboard pipelines
 
 `control` is the tool that moves the *actual* pointer and types on the
 *actual* keyboard. One step is EITHER a pointer action (click, double-click,
@@ -14,14 +14,14 @@ control(metadata, ComputerControl) -> Result<ControlOutput, String>
 
 ## The model: click, then type
 
-Keyboard focus is the resource every keystroke spends — and the only
+Keyboard focus is the resource every keystroke spends - and the only
 mechanism that reliably moves OS keyboard focus across toolkits is a real
 synthetic click. That shapes the canonical pipeline:
 
 ```rust,ignore
 use morpheus_tools::computer::{Computer, types::*};
 
-// `chain` below is the extension trait from examples/computer/control.rs —
+// `chain` below is the extension trait from examples/computer/control.rs -
 // the crate ships the type, the example ships the fluent helper.
 let pipeline = ComputerControl {
     app: Some("Files".into()),
@@ -40,7 +40,7 @@ computer.control(&pipeline).await?;
 ```
 
 Each step runs only if the previous succeeded; the first failure aborts the
-chain and reports the point of failure. Targeting is **per step** — one step
+chain and reports the point of failure. Targeting is **per step** - one step
 may click in one app and the next type into another. Every report that changed
 state ends with an `after:` block (target's fresh state, foreground app,
 focused element); a click whose selector matched several elements without
@@ -49,16 +49,16 @@ released (`release: ["all"]`).
 
 ## The two target forms (per step)
 
-- **Element form** — `app` (or `pid`) or `surface` + `selector`. The point
-  resolves from the element's CURRENT bounds at dispatch time — never stale,
+- **Element form** - `app` (or `pid`) or `surface` + `selector`. The point
+  resolves from the element's CURRENT bounds at dispatch time - never stale,
   and the click doubles as the focus move. This is the form to default to.
   `anchor` picks where inside the bounds the point lands: `center` (default),
   `top_left`, `top_right`, `bottom_left`, `bottom_right`.
-- **Coordinate form** — bare `x`/`y` desktop pixels, usually mapped from a
+- **Coordinate form** - bare `x`/`y` desktop pixels, usually mapped from a
   [`screenshot`](screenshot.md) via `desktop_origin`/`desktop_scale`. Reach
   for it only when the target has NO accessibility node (canvas, custom
-  widget). It is **position-dependent** — the pointer may be elsewhere by
-  the time the click lands — so [guardrails](#permissions) deny it in Build
+  widget). It is **position-dependent** - the pointer may be elsewhere by
+  the time the click lands - so [guardrails](#permissions) deny it in Build
   mode entirely: the approval dialog may move the pointer between measure
   and click.
 
@@ -66,20 +66,20 @@ released (`release: ["all"]`).
 
 `click` (with `count: 2` = double-click, independent of the action name),
 `double_click`, `right_click`, `move`, `down`/`up` (press-and-hold pairs for
-freehand choreography — `up` needs no target), `scroll` (needs `dx`/`dy`
-wheel steps), and `drag` — a NATIVE drag: press at the start, interpolate
+freehand choreography - `up` needs no target), `scroll` (needs `dx`/`dy`
+wheel steps), and `drag` - a NATIVE drag: press at the start, interpolate
 the pointer path at ~60 Hz across `duration_ms` (default 150, floor 50),
-release at the end. A drag takes both ends in one of two forms — elements
-(`selector` + `to_selector`) or coordinates (`x`/`y` + `x2`/`y2`) — never a
+release at the end. A drag takes both ends in one of two forms - elements
+(`selector` + `to_selector`) or coordinates (`x`/`y` + `x2`/`y2`) - never a
 mix.
 
 Modifiers ride on the step: `held: ["ctrl"]` turns a click into ctrl+click,
-or a key into a chord — see [keyboard](keyboard.md) for the alias table.
+or a key into a chord - see [keyboard](keyboard.md) for the alias table.
 
 ## Holding keys across steps and calls
 
 `hold: ["shift"]` presses keys NOW and keeps them down across the rest of
-the chain — for shift-selected text by keyboard (click the anchor, `hold`
+the chain - for shift-selected text by keyboard (click the anchor, `hold`
 shift, arrow through, `release` shift), drag-modified interactions, and
 nested compose sequences. Its pair `release: ["shift"]` lifts keys again;
 pressing an already-down key just re-presses it, and releasing a key
@@ -90,7 +90,7 @@ chain whose FIRST step is a hold needs an element step to own the approval.
 
 ## Inline waits
 
-A standalone step `{"wait": 600}` pauses the chain — for the dialog a menu
+A standalone step `{"wait": 600}` pauses the chain - for the dialog a menu
 item opens, for the ephemeral rename box to exist. Capped at 10 s per step;
 for a CONDITION use [`wait`](wait.md), not sleeps.
 

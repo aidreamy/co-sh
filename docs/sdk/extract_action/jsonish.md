@@ -1,10 +1,10 @@
-# `extract_action::jsonish` — the tolerant JSON parser
+# `extract_action::jsonish` - the tolerant JSON parser
 
 `jsonish` parses JSON that is **not quite JSON**. It is a direct port of the
 [jsonish parser from BoundaryML/baml](https://github.com/BoundaryML/baml)
-(Apache 2.0), and it exists so LLM output — which routinely arrives with
+(Apache 2.0), and it exists so LLM output - which routinely arrives with
 trailing commas, unquoted keys, markdown fences, truncated tails, and stray
-prose — can still be turned into a structured value.
+prose - can still be turned into a structured value.
 
 Its public surface is small:
 
@@ -30,7 +30,7 @@ pub enum Fixes { GreppedForJSON, InferredArray }
 pub struct JsonishError(pub String);
 ```
 
-## `parse` — one input, every trick
+## `parse` - one input, every trick
 
 `parse` tries strategies **in order** and returns the first that succeeds:
 
@@ -39,30 +39,30 @@ pub struct JsonishError(pub String);
 1. **Strict JSON** (`serde_json`). Top-level numbers are marked `Incomplete`
    (a bare number may be a truncated prefix); strings, objects, and arrays
    are necessarily complete.
-2. **Markdown-aware parsing** — a fenced code block becomes
+2. **Markdown-aware parsing** - a fenced code block becomes
    `Value::Markdown(language, inner, state)`; a block with multiple JSON
    objects becomes an `AnyOf` of the individual objects, the whole list as an
    `Array`, and the raw strings.
-3. **Multiple-object extraction** — scans for every balanced `{...}` in the
+3. **Multiple-object extraction** - scans for every balanced `{...}` in the
    text; one object → `FixedJson(value, [GreppedForJSON])`, several → an
    `AnyOf` with the array form included.
-4. **Fixing parser** — repairs malformed JSON (trailing commas, missing
+4. **Fixing parser** - repairs malformed JSON (trailing commas, missing
    quotes/brackets) and reports what it fixed via `Fixes`.
 
 A plain string with no JSON anywhere falls through to the fixing parser,
-which may return it as a `String` — or fail with `JsonishError`.
+which may return it as a `String` - or fail with `JsonishError`.
 
-## `Value` — the result shape
+## `Value` - the result shape
 
 - **`AnyOf(items, original)`** is the *uncertainty wrapper*: several plausible
-  readings of the same input. Callers pick — `extract` converts each to
+  readings of the same input. Callers pick - `extract` converts each to
   `serde_json::Value` and validates, taking the first that fits.
-- **`Markdown(tag, inner, _)`** — the tag is the fence language
+- **`Markdown(tag, inner, _)`** - the tag is the fence language
   (`json`, `rust`, …); `inner` is the parsed block body.
-- **`FixedJson(inner, fixes)`** — a value that required repairs; `fixes`
+- **`FixedJson(inner, fixes)`** - a value that required repairs; `fixes`
   records which (`GreppedForJSON` = object(s) pulled out of surrounding
   prose; `InferredArray` = a list was assumed).
-- **`CompletionState`** — every container carries it: `Incomplete` means the
+- **`CompletionState`** - every container carries it: `Incomplete` means the
   input looked cut off (useful for streaming callers). `complete_deeply()`
   forces a whole tree to `Complete`.
 - `Value` implements `Display` (renders compactly) and `serde::Deserialize`
@@ -102,7 +102,7 @@ println!("{v}");  // Markdown("json", Object([...]), ...)
 
 Inside `extract_action`, `parse_and_validate` calls
 `jsonish::parse(candidate, ParseOptions::default(), true)` and converts the
-resulting `Value` to `serde_json::Value` before schema validation — so the
+resulting `Value` to `serde_json::Value` before schema validation - so the
 tolerance you get through `ExtractAction` is exactly what `jsonish` provides.
 
 ---
@@ -113,7 +113,7 @@ Back to the [module overview](extract_action.md).
 
 ## Summary
 
-- `jsonish` parses JSON that is "not quite JSON" — a direct port of BoundaryML/baml's jsonish parser (Apache 2.0) for handling LLM output with trailing commas, unquoted keys, markdown fences, truncated tails, and stray prose.
+- `jsonish` parses JSON that is "not quite JSON" - a direct port of BoundaryML/baml's jsonish parser (Apache 2.0) for handling LLM output with trailing commas, unquoted keys, markdown fences, truncated tails, and stray prose.
 - `parse(str, options, is_done)` tries strategies in order: strict JSON → markdown-aware parsing → multiple-object extraction → fixing parser.
 - `Value` enum includes `AnyOf` (uncertainty wrapper with multiple plausible readings), `Markdown` (fenced block with language tag), `FixedJson` (repaired value with fixes recorded), and standard types with `CompletionState` (Complete/Incomplete).
 - `ParseOptions` controls four flags (all default to true): `all_finding_all_json_objects`, `allow_markdown_json`, `allow_fixes`, `allow_as_string`, plus recursion depth limit (100).

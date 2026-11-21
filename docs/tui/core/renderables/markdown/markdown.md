@@ -1,4 +1,4 @@
-# `markdown` — the full markdown renderer
+# `markdown` - the full markdown renderer
 
 `MarkdownRenderable` renders markdown source into a terminal area: headings,
 emphasis, lists, blockquotes, inline code, fenced code blocks **with
@@ -78,7 +78,7 @@ let h = estimate_height(markdown, area_width);
 pub fn markdown_to_visible_text(markdown: &str) -> String
 ```
 
-Strips markdown syntax, returning the visible text — useful for previews or
+Strips markdown syntax, returning the visible text - useful for previews or
 copying content out of a rendered message.
 
 ## Example
@@ -97,6 +97,6 @@ md.set_bg(Some("#101010".into()));
 
 ## Submodules
 
-- [context](context.md) — `MarkdownContext` / `MarkdownElement` nesting tracker.
-- [palette](palette.md) — `MarkdownPalette` element color derivation.
-- [layout](layout.md) — `estimate_height` (also re-exported above).
+- [context](context.md) - `MarkdownContext` / `MarkdownElement` nesting tracker.
+- [palette](palette.md) - `MarkdownPalette` element color derivation.
+- [layout](layout.md) - `estimate_height` (also re-exported above).

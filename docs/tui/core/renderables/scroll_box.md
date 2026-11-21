@@ -1,4 +1,4 @@
-# `ScrollBoxRenderable` — scrollable viewport container
+# `ScrollBoxRenderable` - scrollable viewport container
 
 A container that exposes scroll offsets and scrollable content dimensions
 for its children. Use it to make a region of the UI scrollable: put the
@@ -42,4 +42,4 @@ viewport.scroll_by(0, 40);             // view a window starting at y=40
 assert_eq!(viewport.scroll_y(), 40);
 ```
 
-Next: [code — syntax-highlighted code](code.md).
+Next: [code - syntax-highlighted code](code.md).

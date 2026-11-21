@@ -269,7 +269,9 @@ fn build_correction_connector(
         return Err("A correction model must include a concrete provider and model.".into());
     }
     let mut connector = Connector::new(provider).map_err(|error| error.to_string())?;
-    connector = connector.with_model(model);
+    connector = connector
+        .with_service_keyring(morpheus::KEYRING_SERVICE)
+        .with_model(model);
     if let Some(url) = local_base_urls.get(provider) {
         connector = connector.with_base_url(url.clone());
     }

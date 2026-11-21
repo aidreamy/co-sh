@@ -1,12 +1,12 @@
 # `question` data types
 
-The module has one question model, one answer model, and two container types
-— all deriving `Serialize` + `Deserialize` + `JsonSchema`, so the same
+The module has one question model, one answer model, and two container types -
+all deriving `Serialize` + `Deserialize` + `JsonSchema`, so the same
 structs both carry the tool-call JSON and describe the schema.
 
 ---
 
-## `QuestionType` — the kinds of answers
+## `QuestionType` - the kinds of answers
 
 ```rust
 pub enum QuestionType {
@@ -20,7 +20,7 @@ pub enum QuestionType {
 The type selects both how the question is rendered and what the answer
 looks like (see [`AnswerItem`](#answeritem)).
 
-## `QuestionItem` — one question
+## `QuestionItem` - one question
 
 ```rust
 pub struct QuestionItem {
@@ -38,25 +38,25 @@ pub struct QuestionItem {
 
 Field-by-field:
 
-- **`id`** — the correlation key. Must be unique within one call (duplicates
+- **`id`** - the correlation key. Must be unique within one call (duplicates
   are rejected by [`ask`](question.md#validation-the-contract)), and the user's
   answer for this question comes back tagged with the same id.
-- **`question`** — the visible text; keep it short and self-contained.
-- **`question_type`** — serialized as `"type"` in JSON (the `#[serde(rename
+- **`question`** - the visible text; keep it short and self-contained.
+- **`question_type`** - serialized as `"type"` in JSON (the `#[serde(rename
   = "type")]` attribute), matching the tool schema's `type` property.
-- **`purpose`** — optional explanation of why the information is needed. The
+- **`purpose`** - optional explanation of why the information is needed. The
   tool description urges the model to always fill this in.
-- **`options`** — required for `SingleChoice`/`MultiChoice` (and must be
+- **`options`** - required for `SingleChoice`/`MultiChoice` (and must be
   non-empty); forbidden for `YesNo`; ignored for `Text`.
-- **`required`** — whether the user must answer; defaults to `true` when the
+- **`required`** - whether the user must answer; defaults to `true` when the
   field is omitted (via `#[serde(default = "default_required")]`).
-- **`recommended`** — REQUIRED for `SingleChoice` (must exactly match one
+- **`recommended`** - REQUIRED for `SingleChoice` (must exactly match one
   entry of `options`; the tool moves it to the top automatically and the TUI
   badges it `(Recommended)`); forbidden for `Text` / `MultiChoice` / `YesNo`.
   Defaults to `None` for backwards-compatible deserialization (old payloads
   parse, then fail validation with a clear message).
 
-## `AnswerItem` — one answer
+## `AnswerItem` - one answer
 
 ```rust
 pub struct AnswerItem {
@@ -71,10 +71,10 @@ shape, depending on the question type:
 
 | Question type | Populated field |
 |---|---|
-| `Text` | `answer` — the typed text |
-| `YesNo` | `answer` — "Yes" or "No" |
-| `SingleChoice` | `selected` — one option |
-| `MultiChoice` | `selected` — the chosen options |
+| `Text` | `answer` - the typed text |
+| `YesNo` | `answer` - "Yes" or "No" |
+| `SingleChoice` | `selected` - one option |
+| `MultiChoice` | `selected` - the chosen options |
 
 ## `QuestionInput` and `QuestionOutput`
 
@@ -92,7 +92,7 @@ pub struct QuestionOutput {
 `QuestionInput` is the tool-call argument: just the batch. `QuestionOutput`
 is what [`ask`](question.md#the-ask-method) returns: the questions echoed back
 (unmodified) plus the answers. On the initial validation call `answers` is
-**empty** — the UI layer captures the user's input and returns it as the
+**empty** - the UI layer captures the user's input and returns it as the
 tool result, correlated by `id`.
 
 ---

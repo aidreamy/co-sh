@@ -42,7 +42,7 @@ Always run `lsp_diagnostics` after applying to catch fallout.
 ## Passive injection
 
 The session layer attaches errors-only diagnostics to `fs_write` results as
-a `<system-reminder>` block. This is the primary feedback loop — tools like
+a `<system-reminder>` block. This is the primary feedback loop - tools like
 `lsp_diagnostics` are for explicit queries when the passive check isn't
 enough.
 
@@ -52,7 +52,7 @@ Servers are discovered from a built-in catalog (~26 entries) by file
 extension or exact extensionless file name (e.g. `Dockerfile`) plus
 root-marker walk-up. Matching is strict: only an exact extension (`.rs`,
 `.dockerfile`) or a case-insensitive exact name (`dockerfile`) claims a
-spec — no loose heuristics. Binaries must be on `PATH`; missing ones
+spec - no loose heuristics. Binaries must be on `PATH`; missing ones
 soft-skip without blocking other servers for the same file.
 
 ## MCP wiring

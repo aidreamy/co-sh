@@ -1,3 +1,5 @@
+pub const KEYRING_SERVICE: &str = "morpheus";
+
 pub mod assembly;
 pub mod config;
 pub mod coordinator;

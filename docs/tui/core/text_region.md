@@ -1,4 +1,4 @@
-# `text_region` — copy-by-selection text extraction
+# `text_region` - copy-by-selection text extraction
 
 The `text_region` module provides types and functions for extracting text from selections in a terminal UI. It handles the conversion between screen coordinates and content coordinates, enabling copy-by-selection functionality that works correctly even when the viewport scrolls.
 
@@ -8,8 +8,8 @@ The `text_region` module provides types and functions for extracting text from s
 
 A `TextRegion` uses a **hybrid coordinate space**:
 
-- **Rows** (`y1`, `y2`) are *content rows* — absolute, scroll-independent positions in the document.
-- **Columns** (`x1`, `x2`) are *screen columns* — positions on the terminal display.
+- **Rows** (`y1`, `y2`) are *content rows* - absolute, scroll-independent positions in the document.
+- **Columns** (`x1`, `x2`) are *screen columns* - positions on the terminal display.
 
 This separation allows a selection to track the text correctly even when auto-scroll moves the viewport. The selection is defined in content space (so it points to the right text) but rendered in screen space (so it paints under the mouse).
 
@@ -147,7 +147,7 @@ pub fn extract_text_in_region(
 
 Column bounds are **inclusive on both ends**: the glyph under the focus cell is part of the selection, matching what highlight painters draw (`lx1..=lx2`).
 
-This matters for single-cell selections and for releasing on the last character of a word. A same-cell band is a valid selection — it copies exactly that one glyph. Distinguishing a drag from a bare click is the event layer's job (mouse-down followed by drag events vs. a plain down+up release); this extractor never second-guesses geometry.
+This matters for single-cell selections and for releasing on the last character of a word. A same-cell band is a valid selection - it copies exactly that one glyph. Distinguishing a drag from a bare click is the event layer's job (mouse-down followed by drag events vs. a plain down+up release); this extractor never second-guesses geometry.
 
 ### Example
 
@@ -216,4 +216,4 @@ Call sites provide the content origin they render at, and the helper ensures the
 - The inclusive-focus contract: the glyph under the focus cell is part of the selection, enabling correct single-cell selections and last-character copying.
 - Coordinate separation (content rows, screen columns) allows selections to track text correctly even during auto-scroll.
 
-Next: [types — attributes, mouse events, selection](types.md).
+Next: [types - attributes, mouse events, selection](types.md).

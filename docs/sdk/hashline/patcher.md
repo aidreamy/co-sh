@@ -1,10 +1,10 @@
-# `patcher` — validating and applying a patch to real files
+# `patcher` - validating and applying a patch to real files
 
 The `Patcher` is the only stage of the hashline pipeline that touches the
 filesystem. It wires everything together: read the section's target file
 through a [`Filesystem`](fs.md), strip the BOM and normalize line endings,
 validate the section's snapshot tag (with [recovery](recovery.md)), apply
-the edits in memory, and write the result back — restoring the original BOM
+the edits in memory, and write the result back - restoring the original BOM
 and line endings.
 
 ```rust,ignore
@@ -16,7 +16,7 @@ let mut patcher = Patcher::new(
 let result = patcher.apply(&patch).await?;
 ```
 
-The `Patcher` is **stateless across calls** — construct one per filesystem
+The `Patcher` is **stateless across calls** - construct one per filesystem
 configuration and reuse it.
 
 ## The two layers
@@ -26,19 +26,19 @@ configuration and reuse it.
 | `Patcher::apply(&patch)` | High-level, **all-or-nothing**. Preflights every section in memory *before* any write hits disk, then commits in order. |
 | `Patcher::prepare(&section)` → `PreparedSection` | The read-side work only: read, parse, validate, apply in memory. Returns a prepared token. |
 | `Patcher::commit(prepared)` | Writes a prepared result, restores line endings/BOM, records a fresh snapshot. |
-| `Patcher::preflight(&patch)` | The preflight pass only — no writes. Use for CI checks and dry runs. |
+| `Patcher::preflight(&patch)` | The preflight pass only - no writes. Use for CI checks and dry runs. |
 
 Because `prepare` already runs the full apply, a multi-file batch is
 naturally all-or-nothing: by the time any `commit` runs, every section has
 been validated. A section whose apply produced no text change aborts the
-batch with `Edits to {path} resulted in no changes being made.` — this fires
+batch with `Edits to {path} resulted in no changes being made.` - this fires
 in the multi-section path (different target files); a single section (or
 same-path sections, which merge into one) short-circuits to the fast path
 and reports the section with `op: Noop` instead of failing.
 
 Two constructors exist: `Patcher::new(fs, store, resolver)` wraps the store
 in its own `Arc<Mutex<S>>`; `Patcher::new_shared(fs, arc_store, resolver)`
-accepts an already-shared store — use it when the patcher must record
+accepts an already-shared store - use it when the patcher must record
 snapshots into the same store other session tools use (e.g. the global
 `rollback::session_store`).
 
@@ -52,7 +52,7 @@ snapshots into the same store other session tools use (e.g. the global
 2. **The file must exist.** A missing target errors: `File not found: {path}.
    Use the write tool to create new files.` (Hashline edits existing files;
    `write` creates.)
-3. **The tag must match the live content** — see below.
+3. **The tag must match the live content** - see below.
 4. **No two sections may resolve to the same canonical path**: `Multiple
    hashline sections resolve to the same file (A and B). Merge their ops
    under one header before applying.`
@@ -69,16 +69,16 @@ apply time the patcher compares it against a hash of the live file:
 | **Stale, anchored edit, snapshot recorded** | Attempt [recovery](recovery.md): replay the edit against the recorded snapshot and 3-way-merge onto the live content. Success yields a recovery banner warning. |
 | **Stale, anchored edit, no recovery** | Reject with a `MismatchError`: `Edit rejected: file changed between read and edit.` |
 
-The mismatch rejection is rich on purpose — it re-reads nothing, but it
+The mismatch rejection is rich on purpose - it re-reads nothing, but it
 carries the expected/actual tags, the anchored lines, and the surrounding
 context, and it distinguishes two cases:
 
-- **Hash recognized** (a snapshot exists for it — the file drifted since):
+- **Hash recognized** (a snapshot exists for it - the file drifted since):
   `Section is bound to #EXPECTED, but the current file hashes to #ACTUAL.
   If a prior edit in this session modified this file, copy the ¶path#newhash
   header from that edit's response; otherwise re-read the file with \`read\`
   to refresh the tag before retrying.`
-- **Hash not recognized** (never recorded — fabricated or carried over from
+- **Hash not recognized** (never recorded - fabricated or carried over from
   a prior session): `Edit rejected: hash #TAG is not from this session. …
   never invent the tag and never reuse one from a prior session.`
 
@@ -103,5 +103,5 @@ pub struct PatchSectionResult {
 ```
 
 `header`/`file_hash` are the anchor for the *next* edit: an agent applies an
-edit, reads `header` from the response, and anchors the follow-up against it
-— that's how edit chains stay valid.
+edit, reads `header` from the response, and anchors the follow-up against it -
+that's how edit chains stay valid.

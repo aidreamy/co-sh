@@ -6,7 +6,7 @@ JSON directly.
 
 ---
 
-## `SubAgentCallInput` — the `subagent_call` arguments
+## `SubAgentCallInput` - the `subagent_call` arguments
 
 ```rust
 pub struct SubAgentCallInput {
@@ -14,7 +14,7 @@ pub struct SubAgentCallInput {
     /// supported agents listed in the tool description.
     ///
     /// Optional: if omitted (or empty), an internal agent runs the task
-    /// instead — a fresh nested harness with an empty context, in
+    /// instead - a fresh nested harness with an empty context, in
     /// auto-approve mode, that persists nothing and returns only its final
     /// report.
     pub agent: Option<String>,
@@ -29,7 +29,7 @@ pub struct SubAgentCallInput {
 }
 ```
 
-Both fields are optional — deliberately. The combination of what is present
+Both fields are optional - deliberately. The combination of what is present
 and what is missing selects the behavior:
 
 | `agent` | `input` | Behavior |
@@ -46,16 +46,16 @@ rejected by [`validate_agent`](acp.md#validate_agent) with a
 
 ---
 
-## `SubAgentCallOutput` — the result
+## `SubAgentCallOutput` - the result
 
 ```rust
 pub struct SubAgentCallOutput {
-    /// The sub-agent's report: its FINAL message — the text written after
+    /// The sub-agent's report: its FINAL message - the text written after
     /// its last tool call (see `subagent::closure::TurnClosure`), not the
     /// concatenation of every message of the turn.
     pub output: String,
     /// Why the prompt turn ended: a snake_case ACP stop reason (e.g.
-    /// `end_turn`, `cancelled` — the spec-mandated answer to a
+    /// `end_turn`, `cancelled` - the spec-mandated answer to a
     /// `session/cancel`), or the client-side terminal marker `error` when
     /// the harness failed mid-turn. There is no timeout: the turn runs
     /// until the agent ends it or the user stops it.
@@ -66,14 +66,14 @@ pub struct SubAgentCallOutput {
 The harness returns this as JSON after the sub-agent finishes. The two fields
 tell the caller everything needed to judge the outcome:
 
-- `output` — the external ACP harness's FINAL message (the last message of
+- `output` - the external ACP harness's FINAL message (the last message of
   the turn, with a fallback to the last completed message when the turn
   ends right after a tool call), or the internal agent's final report.
-- `stop_reason` — the snake_case ACP stop reason of the completed turn (e.g.
+- `stop_reason` - the snake_case ACP stop reason of the completed turn (e.g.
   `end_turn`, `cancelled` when the user stopped it via `session/cancel`,
   `refusal`); or `"error"` when the ACP turn failed mid-flight with partial
   output already produced.
 
 For the external path, a **hard failure** (validation error, or a turn
 failure with no output at all) is returned as an `Err` string instead
-of an output struct — see the [acp page](acp.md#errors) for the exact cases.
+of an output struct - see the [acp page](acp.md#errors) for the exact cases.

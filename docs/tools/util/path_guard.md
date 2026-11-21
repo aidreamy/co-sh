@@ -1,4 +1,4 @@
-# `path_guard` — filesystem path validation and security
+# `path_guard` - filesystem path validation and security
 
 The `path_guard` module provides centralized path validation for filesystem operations. It combines lexical validation (allowlist/blocklist, project root containment) with filesystem canonicalization (symlink resolution, real path discovery) to ensure consistent security checks across all tools.
 
@@ -8,11 +8,11 @@ The `path_guard` module provides centralized path validation for filesystem oper
 
 Every tool that accepts filesystem paths should use this guard to enforce a consistent security policy:
 
-1. **Blocklist priority** — paths in the blocklist are always denied, regardless of other rules.
-2. **Project root containment** — paths outside the project root are denied unless explicitly allowed.
-3. **Allowlist exceptions** — paths in the allowlist are allowed even if outside the root.
-4. **Scratch directory exemption** — the harness scratch directory (`<OS temp>/morpheus`) is allowed for tool-output logs, but still subject to the blocklist.
-5. **Symlink protection** — canonicalization catches symlink escapes from the project root.
+1. **Blocklist priority** - paths in the blocklist are always denied, regardless of other rules.
+2. **Project root containment** - paths outside the project root are denied unless explicitly allowed.
+3. **Allowlist exceptions** - paths in the allowlist are allowed even if outside the root.
+4. **Scratch directory exemption** - the harness scratch directory (`<OS temp>/morpheus`) is allowed for tool-output logs, but still subject to the blocklist.
+5. **Symlink protection** - canonicalization catches symlink escapes from the project root.
 
 ---
 
@@ -52,8 +52,8 @@ pub fn resolve(&self, path: &str) -> Result<PathBuf, String>
 Validates and canonicalizes `path` against the guard's root, allowlist, and blocklist.
 
 **Returns:**
-- `Ok(PathBuf)` — the canonicalized (real) path on the filesystem
-- `Err(String)` — a descriptive error explaining why the path was denied
+- `Ok(PathBuf)` - the canonicalized (real) path on the filesystem
+- `Err(String)` - a descriptive error explaining why the path was denied
 
 **Errors occur when:**
 - The path is blocked by the blocklist.
@@ -121,7 +121,7 @@ pub fn normalize_path(path: &Path, root: &Path) -> PathBuf
 
 Resolves `.` and `..` components lexically. If the path is relative, it is first made absolute against the given root.
 
-**Purely lexical** — no filesystem access, no symlink resolution. Used by `validate_path` to compare paths on equal footing before filesystem canonicalization.
+**Purely lexical** - no filesystem access, no symlink resolution. Used by `validate_path` to compare paths on equal footing before filesystem canonicalization.
 
 ```rust,ignore
 use std::path::Path;
@@ -219,8 +219,8 @@ pub fn validate_asset_path(base_dir: &Path, asset_path: &str) -> Result<PathBuf,
 - After joining with `base_dir` and canonicalizing, must stay within `base_dir`.
 
 **Returns:**
-- `Ok(PathBuf)` — the canonicalized asset path
-- `Err(String)` — describes the violation or why the path couldn't be resolved
+- `Ok(PathBuf)` - the canonicalized asset path
+- `Err(String)` - describes the violation or why the path couldn't be resolved
 
 ```rust,ignore
 use morpheus_tools::util::path_guard::validate_asset_path;
@@ -278,4 +278,4 @@ This ensures consistent path spelling across the codebase.
 - `HARNESS_SCRATCH_DIR = "morpheus"` is the harness scratch directory name (exempt from outside-root denial).
 - Windows verbatim prefixes are stripped to maintain consistent path spelling.
 
-Next: [fs — filesystem tools](../fs/fs.md).
+Next: [fs - filesystem tools](../fs/fs.md).

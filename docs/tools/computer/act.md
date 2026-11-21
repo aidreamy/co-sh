@@ -1,7 +1,7 @@
-# `act` — semantic actions on accessibility elements
+# `act` - semantic actions on accessibility elements
 
-`act` invokes an element's **action layer** — the verbs the platform itself
-exposes (press, toggle, expand, set_value, …) — instead of synthesizing
+`act` invokes an element's **action layer** - the verbs the platform itself
+exposes (press, toggle, expand, set_value, …) - instead of synthesizing
 pointer motion. Where [`control`](control.md) reproduces what a hand would
 do, `act` says what it MEANS: "press this button", "set this field", "open
 this menu".
@@ -17,25 +17,25 @@ act(metadata, ComputerAct) -> Result<ActOutput, String>
 
 A `ComputerAct` is ONE step of a pipeline. A semantic step carries:
 
-- **a target** — `name`/`pid` (an application) or `surface` (a shell
-  surface, see [`surface`](surface.md)) — plus a `selector` with optional
+- **a target** - `name`/`pid` (an application) or `surface` (a shell
+  surface, see [`surface`](surface.md)) - plus a `selector` with optional
   `nth`;
-- **an action** — [`ActAction`](types.md), defaulting to `press`. The full
+- **an action** - [`ActAction`](types.md), defaulting to `press`. The full
   set: `press`, `focus`, `blur`, `toggle`, `select`, `expand`, `collapse`,
   `show_menu`, `increment`, `decrement`, `scroll_into_view`, `set_value`
   (+`value`), `set_numeric_value` (+`numeric_value`), `select_text`
   (+`range`, 0-based, `end` EXCLUSIVE), `type_text` (+`value`), and
   `perform_action` (+`value`, a platform-specific action name).
-- **patience** — `timeout_ms` (default 3000) bounds the auto-wait for the
+- **patience** - `timeout_ms` (default 3000) bounds the auto-wait for the
   app AND a visible+enabled match. Unlike [`snapshot`](snapshot.md)/
   [`screenshot`](screenshot.md), actions wait for actionability.
 
 Steps chain via `then` with shell `&&` semantics: each next step runs only
 if the previous succeeded, and the output joins the per-step reports with
 ` → ` (`set_value \`entry\` (app) → waited 400 ms → pressed \`button\``).
-Each report that changed state also carries an `after:` block — the target's
+Each report that changed state also carries an `after:` block - the target's
 fresh state (`is gone`, `visible`, `disabled`, value), the foreground app and
-the element now holding keyboard focus — so a no-op step is visible without
+the element now holding keyboard focus - so a no-op step is visible without
 another snapshot. A selector that matched several elements without `nth` says
 so, and keys a `hold` left down are reported until released
 (`release: ["all"]`).
@@ -43,18 +43,18 @@ so, and keys a `hold` left down are reported until released
 ## Keyboard steps inside an act chain
 
 A step with `key`/`text`/`hold`/`release` (or a bare `wait`) is a
-KEYBOARD/WAIT step — no selector, typing goes into whatever holds keyboard
+KEYBOARD/WAIT step - no selector, typing goes into whatever holds keyboard
 focus. That is the validator split to internalize:
 
-- **semantic steps** carry `selector` + action — validated by the semantic
+- **semantic steps** carry `selector` + action - validated by the semantic
   validator (payload checks run BEFORE dispatch, so a malformed call fails
   fast instead of auto-waiting for an element that was never the problem);
-- **keyboard steps** carry `key`/`text`/`held`/`hold`/`release` — validated
+- **keyboard steps** carry `key`/`text`/`held`/`hold`/`release` - validated
   by the shared [keyboard engine](keyboard.md) as the chain walks.
 
 `hold` / `release` are the press-hold-across-steps pair: `hold: ["shift"]`
 presses keys and keeps them down (a second hold of a down key just
-re-presses it), `release: ["shift"]` lifts them — and a `release` of a key
+re-presses it), `release: ["shift"]` lifts them - and a `release` of a key
 nothing held is harmless, so the pair cannot desync into an error.
 Feeding a keyboard step to the semantic validator is itself an error whose
 guidance names the right engine. And because `act` has no pointer, a chain
@@ -73,7 +73,7 @@ an element directly) or does its focus move with a real
 ## Edges
 
 - `set_value` replaces the text entirely; `type_text` inserts at the caret.
-- `select_text` ranges are 0-based with EXCLUSIVE end — `[0, 3]` selects
+- `select_text` ranges are 0-based with EXCLUSIVE end - `[0, 3]` selects
   three characters (the AT-SPI convention).
 - `perform_action` is the escape hatch for platform-specific verbs
   (`"raise"`, macOS `AXCustomThing`-derived names).

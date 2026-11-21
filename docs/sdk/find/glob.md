@@ -1,4 +1,4 @@
-# `find::glob` — searching by name
+# `find::glob` - searching by name
 
 `glob` finds filesystem entries whose *names* match a glob pattern.
 
@@ -29,15 +29,15 @@ pub struct GlobOptions {
 
 The pattern goes through [`build_glob_pattern`](glob_util.md) first:
 
-- **Simple patterns get a `**/` prefix** — `"*.rs"` becomes `"**/*.rs"`, so
+- **Simple patterns get a `**/` prefix** - `"*.rs"` becomes `"**/*.rs"`, so
   it matches at *every* depth under `path`. This is the default (`recursive:
   true`) behavior.
-- **Patterns that already contain a `/` are left alone** — `"src/*.rs"` stays
+- **Patterns that already contain a `/` are left alone** - `"src/*.rs"` stays
   shallow, matching `src/lib.rs` but not `src/sub/lib.rs`. Use
   `"src/**/*.rs"` for the whole tree.
-- **`recursive: false` disables the prefix** — `"*.rs"` then matches only the
+- **`recursive: false` disables the prefix** - `"*.rs"` then matches only the
   direct children of `path`.
-- **Unclosed `{` alternation groups are auto-closed** — `"*.{ts,tsx"` is
+- **Unclosed `{` alternation groups are auto-closed** - `"*.{ts,tsx"` is
   repaired to `"*.{ts,tsx}"` instead of erroring (a tolerance for LLM-written
   patterns; see [glob_util](glob_util.md)).
 
@@ -55,7 +55,7 @@ A pattern that is empty or whitespace becomes `"*"`.
 | `max_results` | unbounded | Cap the result count. With `sort_by_mtime`, only the current top-N is kept while walking; without it, matching stops early at the cap. |
 
 `on_match` fires for every match *as the walk finds it* (before the mtime rank
-and limit), on walker worker threads — keep it cheap and `Sync`.
+and limit), on walker worker threads - keep it cheap and `Sync`.
 
 ## The result
 
@@ -63,7 +63,7 @@ and limit), on walker worker threads — keep it cheap and `Sync`.
 pub struct GlobResult {
     pub matches: Vec<GlobMatch>,   // path (relative, forward slashes), file_type, mtime (ms), size
     pub total_matches: u32,        // matches.len(), clamped
-    pub timed_out: bool,           // partial results — scan was cut short
+    pub timed_out: bool,           // partial results - scan was cut short
 }
 ```
 
@@ -78,12 +78,12 @@ added (unlike the morpheus-tools wrapper, which renders one).
 | `path` missing / unresolvable | `Path not found: ...` |
 | `path` is not a directory | `Search path must be a directory` |
 | Invalid glob pattern | `Invalid glob pattern: ...` / `Failed to build glob matcher: ...` |
-| Timeout before the walk starts | `Timeout` (hard error — nothing to salvage) |
+| Timeout before the walk starts | `Timeout` (hard error - nothing to salvage) |
 | Mid-walk timeout | Partial `GlobResult` with `timed_out: true` |
 
 ---
 
-Next: [glob_util — pattern helpers](glob_util.md), or [grep — searching by
+Next: [glob_util - pattern helpers](glob_util.md), or [grep - searching by
 content](grep.md).
 
 ---
@@ -93,6 +93,6 @@ content](grep.md).
 - `glob` finds filesystem entries whose names match a glob pattern using `GlobOptions`.
 - Pattern interpretation: simple patterns get `**/` prefix (recursive), patterns with `/` stay shallow, `recursive: false` disables prefix, unclosed `{` alternation groups are auto-closed.
 - Filtering semantics: `file_type` (File/Dir/Symlink), `hidden` (default false, include `.`-prefixed), `gitignore` (default true), `include_node_modules` (depends on pattern), `sort_by_mtime` (rank by modification time), `max_results` (cap result count).
-- `on_match` callback fires for every match as the walk finds it (before mtime ranking and limit), on worker threads — keep it cheap and Sync.
+- `on_match` callback fires for every match as the walk finds it (before mtime ranking and limit), on worker threads - keep it cheap and Sync.
 - Result: `GlobResult` with matches (path relative to searched directory, forward slashes, file_type, mtime, size), total_matches, and timed_out flag.
 - Errors: path missing/unresolvable, path not a directory, invalid glob pattern, timeout before walk starts (hard error), mid-walk timeout (partial result).

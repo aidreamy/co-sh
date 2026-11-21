@@ -185,7 +185,9 @@ impl App {
                 let mut all_models: Vec<ModelEntry> = Vec::new();
 
                 for provider in providers_to_check {
-                    if let Ok(mut connector) = Connector::new(provider) {
+                    if let Ok(mut connector) = Connector::new(provider)
+                        .map(|c| c.with_service_keyring(morpheus::KEYRING_SERVICE))
+                    {
                         if let Some(url) = base_urls.get(provider) {
                             connector = connector.with_base_url(url.clone());
                         }

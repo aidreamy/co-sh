@@ -1,4 +1,4 @@
-# `time_to_first_draw` — TTFD marker
+# `time_to_first_draw` - TTFD marker
 
 A placeholder renderable intended to mark (and later measure) the
 **time-to-first-draw** of the UI.
@@ -7,7 +7,7 @@ A placeholder renderable intended to mark (and later measure) the
 TimeToFirstDrawRenderable::new() -> Self
 ```
 
-The struct carries no state and renders nothing — it is pure API scaffolding
+The struct carries no state and renders nothing - it is pure API scaffolding
 for a future TTFD instrumentation pass.
 
 ```rust,ignore
@@ -15,4 +15,4 @@ for a future TTFD instrumentation pass.
 let marker = TimeToFirstDrawRenderable::new();
 ```
 
-Next: [types — marker traits](types/elements.md).
+Next: [types - marker traits](types/elements.md).

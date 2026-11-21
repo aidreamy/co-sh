@@ -1,7 +1,7 @@
-# `block` — resolving `replace block N:` edits
+# `block` - resolving `replace block N:` edits
 
 `replace block N:` is a convenience that lets an edit target a **syntactic
-block** instead of an explicit line range. The parser can't expand it —
+block** instead of an explicit line range. The parser can't expand it -
 the line span of "the block beginning on line N" is unknown until the file
 text and language are available. Expansion happens here, at every
 apply/preview boundary that has text:
@@ -26,7 +26,7 @@ pub fn resolve_block_edits(
    expansion `replace start..end:` would produce: one `before_anchor`
    replacement insert per payload row at `start`, then one delete per line
    across `[start, end]`. An empty `payloads` (from `delete block N`) emits
-   no inserts — a pure range deletion.
+   no inserts - a pure range deletion.
 4. After it runs, no `Block` edits remain, so the applier and recovery only
    ever see resolved edits.
 
@@ -34,12 +34,12 @@ pub fn resolve_block_edits(
 
 `BlockResolver` is a plain function pointer (`fn(BlockResolverRequest) ->
 Option<BlockSpan>`). The hashline core declares the contract; the **host
-injects the implementation** — typically tree-sitter backed. `None` means
+injects the implementation** - typically tree-sitter backed. `None` means
 "no block can be resolved": unrecognized language, blank/out-of-range line,
 no node begins on line N (e.g. a lone closing delimiter), or the resolved
 subtree has a syntax error.
 
-> **Host wiring note:** nothing in morpheus-sdk wires a resolver by default —
+> **Host wiring note:** nothing in morpheus-sdk wires a resolver by default -
 > `Patcher::new(fs, store, None)` runs without block support, and a
 > `replace block N:` then fails with `\`replace block N:\` is not available
 > here (no tree-sitter block resolver is configured). Use \`replace N..M:\`
@@ -53,8 +53,8 @@ block can't be resolved:
 
 | Action | Behavior | Used by |
 |---|---|---|
-| `Throw` (default) | Panics with a resolution diagnostic | Authoritative apply + final preview — an unresolvable block is a real error |
-| `Drop` | Silently skips the edit | Streaming previews — a half-written file must not throw |
+| `Throw` (default) | Panics with a resolution diagnostic | Authoritative apply + final preview - an unresolvable block is a real error |
+| `Drop` | Silently skips the edit | Streaming previews - a half-written file must not throw |
 
 The throw message names the offending line and steers back to an explicit
 range:
@@ -66,8 +66,8 @@ range:
 
 ## Block resolution against the right text
 
-The patcher resolves block anchors against the text the section tag names
-— when the live file matches the tag, that's the live content; when the
+The patcher resolves block anchors against the text the section tag names -
+when the live file matches the tag, that's the live content; when the
 file drifted, the ranges are resolved against the tagged snapshot's text so
 they flow through the 3-way-merge recovery correctly. If the snapshot is
 unavailable, the edit is rejected as a mismatch rather than placed blindly.

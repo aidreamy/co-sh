@@ -6,7 +6,7 @@ the output types derive `Serialize` + `JsonSchema`.
 
 ---
 
-## `RecallSearchInput` — the search parameters
+## `RecallSearchInput` - the search parameters
 
 ```rust
 pub struct RecallSearchInput {
@@ -27,24 +27,24 @@ pub struct RecallSearchInput {
 
 Field-by-field:
 
-- **`db_uri` / `table_name`** — where the data lives. `db_uri` is a local
+- **`db_uri` / `table_name`** - where the data lives. `db_uri` is a local
   directory (LanceDB's on-disk format) or a cloud URI; `table_name` is the
   table inside it.
-- **`vector_dim`** — the expected embedding dimension. It is checked against
+- **`vector_dim`** - the expected embedding dimension. It is checked against
   the table's actual schema before searching (a mismatch errors), and it
   doubles as metadata telling the caller which embedding model to use.
-- **`query`** — the original natural-language text. The tool does not use it
+- **`query`** - the original natural-language text. The tool does not use it
   for matching (the vector does that); it echoes it back in the output so
   the agent can correlate the results with what it asked.
-- **`query_vector`** — the pre-computed embedding of the query. This is the
+- **`query_vector`** - the pre-computed embedding of the query. This is the
   actual search key.
-- **`limit`** — result cap; `None` means 5 (the default applied by the
+- **`limit`** - result cap; `None` means 5 (the default applied by the
   search, and the default the tool schema advertises).
 
-Note that the input has **no `total` or pagination** — a fixed top-N by
+Note that the input has **no `total` or pagination** - a fixed top-N by
 design.
 
-## `RecallEntry` — one hit
+## `RecallEntry` - one hit
 
 ```rust
 pub struct RecallEntry {
@@ -54,10 +54,10 @@ pub struct RecallEntry {
 ```
 
 The two fields the agent actually needs: what the entry is called and what
-it says. There are no vectors or scores in the output — the caller asked for
+it says. There are no vectors or scores in the output - the caller asked for
 similar entries, and gets the text.
 
-## `RecallOutput` — the search result
+## `RecallOutput` - the search result
 
 ```rust
 pub struct RecallOutput {

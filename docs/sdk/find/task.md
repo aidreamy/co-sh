@@ -1,8 +1,8 @@
-# `find::task` — cancellation
+# `find::task` - cancellation
 
 `task` provides **cooperative cancellation** for the blocking search
 operations. It is the mechanism behind every `timeout_ms` option in the
-`find` module — and it is public so you can build your own long-running work
+`find` module - and it is public so you can build your own long-running work
 with the same guarantees, or cancel a search from another thread.
 
 ```rust,ignore
@@ -47,7 +47,7 @@ impl AbortToken {
 - **Timeout** is reported as `AbortReason::Timeout`; the walkers keep the
   partial results and return them with `timed_out: true` (see the
   [timeout contract](find.md#the-timeout-contract-read-this-once)).
-- **Non-timeout aborts** (`User`, `Signal`) always surface as errors — there
+- **Non-timeout aborts** (`User`, `Signal`) always surface as errors - there
   is no partial-salvage for explicit cancellation.
 - A deadline that already elapsed *before* the first `heartbeat()` is a hard
   error: nothing was collected, so there is nothing to salvage.
@@ -76,7 +76,7 @@ let result = glob(GlobOptions { /* … */ timeout_ms: Some(30_000), ..Default::d
 ```
 
 `AbortReason` and `CancelledError` both `Display` as `"Timeout"`, `"Signal"`,
-or `"User"` — the exact strings the engines surface in their `Err` values.
+or `"User"` - the exact strings the engines surface in their `Err` values.
 
 ---
 

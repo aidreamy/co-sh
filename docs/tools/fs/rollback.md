@@ -1,4 +1,4 @@
-# `rollback` — restoring previous versions
+# `rollback` - restoring previous versions
 
 `rollback` restores a file to a version that was recorded earlier in the
 session. It is the safety net for the whole [`fs` module](fs.md): every read
@@ -21,7 +21,7 @@ per-path and ordered by time of recording. This means:
   come back to.
 - Writing always records the *previous* content first, so a mistaken overwrite
   can be undone.
-- `rollback` needs nothing but the path — the version to restore to is found
+- `rollback` needs nothing but the path - the version to restore to is found
   from the history.
 
 There is no explicit "save version" call: recordings happen automatically as a
@@ -34,10 +34,10 @@ argument:
 
 | `hash` | Behavior |
 |---|---|
-| **Empty** `""` | Restore the version immediately **preceding** the file's current disk content. The natural "undo last change" — you don't need to know any hash. |
+| **Empty** `""` | Restore the version immediately **preceding** the file's current disk content. The natural "undo last change" - you don't need to know any hash. |
 | **A hash tag** | Restore the specific recorded version identified by that tag (the `file_hash`/`header` of an earlier result). |
 
-After an explicit-hash restore, the restored version is what is now on disk —
+After an explicit-hash restore, the restored version is what is now on disk -
 asking for it again is an error (`already at version ...`). To reverse a
 restore, pass back the result's `replaced_hash`: it identifies the version that
 was on disk *before* the restore, so a follow-up rollback with it undoes the
@@ -53,7 +53,7 @@ rollback("", hash="")                    → disk restored to v1
 
 Because `write` records the previous content before overwriting, the history
 after the two writes is `[v1, v2]`, and rolling back with an empty hash restores
-`v1` — the version right before the current disk state.
+`v1` - the version right before the current disk state.
 
 ## Behavior details
 
@@ -86,4 +86,4 @@ state, and an optional `warning`.
 A complete runnable example is provided at
 [`examples/fs/rollback.rs`](../../../crates/morpheus-tools/examples/fs/rollback.rs).
 It writes two versions of a file, rolls back to the first, and then rolls
-forward again using the recorded hash — the full undo/redo cycle.
+forward again using the recorded hash - the full undo/redo cycle.

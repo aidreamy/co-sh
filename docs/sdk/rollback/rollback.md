@@ -2,7 +2,7 @@
 
 `rollback` is the **undo engine** behind `morpheus-tools`' `fs_rollback` tool. It
 keeps a bounded, in-memory history of every file version the session has
-observed and can restore any recorded version by its content hash — or step
+observed and can restore any recorded version by its content hash - or step
 back one version at a time.
 
 ```
@@ -22,17 +22,17 @@ The 4-hex content tags already minted by the hashline engine
 ([`compute_file_hash`](../hashline/format.md)) are the *same* tokens used to
 name versions here. Every tool that reads or writes a file calls
 [`record`](core.md), which returns the tag. The model then already knows how
-to target a version — a header it saw in `read` output (`¶path#HASH`) is
+to target a version - a header it saw in `read` output (`¶path#HASH`) is
 exactly what `restore` accepts. No new vocabulary to learn.
 
 Three properties follow:
 
 1. **Deterministic handles.** Recording identical content mints the same
-   tag (read fusion), so `record` is idempotent — calling it again with the
+   tag (read fusion), so `record` is idempotent - calling it again with the
    same bytes does not bloat the history.
 2. **Content-addressable, not edit-addressable.** Versions are named by what
    the file *contained*, never by "the 3rd change". Two different paths with
-   identical content share the same tag, which is fine — tags are scoped per
+   identical content share the same tag, which is fine - tags are scoped per
    path in the store.
 3. **Session-scoped and bounded.** History lives for the process lifetime
    (it is a process-global singleton), not on disk. Old versions are evicted
@@ -48,7 +48,7 @@ Three properties follow:
 | `MAX_VERSIONS_PER_PATH` | 10 | Versions retained per path; oldest dropped first |
 | `MAX_SNAPSHOT_BYTES` | 512 KiB | Files larger than this are **silently skipped** by `record` (returns `None`) |
 
-Content containing null bytes (binary) is also skipped at record time —
+Content containing null bytes (binary) is also skipped at record time -
 `record` returns `None` for it.
 
 ---
@@ -84,7 +84,7 @@ function. They differ in *who owns the store*:
 
 - `rollback` owns a process-global singleton (`session_store()`) with its
   own window (50 paths × 10 versions).
-- `hashline`'s `Patcher` takes whatever store you hand it — and the
+- `hashline`'s `Patcher` takes whatever store you hand it - and the
   recommended wiring is to hand it `rollback::session_store()` via
   `Patcher::new_shared`, so edits and rollbacks share one history.
 
@@ -98,7 +98,7 @@ immediately be targeted by `fs_rollback`.
 
 - **No disk persistence.** History is in memory and dies with the process.
 - **No diffs.** Versions are whole files, not deltas.
-- **No policy about *when* to record** — the caller (each file tool) decides
+- **No policy about *when* to record** - the caller (each file tool) decides
   when to call [`record`](core.md). If a tool forgets, that version is not
   recoverable.
 
@@ -111,4 +111,4 @@ A complete, runnable walkthrough lives at
 it records a version chain, restores by explicit hash, steps back one
 version at a time, undoes a rollback, and exercises the error paths.
 
-Next: the [core API](core.md) — `record`, `restore`, and the error table.
+Next: the [core API](core.md) - `record`, `restore`, and the error table.

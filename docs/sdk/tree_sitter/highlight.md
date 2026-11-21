@@ -1,4 +1,4 @@
-# `highlight` — syntax highlighting spans
+# `highlight` - syntax highlighting spans
 
 A small, self-contained highlighter: given source text and an explicit
 language name, it returns the byte ranges of tokens worth coloring.
@@ -8,7 +8,7 @@ pub fn highlight(source: &str, lang: &str) -> Option<Vec<HighlightSpan>>
 ```
 
 Unlike the rest of the module, `highlight` takes a **language name** (not a
-path) and does **not** use the LRU cache — it is a one-shot parse for
+path) and does **not** use the LRU cache - it is a one-shot parse for
 rendering snippets (code blocks in markdown, terminal output).
 
 ## Language names
@@ -16,7 +16,7 @@ rendering snippets (code blocks in markdown, terminal output).
 `lang` is matched against a fixed set of names. Note the **JS family
 collapse**: `javascript`, `js`, `jsx`, `mjs`, `cjs`, `json`,
 `typescript`, `ts`, `tsx`, `php`, `lua`, and `dart` all use the JavaScript
-grammar (with the JS query). Matching is **exact** — a leading/trailing
+grammar (with the JS query). Matching is **exact** - a leading/trailing
 space (`" rust"`, `"rust "`) returns `None` (this mirrors how a markdown
 renderer passes code-fence languages and rejects stray whitespace).
 
@@ -55,7 +55,7 @@ Each language has a hand-written query:
   just strings, comments, types, and numbers.
 
 Spans are sorted by `start`; overlapping captures are possible (e.g. a
-keyword inside a comment) — consumers decide how to resolve them.
+keyword inside a comment) - consumers decide how to resolve them.
 
 ## Example
 

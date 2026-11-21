@@ -1,7 +1,7 @@
-# `fetch` — fetching a URL as clean markdown
+# `fetch` - fetching a URL as clean markdown
 
 `fetch` downloads a page and extracts its main content, returning it as
-clean text ready for the model's context — navigation, scripts, and
+clean text ready for the model's context - navigation, scripts, and
 boilerplate are stripped:
 
 ```rust,ignore
@@ -35,11 +35,11 @@ constant `EXA_FIRST` (currently `false`):
 
 ### 1. The local extractor (tried first)
 
-1. **Download** — `reqwest` GETs the URL with the `Morpheus/0.1` user agent.
-2. **Extract** — the HTML goes through `rs_trafilatura`, a readability-style
+1. **Download** - `reqwest` GETs the URL with the `Morpheus/0.1` user agent.
+2. **Extract** - the HTML goes through `rs_trafilatura`, a readability-style
    extractor, which returns the main content plus an `extraction_quality`
    score (0.0–1.0).
-3. **Quality gate** — if `extraction_quality` is below `0.75`, the extractor
+3. **Quality gate** - if `extraction_quality` is below `0.75`, the extractor
    is considered to have failed (it falls back to raw body text for
    non-HTML, e.g. JSON API responses), and the fetch falls through to Exa.
 
@@ -61,7 +61,7 @@ to keep the TUI clean.
 ## Output
 
 The result is the extracted main content as plain text. There is no HTML,
-no navigation, no comments — the model sees the article. (A `strip_na`
+no navigation, no comments - the model sees the article. (A `strip_na`
 cleanup pass removes useless `Published: N/A` / `Author: N/A` /
 `Highlights:` lines that some sources emit, keeping the text lean.)
 
@@ -81,7 +81,7 @@ Every failure surfaces as a descriptive `Err(String)`:
 | Exa MCP error | `"mcp err: …"` |
 
 When both backends fail, the last error is returned. The error string is
-deliberately informative — the model can read it and decide whether to
+deliberately informative - the model can read it and decide whether to
 retry, switch URLs, or give up.
 
 ---

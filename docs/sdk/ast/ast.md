@@ -23,7 +23,7 @@ from oh-my-pi's `pi-ast`/`pi-natives`, stripped of the N-API/JS surface.
 
 | Layer | Module | What it provides |
 |---|---|---|
-| Languages | [`lang`](lang.md) | [`SupportLang`] — 60+ grammars, alias resolution, extension inference |
+| Languages | [`lang`](lang.md) | [`SupportLang`] - 60+ grammars, alias resolution, extension inference |
 | Parsers | [`parse`](parse.md) | The tree-sitter parser function for every language |
 | Operations | [`ops`](ops.md) | Pattern compilation, matching, rewriting, edit application, file discovery |
 
@@ -35,7 +35,7 @@ rewrite_source, …}` is all you typically need.
 
 ## The core concept: patterns with metavariables
 
-An ast-grep pattern is a **code snippet** that may contain metavariables —
+An ast-grep pattern is a **code snippet** that may contain metavariables -
 `$NAME` placeholders that match any single node:
 
 ```rust,ignore
@@ -46,7 +46,7 @@ $x + $x                    every expression adding a thing to itself
 ```
 
 `$$$ARGS` (three dollars) matches *zero or more* nodes. Patterns are parsed
-as real syntax in the target language, so they are structurally precise —
+as real syntax in the target language, so they are structurally precise -
 `foo($A)` matches `foo(x)` but not `foo(x, y)`.
 
 Matching has a **strictness** knob (see [ops](ops.md)): `Smart` (default)
@@ -57,8 +57,8 @@ concrete-syntax equality, and the others trade precision for recall.
 
 Operations take a [`SupportLang`], which callers obtain in one of two ways:
 
-- **Explicitly** — `SupportLang::from_alias("py")` or `resolve_supported_lang("python")`.
-- **From a file** — `SupportLang::from_path("src/main.rs")` / `resolve_language(None, path)`,
+- **Explicitly** - `SupportLang::from_alias("py")` or `resolve_supported_lang("python")`.
+- **From a file** - `SupportLang::from_path("src/main.rs")` / `resolve_language(None, path)`,
   which infer the language from the extension (or well-known filename:
   `Makefile`, `Justfile`, `CMakeLists.txt`, `Dockerfile`, shell rc files).
 

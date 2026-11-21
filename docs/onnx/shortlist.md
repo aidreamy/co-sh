@@ -1,4 +1,4 @@
-# `shortlist` — embedding-based choice reduction
+# `shortlist` - embedding-based choice reduction
 
 The `shortlist` module reduces high-cardinality choice questions by embedding the state and each option, then keeping only the top-`k` most semantically similar labels. This conserves the token budget when a choice has hundreds of options.
 
@@ -67,11 +67,11 @@ pub fn shortlist_choice(
 
 ### How it works
 
-1. **Serialize state** — `state` is compacted to a string (via `serialize_state`). If `instructions` is provided, it prefixes the state.
-2. **Render options** — each choice criterion (label → description) is rendered to a string via `render_options`.
-3. **Embed everything** — `embed_fn` is called once with `[query, option1, option2, ...]`.
-4. **Compute cosine similarity** — similarity between the query vector and each option vector.
-5. **Rank and truncate** — options are sorted by similarity (descending, stable order, ties keep the earlier label), then truncated to `k`.
+1. **Serialize state** - `state` is compacted to a string (via `serialize_state`). If `instructions` is provided, it prefixes the state.
+2. **Render options** - each choice criterion (label → description) is rendered to a string via `render_options`.
+3. **Embed everything** - `embed_fn` is called once with `[query, option1, option2, ...]`.
+4. **Compute cosine similarity** - similarity between the query vector and each option vector.
+5. **Rank and truncate** - options are sorted by similarity (descending, stable order, ties keep the earlier label), then truncated to `k`.
 
 ### Example
 
@@ -119,12 +119,12 @@ pub fn predict_shortlist(
 
 ### How it works
 
-1. **Iterate questions** — for each `(qid, qdef)` in the map:
+1. **Iterate questions** - for each `(qid, qdef)` in the map:
    - If `type != "choice"`, forward unchanged.
    - If `type == "choice"` and label count `<= k`, forward unchanged (no shortlisting needed).
    - Otherwise, call `rank` to get the top-`k` labels and build a reduced criteria set.
-2. **Call predict** — `runner.predict(state, &reduced)` runs the model on the shortlisted questions.
-3. **Attach metadata** — the result includes a `shortlist` entry with `labels`, `scores`, `k`, `n`, and `passthrough` for each shortlisted question.
+2. **Call predict** - `runner.predict(state, &reduced)` runs the model on the shortlisted questions.
+3. **Attach metadata** - the result includes a `shortlist` entry with `labels`, `scores`, `k`, `n`, and `passthrough` for each shortlisted question.
 
 ### The `shortlist` metadata
 
@@ -145,11 +145,11 @@ The returned value includes:
 }
 ```
 
-- `labels` — the kept labels in rank order.
-- `scores` — cosine similarity scores (or `null` when nothing was dropped).
-- `k` — the shortlist size.
-- `n` — the original label count.
-- `passthrough` — `true` if the question was forwarded unchanged (label count `<= k`).
+- `labels` - the kept labels in rank order.
+- `scores` - cosine similarity scores (or `null` when nothing was dropped).
+- `k` - the shortlist size.
+- `n` - the original label count.
+- `passthrough` - `true` if the question was forwarded unchanged (label count `<= k`).
 
 ### Probabilities
 
@@ -308,4 +308,4 @@ The default shortlist size used when no explicit `k` is provided.
 - Shortlisted choice probabilities are over the kept labels only, not the original set.
 - `DEFAULT_SHORTLIST_K = 20` is the default shortlist size.
 
-Next: [runtime — tokenization, batching, and ONNX sessions](runtime.md).
+Next: [runtime - tokenization, batching, and ONNX sessions](runtime.md).

@@ -1,6 +1,6 @@
-# `scrollback` — scrollback snapshot writer
+# `scrollback` - scrollback snapshot writer
 
-Types for capturing a solid component tree into a **scrollback snapshot** —
+Types for capturing a solid component tree into a **scrollback snapshot** -
 the rendered output preserved above the visible terminal area. **Port
 status: scaffolded.** The types and signatures are in place, but the
 writer produces an empty snapshot and the main entry point is a no-op.
@@ -56,7 +56,7 @@ pub fn write_solid_to_scrollback(
 
 The design intent (per the source comments): integrate with the ratatui
 backend and the `LayoutTree` once the renderer exposes a scrollback surface
-API equivalent to the original `OptimizedBuffer` path — i.e. render the
+API equivalent to the original `OptimizedBuffer` path - i.e. render the
 component tree into an off-screen buffer and hand it to the terminal's
 scrollback.
 
@@ -67,4 +67,4 @@ API scaffolding. To render content off-screen today, render widgets into an
 in-memory `ratatui::buffer::Buffer` yourself (the same approach the
 [`core` example](../../../crates/morpheus-tui/examples/core/core.rs) uses).
 
-Next: [time_to_first_draw — TTFD marker](time_to_first_draw.md).
+Next: [time_to_first_draw - TTFD marker](time_to_first_draw.md).

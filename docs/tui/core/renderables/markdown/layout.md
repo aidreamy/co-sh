@@ -1,4 +1,4 @@
-# `markdown::layout` — height estimation
+# `markdown::layout` - height estimation
 
 A single function that predicts how many terminal rows markdown will occupy,
 so callers can size a scroll container before rendering.
@@ -8,8 +8,8 @@ pub fn estimate_height(text: &str, max_w: u16) -> u16
 ```
 
 `estimate_height` runs the **same** `pulldown_cmark` event walk and the same
-wrapping logic as [`MarkdownRenderable::render_self`](../markdown/markdown.md)
-— it even mirrors the table-buffering behavior — so its answer matches what
+wrapping logic as [`MarkdownRenderable::render_self`](../markdown/markdown.md) -
+it even mirrors the table-buffering behavior - so its answer matches what
 the renderer will actually produce. List markers, code blocks, blockquotes,
 and table rows are all counted identically.
 

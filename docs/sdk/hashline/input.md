@@ -1,6 +1,6 @@
 # The hashline syntax: tokens, ops, and error handling
 
-This page is the reference for the patch language itself — what a valid
+This page is the reference for the patch language itself - what a valid
 patch looks like, how input is split into sections, and every diagnostic the
 parser can produce. The two modules behind it are `tokenizer`
 (line classification) and `parser` (the state machine that
@@ -30,12 +30,12 @@ insert tail:
   produced by [`compute_file_hash`](format.md), which always returns 4 hex
   chars.
 - The strict tokenizer only recognizes a `#`-tag when it is exactly 4 hex
-  chars (`#ABC` or `#ABCDE` do not parse as a tag — the trailing chars stay
+  chars (`#ABC` or `#ABCDE` do not parse as a tag - the trailing chars stay
   part of the path in the lenient recovery path, so a malformed tag is
   silently treated as a path rather than rejected).
 - Quoted paths (`¶"src/lib.rs"#0A3`) are unquoted. A leading `***` and
   apply_patch-style noise (`Update File:`, `Update:`, `Add File:`, …) is
-  stripped both from headers and from path text — the parser is built to
+  stripped both from headers and from path text - the parser is built to
   forgive the shapes models reflexively emit.
 - Malformed `¶`-prefixed lines are a hard error, not payload: `Input header
   must be ¶PATH or ¶PATH#TAG with a 4-hex content-hash tag; got "…".`
@@ -57,7 +57,7 @@ grammar is strict about which ops take bodies:
 | `replace block 5:` | required | `EMPTY_BLOCK`: "`replace block N:` needs at least one `+TEXT` body row. To delete a block, use `delete N..M` with the block's line range." |
 | `delete block 5` | **none** | "`delete block N` does not take body rows. Remove the body, or use `replace block N:` to replace the block." |
 
-Range separators may be `..`, `-`, `…`, or `..` with spaces — the tokenizer
+Range separators may be `..`, `-`, `…`, or `..` with spaces - the tokenizer
 accepts all. A range that ends before it starts is an error (`line N: range
 M..K ends before it starts.`). `delete` requires a range or single line
 after the verb and rejects `delete N..M:` (colon) via a dedicated
@@ -71,7 +71,7 @@ diagnostic. `replace` accepts a single line (`replace 5:`).
 - A **bare row** (no `+`) inside a pending body is auto-converted to a
   literal row with a warning: `Auto-prefixed bare body row(s) with \`+\`.
   Body rows must be \`+TEXT\` literal lines; pasting raw code as payload is
-  not a portable shape.` This is a warning, not an error — the content is
+  not a portable shape.` This is a warning, not an error - the content is
   preserved.
 - A row starting with `-` (unified-diff style) is a hard error: `\`-\` rows
   are not valid; hashline ranges already name the lines being changed. To
@@ -106,7 +106,7 @@ a targeted message instead of misparsing them:
 
 - `*** Begin Patch` and `*** End Patch` are an optional envelope: the begin
   marker is silently consumed (even at the very start of input), the end
-  marker **terminates parsing** — everything after it is ignored.
+  marker **terminates parsing** - everything after it is ignored.
 - `*** Abort` is a recovery sentinel emitted by an agent loop when a
   contaminated tool-call stream is truncated mid-call. It behaves like
   `*** End Patch` (terminates) but surfaces no warning.
@@ -129,10 +129,10 @@ a targeted message instead of misparsing them:
 3. Splits on subsequent headers. Sections with **no ops** are dropped;
    consecutive sections for the **same path** are merged into one section
    with concatenated diffs (anchors authored against one snapshot must apply
-   as one batch — applying them separately would shift line numbers).
+   as one batch - applying them separately would shift line numbers).
    Merging with **conflicting hash tags** for the same path panics with
    `Conflicting hashline snapshot tags for {path}. Re-read the file and retry
-   with one current header.` (This is the one assert in the split path —
+   with one current header.` (This is the one assert in the split path -
    it indicates contradictory authoring input.)
 4. Returns a [`Patch`](input.md) whose sections parse their diffs **lazily**
    on first access and cache the result, so preflight and apply never parse

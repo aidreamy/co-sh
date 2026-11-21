@@ -1,4 +1,4 @@
-# `embed` — the embedding and RAG API
+# `embed` - the embedding and RAG API
 
 The `embed` module provides a high-level RAG (Retrieval-Augmented Generation) workflow that combines text embedding with vector storage. It offers two embedding backends (local ONNX and cloud providers) and a simple ingest-and-search interface backed by LanceDB.
 
@@ -115,7 +115,7 @@ let ids = rag.ingest_batch(&docs).await?;
 
 `ingest` embeds the content and stores it. If the same content string already exists in the table, the existing id is returned and no duplicate is inserted (content-based deduplication).
 
-`ingest_batch` processes multiple entries in a single call. The batch is processed sequentially; if any entry fails, the error is returned immediately and earlier entries remain in the database. The function returns the same number of ids as inputs — if content already exists, the existing id is returned for that entry instead of the one you passed.
+`ingest_batch` processes multiple entries in a single call. The batch is processed sequentially; if any entry fails, the error is returned immediately and earlier entries remain in the database. The function returns the same number of ids as inputs - if content already exists, the existing id is returned for that entry instead of the one you passed.
 
 ### Searching
 
@@ -304,4 +304,4 @@ At least one of `fastembed` or `cloud` must be enabled; otherwise the `Embedder`
 - Errors are reported via `RagError` (embedding/database/lock) and `VecDbError` (validation/mismatch/not found).
 - Feature-gated: requires `lancedb` plus at least one of `fastembed` or `cloud`.
 
-Next: [search — the vector search pipeline](search.md).
+Next: [search - the vector search pipeline](search.md).

@@ -1,4 +1,4 @@
-# `markdown::context` — the nesting tracker
+# `markdown::context` - the nesting tracker
 
 `MarkdownContext` is the state machine that tracks where you are in the
 markdown while iterating a `pulldown_cmark` event stream. `MarkdownRenderable`
@@ -21,7 +21,7 @@ pub enum MarkdownElement {
     Emphasis,               // *italic*
     Strong,                 // **bold**
     Strikethrough,          // ~~text~~
-    Link,                   // [label](url) — the label part
+    Link,                   // [label](url) - the label part
     InlineCode,             // `code`
     CodeBlock,              // fenced/indented block
     Blockquote,

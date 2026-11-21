@@ -1,9 +1,9 @@
-# `terminal_palette` — OSC-4 palette detection
+# `terminal_palette` - OSC-4 palette detection
 
 Queries the running terminal for its actual color palette over the **OSC-4
 escape sequence** (`ESC ] 4 ; N ; color BEL`), so the UI can adapt its
 colors to what the user's terminal really provides. This is a heavier,
-opt-in capability — most widgets never touch it, and it requires a live
+opt-in capability - most widgets never touch it, and it requires a live
 terminal with a response channel.
 
 ## Core types
@@ -68,9 +68,9 @@ impl TerminalPalette {
 pub fn create_terminal_palette(options: TerminalPaletteOptions) -> TerminalPalette
 ```
 
-- `detect_osc_support` — probes whether the terminal answers OSC queries at
+- `detect_osc_support` - probes whether the terminal answers OSC queries at
   all (with a `timeout_ms` limit; capped at 300 ms internally).
-- `detect` — takes `Option<&GetPaletteOptions>` (`None` = defaults: 16
+- `detect` - takes `Option<&GetPaletteOptions>` (`None` = defaults: 16
   colors, no timeout), queries the palette, and returns the parsed
   `TerminalColors`. If OSC is unsupported it returns an all-`None` palette
   rather than an error.
@@ -85,19 +85,19 @@ pub fn build_terminal_palette_signature(colors: Option<&TerminalColors>) -> Stri
 `normalize_terminal_palette` converts the `Option<String>` hex entries into
 concrete `RGBA`s (falling back to sane defaults for `None`).
 `build_terminal_palette_signature` produces a stable string signature of the
-palette — useful for cache keys or change detection.
+palette - useful for cache keys or change detection.
 
 ## When to use it
 
-Only when you need the *actual* palette of the terminal the user is running
-— e.g. to pick contrast-safe highlight colors. It needs:
+Only when you need the *actual* palette of the terminal the user is running -
+e.g. to pick contrast-safe highlight colors. It needs:
 
 1. a way to write to the terminal (`write_fn`),
 2. a way to receive the OSC reply (`osc_source`),
 3. a live terminal that supports OSC-4.
 
 Without those, detection fails gracefully with a `String` error. If you just
-need *a* color, use [`rgba`](rgba.md) — this module is strictly optional
+need *a* color, use [`rgba`](rgba.md) - this module is strictly optional
 plumbing.
 
-Back to [lib/ — the shared building blocks](primitives.md).
+Back to [lib/ - the shared building blocks](primitives.md).

@@ -1,7 +1,7 @@
 # The `question` module: asking the user for input
 
 `question` is the module that lets the agent talk back to the human. It
-presents structured questions — text, single choice, multi choice, yes/no —
+presents structured questions - text, single choice, multi choice, yes/no -
 and collects the answers, so the agent can ask for exactly the information it
 needs instead of guessing.
 
@@ -11,7 +11,7 @@ needs instead of guessing.
 
 The module is deliberately small: one wrapper ([`Question`](#the-question-wrapper)),
 one operation ([`ask`](#the-ask-method)), and a handful of types. There are no
-free functions and no engines — the interesting part is the validation
+free functions and no engines - the interesting part is the validation
 contract and how the tool plugs into the UI layer.
 
 ---
@@ -21,7 +21,7 @@ contract and how the tool plugs into the UI layer.
 Three principles shape the API, and they are baked into the tool description
 so the model follows them:
 
-1. **Batch questions.** Ask *all* the questions you need in a single call —
+1. **Batch questions.** Ask *all* the questions you need in a single call -
    repeated single-question interruptions frustrate users.
 2. **Explain the purpose.** Every question can (and should) carry a
    `purpose`: *why* the agent needs the answer. Users answer better when they
@@ -55,7 +55,7 @@ let output = question.ask(&QuestionInput {
 })?;
 ```
 
-`Question::new()` pre-configures `description_ask` — the ready-to-serve MCP
+`Question::new()` pre-configures `description_ask` - the ready-to-serve MCP
 tool description for `ask_questions`. `Question::default()` is
 `Question::new()`.
 
@@ -65,7 +65,7 @@ tool description for `ask_questions`. `Question::default()` is
 pub fn ask(&self, input: &QuestionInput) -> Result<QuestionOutput, String>
 ```
 
-`ask` is **synchronous and stateless** — it validates the input and returns a
+`ask` is **synchronous and stateless** - it validates the input and returns a
 `QuestionOutput` echoing the questions back with an empty `answers` list. The
 *actual* interaction with the user happens in the UI layer: the harness
 intercepts the `ask_questions` tool call, renders the dialog, captures the
@@ -95,12 +95,12 @@ anything is presented. The rules:
 `SingleChoice` questions are normalized: the `recommended` option is moved
 to position 0 automatically (the model must NOT pre-sort `options` itself)
 and the TUI renders it with a `(Recommended)` badge. The TUI also always
-appends a virtual `Personalize your response` entry to `SingleChoice` — the
+appends a virtual `Personalize your response` entry to `SingleChoice` - the
 model must NOT invent its own custom/other option.
 
 Every error names the offending question id, so the model can fix exactly
 that item and retry. An empty `questions` array and duplicate ids fail the
-whole call — validation is all-or-nothing.
+whole call - validation is all-or-nothing.
 
 ---
 
@@ -112,7 +112,7 @@ The tool is **stateless by design**: `Question` holds no answers. The flow is:
 2. `ask` validates and returns `QuestionOutput { questions, answers: [] }`.
 3. The harness/TUI intercepts the call, renders the questions as a dialog,
    and captures the user's answers.
-4. The answers are returned to the model as the tool result — correlated by
+4. The answers are returned to the model as the tool result - correlated by
    question `id` via [`AnswerItem`](types.md#answeritem).
 
 The `id` field is the correlation key: it must be unique per call, and each
@@ -122,7 +122,7 @@ answer references the question it belongs to by that id.
 
 ## The harness and where asking is allowed
 
-- `ask_questions` is available in **Ask mode** as well as Build/Yolo — asking
+- `ask_questions` is available in **Ask mode** as well as Build/Yolo - asking
   the user questions is a read-only, conversational operation.
 - The **internal sub-agent** cannot ask: `ask_questions` is in the sub-agent's
   blocklist (`SUBAGENT_BLOCKED_TOOLS`), because a headless sub-agent would
@@ -133,10 +133,10 @@ answer references the question it belongs to by that id.
 ## Summary
 
 - One tool, one operation: `Question::new().ask(&input)`.
-- Batch everything, explain `purpose`, offer `options` — the description
+- Batch everything, explain `purpose`, offer `options` - the description
   teaches the model these habits.
 - `ask` validates (non-empty, unique ids, options rules) and echoes the
   questions; the UI layer collects the answers.
 - Answers correlate to questions by `id`.
 
-Next: the [data types](types.md) — the question/answer model.
+Next: the [data types](types.md) - the question/answer model.

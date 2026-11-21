@@ -1,4 +1,4 @@
-# `SliderRenderable` — range slider
+# `SliderRenderable` - range slider
 
 A track-and-thumb slider over a numeric range. Focusable. Use it for
 settings like speed, volume, or zoom.
@@ -16,10 +16,10 @@ pub enum SliderOrientation { Horizontal, Vertical }
 | `value() -> f64` | | Read it back. |
 | `set_min(f64)` / `set_max(f64)` | `0.0` / `100.0` | Change the range; clamps the current value into it. |
 | `set_orientation(SliderOrientation)` | from `new` | Swap direction. |
-| `set_view_port_size(f64)` | `10.0` | The visible window size — controls the thumb's *length* relative to the range. |
+| `set_view_port_size(f64)` | `10.0` | The visible window size - controls the thumb's *length* relative to the range. |
 
-The thumb length is proportional to `view_port_size / (range + view_port_size)`
-— a small viewport yields a large thumb (most of the content visible).
+The thumb length is proportional to `view_port_size / (range + view_port_size)` -
+a small viewport yields a large thumb (most of the content visible).
 
 ## Colors
 
@@ -52,4 +52,4 @@ volume.set_value(999.0);      // clamps to max
 assert_eq!(volume.value(), 100.0);
 ```
 
-Next: [scroll_bar — the scroll bar](scroll_bar.md).
+Next: [scroll_bar - the scroll bar](scroll_bar.md).

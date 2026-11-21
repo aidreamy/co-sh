@@ -2,7 +2,7 @@
 
 The bash module has one request type and a small set of stream / error types.
 
-All stream/error types below live in `morpheus_tools::bash::bsh` — only
+All stream/error types below live in `morpheus_tools::bash::bsh` - only
 `BashRunInput` is re-exported at the `bash` root. `Bash::run`'s signature
 uses them, so import from `bash::bsh::…` when you need to name a concrete
 type (the [example](../../../crates/morpheus-tools/examples/bash/bash.rs) does).
@@ -11,7 +11,7 @@ type (the [example](../../../crates/morpheus-tools/examples/bash/bash.rs) does).
 
 ## Request type
 
-### `BashRunInput` — the `bash_run` arguments
+### `BashRunInput` - the `bash_run` arguments
 
 ```rust
 pub struct BashRunInput {
@@ -21,10 +21,10 @@ pub struct BashRunInput {
 }
 ```
 
-`command` is the only field: there is no timeout argument — hangs are ended
+`command` is the only field: there is no timeout argument - hangs are ended
 automatically by the liveness watchdog (no output, CPU or I/O progress for
 120s → killed) and progress-making runs are bounded by the wrapper's hard
-runtime cap. All execution configuration — `cwd`, `env`, the cap, `pty` —
+runtime cap. All execution configuration - `cwd`, `env`, the cap, `pty` -
 lives on the [`Bash`](bash.md#the-bash-wrapper) wrapper and is fixed when the
 harness builds its tool set. It derives
 `Deserialize` and `JsonSchema`, so the same struct both parses the tool
@@ -35,7 +35,7 @@ arguments and can generate their schema (the `inputSchema` on
 
 ## Stream item
 
-### `SpawnOutput` — one item in the output stream
+### `SpawnOutput` - one item in the output stream
 
 ```rust
 pub struct SpawnOutput {
@@ -58,7 +58,7 @@ the essentials:
   exclusive**: a normal exit sets `exit_code` (0 or not); a signal death sets
   `signal` to the Unix signal number; a timeout sets `signal` to `-1`.
 - **`truncated`** is `true` when a chunk exactly filled the 4096-byte read
-  buffer — a per-chunk "more may be coming" hint, not an aggregate total.
+  buffer - a per-chunk "more may be coming" hint, not an aggregate total.
 - Both `stdout` and `stderr` are raw bytes, not text: the program may emit
   arbitrary bytes, and PTY mode rewrites `\n` to `\r\n`. Decode with
   `String::from_utf8_lossy` when displaying.
@@ -67,7 +67,7 @@ the essentials:
 
 ## Error and helper types
 
-### `BashError` — the error from `Bash::run`
+### `BashError` - the error from `Bash::run`
 
 ```rust
 pub struct BashError {
@@ -111,7 +111,7 @@ consuming the [`SpawnOutput`](#spawnoutput--one-item-in-the-output-stream)
 stream directly.
 
 > **Stream errors are dropped by `Bash::run`.** The underlying executor emits
-> *stream* errors (`Err(io::Error)`) for runtime failures — an invalid
+> *stream* errors (`Err(io::Error)`) for runtime failures - an invalid
 > environment-variable name (`ErrorKind::InvalidInput`), a nonexistent `cwd`,
 > a spawn failure. The wrapper's stream only yields `Ok` items, so those
 > surface as a **silently truncated/empty stream**, not as an `Err` from
@@ -126,7 +126,7 @@ stream directly.
 
 `Bash::description_run` is a ready-to-serve MCP tool description
 (`{ "name", "description", "inputSchema" }`) for the `bash_run` tool. Its
-`inputSchema` requires exactly one property — `command` — matching
+`inputSchema` requires exactly one property - `command` - matching
 [`BashRunInput`](#bashruninput--the-bash_run-arguments) above. The prose
 description covers the security validation, the streaming semantics, and the
 harness truncation behavior (output over the token budget is head/tail-cut

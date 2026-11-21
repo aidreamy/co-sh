@@ -1,10 +1,10 @@
 # Storage seams: `fs` and `snapshots`
 
-The patcher never touches disk directly — it works through two traits that
+The patcher never touches disk directly - it works through two traits that
 let the same engine run against any backing store:
 
-- [`Filesystem`](fs.md) — where file *content* comes from and goes to.
-- `SnapshotStore` — where full-file *versions* are cached so
+- [`Filesystem`](fs.md) - where file *content* comes from and goes to.
+- `SnapshotStore` - where full-file *versions* are cached so
   stale tags can be recovered.
 
 This page covers both. They're the two seams to implement when embedding
@@ -12,7 +12,7 @@ hashline in a new host.
 
 ---
 
-## `Filesystem` — the content seam
+## `Filesystem` - the content seam
 
 ```rust
 pub trait Filesystem {
@@ -24,8 +24,8 @@ pub trait Filesystem {
 }
 ```
 
-The trait is intentionally minimal — three required behaviors (read, write,
-probe) plus two defaults — so any backing store can adapt: disk, memory, an
+The trait is intentionally minimal - three required behaviors (read, write,
+probe) plus two defaults - so any backing store can adapt: disk, memory, an
 LSP text-document protocol, a Git tree, a VFS.
 
 Contract details:
@@ -39,7 +39,7 @@ Contract details:
   `path()`, `Display` "File not found: {path}", and a `code`-compatible
   shape) plus `is_not_found`, which walks the error chain and also accepts
   `std::io::ErrorKind::NotFound`.
-- **`write_text` returns `WriteResult { text }`** — the *actual* final text,
+- **`write_text` returns `WriteResult { text }`** - the *actual* final text,
   so adapters that transform on serialization (notebooks, formatters) can
   report what really landed.
 - **`canonical_path`** is the cache key. Default identity; override to
@@ -47,15 +47,15 @@ Contract details:
 
 ### Ships with the module
 
-- `DiskFilesystem` — `std::fs`/`tokio::fs` backed; the default for CLI use.
+- `DiskFilesystem` - `std::fs`/`tokio::fs` backed; the default for CLI use.
   Paths are accepted as-is; callers own any cwd or sandbox resolution.
-- `InMemoryFilesystem` — a `Mutex<HashMap>` with convenient synchronous
+- `InMemoryFilesystem` - a `Mutex<HashMap>` with convenient synchronous
   helpers (`set`, `get`, `delete`, `clear`, `entries`) for tests, sandboxes,
   and dry runs.
 
 ---
 
-## `SnapshotStore` — the version seam
+## `SnapshotStore` - the version seam
 
 ```rust
 pub trait SnapshotStore {
@@ -74,18 +74,18 @@ A `Snapshot` is one observed version: `path`, the full normalized text, the
 computed `hash` tag, and `recorded_at` (ms since epoch).
 
 - **Producers** (read / grep / write tools, or `Patcher::commit`) call
-  `record(path, full_text)` — the store hashes the text and returns the tag.
+  `record(path, full_text)` - the store hashes the text and returns the tag.
 - **Consumers** (the patcher, recovery) call `by_hash(path, tag)` to resolve
   a stale tag back to the exact text that minted it.
 - Recording **byte-identical content** refreshes recency and reuses the
-  existing tag (read fusion — any read of the same state mints the same
+  existing tag (read fusion - any read of the same state mints the same
   tag). Recording new content prepends a fresh version.
 - `record_seen_lines` is how producers tell recovery which lines the model
   actually saw, powering the unseen-anchor warning.
 
 ### Ships with the module
 
-`InMemorySnapshotStore` — an LRU-bounded default: up to 30 paths (default),
+`InMemorySnapshotStore` - an LRU-bounded default: up to 30 paths (default),
 each with a short ring of up to 4 full-file versions (oldest dropped
 first). Configure via `InMemorySnapshotStoreOptions { max_paths,
 max_versions_per_path }`.
@@ -94,6 +94,6 @@ An `Arc<Mutex<S>>` also implements `SnapshotStore`, so you can share one
 store across the patcher and other session tools without duplicating state.
 
 > Note: `Patcher` requires a store. Without one, section tags would be
-> unverifiable pointers — the whole safety model collapses. `Patcher::new`
+> unverifiable pointers - the whole safety model collapses. `Patcher::new`
 > takes the store by value; `Patcher::new_shared` takes an existing
 > `Arc<Mutex<S>>` (e.g. the global store from `rollback::session_store`).

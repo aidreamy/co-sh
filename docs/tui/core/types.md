@@ -1,4 +1,4 @@
-# `types` — attributes, mouse events, selection
+# `types` - attributes, mouse events, selection
 
 The shared types that widgets, the renderer, and applications pass around:
 text attributes, mouse events, selection state, terminal capabilities, and
@@ -6,7 +6,7 @@ the `RenderContext` trait.
 
 ---
 
-## `TextAttributes` — bitflags for text styling
+## `TextAttributes` - bitflags for text styling
 
 ```rust
 bitflags! {
@@ -28,9 +28,9 @@ Attributes are stored as a plain `u32` on text chunks and renderables. The
 low 8 bits are the standard text attributes above; bits 8–31 can carry extra
 payloads such as a link id (see [`utils::attributes_with_link`](utils.md)).
 
-- `get_base_attributes(attr: u32) -> u32` — mask off everything but the low 8
+- `get_base_attributes(attr: u32) -> u32` - mask off everything but the low 8
   attribute bits (`attr & 0xff`).
-- `ATTRIBUTE_BASE_BITS = 8`, `ATTRIBUTE_BASE_MASK = 0xff` — constants for the
+- `ATTRIBUTE_BASE_BITS = 8`, `ATTRIBUTE_BASE_MASK = 0xff` - constants for the
   bit layout.
 
 Use [`create_text_attributes`](utils.md) to build a `u32` from named boolean
@@ -84,7 +84,7 @@ terminal supports: `kitty_keyboard`, `kitty_graphics`, `rgb`, `ansi256`,
 `RenderContext::capabilities()` exposes an optional snapshot to widgets that
 need to adapt (e.g. fall back to ANSI-256 when truecolor is unsupported).
 
-## `Selection` — text selection state
+## `Selection` - text selection state
 
 Tracks a drag selection with an anchor (start) and focus (current end):
 
@@ -114,7 +114,7 @@ pub enum MouseButton { Left = 0, Middle = 1, Right = 2 }
 pub enum MouseEventType { Down, Up, Drag, Move, ScrollDown, ScrollUp }
 
 pub struct MouseModifiers { pub shift: bool, pub alt: bool, pub ctrl: bool }
-// MouseModifiers::none() — all false
+// MouseModifiers::none() - all false
 
 pub struct MouseEvent {
     pub event_type: MouseEventType,
@@ -130,8 +130,8 @@ pub struct MouseEvent {
 `is_left_click()` is a convenience (`button == Left && event_type == Up`).
 Two mutation methods mirror DOM semantics:
 
-- `stop_propagation()` — the event won't bubble further up the tree.
-- `prevent_default()` — the default handling is skipped.
+- `stop_propagation()` - the event won't bubble further up the tree.
+- `prevent_default()` - the default handling is skipped.
 
 Widgets receive mouse events through
 [`Renderable::process_mouse_event`](renderable.md).
@@ -144,7 +144,7 @@ lets a widget:
 - **Hit testing**: `add_to_hit_grid(x, y, w, h, id)`, scissor rects
   (`push_hit_grid_scissor_rect` / `pop_hit_grid_scissor_rect` /
   `clear_hit_grid_scissor_rects`).
-- **Frame info**: `width()`, `height()`, `frame_id()` (monotonic per frame —
+- **Frame info**: `width()`, `height()`, `frame_id()` (monotonic per frame -
   lets renderables dedupe per-frame work).
 - **Rendering control**: `request_render()`, `request_live()` /
   `drop_live()`.
@@ -196,4 +196,4 @@ drawn to the terminal.
 Other small types: `DebugOverlayCorner`, `TargetChannel`, `MemorySnapshot`,
 `ViewportBounds`, `Highlight`, `UpdateSelectionOptions`.
 
-Next: [layout — automatic layout with LayoutTree](layout.md).
+Next: [layout - automatic layout with LayoutTree](layout.md).

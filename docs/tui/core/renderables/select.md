@@ -1,4 +1,4 @@
-# `SelectRenderable` — vertical option list
+# `SelectRenderable` - vertical option list
 
 A scrollable, vertical list of options with an optional description line per
 option. Focusable. Use it for pickers and menus.
@@ -31,7 +31,7 @@ pub struct SelectOption {
 | `move_up(steps)` | Move up, clamping at 0 (or wrapping to the last). |
 | `move_down(steps)` | Move down, clamping at the end (or wrapping to 0). |
 
-> **Note:** wrapping is currently *internal* — the `wrap_selection` field
+> **Note:** wrapping is currently *internal* - the `wrap_selection` field
 > defaults to `false` and has no public setter in this version, so selection
 > clamps at the bounds in practice.
 
@@ -72,4 +72,4 @@ select.move_down(1);
 assert_eq!(select.selected_option().map(|o| o.name.as_str()), Some("go"));
 ```
 
-Next: [tab_select — horizontal tab bar](tab_select.md).
+Next: [tab_select - horizontal tab bar](tab_select.md).

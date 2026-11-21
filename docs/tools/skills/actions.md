@@ -1,4 +1,4 @@
-# `skills` actions — what each tool does
+# `skills` actions - what each tool does
 
 All four operations share one flow: `execute` dispatches on the
 [`SkillAction`](types.md#skillaction), the skills are
@@ -23,15 +23,15 @@ match out {
 }
 ```
 
-- Reads every source, so an unreadable directory source is an error here —
+- Reads every source, so an unreadable directory source is an error here -
   `SkillError::InvalidSource` (`"cannot canonicalize path: …"` /
   `"not a directory: …"` / `"cannot read directory: …"`).
-- No skill is ever "not found" in a list — an empty result just means no
+- No skill is ever "not found" in a list - an empty result just means no
   skills matched the sources and filters.
 
 ## `Read`
 
-Returns the full content of one named skill — metadata plus the body with
+Returns the full content of one named skill - metadata plus the body with
 frontmatter stripped:
 
 ```rust,ignore
@@ -39,10 +39,10 @@ let out = skills.read("my-skill")?;    // SkillOutput::Read
 ```
 
 - The name is matched **exactly** against discovered skill names (after
-  filters — a skill excluded by `ignore`/`include` is not readable).
+  filters - a skill excluded by `ignore`/`include` is not readable).
 - **Errors:** `SkillError::NotFound` (`"skill not found: my-skill"`) when no
   discovered skill has that name. (An internal guard also rejects a call
-  with no name at all as `InvalidAction` — the wrapper always supplies one.)
+  with no name at all as `InvalidAction` - the wrapper always supplies one.)
 
 ## `Read Asset`
 
@@ -66,12 +66,12 @@ The asset path is **sandboxed** to the skill directory:
 | Embedded skill (no directory) | `SkillError::InvalidAction` (`"read_asset is not supported for embedded skills"`) |
 
 The sandbox works by canonicalizing both the skill directory and the
-resolved path and checking containment — which is also what catches symlink
+resolved path and checking containment - which is also what catches symlink
 escapes.
 
 ## `Match`
 
-Returns the skills that should be **active** for the current workspace —
+Returns the skills that should be **active** for the current workspace -
 those whose glob patterns match at least one of the supplied paths, or that
 opt out of matching entirely:
 
@@ -82,19 +82,19 @@ let out = skills.match_skills(vec!["src/main.rs".into(), "README.md".into()])?;
 
 A skill is included when any of these holds:
 
-1. **`always_apply: true`** in its frontmatter — matched unconditionally,
+1. **`always_apply: true`** in its frontmatter - matched unconditionally,
    whatever the paths are.
-2. **At least one glob hits** — the skill's `globs` list is matched against
+2. **At least one glob hits** - the skill's `globs` list is matched against
    the paths using the project's standard glob engine (`**` works).
-3. **No globs and not `always_apply`** — never matches (a skill must declare
+3. **No globs and not `always_apply`** - never matches (a skill must declare
    *something* to be auto-activated).
 
 Behavioral notes:
 
 - An **empty `match_paths`** short-circuits to an empty result without even
-  discovering skills — there is nothing to match against.
+  discovering skills - there is nothing to match against.
 - Like `List`, the result carries only `SkillInfo` (name + description), not
-  bodies — `Match` is for *deciding what to load*, and you `read` the chosen
+  bodies - `Match` is for *deciding what to load*, and you `read` the chosen
   skills afterwards.
 - Filters (`ignore`/`include`) apply here too: an excluded skill cannot be
   matched.

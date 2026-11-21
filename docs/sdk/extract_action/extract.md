@@ -1,4 +1,4 @@
-# `extract_action::extract` — the extractor
+# `extract_action::extract` - the extractor
 
 The core [`ExtractAction`] type plus the data types it produces.
 
@@ -29,7 +29,7 @@ pub struct BatchResult { pub items: Vec<Item> }
 pub enum StreamAction {
     Text(String),
     ToolCall(ToolCallData),
-    Pending,               // still buffering a potential call — emit nothing
+    Pending,               // still buffering a potential call - emit nothing
 }
 ```
 
@@ -59,7 +59,7 @@ For each candidate object:
 
 1. **Inside a fenced code block?** (opening `` ``` `` at a line start) →
    kept as display `Text`. Fenced JSON is *shown*, never invoked.
-2. Otherwise, try `parse_and_validate` — first as strict JSON, then through
+2. Otherwise, try `parse_and_validate` - first as strict JSON, then through
    the [`jsonish`](jsonish.md) lenient parser, then against the schemas.
 3. **Valid** → `Item::ToolCall`. **Invalid** → the failure warning as
    `Item::Text`, and the failure is counted (see [Failure
@@ -81,7 +81,7 @@ A candidate is validated against this flexible shape:
 - **String-encoded field repair** (`repair_string_encoded`): before schema
   validation, any field the schema types as `array`/`object` whose value is
   a *string containing valid JSON of that shape* is parsed back into
-  structured form — recursively, schema-directed (objects via `properties`,
+  structured form - recursively, schema-directed (objects via `properties`,
   arrays via `items`). This recovers double-encoded emissions such as
   `"questions": "[{...}]"` without weakening validation: a string is only
   coerced when it parses AND matches the declared type. Applied identically
@@ -102,7 +102,7 @@ Feed it one token/chunk at a time. It maintains all state internally and
 returns `Text` for text that is safely past any potential tool call,
 `ToolCall` when a complete validated call closes, and `Pending` while it is
 still buffering a possible call. `extract_stream` is *non-reentrant* per
-instance — one instance, one stream.
+instance - one instance, one stream.
 
 Streaming adds two safety behaviors on top of batch:
 
@@ -117,7 +117,7 @@ Streaming adds two safety behaviors on top of batch:
 
 - **Fence tracking across tokens.** The code-block state persists across
   chunks, and a backtick run only toggles it if the run's *first* backtick was
-  at a line start — so prose quoting ``` mid-sentence cannot swallow a
+  at a line start - so prose quoting ``` mid-sentence cannot swallow a
   following real tool call.
 
 > **Why fence tracking matters:** Models often use backticks for inline code quoting in prose (e.g., "use the `fs.read` tool"). Without position-aware fence tracking, such inline backticks could incorrectly toggle the code-block state, causing the parser to misinterpret subsequent real tool calls as display text. By only recognizing fences that start at line beginnings, we distinguish between inline code quotes and actual markdown code blocks.
@@ -134,19 +134,19 @@ pub fn take_last_failed_raw(&mut self) -> String // drain the last failed JSON
 Before validation runs, `repair_string_encoded` coerces string-encoded
 array/object fields back to structured form (see [Envelope
 aliases](#envelope-aliases)); the repaired value is what `validate_against_schema`
-sees — and what `ToolCallData.arguments` carries downstream.
+sees - and what `ToolCallData.arguments` carries downstream.
 
 `validate_against_schema` implements the JSON Schema subset the tools
 actually use:
 
-- `oneOf` — the value must match at least one sub-schema.
-- `type` — an object value must be `"object"` (or absent); a non-object value
+- `oneOf` - the value must match at least one sub-schema.
+- `type` - an object value must be `"object"` (or absent); a non-object value
   only passes if the schema allows `"null"`. Property types are checked with
   `string` / `number` / `integer` / `boolean` / `object` / `array` / `null`.
-- `required` — every listed field must be present.
-- `properties` — present fields are checked: `const` values must match
+- `required` - every listed field must be present.
+- `properties` - present fields are checked: `const` values must match
   exactly, and field `type`/`oneOf` must hold. **Unknown extra fields are
-  allowed** (no `additionalProperties: false` handling) — validation is
+  allowed** (no `additionalProperties: false` handling) - validation is
   permissive by design.
 
 ## `find_json_objects`
@@ -161,14 +161,14 @@ own for any "extract the JSON-ish objects from this blob" job.
 
 ## Errors
 
-`extract_batch` / `extract_stream` never return `Result` — failures are
+`extract_batch` / `extract_stream` never return `Result` - failures are
 *represented* (failure warning text, failure count), not thrown. The only
 `Result` in the module surface is `jsonish::parse`'s `Result<Value,
 JsonishError>`.
 
 ---
 
-Next: [jsonish — the tolerant parser](jsonish.md).
+Next: [jsonish - the tolerant parser](jsonish.md).
 
 ---
 

@@ -1,4 +1,4 @@
-# `acp` — the external ACP harness engine
+# `acp` - the external ACP harness engine
 
 `acp` is the part of the module that actually talks to other agent
 harnesses: it resolves the agent name, spawns the harness in ACP server
@@ -42,13 +42,13 @@ pub struct Agent {
 
 There are **no per-agent prompt flags**: the prompt travels as the ACP
 `session/prompt` payload, never as a command-line argument. Adding an agent
-is purely a table entry — anything registered in the official ACP registry
+is purely a table entry - anything registered in the official ACP registry
 works.
 
 ### Model selection (`model`)
 
 Some harnesses pick a **different default model for ACP than for their own
-CLI** — and the ACP default may be a paid-tier model the user's existing
+CLI** - and the ACP default may be a paid-tier model the user's existing
 login cannot use (kilo, for instance, defaults its ACP sessions to
 `kilo/google/gemini-3-pro-image`, which fails the prompt with
 `"You need to sign in to use this model."` even though `kilo run` works
@@ -75,7 +75,7 @@ Two design points behind the table:
 - **Only ACP-capable harnesses are listed.** The protocol contract replaces
   the old one-shot CLI scraping (per-agent `input_flag` tables that broke on
   every CLI update). Agents without ACP support (`cursor`, `aider`,
-  `interpreter`) were removed — they cannot satisfy the contract.
+  `interpreter`) were removed - they cannot satisfy the contract.
 - **`claude` and `codex` are not ACP-native yet**: their entries spawn the
   official Zed ACP adapters via `npx` (the same route the SDK's own
   `AcpAgent::claude_agent()` / `AcpAgent::codex()` helpers take), and their
@@ -83,7 +83,7 @@ Two design points behind the table:
 
 ---
 
-## `detect_installed` — which harnesses exist
+## `detect_installed` - which harnesses exist
 
 ```rust,ignore
 pub fn detect_installed() -> &'static Vec<&'static str>
@@ -91,13 +91,13 @@ pub fn detect_installed() -> &'static Vec<&'static str>
 
 Scans `PATH` for each registered agent's required binaries and returns the
 names found. The result is cached in a `OnceLock`, so detection runs **once
-per process** — repeated calls return the cached list. `SubAgent::new()`
+per process** - repeated calls return the cached list. `SubAgent::new()`
 uses this to tailor the tool description's agent enum to what is actually
 installed.
 
 ---
 
-## `validate_agent` — name checking
+## `validate_agent` - name checking
 
 ```rust,ignore
 pub fn validate_agent(agent: &str) -> Result<(), String>
@@ -142,7 +142,7 @@ spawned.
    - `fs/read_text_file` / `fs/write_text_file` requests operate on the real
      workspace files (1-based lines, absolute paths per the protocol).
 6. **Complete.** The prompt response's stop reason is returned with the
-   turn's REPORT — the sub-agent's LAST message (the text written after its
+   turn's REPORT - the sub-agent's LAST message (the text written after its
    final tool call), not the concatenation of every message it produced.
    Earlier narration between tool calls lives only in the TUI's live
    timeline; the market-standard contract (Claude Code's Task tool, Gemini
@@ -152,11 +152,11 @@ spawned.
    post-call text: the last completed message is returned instead of an
    empty report (the mechanism is `subagent::closure::TurnClosure`). There
    is NO time limit: a sub-agent may work for hours, and the turn ends
-   when the agent ends it — or earlier only when the user stops it, which
+   when the agent ends it - or earlier only when the user stops it, which
    sends `session/cancel` and yields the spec-mandated `"cancelled"` stop
    reason with the partial output preserved. A harness that ignores
    `session/cancel` and never ends the turn is abandoned with the call
-   (its task and process stay alive until the app exits) — the stop signal
+   (its task and process stay alive until the app exits) - the stop signal
    is the only early-end mechanism.
 
 ---
@@ -165,7 +165,7 @@ spawned.
 
 | Situation | Result |
 |---|---|
-| Unknown agent name | `Err("Unsupported agent …")` — before any spawn |
+| Unknown agent name | `Err("Unsupported agent …")` - before any spawn |
 | ACP handshake/prompt failure, no output | `Err` naming the failing step |
-| ACP turn failed, partial output | `Ok((partial_output, "error"))` — with a warning log |
+| ACP turn failed, partial output | `Ok((partial_output, "error"))` - with a warning log |
 | Turn completed | `Ok((output, stop_reason))` |

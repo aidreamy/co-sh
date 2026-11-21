@@ -1,7 +1,7 @@
-# `markdown::palette` — element color derivation
+# `markdown::palette` - element color derivation
 
 `MarkdownPalette` derives the color for every markdown element from two base
-colors — the text color and the background — so a markdown block looks
+colors - the text color and the background - so a markdown block looks
 cohesive in any theme.
 
 ```rust

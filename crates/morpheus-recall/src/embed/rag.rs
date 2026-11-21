@@ -64,7 +64,9 @@ impl From<aiface::connector::ConnectorError> for RagError {
 /// let local = Embedder::try_new_local(EmbeddingModel::BGESmallENV15)?;
 ///
 /// // Cloud embedder (requires feature "cloud")
-/// let connector = Connector::new("openai")?.with_model("text-embedding-3-small");
+/// let connector = Connector::new("openai")?
+///     .with_service_keyring("my-app")
+///     .with_model("text-embedding-3-small");
 /// let cloud  = Embedder::new_cloud(connector, 1536);
 /// ```
 pub enum Embedder {

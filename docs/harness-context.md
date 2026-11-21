@@ -1,4 +1,4 @@
-# The `src/harness/context` module — Morpheus's conversation context manager
+# The `src/harness/context` module - Morpheus's conversation context manager
 
 > **Scope of this document.** This document describes, in increasing depth, the
 > `src/harness/context` module of Morpheus: the `ContextManager`, its conversation
@@ -41,18 +41,18 @@
 
 Every LLM-based coding agent faces the same physical constraint: the model can
 only read what fits inside its **context window**, and a long software
-engineering session — dozens of file reads, command executions, edits and
-reasoning steps — grows far faster than any window. The `src/harness/context`
+engineering session - dozens of file reads, command executions, edits and
+reasoning steps - grows far faster than any window. The `src/harness/context`
 module is Morpheus's answer to that problem.
 
 It is the **single owner** of the conversation: every event that must reach
-the model — the user's request, each assistant response, each tool call and
-each tool result — enters as an **item** of a **timeline** in display order.
+the model - the user's request, each assistant response, each tool call and
+each tool result - enters as an **item** of a **timeline** in display order.
 No other component of the *harness* keeps a second "official" copy of the
 conversation; the `ContextManager` is the single source of truth at runtime.
 From that timeline it produces, on demand, the list of messages ready for the
 provider (`build_messages`), and it is responsible for keeping that projection
-**within a token budget** — hiding, summarizing or compressing old content as
+**within a token budget** - hiding, summarizing or compressing old content as
 needed.
 
 Three design decisions shape everything that follows:
@@ -64,8 +64,8 @@ Three design decisions shape everything that follows:
    "reveal" back exactly what the model stopped seeing.
 2. **The manager is synchronous and LLM-free.** It never calls models. When it
    cannot resolve the budget by itself, it **asks** the *harness*
-   (`RunOutcome::NeedsLlmCompaction`) to run a summarizer — a dedicated agent
-   with its own system prompt — and receives the finished summary via
+   (`RunOutcome::NeedsLlmCompaction`) to run a summarizer - a dedicated agent
+   with its own system prompt - and receives the finished summary via
    `apply_llm_summary`. The module builds the prompt; the *harness* pays for
    the call.
 3. **Mid-history mutations do not exist on the automatic path.** Modern
@@ -96,7 +96,7 @@ budget overflows.
 The direct consumer is `src/harness/core.rs` (the `Harness`), which keeps a
 `context_manager: ContextManager` field and feeds it at the pace of the *agent
 loop*. The export events (`HarnessEvent::ContextItemRecorded`, `ContextInfo`,
-`ContextSnapshot`) go out through the same *harness* event channel — the UI
+`ContextSnapshot`) go out through the same *harness* event channel - the UI
 merely consumes them.
 
 ---
@@ -115,7 +115,7 @@ Before the details, the complete mental model in six steps:
    the timeline **once** and produces the provider's native messages.
    Filtering is by visibility: hidden items or items covered by a checkpoint
    do not exist for the model. Checkpoints are recomposed **before** the
-   recent raw history — they are physically at the end of the timeline, but
+   recent raw history - they are physically at the end of the timeline, but
    logically the *prefix* of the conversation.
 
 3. **Budget.** An incremental token counter (memoized, O(1) per read) sums the
@@ -125,8 +125,8 @@ Before the details, the complete mental model in six steps:
 
 4. **Cheap relief first.** Before any summarization, the model itself can
    request `mask_tool_result`: the most recent irrelevant tool result is
-   replaced by a one-line typed reference. This only touches the tail — which
-   was not cached yet anyway — and is therefore *cache-neutral*.
+   replaced by a one-line typed reference. This only touches the tail - which
+   was not cached yet anyway - and is therefore *cache-neutral*.
 
 5. **Compaction as the last resort.** If the total still reaches 80%, the
    `ContextManager` returns `NeedsLlmCompaction`. The *harness* requests the
@@ -142,7 +142,7 @@ Before the details, the complete mental model in six steps:
    → atomic commit). The sequential **split-and-concatenate** is the legacy
    path, kept only to resume staging written by older versions. If none of
    that fits, the overflow becomes **stuck per model** (`overflow_model`)
-   until the user switches models — no paid call is burned per attempt.
+   until the user switches models - no paid call is burned per attempt.
 
 Two pieces outside the timeline complete the picture: the **protected TODO
 block** (the `plan_*` plan, re-rendered at the tail on every request, immune
@@ -160,7 +160,7 @@ now avoids ambiguity later.
 | Term | Exact meaning |
 |---|---|
 | **Timeline** | The `VecDeque<ContextItem>` in display order (oldest first). Append-only: items enter, never leave. |
-| **Item** | One entry of the timeline. **One item = one message** in `build_messages` — the mapping is 1:1 by construction, which preserves positions. |
+| **Item** | One entry of the timeline. **One item = one message** in `build_messages` - the mapping is 1:1 by construction, which preserves positions. |
 | **Item ID** | Monotonic `u64` (`next_id`), starts at 1. It is the currency of everything (visibility, coverage, rereads, cursors). |
 | **Display-only** | Item that exists only for the UI/transcript (`Error`, `UserCommand`). `build_messages` skips it; `tokens()` is 0; summarizers never see it. |
 | **Visible** | Item the model would receive on the next request: `!is_hidden(item)`. |
@@ -170,7 +170,7 @@ now avoids ambiguity later.
 | **Masking** | Replacing an item's *projection* with a typed reference (`[Historical tool result masked …]`). Done **only at the tail**, always on the model's request (`mask_tool_result`), never deterministically. |
 | **Checkpoint** | A `Compaction` item: the anchor summary produced by the summarizer, with its `covered_ranges`. |
 | **Coverage** | Inclusive ID ranges (`ContextItemRange`) hidden by the newest checkpoint. Derived, never persisted separately. |
-| **Recent raw tail** | The final window of the timeline that stays verbatim after compaction — sized in tokens (~20% of the budget). |
+| **Recent raw tail** | The final window of the timeline that stays verbatim after compaction - sized in tokens (~20% of the budget). |
 | **Trigger** | 80% of the budget. Above it, `run()` requests LLM compaction. In manual mode (`/compact`), the trigger becomes 0. |
 | **Summarizer** | The dedicated summary agent, with its own prompts in `summarize.rs`. It never sees the main agent loop's system prompt. |
 | **Staging** | In-progress state of a contingency (`SplitState`, `MapReduceState`): persistable, resumable, and never touching the timeline before the commit. |
@@ -208,11 +208,11 @@ Organization details that matter:
   (`impl ContextManager` outside `mod.rs`). This is possible because they are
   descendants of the context module: Rust lets submodules access private
   fields of the type declared in the parent. The contingencies are not
-  separate types that *wrap* the manager — they are capabilities of it, which
+  separate types that *wrap* the manager - they are capabilities of it, which
   avoids duplicating state.
 - `test.rs` is `#[cfg(test)]` and covers ingestion, rendering, sweeps, budget,
   compaction, snapshot round-trips, `/compact`, window discovery and both
-  contingencies — it is the executable specification of nearly everything this
+  contingencies - it is the executable specification of nearly everything this
   document claims.
 - `todo_ctxt.rs` and `error_catalog.rs` have their own internal suites
   (`mod tests` inside the file).
@@ -240,14 +240,14 @@ Each variant exists for a precise reason:
 
 The user's request. **Protected by construction**: the original text
 (`original`) stays verbatim until the LLM compaction folds it into the general
-summary — no other phase touches it. The `synthetic` field is **provenance**,
+summary - no other phase touches it. The `synthetic` field is **provenance**,
 not behavior: `false` = the user typed it; `true` = a turn the *harness*
 classified as injected on the user's behalf. Important for accuracy: in
 production today, the `[automated notification]` background sub-agent
 completions enter through `add_user`, with the marker in the **text**;
 `add_synthetic_user`/`synthetic` is the dedicated provenance mechanism,
 currently without a production caller. The model-facing rendering is identical
-either way; the field exists for the intended consumer — an audit that needs
+either way; the field exists for the intended consumer - an audit that needs
 to filter non-typed turns. Today, however, `turn_user_thread` (the accessor
 with that filter) is a **seam without a production caller**: `checkup.rs`
 documents explicitly that the current checkup audits only the final text, and
@@ -258,15 +258,15 @@ the field existed decodable.
 ### `Assistant`
 
 An assistant text output. `closable == true` marks a **purely textual** turn
-(no tool call) — the only one eligible for promotion to a `Closure` by
+(no tool call) - the only one eligible for promotion to a `Closure` by
 `close_loop`. A turn that carried a tool call is structural and never closable.
 The `reasoning` field is the model's reasoning **in that response**, and it has
 a strict, triply-justified contract:
 
-- **Display-only**: never enters `build_messages` — the model must not see its
+- **Display-only**: never enters `build_messages` - the model must not see its
   own thinking as assistant prose (and the API would not accept it in that
   position anyway);
-- **Zero cost**: `tokens()` never counts it — inflating the budget with text
+- **Zero cost**: `tokens()` never counts it - inflating the budget with text
   the model will never receive again would distort the trigger;
 - **Write-once**: set at the item's birth, never mutated in place afterwards.
   Incremental deltas serialize whole items; in-place mutation would re-emit the
@@ -274,12 +274,12 @@ a strict, triply-justified contract:
 
 `reasoning: None` is normalized even when an empty string arrives
 (`.filter(|r| !r.is_empty())`), and `skip_serializing_if` keeps items without
-reasoning **byte-identical** to the format that predated the field — no bloat
+reasoning **byte-identical** to the format that predated the field - no bloat
 in the deltas, compatible with old histories.
 
 ### `ToolCall`
 
-The tool call. Structural: **never prose-compressed** — it renders as an
+The tool call. Structural: **never prose-compressed** - it renders as an
 `assistant` message with native `tool_calls`. Two replay fields **exist**
 because two provider families **reject** the replay without them:
 
@@ -292,50 +292,50 @@ because two provider families **reject** the replay without them:
   missing blocks. Empty for all others.
 
 Both carry `#[serde(default)]` for the same backwards-compatibility reason,
-and both **count tokens** (see §11) — they are real request content.
+and both **count tokens** (see §11) - they are real request content.
 
 ### `ToolResult`
 
 The tool result, linked to its call by `call_id`. Also structural. Two
 behavior fields:
 
-- `useless`: marks a result with no useful output (e.g. a zero-match search —
+- `useless`: marks a result with no useful output (e.g. a zero-match search -
   `find_grep`/`find_glob` signal `"useless": true` in their JSON, and the
   *harness* gates on the tool name in `result_is_useless`; the confirmation of
   a `mask_tool_result` call is useless by definition too). The chain dies on
-  the next `run()` — without waiting for a budget overflow — because it served
+  the next `run()` - without waiting for a budget overflow - because it served
   its purpose the moment the model reacted. The **newest chain is spared**
   until the model reacts, except when a `mask_tool_result` call itself counts
   as the reaction (§9.3).
-- `images`: the multimodal channel — screenshots (`computer_screenshot`) ride
+- `images`: the multimodal channel - screenshots (`computer_screenshot`) ride
   as base64 `ImageBlock`s next to the text. They are **never** serialized into
   the session history (the base64 would bloat every delta); due to
   `#[serde(skip)]`, they are empty after a **serialization round-trip** (an
-  in-memory save/restore preserves them — it is a plain clone of the items):
+  in-memory save/restore preserves them - it is a plain clone of the items):
   they are a transport detail of the current run. When the result is masked,
-  the images are replaced along with the text — continuing to send the PNG of
+  the images are replaced along with the text - continuing to send the PNG of
   a masked screenshot would defeat the mask's purpose at full token cost.
 
 ### `Closure`
 
 The final response of a completed *agent loop*. `close_loop` replaces the raw
-text of the last `Assistant` **in place, with the same ID** — it is a
+text of the last `Assistant` **in place, with the same ID** - it is a
 transform, not a hide: identity and visibility are unchanged, and the token
 cache is adjusted by the exact delta. The promotion is verbatim: the final
 text is delivered word-for-word for as long as it stays in the timeline (a
 future compaction still folds it into the summary, like everything else). The
-draft's `reasoning` is carried into the `Closure` — the promotion must not
+draft's `reasoning` is carried into the `Closure` - the promotion must not
 silently drop the thinking the item was born with.
 
 ### `Compaction`
 
 The checkpoint derived by the LLM compaction. Appended at the end of the
-timeline (physically), but recomposed **before** the raw tail (logically) — it
+timeline (physically), but recomposed **before** the raw tail (logically) - it
 is the conversation's prefix. The `covered_ranges` field is the module's
 structural novelty: **the exact inclusive ID ranges of the source items** that
 this checkpoint folds. Direct consequences:
 
-- the model's coverage is derivable from the item itself — **there is no
+- the model's coverage is derivable from the item itself - **there is no
   second persisted visibility state** for checkpoints;
 - a later checkpoint that folds an earlier one **inherits** its ranges (merge),
   so the newest checkpoint's coverage describes exactly everything folded;
@@ -352,7 +352,7 @@ mode (the TUI as a plain terminal), and is born **directly hidden**
 (`add_hidden_user_command` calls `hide_at`). Both: zero tokens, skipped by
 `build_messages` and the summarizers, persisted only so the transcript restores
 them with their own visual semantics (the styled error box; the command line).
-`UserCommand` bears that name — not `Command` — because the agent has its own
+`UserCommand` bears that name - not `Command` - because the agent has its own
 notion of shell commands (bash tool calls) and the ambiguity would be lethal.
 
 ### `tokens()` and `call_id()`
@@ -362,7 +362,7 @@ today** with the active model's encoding: `User`/`Assistant` count `original`;
 `ToolCall` counts name + arguments + thought_signature + every thinking block
 (text and signature); `ToolResult`/`Closure`/`Compaction` count the content;
 `Error` and `UserCommand` are **0**. `reasoning` is never counted. `call_id()`
-returns `Some` only for tool items — it is the key of the chains.
+returns `Some` only for tool items - it is the key of the chains.
 
 ---
 
@@ -395,97 +395,97 @@ pub struct ContextManager {
 
 Why each one exists:
 
-- **`binding_tx`** — the optional event channel. When installed
+- **`binding_tx`** - the optional event channel. When installed
   (`set_binding_sender`), every `push_item` emits
   `HarnessEvent::ContextItemRecorded` (with the `user`, `call_item_id`,
-  `tool_name`, `compaction` flags; errors do not emit — the consumer binds the
+  `tool_name`, `compaction` flags; errors do not emit - the consumer binds the
   error snapshot *after* creating the message). It is the point where the
   timeline talks to the world without coupling to it.
-- **`items` / `next_id`** — the timeline and the identity counter. `next_id`
+- **`items` / `next_id`** - the timeline and the identity counter. `next_id`
   starts at 1; IDs are the currency of everything (visibility, coverage,
   rereads, cursors).
-- **`max_tokens`** — the budget. Default `MAX_CONTEXT_TOKENS = 100_000`;
+- **`max_tokens`** - the budget. Default `MAX_CONTEXT_TOKENS = 100_000`;
   overridden by window discovery (`from_window`, `with_discovered_context`) or
   `set_max_tokens`. The trigger re-scales with it, so compaction fires at a
   sane fraction of the model's **real** window instead of a fixed default far
   below it.
-- **`encoding`** — the tiktoken `TokenEncoding` resolved by `set_model`
+- **`encoding`** - the tiktoken `TokenEncoding` resolved by `set_model`
   (default `Cl100k`). The *harness* calls `set_model` at every loop start; if
-  the encoding did not change, the function returns early — recomputing would
+  the encoding did not change, the function returns early - recomputing would
   re-pay the O(n) tiktoken pass the cache exists to avoid.
-- **`overflow_model`** — the model whose window **overflowed** and whose
+- **`overflow_model`** - the model whose window **overflowed** and whose
   overflow the contingency could not relieve. While set (same model), the
   *harness* skips the doomed summarizer call (it would burn a paid call per
   dispatch) and only re-notifies. The key is **model, not provider**: the stuck
   constraint is the model's window; switching models within the same provider
   must release it (`sync_model`).
-- **`split` / `map_reduce`** — the persistent staging of the contingencies.
+- **`split` / `map_reduce`** - the persistent staging of the contingencies.
   MapReduce stores **references and derived summaries, never a second copy of
   the raw transcript**; the legacy split keeps buffer + cursor. Both resume
   exactly where they stopped after a restore.
-- **`visible_from`** — the legacy compaction boundary. New checkpoints derive
+- **`visible_from`** - the legacy compaction boundary. New checkpoints derive
   coverage from their own ranges, but the field remains so histories written
   by old versions can be replayed **without rewriting them**.
-- **`hidden`** — IDs hidden one by one (the useless-chain sweep, abandoned
+- **`hidden`** - IDs hidden one by one (the useless-chain sweep, abandoned
   inputs, cancelled-run debris, user commands). IDs below `visible_from` are
   implicitly hidden by the first clause of `is_hidden`; the code comments
   mention an eventual pruning of those IDs during compaction, but **no path in
-  the module removes entries from `hidden` today** — the set only grows (and
+  the module removes entries from `hidden` today** - the set only grows (and
   `masked` is cleaned at commit and restore).
-- **`masked`** — IDs of results whose **projection** is the typed reference.
+- **`masked`** - IDs of results whose **projection** is the typed reference.
   Filled **only** by the model's explicit requests; never deterministically,
   because a mid-history mutation would invalidate every provider's prefix
   cache (§14 states the same restriction from the other side).
-- **`checkpoint_coverage`** — the derived coverage of the newest
+- **`checkpoint_coverage`** - the derived coverage of the newest
   **base-visible** checkpoint. Rebuilt from the immutable item on restore
   (`rebuild_checkpoint_coverage`); never persisted separately. Intentionally
   derived: removing the anchor via revert/fork reveals the sources by itself.
-- **`todo`** — the `TodoContext` (§13.1). Not an item.
-- **`correction_block` / `correction_block_tokens`** — the tool-correction
+- **`todo`** - the `TodoContext` (§13.1). Not an item.
+- **`correction_block` / `correction_block_tokens`** - the tool-correction
   memory block, mirrored by the *harness* before every request
   (`set_correction_block`; blank text clears it). **Transient**: never
   persisted; a restored manager starts empty. The token count is memoized so
   `total_tokens()` stays O(1). Why the tail: §13.2.
-- **`todo_restore_pending`** — the transient rehydration signal, never
+- **`todo_restore_pending`** - the transient rehydration signal, never
   authoritative state nor persisted: `restore_state` sets it, and the consumer
   drains it via `take_restored_todo_list` (including an explicit reset for
   absent plans).
-- **`summary_annotator`** — the *handoff/tool-set consistency* hook: a closure
+- **`summary_annotator`** - the *handoff/tool-set consistency* hook: a closure
   installed by the *harness* (`set_summary_annotator`) that rewrites the
   summary **before commit**. The ownership split is deliberate: the *harness*
   knows the effective tool set; the manager owns the single commit funnel
-  (`commit_summary_to_source`) — one-shot, MapReduce and the legacy split all
+  (`commit_summary_to_source`) - one-shot, MapReduce and the legacy split all
   pass through it. The annotation is `annotate_summary_tool_set` in the
   *harness*: it removes old notices (`[Tool set notice]:`), detects tool names
   cited in the summary that no longer exist in the current set, and appends a
-  notice (capped at 8 names) — so the model does not rely on tools that
+  notice (capped at 8 names) - so the model does not rely on tools that
   disappeared (mode switch, disabled tools, MCP server drift).
-- **`cached_items_tokens`** — the incremental token total of the items. There
+- **`cached_items_tokens`** - the incremental token total of the items. There
   is **no per-item map**: a removal re-tokenizes the doomed item (removals are
   rare and bounded), which keeps the cache↔items sync trivial and puts
-  *drift* — the failure mode that motivated a debug-only invariant —
+  *drift* - the failure mode that motivated a debug-only invariant -
   structurally out of reach (§11.3).
-- **`manual_compaction`** — the `/compact` mode. While set, `trigger()`
+- **`manual_compaction`** - the `/compact` mode. While set, `trigger()`
   returns 0 and `run()` hands off to the LLM summary regardless of free
   budget. Scheduling-only, never persisted: the *harness* brackets the whole
   manual pass with `begin_manual_compaction`/`end_manual_compaction`, and a
   restored manager is never left mid-manual.
-- **`last_tool_set`** — the effective tool set last offered (sorted,
+- **`last_tool_set`** - the effective tool set last offered (sorted,
   deduplicated). Persisted across turns so the *harness* can detect **tool-set
   drift** and notify the model when the set changes.
 
 ### Construction and window discovery
 
-- `new(max_tokens)` — explicit budget.
-- `from_window(Option<usize>, effective)` — pure, no I/O. A **real**
+- `new(max_tokens)` - explicit budget.
+- `from_window(Option<usize>, effective)` - pure, no I/O. A **real**
   discovered window is resized to its **effective** value when `effective` is
-  set; the fallback (`None`) stays `MAX_CONTEXT_TOKENS` — the default is not
+  set; the fallback (`None`) stays `MAX_CONTEXT_TOKENS` - the default is not
   any model's window and must not be "shrunk" as if it were.
-- `with_discovered_context(model, effective)` — discovers the window via
+- `with_discovered_context(model, effective)` - discovers the window via
   public APIs (the models.dev catalog, OpenRouter, Anthropic; catalogs cached
   on disk under `~/.local/share/morpheus/morpheus/cache`) and delegates to
   `from_window`.
-- `resolve_window(window, effective)` — pure: the effective value
+- `resolve_window(window, effective)` - pure: the effective value
   (`effective_context_window` from the SDK, §19.1) or the full window.
 
 ---
@@ -501,36 +501,36 @@ the other way around.
 | Method | Creates | Notes |
 |---|---|---|
 | `add_user(text)` | `User { synthetic: false }` | Protected by construction. |
-| `add_synthetic_user(text)` | `User { synthetic: true }` | Identical to the model; differs only in provenance. No production caller today — the `[automated notification]` notifications enter via `add_user`, marker in the text (see §5). |
+| `add_synthetic_user(text)` | `User { synthetic: true }` | Identical to the model; differs only in provenance. No production caller today - the `[automated notification]` notifications enter via `add_user`, marker in the text (see §5). |
 | `add_assistant(text, closable)` / `add_assistant_with_reasoning(…)` | `Assistant` | Empty `reasoning` is normalized to `None`. |
 | `add_tool_call(call_id, name, args)` | `ToolCall` without replay metadata | The empty-signature path. |
 | `add_tool_call_with_thinking(…)` | `ToolCall` with `thought_signature` and/or `thinking_blocks` | Native Gemini 3.x / Claude replay. |
-| `add_tool_result(call_id, content)` | `ToolResult { useless: false }` | — |
+| `add_tool_result(call_id, content)` | `ToolResult { useless: false }` | - |
 | `add_tool_result_flagged(…, useless)` | idem, with the flag | Explicit useless chain. |
 | `add_tool_result_with_images(…, images)` | idem, with images | Multimodal channel; images never serialized. |
 | `add_error(text)` | `Error` | Display-only; no recording event emitted (the consumer binds it after the terminal event). |
-| `add_hidden_user_command(text) -> u64` | `UserCommand` **born hidden** | Uses `hide_at` (not a bare `hidden.insert`) to also drop the cost from the cache — the drift invariant stays honest. |
+| `add_hidden_user_command(text) -> u64` | `UserCommand` **born hidden** | Uses `hide_at` (not a bare `hidden.insert`) to also drop the cost from the cache - the drift invariant stays honest. |
 | `add_hidden_command_execution(call_id, command, result) -> (u64, u64)` | A `bash_run` `ToolCall`/`ToolResult` pair **born hidden** | The transcript shows what the "terminal" ran; the model never sees it. |
 
 Ingestion accessors:
 
-- `last_user_equals(text)` — true when the last visible, "conversational"
+- `last_user_equals(text)` - true when the last visible, "conversational"
   item (skips `Compaction`/`Error`) is a `User` with that text. The *harness*
   uses it to avoid duplicating the current input when it was already loaded
   via `with_history`.
-- `turn_user_thread()` — the **request thread** of the current cycle: starts
+- `turn_user_thread()` - the **request thread** of the current cycle: starts
   after the last visible `Closure`/`Compaction` (the previous cycle ended
   there; a request from an unrelated task 40 minutes ago must not sit next to
   the current one), filters `synthetic` and hidden items, and returns at most
   `TURN_THREAD_MAX_TURNS = 4` turns: **the first** (the original intent) and
-  **the last 3** (the most recent instructions) — the middle is truncated
+  **the last 3** (the most recent instructions) - the middle is truncated
   first, because the two ends carry the discrimination a *request-aware*
   termination audit would need. Today the method is a **seam without a
   production caller**: `checkup.rs` documents that the current checkup audits
   only the final text and leaves the request thread to a future checkpoint
   (the consumer that actually reads the model's last text today is
   `last_assistant_text`, used by the heuristic-guard audit).
-- `last_assistant_text()` — the most recent assistant text, scanning backwards
+- `last_assistant_text()` - the most recent assistant text, scanning backwards
   through `Assistant` **and** `Closure`. Works **before** `close_loop` (it
   scans through tool calls/results); `None` when the model never produced text
   (a heuristic guard fired over pure tool work). Used by the audit of
@@ -552,29 +552,29 @@ fn is_hidden(&self, item: &ContextItem) -> bool {
 }
 ```
 
-1. **`visible_from` (legacy)** — everything below the boundary is hidden.
+1. **`visible_from` (legacy)** - everything below the boundary is hidden.
    Kept only to replay old histories without rewriting them; new checkpoints
-   do not advance this boundary — they use coverage.
-2. **`hidden`** — individual hiding, always via `hide_at(idx)`, which:
+   do not advance this boundary - they use coverage.
+2. **`hidden`** - individual hiding, always via `hide_at(idx)`, which:
    registers the ID, **removes the ID from `masked`** (a hidden item needs no
-   mask), subtracts the item's **visible** cost from the token cache, and — if
-   the item was a `Compaction` — rebuilds the coverage and recomputes the
+   mask), subtracts the item's **visible** cost from the token cache, and - if
+   the item was a `Compaction` - rebuilds the coverage and recomputes the
    cache (hiding an anchor changes which sources become visible again, which
    changes the total cost non-locally).
-3. **`checkpoint_coverage`** — the ranges of the newest **base-visible**
+3. **`checkpoint_coverage`** - the ranges of the newest **base-visible**
    checkpoint. "Base-visible" is the subtlety: `rebuild_checkpoint_coverage`
    scans backwards and takes the first `Compaction` whose ID is not below
-   `visible_from` nor in `hidden` — a checkpoint that is itself hidden does
+   `visible_from` nor in `hidden` - a checkpoint that is itself hidden does
    not count, and coverage falls back to the previous one's (or to none).
 
 `hide_item(idx)` is the **chain-aware** version: for tool items, it locates
 the partner (the `ToolCall` with the same `call_id` if the item is a result,
-or vice versa) and hides **both halves** — an orphan `tool` message or an
+or vice versa) and hides **both halves** - an orphan `tool` message or an
 orphaned tool call is rejected by providers that validate the native pairing.
 With no partner (a legitimate orphan), it hides only the item. When there is a
 partner, it hides the larger index first and then the smaller one (the order
 matters because `hide_at` operates by position and the removals here do not
-shrink the vector — but the discipline avoids future traps).
+shrink the vector - but the discipline avoids future traps).
 
 **Why visibility instead of deletion?** Because the append-only timeline is
 what makes *revert* and *fork* trivial: undoing a checkpoint is removing /
@@ -594,7 +594,7 @@ remains in the immutable session history.]
 
 `mask_newest_tool_result()` (the *harness tool* `mask_tool_result`):
 
-1. collects the `call_id`s of calls named `mask_tool_result` — **the results
+1. collects the `call_id`s of calls named `mask_tool_result` - **the results
    of the mask confirmations themselves are never targets** (a reflex must
    mask a real tool result; the confirmation's chain is swept as useless
    anyway);
@@ -611,7 +611,7 @@ nothing to mask returns `None` (the *harness* answers the model with
 
 **Tail only.** Deterministic mid-history masking existed and was retired:
 invalidating every provider's cached prefix costs more than the relief saves.
-The tail is new, uncached content — touching it is free. That is why the mask
+The tail is new, uncached content - touching it is free. That is why the mask
 is always "the **newest** result" and not "result N".
 
 ---
@@ -620,43 +620,43 @@ is always "the **newest** result" and not "result N".
 
 ### 9.1 Abandoned inputs (`remove_abandoned_inputs`)
 
-Scenario: the user cancels a run (Esc) and types something new. The old input —
-which produced **nothing** — is dead weight in the request. The *harness*
+Scenario: the user cancels a run (Esc) and types something new. The old input -
+which produced **nothing** - is dead weight in the request. The *harness*
 calls this method at loop start, right after adding the fresh input. It is a
 loop to quiescence with two rules:
 
 - **`drop_abandoned_user_runs`**: when the timeline ends in **two or more**
   consecutive visible `User` turns with no output between them (text, tool
-  work, Closure, summary), every turn but the newest is an abandoned input —
+  work, Closure, summary), every turn but the newest is an abandoned input -
   hidden. A turn that produced any output after it is never touched. A hidden
-  `User` is *skipped*, not a break — a run already hidden by a previous pass
+  `User` is *skipped*, not a break - a run already hidden by a previous pass
   never trips the loop.
 - **`drop_orphan_calls_before_trailing_users`**: a `ToolCall` **without its
   result** wedged between the old turns and the new input is debris from a run
-  cancelled mid-execution — and such an orphan would be **rejected** by
+  cancelled mid-execution - and such an orphan would be **rejected** by
   providers that validate the native pairing, which would then hide the
   legitimate following input too. The scan walks the tool-item zone back to
   front until the first non-tool item; **completed** chains (a call WITH its
-  result — including mixed parallel runs where only some results arrived) are
+  result - including mixed parallel runs where only some results arrived) are
   preserved whole, and a result of a preserved call does not end the zone (an
   orphaned parallel call can sit next to a completed one). An orphan at the
   very **end** of the timeline (a result still pending from a live run) is
   never touched.
 
-Everything is append-only: the debris stays in the timeline, hidden —
+Everything is append-only: the debris stays in the timeline, hidden -
 revert/fork still reaches it.
 
 ### 9.2 The useless-chain sweep (`sweep_useless_chains`)
 
 Runs at the start of **every** `run()`, regardless of the budget. Algorithm:
 
-1. `newest_call_id` = the `call_id` of the newest visible chain — the identity
+1. `newest_call_id` = the `call_id` of the newest visible chain - the identity
    of the chain the model has **not reacted to yet** (the call is the identity;
    both halves are excluded together). Already-hidden chains are inert:
    re-hiding would be a no-op, but scanning them could anchor
    `newest_call_id` wrongly.
 2. `useless_call_ids` = the `call_id`s of visible results marked `useless`.
-3. `masked_call_ids` = the `call_id`s of explicitly masked results — the mask
+3. `masked_call_ids` = the `call_id`s of explicitly masked results - the mask
    **is** the model's reaction, so the newest-chain protection does not apply
    to them.
 4. A back-to-front scan (hiding never invalidates a pending index;
@@ -664,7 +664,7 @@ Runs at the start of **every** `run()`, regardless of the budget. Algorithm:
    hides every chain whose result is useless, except the newest unmasked one.
    Idempotent by construction.
 
-### 9.3 `run()` — the per-iteration tick
+### 9.3 `run()` - the per-iteration tick
 
 ```rust
 pub fn run(&mut self) -> RunOutcome {
@@ -678,7 +678,7 @@ deterministic masking here**. Mid-history mutations invalidate every
 provider's exact-prefix cache for everything after the changed position.
 Budget relief near the trigger comes from the model's explicit
 `mask_tool_result` calls (tail-only, cache-neutral) or from the LLM
-compaction — never from a mid-history mutation.
+compaction - never from a mid-history mutation.
 
 ---
 
@@ -689,12 +689,12 @@ iterations, and a final text response. `close_loop` marks the end:
 
 - **Guard**: it only promotes if the **last item** is an `Assistant` with
   `closable == true`. If the last item was a tool call, that text was not a
-  summary of what was done — no `Closure` is created.
+  summary of what was done - no `Closure` is created.
 - **Verbatim in-place promotion**: same ID, original content, the `reasoning`
   carried over. The token cache is adjusted by the exact delta
   (`old_tokens` → `new_tokens`), not recomputed.
 - **Effect**: `final_answer()` returns the content when the last item is the
-  `Closure` — the canonical read of the cycle's result (the *harness* nests
+  `Closure` - the canonical read of the cycle's result (the *harness* nests
   sub-agents and reads exactly from there). A turn that ended in a tool call
   returns `None`.
 
@@ -715,7 +715,7 @@ non-OpenAI models (Claude, Gemini, Llama…). tiktoken-rs's registry resolves
 known OpenAI models; a substring fallback covers modern dateless aliases
 (`gpt-4.5`, `o3`…); names are lowercased (some providers deliver `GPT-4o`).
 `estimate(text)` is `encode_ordinary(text).len()` with the BPE tables in
-`lazy_static` — the expensive vocabulary is loaded once per encoding.
+`lazy_static` - the expensive vocabulary is loaded once per encoding.
 
 The estimate is **approximate by design**: without per-provider vocabularies,
 it is the best possible cross-provider estimate, and the budget is sized with
@@ -724,7 +724,7 @@ slack (effective window + the 80% trigger) to tolerate the error.
 ### 11.2 The incremental cache
 
 `cached_items_tokens` sums the **visible** cost of all items
-(`visible_item_tokens` — masked results cost the reference). The sync points,
+(`visible_item_tokens` - masked results cost the reference). The sync points,
 exactly the eight of the mutating surface:
 
 | Mutation | Adjustment |
@@ -752,7 +752,7 @@ structurally out of reach.
 }
 ```
 
-Every `total_tokens()` call — which the whole suite makes constantly —
+Every `total_tokens()` call - which the whole suite makes constantly -
 cross-checks the cache against a brute-force recompute, failing fast on drift.
 Compiled out in release: zero cost. The `saturating_*` in all arithmetic is
 exactly what would **mask** a silent underflow; the invariant exists because
@@ -768,7 +768,7 @@ fn total_tokens(&self) -> usize {
 }
 ```
 
-Items + TODO block + correction block. **Hidden items do not count** — the
+Items + TODO block + correction block. **Hidden items do not count** - the
 cache represents what the provider would be sent, never the raw history. That
 is what makes the useless-chain sweep real budget relief, not just cosmetics.
 
@@ -780,7 +780,7 @@ trigger = 0                        in manual mode (/compact)
 ```
 
 `has_compactable_content()` answers "is there anything to compact?": there is
-**at least one visible item that is not itself the checkpoint** — with
+**at least one visible item that is not itself the checkpoint** - with
 append-only, the timeline grows forever, and the test is about *visibility*,
 never raw length.
 
@@ -802,7 +802,7 @@ let visible: Vec<&ContextItem> = self.items.iter().filter(|it| !self.is_hidden(i
 
 O(1) per item (boundary compare + hash lookup). Pre-compaction and
 individually hidden items never reach the model. Orphans "should not exist"
-thanks to the chain-aware hiding — but a restored snapshot could still carry
+thanks to the chain-aware hiding - but a restored snapshot could still carry
 them.
 
 ### 12.2 Checkpoint recomposition
@@ -824,36 +824,36 @@ let projected = visible-that-are-Compaction  ⟶  visible-that-are-not
 | Item | Message | Notes |
 |---|---|---|
 | `User` | `user`, text verbatim | `synthetic` changes nothing here. |
-| `Assistant` | `assistant`, text | — |
+| `Assistant` | `assistant`, text | - |
 | `ToolCall` | `assistant` with native `tool_calls` | `thought_signature` only when non-empty; `thinking_blocks` ride on the message when present. |
 | `ToolResult` | `tool` with `tool_call_id` | Masked → the typed reference (**text and images** replaced); no images → text; with images → `tool_result_message_with_images` (each *caller* lowers to its provider's native image parts; text-only backends degrade to the text). |
-| `Closure` | `assistant`, content verbatim | — |
-| `Compaction` | `assistant`, the summary | — |
-| `Error`, `UserCommand` | — (skipped) | Display-only by contract. |
+| `Closure` | `assistant`, content verbatim | - |
+| `Compaction` | `assistant`, the summary | - |
+| `Error`, `UserCommand` | - (skipped) | Display-only by contract. |
 
 ### 12.4 The steering input
 
 `current_input` is the *harness*' per-iteration steering message (e.g.
 "please continue with the tool results"). It is appended as the final `user`
-message — **unless it duplicates** the trailing `user` turn already present
+message - **unless it duplicates** the trailing `user` turn already present
 (the *harness* already owns it via `add_user`; `last_user_equals` exists for
 the same purpose at ingestion).
 
 ### 12.5 The tail blocks
 
-Finally, the two blocks that **are not items** — tool corrections first, the
-TODO block second — are appended. If the last message is already `user`, they
+Finally, the two blocks that **are not items** - tool corrections first, the
+TODO block second - are appended. If the last message is already `user`, they
 are **merged into it** (blocks first, steering after) instead of injecting a
-second consecutive `user` message — rejected by some providers. The full
+second consecutive `user` message - rejected by some providers. The full
 rationale is in §13.
 
 `export_markdown()` is the transposition of the **same projection** into a
 Markdown transcript (sections `## User`, `## Assistant`, `### Tool call: name`,
-`### Tool result` — with the `### Tool result (no useful output)` variant for
-results marked `useless` — and `## Compaction checkpoint`), with the same
+`### Tool result` - with the `### Tool result (no useful output)` variant for
+results marked `useless` - and `## Compaction checkpoint`), with the same
 filters and the same masking. Two helpers protect the format: `push_fenced`
 picks a fence **longer than any backtick run in the body** (payloads with
-their own fences — diffs, docs — never break out of the block), and
+their own fences - diffs, docs - never break out of the block), and
 `push_section` separates adjacent sections. Errors and commands are left out
 (the model never saw them). The *harness* steering input and the tail blocks
 are per-request scaffolding, not transcript, and are left out.
@@ -867,7 +867,7 @@ request. The common reason: the **exact prefix cache**. Every modern provider
 (Anthropic `cache_control` auto mode, OpenAI automatic prefix caching, Gemini
 implicit caching) reuses the processing of requests that share the same byte
 prefix. Putting mutating content in front would invalidate the whole history
-on every change — a full-price reprocessing. At the tail, a change costs only
+on every change - a full-price reprocessing. At the tail, a change costs only
 the block: new, uncached content anyway. And the block "sliding" one position
 per appended history turn costs nothing: prefix matching only needs the
 **leading portion** to agree, and the history is append-only.
@@ -878,7 +878,7 @@ A dedicated mini-manager for the plan (Morpheus's `plan_todo_write` tool of the
 `plan_*` family). The *harness* mirrors the tools' state via `set_todo_list`
 at loop start and after every `plan_*` dispatch; `sync` stores the structured
 list **and** memoizes the rendering (`tokens()` is read on **every** budget
-check — re-rendering + re-estimating per call would be pure waste; the text
+check - re-rendering + re-estimating per call would be pure waste; the text
 only changes when the list changes).
 
 Rendering: a `## Tool TODOs` header with the update instruction, and one line
@@ -887,15 +887,15 @@ cancelled, with `(depends: …)` when dependencies exist.
 
 **Removal rules** (the only two ways the block leaves the context):
 
-1. **All tasks are terminal** — nothing `Pending`/`InProgress` remains
+1. **All tasks are terminal** - nothing `Pending`/`InProgress` remains
    (completed and cancelled both count as terminal): the plan is over.
-2. **The model empties the list** — a `plan_todo_write` with an empty list:
+2. **The model empties the list** - a `plan_todo_write` with an empty list:
    nothing to show.
 
-**Protection**: the block is **not** a `ContextItem` — it is re-rendered from
+**Protection**: the block is **not** a `ContextItem` - it is re-rendered from
 the structured projection on every `build_messages`. Therefore: the
 useless-chain sweep never touches it (not an item), and **not even the LLM
-compaction** — which hides the entire pre-existing timeline — reaches it,
+compaction** - which hides the entire pre-existing timeline - reaches it,
 because it is re-rendered from the mirror afterwards. Its tokens **count**
 toward the budget (the 80% trigger stays honest), but nothing can ever compact
 it away.
@@ -908,9 +908,9 @@ rehydration.
 ### 13.2 The correction block (`set_correction_block`)
 
 The *harness*' tool-correction memory (`CorrectionMemory`) **churns** on every
-tool failure — new entry, duplicate reordering, eviction. That is why it
+tool failure - new entry, duplicate reordering, eviction. That is why it
 **cannot** live in the system prompt: the prompt sits at position 0, and any
-change there would invalidate the cache of the **whole** history — exactly the
+change there would invalidate the cache of the **whole** history - exactly the
 mistake of the retired deterministic masking. Mirrored into the
 `ContextManager` via `set_correction_block` and rendered at the tail
 **before** the TODO block, a change costs the block itself. Never persisted;
@@ -944,28 +944,28 @@ What enters the checkpoint:
    the tail it precedes in the model's view);
 2. **Pending inputs stay out**: the visible `User` turns at the end of the
    timeline (including queued steering that arrived after the most recent
-   tool result) remain verbatim — compacting the question that has not been
+   tool result) remain verbatim - compacting the question that has not been
    answered yet would lose the thread. The exclusion only holds when there is
    prior work (`has_prior_work`); in an inputs-only context, everything
    enters;
 3. **Manual compaction**: returns everything (the explicit whole-session
    semantics of `/compact`);
-4. **Automatic**: cuts the **raw tail** — `recent_raw_start_for` accumulates
+4. **Automatic**: cuts the **raw tail** - `recent_raw_start_for` accumulates
    items back to front until ~`RECENT_RAW_PCT = 20%` of the budget (skipping
-   `Compaction` and hidden items) — and the source is everything **before**
+   `Compaction` and hidden items) - and the source is everything **before**
    it (plus the checkpoints, which can sit anywhere);
 5. **Tail larger than its reservation** (pair-preserving expansion, or one
-   giant single item): the whole tail is folded — `return visible` — instead
+   giant single item): the whole tail is folded - `return visible` - instead
    of mutating provider-signed tool calls or installing a checkpoint that
    would relieve nothing;
 6. **Pathological one-item context**: if the source came out empty and the
-   total is already ≥ 80%, preserving a tail would leave nothing to compact —
+   total is already ≥ 80%, preserving a tail would leave nothing to compact -
    the source becomes everything (via `std::mem::take`).
 
 `recent_raw_start_for` has one extra **structural integrity** rule: a result
 retained in the tail must keep its matching call (otherwise the native pairing
 breaks). Parallel calls can leave several results after the boundary; one
-extra pass expands the tail back to the oldest required call — a pair is never
+extra pass expands the tail back to the oldest required call - a pair is never
 cut.
 
 ### 14.3 The prompt: `llm_compaction_request()`
@@ -977,13 +977,13 @@ The content is the selected old prefix, serialized in the opencode-style
 format by `serialize_item`:
 
 - `[User]: …`, `[Assistant]: …`, `[Assistant tool call]: name(args)`,
-- `[Tool result]: …` **verbatim** — the tools bound their own output;
+- `[Tool result]: …` **verbatim** - the tools bound their own output;
   truncating a payload the model still needs would only force a costlier
   re-read of the source,
-- `[Previous summary]: …` + `[Covered source ranges]: …` for checkpoints —
+- `[Previous summary]: …` + `[Covered source ranges]: …` for checkpoints -
   exposing the coverage is what allows a future reducer to **reread** the
   original items,
-- `Error`/`UserCommand` serialize to the **empty string** — display-only never
+- `Error`/`UserCommand` serialize to the **empty string** - display-only never
   reaches a summarizer.
 
 A masked result is serialized with its **original payload**: masking is a view
@@ -993,18 +993,18 @@ optimization, never data loss.
 from "create a new summary" to "update the summary labeled `[Previous
 summary]` at the top of the transcript below, preserving still-true details,
 removing stale details, merging in the new facts". The previous summary is
-**not embedded in the instruction** — it stays in the timeline as the first
+**not embedded in the instruction** - it stays in the timeline as the first
 line of the transcript, a single copy, exactly where the timeline naturally
 starts. This avoids *summary-of-summary* degradation: quality degrades when
 summaries are blindly chained; updating an anchor with the delta is stable.
 
-The `LlmCompactionRequest` carries `system` (the `SUMMARIZER_SYSTEM` — the
+The `LlmCompactionRequest` carries `system` (the `SUMMARIZER_SYSTEM` - the
 summarizer is a dedicated agent with its own instructions, **never** the agent
 loop's system prompt from `core.rs`) and `prompt` (instruction + template +
 transcript). The `SUMMARY_TEMPLATE` is structured opencode-style:
 `## Objective`, `## Important Details` (with `Constraints`, `Decisions and
 Evidence`, `Invalidated State`), `## Work State` (`Completed`, `Active`,
-`Blocked`), `## Next Move`, `## Relevant Files`, `## Code & Anchors` — with
+`Blocked`), `## Next Move`, `## Relevant Files`, `## Code & Anchors` - with
 hard rules: keep every section, cite source item IDs, preserve paths /
 hashline anchors (`¶path#TAG`) / lines / symbols / commands / errors **exactly**,
 carry code **verbatim** in fences, preserve conflicts explicitly, and never
@@ -1017,35 +1017,35 @@ funnel:
 
 1. Empty source or blank summary → `false`, nothing changed.
 2. **The annotation comes before validation**: the exact text that will be
-   installed is the annotated one — validating the unannotated candidate first
+   installed is the annotated one - validating the unannotated candidate first
    would allow an over-budget commit (or reject a fitting one), because the
    annotation can grow or shrink the handoff.
 3. **Projected validation**: `cached − removed + estimate(summary) +
    todo.tokens ≥ trigger` → **rejected** without touching anything. A
    degenerate summary is not a state transition; the current model view stays
    intact so failure and retry are genuinely atomic. (The legacy split passes
-   a different trigger — `window + 1` — because it is driven by a window
+   a different trigger - `window + 1` - because it is driven by a window
    overflow, not the 80% trigger; §16.)
 4. **Commit** (`commit_summary_to_source`):
-   - `coalesce_ranges(direct_ids)` — the source's direct IDs become ranges;
+   - `coalesce_ranges(direct_ids)` - the source's direct IDs become ranges;
    - every folded checkpoint's `covered_ranges` are **inherited** and
-     everything is `merge_ranges`-ed — the final coverage describes exactly
+     everything is `merge_ranges`-ed - the final coverage describes exactly
      the set of visible source items the checkpoint replaces;
    - the covered IDs leave `masked` (the content is folded into the summary;
      keeping the mask would be noise);
    - the `Compaction { id, summary, covered_ranges }` is appended;
    - `checkpoint_coverage` receives the new coverage;
-   - `recompute_cached_tokens()` — the source items are now hidden; the
+   - `recompute_cached_tokens()` - the source items are now hidden; the
      recompute reflects that in one step (non-local coverage: cheaper to
      recompute than to track each delta);
-   - `clear_overflow()` — a successful compaction releases a stuck overflow.
+   - `clear_overflow()` - a successful compaction releases a stuck overflow.
 
 ### 14.5 The annotation hook and `/compact`
 
 `set_summary_annotator` installs the *harness*' closure; `None` leaves
 summaries untouched. The user's `/compact` sets `manual_compaction` (trigger
 0), runs the same flow, and the idempotent `end_manual_compaction` closes it.
-The manual pass selects the full source (§14.2, step 3) — the explicit
+The manual pass selects the full source (§14.2, step 3) - the explicit
 "whole session" semantics.
 
 ---
@@ -1061,16 +1061,16 @@ summarized into **independent segments** (*map*), the summaries are
 
 Structuring principle (module doc): **the staging stores only references and
 derived summaries. The raw text is regenerated from the `ContextManager`'s
-immutable item history for every request** — MapReduce never becomes a second
+immutable item history for every request** - MapReduce never becomes a second
 authoritative copy of the transcript.
 
-### 15.1 `MapReduceState` — the persistent staging
+### 15.1 `MapReduceState` - the persistent staging
 
 | Field | Role |
 |---|---|
 | `version` | `MAP_REDUCE_VERSION = 3`. Staging from older versions (byte-sliced) is **discarded**, never executed. |
 | `window`, `map_target_tokens`, `model` | The summarizer window the calls are sized against; the soft packing target; the model that took over the staging. |
-| `source_item_ids` | The whole IDs of the frozen source (from the normal `checkpoint_source_indices` selection — the raw tail belongs to the receiving agent, it is not an input to the small summarizer; covered by a test). |
+| `source_item_ids` | The whole IDs of the frozen source (from the normal `checkpoint_source_indices` selection - the raw tail belongs to the receiving agent, it is not an input to the small summarizer; covered by a test). |
 | `source_fingerprints` | `Vec<(id, xxh64)>` of each source item's `serialize_item`. **Fingerprinting of the frozen projection**: IDs can survive a revert or an item replacement; stale staging must never cover changed content under the same ID. |
 | `segments` | The `MapSegment`s (ordinals, `item_ids`, `covered_ranges`, `summary: Option`). New staging **never uses byte slices**. |
 | `phase` | `Mapping → Reducing → Validating → Correcting → Ready`. |
@@ -1090,13 +1090,13 @@ call_payload_budget(w, ov) = max(w − max(ov, 1).min(w/2), 1)
 
 The packing rule is classic **sequential bin-packing with indivisible items**:
 an item that does not fit in the current group opens the next group; the
-**first item of a group may exceed the target** — items are not cut, and the
+**first item of a group may exceed the target** - items are not cut, and the
 request preflight checks the actual window including overhead. This is exactly
 the tested behavior: `packing_keeps_whole_items_and_resets_the_next_group_budget`,
 `item_exceeding_remaining_space_moves_intact_to_the_next_group`,
 `truly_oversized_singleton_is_never_sliced_or_retried_unchanged`.
 
-Every segment carries `covered_ranges` (the coalesced ranges of its IDs) — the
+Every segment carries `covered_ranges` (the coalesced ranges of its IDs) - the
 provenance that traverses all levels.
 
 ### 15.3 The `Mapping` phase
@@ -1108,10 +1108,10 @@ provenance that traverses all levels.
   `(window/10).clamp(128, 2000)` tokens.
 - **Parallelism**: while `Mapping` and `!parallel_disabled`, the *harness*
   fires maps in parallel; a provider that rejects concurrent requests sets
-  `parallel_disabled` — **already-accepted maps remain valid** and the rest
+  `parallel_disabled` - **already-accepted maps remain valid** and the rest
   run sequentially on resume.
 - `accept_map_summary(ordinal, summary)` is **idempotent**
-  (`segment.summary.is_none()` before writing — the
+  (`segment.summary.is_none()` before writing - the
   `accepted_map_results_are_idempotent…` test guarantees a retry does not
   overwrite). When **all** segments have summaries, the nodes are promoted and
   the phase becomes `Reducing`.
@@ -1121,7 +1121,7 @@ provenance that traverses all levels.
   otherwise 3/4 of the current target); **accepted summaries stay attached to
   their original ordered ranges**; a singleton whose regrouping made no
   progress is split **in half by items** (never inside an item); if the count
-  of incomplete segments did not shrink, everything is reverted and `false` —
+  of incomplete segments did not shrink, everything is reverted and `false` -
   no loop against a bad window. Budget: `MAX_REPARTITIONS = 3`, persisted
   (restarts do not reset the counter against the same window).
 
@@ -1135,13 +1135,13 @@ single call) and the group's merged ranges.
 
 `REDUCE_SUMMARIZER_SYSTEM` defines the contract: reconcile the complete
 ordered set (deduplicate, remove invalidated, never promote proposals to
-completed), and — crucially — **if an important conflict cannot be resolved,
+completed), and - crucially - **if an important conflict cannot be resolved,
 output only `REREAD: start-end,…`** using IDs from the covered ranges.
 
 - Non-final group → a new `SummaryNode` into `next_nodes`; when the cursor
   exhausts the level, `nodes ← next_nodes`, cursor 0, `level += 1`. Reduction
   is a **tree**: levels succeed until the final group. Hard limit:
-  `MAX_REDUCTION_LEVELS = 8` — preventing the non-shrinking-output loop
+  `MAX_REDUCTION_LEVELS = 8` - preventing the non-shrinking-output loop
   (tested: `reduction_limit_prevents_non_shrinking_model_output_loops`).
 - Final group (the whole level fits in one call) → `candidate` set, phase
   `Validating`.
@@ -1159,9 +1159,9 @@ output only `REREAD: start-end,…`** using IDs from the covered ranges.
 1. requires the literal `REREAD:` prefix; anything else → empty;
 2. rebuilds the allowed coverage: the coalescing of `source_item_ids` **plus**
    the ranges of any `Compaction` present in the source (rereading evidence
-   **behind a previous checkpoint** is allowed — the raw items stay immutable
+   **behind a previous checkpoint** is allowed - the raw items stay immutable
    in the timeline);
-3. filters availability: an ID must exist among the current items — **a
+3. filters availability: an ID must exist among the current items - **a
    removed item (revert) must not be silently represented by its neighbor**
    in a requested range;
 4. limits: at most `MAX_REREAD_RANGES = 3` ranges, all contained within an
@@ -1173,7 +1173,7 @@ output only `REREAD: start-end,…`** using IDs from the covered ranges.
 instruction to resolve the conflict and return the final reduction **without
 requesting another reread**. A range whose text exceeds
 `reduction_budget / 3` rejects the whole reread: **a partial excerpt cannot
-establish which side of a conflict is correct** — truncating the evidence and
+establish which side of a conflict is correct** - truncating the evidence and
 presenting it as complete would be worse than failing.
 
 ### 15.6 The `Validating` and `Correcting` phases
@@ -1188,15 +1188,15 @@ supported by the maps.
 - All `PASS` → `final_summary = candidate`, phase `Ready`.
 - Any non-`PASS` audit → phase `Correcting`.
 - `correction_request()` builds the correction prompt (full template +
-  candidate + numbered audits). Capped at `MAX_CORRECTIONS = 2` — repeatedly
+  candidate + numbered audits). Capped at `MAX_CORRECTIONS = 2` - repeatedly
   failing corrections **never commit** and are bounded (tested).
   `accept_correction` clears audits/cursor, increments the counter and returns
-  to `Validating` — **every correction is audited again**; and it **rejects**
-  a "summary" that starts with `REREAD:` — the reread protocol belongs to the
+  to `Validating` - **every correction is audited again**; and it **rejects**
+  a "summary" that starts with `REREAD:` - the reread protocol belongs to the
   reducer, never to the corrector.
 - Changing the staging's model (`prepare_map_reduce_model`) **resets the
   dynamic limits** (`repartitions`, `parallel_disabled`, `corrections`, and
-  `level` if exhausted) — a larger model deserves a fresh chance; a smaller
+  `level` if exhausted) - a larger model deserves a fresh chance; a smaller
   model re-sizes the window and the target.
 
 ### 15.7 Commit and abort
@@ -1205,7 +1205,7 @@ supported by the maps.
 slices, all source IDs present and visible, **fingerprints matching**), phase
 `Ready`, `final_summary` present, and all source IDs mappable to indices. Then
 the commit descends through the **same funnel** as the one-shot compaction
-(`apply_summary_to_source`) — including the projected validation against the
+(`apply_summary_to_source`) - including the projected validation against the
 **receiving agent's budget**, not the summarizer's window (explicitly tested:
 `map_reduce_commit_uses_the_receiving_agents_budget`). Failure of any
 precondition: **the staging comes back intact** (resumable for a later
@@ -1213,7 +1213,7 @@ recovery) and nothing in the view changed.
 
 `abort_map_reduce()` discards the staging.
 `discard_unverified_compaction_staging` discards old-version staging (map or
-split) and releases the overflow — source events and already-committed
+split) and releases the overflow - source events and already-committed
 checkpoints are **never** altered by the migration; `begin_map_reduce` over
 stale staging rebuilds from scratch.
 
@@ -1229,12 +1229,12 @@ discards accepted work.
 
 Beyond the cycle above, the *harness* consults the contingencies' state
 through dedicated accessors, all read-only: `map_reduce_active()`,
-`compaction_staging_active()` (MapReduce **or** split in progress — the
+`compaction_staging_active()` (MapReduce **or** split in progress - the
 *harness* uses it to route a second compaction request into the in-progress
 checkpoint instead of starting another one), `map_reduce_window()`,
 `parallel_mapping_enabled()` / `disable_parallel_mapping()` (the §15.3
 parallelism control, exposed to the dispatch engine), `split_active()` and
-`split_all_consumed()` — the latter returns `true` also when there is **no
+`split_all_consumed()` - the latter returns `true` also when there is **no
 staging**, which makes `commit_split` safe to call without a pre-check. On the
 core side, `todo_list()` (the plan's structured projection), `max_tokens()`
 (the budget, used to size the contingency when the real window is unknown),
@@ -1246,7 +1246,7 @@ of the state.
 ## 16. The legacy contingency: split-and-concatenate
 
 `split.rs` is MapReduce's predecessor, kept for a single reason: **staging
-already persisted by older versions must remain resumable after an upgrade** —
+already persisted by older versions must remain resumable after an upgrade** -
 the `SplitState` in the snapshot has to stay executable. New code uses
 MapReduce.
 
@@ -1268,46 +1268,46 @@ Constants and their roles:
 Cycle: `begin_split(window)` → `split_next_chunk()` → the *harness* calls the
 summarizer → `advance_split(summary, chunk_end)` → … → `commit_split()` /
 `abort_split()`. `begin_split` is **re-entrant**: calling it with a staging
-already active only updates the window — buffer and cursor are preserved
+already active only updates the window - buffer and cursor are preserved
 (resume semantics, the analogue of MapReduce's `begin_map_reduce`).
 
-- **`split_next_chunk`** — chunks of **whole** items in historical order
+- **`split_next_chunk`** - chunks of **whole** items in historical order
   (visible items only; hidden ones "are not there"), sized to
   `window − overhead` with the overhead **capped at half the window** (a small
-  window — a small fallback model — keeps a usable chunk budget instead of
+  window - a small fallback model - keeps a usable chunk budget instead of
   degrading to one item per chunk). The first item of the chunk enters
   **whole** even when it alone exceeds the budget: structural integrity beats
-  budget precision. The **cursor only advances in `advance_split`** — a
+  budget precision. The **cursor only advances in `advance_split`** - a
   failed chunk can be retried identically.
 - **Continuity**: the first chunk carries the full template (producing the
   anchored skeleton); the following ones receive the last 1.200 characters of
-  the previous summary and the instruction to **extend** — never restart the
-  template — so the final buffer reads as **one continuous document with no
+  the previous summary and the instruction to **extend** - never restart the
+  template - so the final buffer reads as **one continuous document with no
   visible seam**.
 - **Early containment**: below 80% of the ceiling the model acts naturally (a
-  long-session summary rarely approaches the ceiling — "observe and only warn
+  long-session summary rarely approaches the ceiling - "observe and only warn
   when it matters"); above that, the prompt receives the proportional target
   `⌈chunk_tokens · available / remaining⌉` (minimum 64), so the final buffer
   fits under the ceiling with the slack built into it. The warning text
-  includes how much has been summarized and how much remains — real context,
+  includes how much has been summarized and how much remains - real context,
   not a magic number.
 - **Incremental accounting**: `buffer_tokens` adds only the new summary (+
   the `\n` separator); re-encoding the whole buffer per chunk would be
   O(total²) across a long split. The estimate is **additive** (per parts) and
-  may run a few tokens above the exact value — the conservative direction
+  may run a few tokens above the exact value - the conservative direction
   (warns slightly earlier), and the **commit re-estimates the whole buffer**,
   never depending on this estimate.
-- **`commit_split`** — atomic and with its own success criterion: only when
+- **`commit_split`** - atomic and with its own success criterion: only when
   **every item has been consumed**, and via `apply_full_llm_summary` (the full
   visible source, trigger `window + 1`). The success criterion is the
   **window**, not the 80% trigger: the split is driven by a model-window
   overflow; an anchor well under 80% of the budget is still a valid commit.
-  The buffer is re-estimated whole here — a pathological overshoot (an anchor
+  The buffer is re-estimated whole here - a pathological overshoot (an anchor
   larger than the window) **rejects without changing anything** (the staging
   comes back; the *harness* marks the stuck overflow and notifies). Note:
   since the split already summarized the raw tail, the commit uses the full
-  source — retaining the tail would duplicate it in the model's view.
-- **`abort_split`** — discards buffer + cursor; the timeline was **never**
+  source - retaining the tail would duplicate it in the model's view.
+- **`abort_split`** - discards buffer + cursor; the timeline was **never**
   touched; the conversation stays exactly as it was.
 
 ---
@@ -1333,20 +1333,20 @@ the window is a property of the model.
 ### 17.2 `record_provider_window`
 
 A provider overflow is the **provider's own report** of its maximum input
-size ("maximum context length is 128000") — more authoritative than any public
+size ("maximum context length is 128000") - more authoritative than any public
 catalog. The method: resizes the budget to the reported window's **effective**
 value (or the full window) and persists the **raw** window into the error
 catalog, so future launches discover it **before** paying another overflow.
-Skipped under `cfg(test)` — tests run against the real data directory and must
+Skipped under `cfg(test)` - tests run against the real data directory and must
 never write to it.
 
 ### 17.3 The catalog (`error_catalog.rs`)
 
-`~/.local/share/morpheus/api_errors.json` — a `model → window` map. Deliberate
+`~/.local/share/morpheus/api_errors.json` - a `model → window` map. Deliberate
 decisions:
 
 - **Location**: at the top level of the data dir, **not** under the `cache/`
-  subdir of the public catalogs — it is a **record**, not a cache: private
+  subdir of the public catalogs - it is a **record**, not a cache: private
   per-machine state of what the user's own provider observed, deliberately
   isolated from `morpheus-sdk`'s discovery (which lists public models).
 - **Atomic write**: temp file in the **same directory** (rename stays on one
@@ -1354,10 +1354,10 @@ decisions:
   interleave write/rename over a shared temp path), `write_all` + `sync_all`
   **before** the rename (a rename published without durable content could
   survive a crash pointing at garbage), and temp cleanup on any failure.
-  **Never fatal** — a cache-write failure must not block the agent loop.
+  **Never fatal** - a cache-write failure must not block the agent loop.
 - **Tolerant read**: missing or corrupted file → `None`, ignored, never fatal.
 - **Flexible matching**: exact, vendor-less suffix (`openai/gpt-4o` ↔
-  `gpt-4o`), case-insensitive, in both directions — mirroring the SDK
+  `gpt-4o`), case-insensitive, in both directions - mirroring the SDK
   discovery's matching.
 
 ---
@@ -1380,14 +1380,14 @@ pub struct ContextManagerState {
 }
 ```
 
-This is the module's **transport contract** — carried by the *harness* events
+This is the module's **transport contract** - carried by the *harness* events
 (`Done`/`Stopped`/`Error`/`ContextSnapshot`) out of the module. Three
 properties matter (the UI-side persistence mechanism is out of scope for this
 document):
 
-1. **Nothing is in-flight between save and restore** — the snapshot is a plain
+1. **Nothing is in-flight between save and restore** - the snapshot is a plain
    clone; restoring is assigning field by field.
-2. **It is never an authoritative on-disk snapshot** — it is the transport
+2. **It is never an authoritative on-disk snapshot** - it is the transport
    projection the receiver compares and derives differences from. The timeline
    itself is append-only and immutable.
 3. **Staging is real progress**: `split` (buffer + cursor) and `map_reduce`
@@ -1396,13 +1396,13 @@ document):
 
 Beyond the copy, `restore_state` performs **hygiene**:
 
-- `masked.retain(only live result IDs)` — a mask for a result that no longer
+- `masked.retain(only live result IDs)` - a mask for a result that no longer
   exists is removed;
-- `rebuild_checkpoint_coverage()` — coverage is derived from the items, never
+- `rebuild_checkpoint_coverage()` - coverage is derived from the items, never
   trusted from the persisted state;
-- `todo` — `Some` syncs, `None` clears explicitly; and
+- `todo` - `Some` syncs, `None` clears explicitly; and
   `todo_restore_pending` is signalled for the rehydration;
-- `recompute_cached_tokens()` — the items were replaced wholesale; the cache
+- `recompute_cached_tokens()` - the items were replaced wholesale; the cache
   is rebuilt.
 
 Fields deliberately **not** persisted: `correction_block` (transient,
@@ -1440,7 +1440,7 @@ with $A = 2.612$, $B = 0.443$, $f_{\min} = 0.20$, $f_{\max} = 0.85$.
 - **Why logarithmic?** Small windows are genuinely usable almost whole
   ($\mathrm{frac} \to f_{\max} = 0.85$ by the cap); giant windows are strongly
   limited ("the bigger the window, the bigger the illusion"). The product
-  $W\cdot\mathrm{frac}(W)$ still **grows** with $W$ — the fraction decays
+  $W\cdot\mathrm{frac}(W)$ still **grows** with $W$ - the fraction decays
   sublinearly.
 - **Why a floor of 0.20 and not lower?** Monotonicity of the product requires
   $W\cdot\mathrm{frac}(W)$ to be increasing:
@@ -1451,7 +1451,7 @@ with $A = 2.612$, $B = 0.443$, $f_{\min} = 0.20$, $f_{\max} = 0.85$.
   is guaranteed whenever $\mathrm{frac}(W) = A - B\log_{10}W >
   B/\ln 10 \approx 0.443/2.3026 \approx 0.1924$. The floor $0.20 > 0.1924$
   keeps the whole function monotonic: **a larger advertised window never
-  yields a smaller effective window** — without the floor, products beyond
+  yields a smaller effective window** - without the floor, products beyond
   the line $W > 10^{(A - 0.1924)/B}$ would start *decreasing*.
 
 The manager's budget is $\mathrm{ECW}(W)$ when real discovery succeeds;
@@ -1489,11 +1489,11 @@ $$
 
 The raw tail is the largest suffix of visible (non-`Compaction`) items whose
 sum $S$ obeys `recent_raw_start_for`'s stop rule: an item enters while
-$S < R$ **and** $S + t_{\text{item}} \le R$ — the exact negation of the stop
+$S < R$ **and** $S + t_{\text{item}} \le R$ - the exact negation of the stop
 `held >= target || held + tokens > target`; the first item of the tail is
-exempt and always enters — followed by the **pair-preserving expansion**: for
+exempt and always enters - followed by the **pair-preserving expansion**: for
 every `call_id` with a retained result, the tail extends back to include the
-call — formally, the final start is
+call - formally, the final start is
 $\min_{\text{retained } c} \mathrm{idx}(\mathrm{call}(c))$.
 
 ### 19.4 Split: ceiling, warning and target
@@ -1517,7 +1517,7 @@ space proportional to its weight, so the final buffer stays under the ceiling
 with the slack already built into it (40% ≤ 100% of the window minus
 overheads). The 64-token floor prevents degenerate targets on the last chunks.
 The final validity is checked by **re-estimating the whole buffer** against
-$w$ (not $C$) — the additive accounting $B_k$ only decides the warning and the
+$w$ (not $C$) - the additive accounting $B_k$ only decides the warning and the
 target.
 
 ### 19.5 The commit's projected validation
@@ -1532,7 +1532,7 @@ $$
 
 with $\Theta' = \Theta$ on the normal path and $\Theta' = w + 1$ on the split
 (§16). The **strict** inequality is what guarantees that a successful commit
-leaves the total **below** the trigger — the next `run()` iteration returns
+leaves the total **below** the trigger - the next `run()` iteration returns
 `Resolved` instead of immediately re-entering compaction (the
 compact-forever loop is the failure mode the *wedge* tests exercise).
 
@@ -1544,11 +1544,11 @@ compact-forever loop is the failure mode the *wedge* tests exercise).
   O(1) per item).
 - `sweep_useless_chains` / the abandonment sweeps: O(n) per tick, with O(1)
   hash lookups; quiescence within at most O(n) degenerate passes.
-- MapReduce packing: **O(n²)** per repartition — `group_map_items` calls
+- MapReduce packing: **O(n²)** per repartition - `group_map_items` calls
   `item_map_tokens(id)`, which does a **linear** search of the timeline per
   item ID; same for `render_segment`. With at most 3 repartitions the factor
   stays bounded, but the linear search per item is the real cost.
-- `hide_item`: O(n) worst case (partner search) — and the first pass of
+- `hide_item`: O(n) worst case (partner search) - and the first pass of
   `sweep_useless_chains` that hides k chains costs O(k·n) through it (the
   following passes are O(n): already-hidden chains are inert). Removals are
   rare and bounded, by design.
@@ -1558,25 +1558,25 @@ compact-forever loop is the failure mode the *wedge* tests exercise).
 ## 20. Tests: what the module guarantees
 
 `src/harness/context/test.rs` (plus the internal `mod tests` of `todo_ctxt`,
-`error_catalog` and `map_reduce`) — **109 tests**, gate
+`error_catalog` and `map_reduce`) - **109 tests**, gate
 `cargo test --lib harness::context::` (108 run, 1 ignored). The groups:
 
-- **Ingestion and rendering** — native roles (`user`/`assistant`/`tool`),
+- **Ingestion and rendering** - native roles (`user`/`assistant`/`tool`),
   1:1 item→message, steering dedup, thinking-block round-trip, leading
   orphaned tool results dropped.
-- **`Closure`** — promotion, the guard (last item not closable → nothing),
+- **`Closure`** - promotion, the guard (last item not closable → nothing),
   the `reasoning` carry-over, `final_answer`.
-- **Chains and sweeps** — the native pair intact, the useless-chain sweep
+- **Chains and sweeps** - the native pair intact, the useless-chain sweep
   (including the newest-chain protection and the mask exception),
   cancellation debris (orphans + abandoned inputs), hidden commands invisible
   to the model and to the budget.
-- **Budget** — the 80% trigger, relief by masking and by sweeping, and the
+- **Budget** - the 80% trigger, relief by masking and by sweeping, and the
   canonical `cached_token_total_stays_in_sync_across_all_mutations` test (the
   drift invariant, exercised across all mutations).
-- **Compaction** — full serialization, update mode (never duplicating the
+- **Compaction** - full serialization, update mode (never duplicating the
   summary), `None` below the trigger, atomic rejection, the raw tail
   preserved, pending inputs verbatim, `/compact`.
-- **MapReduce** — the tail retained independently of the summarizer window,
+- **MapReduce** - the tail retained independently of the summarizer window,
   the receiving agent's budget at commit, whole-item packing, the giant
   singleton never sliced, invalid/old-version staging rebuilt from source,
   repartition without shrinking the real window, map idempotence and resume,
@@ -1584,16 +1584,16 @@ compact-forever loop is the failure mode the *wedge* tests exercise).
   reread, validation/correction as commit gates, oversized-checkpoint
   rejection without changing the view, source-replacement invalidation,
   correction and level limits, queued inputs verbatim.
-- **Split** — whole chunks, the cursor advancing only on success, warning
+- **Split** - whole chunks, the cursor advancing only on success, warning
   only under concerning accumulation, atomic commit with whole-buffer
   re-estimation, staging surviving save/restore and resuming.
-- **Snapshot** — full round-trip, `masked` hygiene, coverage rebuilt.
-- **Discovery** — `from_window` (the fallback never resized), effective
+- **Snapshot** - full round-trip, `masked` hygiene, coverage rebuilt.
+- **Discovery** - `from_window` (the fallback never resized), effective
   resolution, the tolerant and atomic error catalog.
 
 Running the suite is the recommended way to check any behavior in doubt: the
 module is self-contained and the tests **do not depend on the network by
-default** — the only test that touches the network (real window discovery) is
+default** - the only test that touches the network (real window discovery) is
 marked `#[ignore]` precisely for that.
 
 ---
@@ -1602,28 +1602,28 @@ marked `#[ignore]` precisely for that.
 
 ### Direct references (used in the code's calculations and decisions)
 
-1. **Paulsen, B. (2025). *Context Is What You Need*.** arXiv:2509.21361 —
+1. **Paulsen, B. (2025). *Context Is What You Need*.** arXiv:2509.21361 -
    the empirical basis of the effective-window curve (§19.1): the usable
    window grows sublinearly with the advertised window; the SDK's comment
    cites the paper directly ("the bigger the window, the bigger the illusion").
    <https://arxiv.org/abs/2509.21361>
 2. **Dean, J. & Ghemawat, S. (2004). *MapReduce: Simplified Data Processing on
-   Large Clusters*.** OSDI'04 — the map→reduce→reconcile skeleton of §15,
+   Large Clusters*.** OSDI'04 - the map→reduce→reconcile skeleton of §15,
    transplanted to LLM calls with level-by-level reduction trees.
    <https://research.google/pubs/mapreduce-simplified-data-processing-on-large-clusters/>
-3. **Anthropic — Prompt caching** (`cache_control`, prefix-based cache) —
+3. **Anthropic - Prompt caching** (`cache_control`, prefix-based cache) -
    <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching>
-4. **OpenAI — Prompt caching (automatic prefix caching)** —
+4. **OpenAI - Prompt caching (automatic prefix caching)** -
    <https://platform.openai.com/docs/guides/prompt-caching>
-5. **Google — Gemini implicit caching** —
+5. **Google - Gemini implicit caching** -
    <https://ai.google.dev/gemini-api/docs/caching>
-6. **OpenAI — tiktoken** (and the `tiktoken-rs` crate) — the module's token
+6. **OpenAI - tiktoken** (and the `tiktoken-rs` crate) - the module's token
    estimates; `cl100k_base` as the cross-provider default.
    <https://github.com/openai/tiktoken>
-7. **opencode** — the declared inspiration of the summary template
+7. **opencode** - the declared inspiration of the summary template
    (`SUMMARY_TEMPLATE`, "opencode-style") and of the summarizer-agent split.
    <https://github.com/sst/opencode>
-8. **APIs with restricted replay** — Claude *extended thinking* (signed blocks
+8. **APIs with restricted replay** - Claude *extended thinking* (signed blocks
    must be replayed verbatim) and Gemini *thought signatures* (`functionCall`
    rejects replay without the signature):
    <https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking> ·
@@ -1632,19 +1632,19 @@ marked `#[ignore]` precisely for that.
 ### Further reading (context for the techniques used)
 
 - **Log-structured / append-only storage**: the timeline is an event *log*
-  with a derived *view* — the same pattern as event sourcing and LSM-trees
+  with a derived *view* - the same pattern as event sourcing and LSM-trees
   (tombstone markers instead of physical deletion).
   O'Neil et al., *The Log-Structured Merge-Tree*, Acta Informatica (1996).
 - **Prefix caching as a design constraint**: the module's "tail-only
   mutations" rule is an instance of *write-optimized views over an immutable
-  prefix* — the same trade-off that makes compilers avoid invalidating cached
+  prefix* - the same trade-off that makes compilers avoid invalidating cached
   AST prefixes.
 - **Tokenization and estimation**: providers' context limits are counted in
   the provider's own tokenizer; estimating with tiktoken introduces a small
   systematic error, which the design absorbs with the effective window (§19.1)
-  and the 80% trigger (§19.3) — *safety margin* instead of false precision.
+  and the 80% trigger (§19.3) - *safety margin* instead of false precision.
 - **MapReduce with validation**: the map→reduce→validate→correct chain of §15
-  is *self-refinement with external verification* — the independent audit
+  is *self-refinement with external verification* - the independent audit
   (`VALIDATOR_SYSTEM`) is the mechanism that prevents committing a checkpoint
   with a material omission, and the hard limits (levels, corrections,
   repartitions) guarantee termination.

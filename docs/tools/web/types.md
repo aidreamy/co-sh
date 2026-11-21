@@ -7,7 +7,7 @@ their pages; the types here are the wire types the harness deserializes.
 
 ---
 
-## `WebFetchInput` — the `web_fetch` arguments
+## `WebFetchInput` - the `web_fetch` arguments
 
 ```rust
 pub struct WebFetchInput {
@@ -20,7 +20,7 @@ Exactly mirrors [`WebFetch`](fetch.md): one required field, `url`. It derives
 `Deserialize` + `JsonSchema`, so the same struct both parses the tool call
 arguments and describes the schema.
 
-## `WebSearchInput` — the `web_search` arguments
+## `WebSearchInput` - the `web_search` arguments
 
 ```rust
 pub struct WebSearchInput {
@@ -30,7 +30,7 @@ pub struct WebSearchInput {
 ```
 
 Exactly mirrors the `query` field of [`WebSearch`](search.md). Note that the
-result count is **not** part of the tool call — it comes from the `Web`
+result count is **not** part of the tool call - it comes from the `Web`
 wrapper's configured `num_results`, so the harness never needs the model to
 pass it.
 
@@ -40,9 +40,9 @@ pass it.
 
 There is a deliberate split:
 
-- **`WebFetchInput` / `WebSearchInput`** — the per-call JSON arguments for
+- **`WebFetchInput` / `WebSearchInput`** - the per-call JSON arguments for
   the MCP tool surface. One field each, `required`.
-- **`WebFetch` / `WebSearch`** — the configuration structs consumed by the
+- **`WebFetch` / `WebSearch`** - the configuration structs consumed by the
   free functions and the wrapper. `WebSearch` additionally carries the
   result count, which is wrapper configuration rather than a per-call
   argument.
@@ -55,7 +55,7 @@ functions. As a library user you interact with the config structs directly.
 
 ## Output
 
-Both tools return `Result<String, String>` — a markdown string on success,
+Both tools return `Result<String, String>` - a markdown string on success,
 an explanatory error string on failure. There is no dedicated output struct:
 the module's outputs are text by design, sized for the model's context (see
 the [module page](web.md#errors-and-the-shape-of-results)).

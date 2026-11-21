@@ -1,4 +1,4 @@
-# `CodeRenderable` — syntax-highlighted code
+# `CodeRenderable` - syntax-highlighted code
 
 Renders a code string with optional syntax highlighting (via a
 [`SyntaxStyle`](../syntax_style.md) registry), word wrapping, and dimmed
@@ -31,7 +31,7 @@ pub enum WrapMode { None, Char, Word }
 from `fg`/`bg`. Alpha-0 colors render as `Color::Reset`. Wide graphemes
 (CJK/emoji) consume their display columns.
 
-Note: the current implementation renders with a single dimmed style — the
+Note: the current implementation renders with a single dimmed style - the
 `SyntaxStyle` registry is available for future per-token highlighting but is
 not yet applied per token by this widget. For rich, per-element colored code
 blocks inside markdown, use
@@ -53,4 +53,4 @@ code.set_bg(Some("#1e1e1e".into()));
 // code.render_self(&mut buf, area);
 ```
 
-Next: [diff — unified and split diffs](diff.md).
+Next: [diff - unified and split diffs](diff.md).

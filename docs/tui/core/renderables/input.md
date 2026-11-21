@@ -1,4 +1,4 @@
-# `InputRenderable` — single-line input
+# `InputRenderable` - single-line input
 
 A single-line text field with a cursor, placeholder, min/max length
 enforcement, and programmatic editing. Focusable.
@@ -32,10 +32,10 @@ cursor_offset() -> usize      // byte offset into value
 
 | Method | Behavior | Returns |
 |---|---|---|
-| `insert_text(&str)` | Insert at the cursor; strips newlines, respects `max_length`. | — |
+| `insert_text(&str)` | Insert at the cursor; strips newlines, respects `max_length`. | - |
 | `delete_char_backward()` | Delete the char before the cursor. | `false` if at start / empty |
 | `delete_char()` | Delete the char at the cursor. | `false` if at end |
-| `set_value(&str)` | Replace everything. | — |
+| `set_value(&str)` | Replace everything. | - |
 
 `insert_text` ignores newlines and stops at `max_length`; the cursor
 advances with inserted text. `delete_char_backward` respects char
@@ -43,7 +43,7 @@ boundaries (won't split a multi-byte char).
 
 ## Rendering
 
-`render_self` draws either the value or — when empty — the placeholder,
+`render_self` draws either the value or - when empty - the placeholder,
 left-to-right from the area's start, clipped to the area width. No border is
 drawn; wrap this widget in a `BoxRenderable` for a framed field.
 

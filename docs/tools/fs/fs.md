@@ -11,7 +11,7 @@ operations that an agent uses to work with source files inside a project:
 | [`ast_edit`](ast_edit.md) | Rewrite code structurally by matching patterns against the syntax tree. |
 | [`rollback`](rollback.md) | Restore a file to a previously recorded version from the session history. |
 
-The module is designed around a single, central type — [`Fs`](#the-fs-wrapper) —
+The module is designed around a single, central type - [`Fs`](#the-fs-wrapper) -
 that bundles the project configuration and dispatches each operation for you.
 Because every operation goes through the same wrapper, the permission model is
 consistent across all of them.
@@ -83,7 +83,7 @@ assert!(fs.blocklist_ref().is_none());
 
 Because `Fs` is not `Clone`, the accessors return references rather than owned
 values. If you need to change the allowlist after construction, use the mutating
-methods `add_allowlist_path(path)` and `remove_allowlist_path(path)` — the
+methods `add_allowlist_path(path)` and `remove_allowlist_path(path)` - the
 former is a no-op for duplicate paths, the latter for paths not present.
 
 ### Tool descriptions
@@ -121,7 +121,7 @@ The rule of thumb:
 Two important matching rules:
 
 - **Allowlist entries match exactly.** Listing a path grants access to that
-  exact path only — a directory entry does *not* grant its contents. To allow
+  exact path only - a directory entry does *not* grant its contents. To allow
   writes to a file outside the root, list the file itself. (Relative entries
   are interpreted relative to the root.)
 - **Blocklist entries match by prefix.** A blocked directory denies everything
@@ -187,7 +187,7 @@ let ast = Fs::new().only_ast();               // AST engine only
 ```
 
 When forced, the corresponding `description_edit` field is rewritten so the MCP
-tool description only mentions the available engine — a model talking to a
+tool description only mentions the available engine - a model talking to a
 replace-only tool must not learn that an AST engine exists, and vice versa.
 
 ### How `Auto` dispatches
@@ -203,14 +203,14 @@ In `Auto` mode, `Fs::edit` looks at the `serde_json::Value` it received:
   correction prompt.
 
 `Auto` also detects when the agent filled an argument with the *wrong* engine's
-schema — for example, AST metavariables like `$NAME` inside `targets[].ops`, a
+schema - for example, AST metavariables like `$NAME` inside `targets[].ops`, a
 `file_hash` inside `ast`, or `old_string`/`new_string` inside `targets`. It
 returns a descriptive correction prompt instead of failing silently or, worse,
 applying the wrong engine.
 
 The three engines are described in depth on their own pages:
-[`edit` — the hashline replace engine](edit.md) and
-[`ast_edit` — the AST structural engine](ast_edit.md). The short version:
+[`edit` - the hashline replace engine](edit.md) and
+[`ast_edit` - the AST structural engine](ast_edit.md). The short version:
 
 - **Replace** anchors edits on line numbers plus a content-hash tag, supports
   replace / delete / insert / block operations, and attempts a 3-way merge when
@@ -233,7 +233,7 @@ differently, because *order* means different things to them:
   before it. When N fails the batch stops: targets before N remain applied (and
   are returned with their fresh hash tags in `EditBatchError::applied`), and
   targets after N are deliberately skipped (`EditBatchError::skipped`) as a
-  *consequence* of N failing — never reported as independent failures.
+  *consequence* of N failing - never reported as independent failures.
 - **Content replace** (`edits`) has the same order-carries-intention semantics
   as Replace: edits are applied in your order, and a failure stops the batch
   with the same applied/skipped report. Successive edits to the same file in
@@ -247,12 +247,12 @@ differently, because *order* means different things to them:
 
 ## Summary
 
-- Configure one `Fs`, call its methods — no per-call configuration.
+- Configure one `Fs`, call its methods - no per-call configuration.
 - Guard every path with root + allowlist + blocklist; reads have their own
   read-only allowlist that falls back to the write one.
 - `edit` dispatches between the replace and AST engines; you can force either
   or let the arguments decide.
 
 Next: the [data types used by every operation](types.md), then each operation
-in turn — [read](read.md), [write](write.md), [edit](edit.md),
+in turn - [read](read.md), [write](write.md), [edit](edit.md),
 [ast_edit](ast_edit.md), and [rollback](rollback.md).

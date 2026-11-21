@@ -77,6 +77,7 @@ impl Harness {
         }
         let mut connector = Connector::new(provider)
             .map_err(|error| error.to_string())?
+            .with_service_keyring(crate::KEYRING_SERVICE)
             .with_model(model)
             .with_prompt_cache_ttl_1h(self.connector.prompt_cache_ttl_1h());
         if let Some(url) = self.local_base_urls.get(provider) {

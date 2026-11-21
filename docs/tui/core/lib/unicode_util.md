@@ -1,4 +1,4 @@
-# `unicode_util` — display widths and wrapping
+# `unicode_util` - display widths and wrapping
 
 Terminal cells are a fixed-width grid, but Unicode text isn't: CJK
 ideographs take 2 columns, emoji take 2, flag pairs and ZWJ sequences
@@ -54,7 +54,7 @@ assert_eq!(word_wrap("中文字", 4), vec!["中文".to_string(), "字".to_string
 
 ---
 
-## Example — measuring mixed text
+## Example - measuring mixed text
 
 ```rust,ignore
 use morpheus_tui::core::lib::unicode_util::{str_display_width, grapheme_display_width, word_wrap};
@@ -71,4 +71,4 @@ for (g, w) in graphemes_with_width("a中") {
 }
 ```
 
-Next: [detect_links — URL detection](detect_links.md).
+Next: [detect_links - URL detection](detect_links.md).

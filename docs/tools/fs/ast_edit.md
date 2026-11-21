@@ -1,6 +1,6 @@
-# `ast_edit` — the AST structural engine
+# `ast_edit` - the AST structural engine
 
-`ast_edit` is the *structural* editing strategy of the [`fs` module](fs.md) —
+`ast_edit` is the *structural* editing strategy of the [`fs` module](fs.md) -
 the second engine behind `Fs::edit`, alongside the
 [hashline replace engine](edit.md). Where `edit` anchors on line numbers and
 content hashes, `ast_edit` rewrites the file's **syntax tree** directly: it
@@ -11,9 +11,9 @@ Fs::edit(&self, args: serde_json::Value) -> Result<Vec<EditResult>, String>   //
 ast_edit(metadata, FsAstEdit) -> Result<Vec<EditResult>, String>               // the underlying free function
 ```
 
-Use the AST engine when your change is *structural* — renaming a function's
+Use the AST engine when your change is *structural* - renaming a function's
 signature across many call sites, wrapping every argument list in a helper,
-updating a repeated idiom — rather than a literal text swap. For plain text
+updating a repeated idiom - rather than a literal text swap. For plain text
 replacements, prefer the hashline engine.
 
 ---
@@ -35,7 +35,7 @@ a `pat` (pattern) and an `out` (replacement template).
    derives a statement-level contextual pattern so top-level and nested
    statements both match. The tree is re-parsed between derived patterns.
 
-The whole set of matched files is gathered first, sorted, and deduplicated —
+The whole set of matched files is gathered first, sorted, and deduplicated -
 **order of the caller's `paths` list does not carry intention** here, unlike the
 replace engine.
 
@@ -51,7 +51,7 @@ Patterns support ast-grep metavariables:
 Metavariable identity is enforced: the same metavariable must capture identical
 text in every occurrence for a match to succeed.
 
-Critical gotcha: **a metavariable captures a whole node — it never matches a
+Critical gotcha: **a metavariable captures a whole node - it never matches a
 substring inside a literal.** To change the text of a string, match the whole
 literal including its quotes:
 
@@ -72,11 +72,11 @@ target language.
 
 The `paths` argument accepts any mix of:
 
-- **Files** — explicit paths, rewritten if the language is supported.
-- **Directories** — walked recursively; every file with a supported grammar is
+- **Files** - explicit paths, rewritten if the language is supported.
+- **Directories** - walked recursively; every file with a supported grammar is
   included. Symlinks are never followed (they could escape the root or form a
   cycle), and VCS/vendored subtrees (`.git`, `node_modules`) are skipped.
-- **Globs** — expanded with gitignore-awareness, then validated.
+- **Globs** - expanded with gitignore-awareness, then validated.
 
 Every resolved path is validated against the path guards and must have a
 supporting tree-sitter grammar. Nonexistent explicit paths are silently skipped.
@@ -103,7 +103,7 @@ changed.
 ### Errors
 
 Unlike the replace engine, `ast_edit` returns a plain error string. A failure
-names the failing file and aborts the run — there is no caller-intended order to
+names the failing file and aborts the run - there is no caller-intended order to
 preserve, so no `applied`/`skipped` distinction. Top-level errors occur when:
 
 - `paths` is empty, or `ops` is empty.
@@ -118,6 +118,6 @@ preserve, so no `applied`/`skipped` distinction. Top-level errors occur when:
 A complete runnable example is provided at
 [`examples/fs/ast_edit.rs`](../../../crates/morpheus-tools/examples/fs/ast_edit.rs).
 It writes a small source file, then uses `Fs::edit` with an `ast` argument to
-rename a function everywhere it appears — including across a directory tree.
+rename a function everywhere it appears - including across a directory tree.
 
-Next: [rollback — restoring previous versions](rollback.md).
+Next: [rollback - restoring previous versions](rollback.md).

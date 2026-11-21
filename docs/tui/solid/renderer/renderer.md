@@ -1,12 +1,12 @@
-# `solid::renderer` — the renderer traits
+# `solid::renderer` - the renderer traits
 
 The renderer abstraction of the reactive layer, ported from the SolidJS
 renderer interface. It is defined as **two traits** (in `renderer/universal.rs`,
-re-exported from `renderer/mod.rs`). **Port status: scaffolded** — the
+re-exported from `renderer/mod.rs`). **Port status: scaffolded** - the
 traits are declared but no concrete implementation exists in the crate yet;
 the only implementations are in unit tests (a `TestNode`-based renderer).
 
-## `RendererOptions` — node factory
+## `RendererOptions` - node factory
 
 The platform-specific part: how to create and manipulate nodes of a
 concrete type `Node`.
@@ -29,10 +29,10 @@ pub trait RendererOptions {
 }
 ```
 
-These mirror the free functions in [`reconciler`](../reconciler.md) — a
+These mirror the free functions in [`reconciler`](../reconciler.md) - a
 concrete implementation would back them with the renderable tree.
 
-## `Renderer` — the reactive renderer
+## `Renderer` - the reactive renderer
 
 The higher-level interface a framework drives:
 
@@ -56,15 +56,15 @@ pub trait Renderer<Node> {
 ```
 
 The reactive concepts (`effect`, `memo`, `spread`) are the SolidJS
-primitives — they are declared but not yet backed by a signal engine in this
+primitives - they are declared but not yet backed by a signal engine in this
 port.
 
 ## Practical guidance
 
-For a working renderer today, use [`core::renderer`](../../core/renderer.md)
-— the frame loop that actually drives a terminal. The `solid::renderer`
+For a working renderer today, use [`core::renderer`](../../core/renderer.md) -
+the frame loop that actually drives a terminal. The `solid::renderer`
 traits are the abstraction layer for the (future) reactive framework; you
 only need them if you are implementing a node backend or a reactive
 framework on top of morpheus-tui.
 
-Next: [scrollback — scrollback snapshot writer](../scrollback.md).
+Next: [scrollback - scrollback snapshot writer](../scrollback.md).

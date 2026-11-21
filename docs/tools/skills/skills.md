@@ -1,6 +1,6 @@
 # The `skills` module: discovering and serving `SKILL.md` capability packs
 
-`skills` manages *skills* — self-contained Markdown capability packs (a
+`skills` manages *skills* - self-contained Markdown capability packs (a
 `SKILL.md` plus optional asset files) that teach the agent how to do
 something. The module discovers skills from caller-supplied sources, lists
 and reads them, reads their asset files, and matches them against the active
@@ -13,8 +13,8 @@ workspace so the right skills can be auto-activated.
 | [`skills_read_asset`](actions.md#read-asset) | Read one asset file from a skill's directory (path-traversal blocked). |
 | [`skills_match_skills`](actions.md#match) | Return skills whose globs match the active file paths, or that are `always_apply`. |
 
-The design matches the other morpheus modules: a builder-style wrapper —
-[`Skills`](#the-skills-wrapper) — holds the configuration, and each
+The design matches the other morpheus modules: a builder-style wrapper -
+[`Skills`](#the-skills-wrapper) - holds the configuration, and each
 [`SkillAction`](types.md#skillaction) is a dedicated method on it. The
 configuration carries **all** policy: there are no hardcoded paths, names, or
 filters in the module.
@@ -37,7 +37,7 @@ skills.match_skills(vec!["src/main.rs".into()])?;
 ```
 
 Configure the sources and filters once, then call the operations. All four
-take no per-call configuration — like the other morpheus tools, the wrapper is
+take no per-call configuration - like the other morpheus tools, the wrapper is
 the single point of setup. `Skills::default()` is `Skills::new()`.
 
 The builder methods:
@@ -47,7 +47,7 @@ The builder methods:
 | `sources(Vec<SkillSource>)` | Ordered list of places to look for skills. First source wins on name collision. | empty |
 | `recursive(bool)` | Scan directory sources recursively (skills at any depth) instead of only the immediate subdirectories. | `false` |
 | `ignore(Vec<String>)` | Glob-style name patterns to exclude (e.g. `"deprecated-*"`). | empty |
-| `include(Vec<String>)` | Allowlist — when non-empty, only skills whose exact name appears here are returned. | empty |
+| `include(Vec<String>)` | Allowlist - when non-empty, only skills whose exact name appears here are returned. | empty |
 
 ---
 
@@ -55,7 +55,7 @@ The builder methods:
 
 A *skill* is a directory containing a `SKILL.md` file. Its YAML-like
 frontmatter declares the skill's name, description, matching globs, and
-whether it should always apply; the rest of the file is the skill's body —
+whether it should always apply; the rest of the file is the skill's body -
 the instructions the agent follows. Asset files (templates, reference
 material) live next to `SKILL.md` in the same directory. The full format is
 documented on the [frontmatter page](frontmatter.md).
@@ -72,7 +72,7 @@ every operation addresses skills by name.
 | `SkillSource::Embedded { skill }` | One in-memory skill supplied directly by the caller (no filesystem access). |
 
 Directory sources are the normal case. Embedded sources are for callers that
-want to inject skills programmatically — note that embedded skills have no
+want to inject skills programmatically - note that embedded skills have no
 directory, so `read_asset` does not work for them
 (`"read_asset is not supported for embedded skills"`).
 
@@ -98,13 +98,13 @@ applies the filters. Three behaviors shape what you get back (detailed on the
 
 ## The harness and Ask mode
 
-The harness constructs `Skills::new()` **without sources** — skill sources
+The harness constructs `Skills::new()` **without sources** - skill sources
 must be configured by the caller before the tools return anything. In the
 current harness this means `skills_list` etc. return empty results; the API
 exists so a host application can wire its own skill directories.
 
 All four skill tools are read-only, so they are exposed in Ask mode as well
-as Build/Yolo mode — the model can always inspect available skills.
+as Build/Yolo mode - the model can always inspect available skills.
 
 ---
 

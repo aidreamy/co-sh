@@ -11,7 +11,7 @@ agent retrieve relevant context from a stored knowledge base.
 
 > **Feature-gated.** The `recall` module only compiles with the `embed`
 > feature (`morpheus-tools/embed`, which enables the `lancedb` backend in
-> `morpheus-recall`). Without it the module does not exist — this is also why
+> `morpheus-recall`). Without it the module does not exist - this is also why
 > the harness hides it behind the same feature flag.
 
 ---
@@ -21,11 +21,11 @@ agent retrieve relevant context from a stored knowledge base.
 The most important design fact about `recall` is that it is **low-level by
 design**:
 
-- It accepts a **pre-computed embedding vector** (`query_vector`) directly —
+- It accepts a **pre-computed embedding vector** (`query_vector`) directly -
   the module has no embedding-model dependency and never embeds text.
 - It requires the full database coordinates: `db_uri`, `table_name`,
   `vector_dim`, plus the query text and vector.
-- It is **read-only** — it only performs similarity searches, never writes.
+- It is **read-only** - it only performs similarity searches, never writes.
 
 The embedding step lives in the **harness**: the agent calls `recall_search`
 with just `{ db_name, query, limit }`, and the harness resolves the database
@@ -59,7 +59,7 @@ let output = recall.search(&RecallSearchInput {
 .await?;
 ```
 
-`Recall::new()` pre-configures `description_search` — the ready-to-serve MCP
+`Recall::new()` pre-configures `description_search` - the ready-to-serve MCP
 tool description for `recall_search`. The wrapper is **stateless**: every
 call passes the full `RecallSearchInput`. `Recall::default()` is
 `Recall::new()`.
@@ -80,14 +80,14 @@ recall.rebuild_description("This knowledge base covers Rust and WebAssembly.");
 ```
 
 Both append the suffix after the default description, separated by a blank
-line — `db_name` values must match what the description lists, so the model
+line - `db_name` values must match what the description lists, so the model
 knows what it can search. An empty suffix keeps (or reverts to) the default.
 
 ### The tool schema
 
 The LLM-facing schema requires only `db_name` and `query`; `limit` is
 optional (default 5). The internal fields (`db_uri`, `table_name`,
-`vector_dim`, `query_vector`) are deliberately **not** in the schema — the
+`vector_dim`, `query_vector`) are deliberately **not** in the schema - the
 model never sees them, the harness fills them in.
 
 ---
@@ -96,15 +96,15 @@ model never sees them, the harness fills them in.
 
 `Recall::search` (and the free `search` function) performs:
 
-1. **Connect** — open the `LanceDB` table at `db_uri` read-only
+1. **Connect** - open the `LanceDB` table at `db_uri` read-only
    (`connect_readonly`). Missing table → error.
-2. **Dimension check** — the input's `vector_dim` must equal the dimension
+2. **Dimension check** - the input's `vector_dim` must equal the dimension
    of the table's schema; a mismatch is a hard error
    (`"vector dimension mismatch: input has 5, but table schema has 3"`).
-3. **ANN search** — an approximate-nearest-neighbour query with the
+3. **ANN search** - an approximate-nearest-neighbour query with the
    pre-computed `query_vector`, returning up to `limit` entries
    (`limit.unwrap_or(5)`).
-4. **Map** — each result becomes a `RecallEntry { id, content }`; the output
+4. **Map** - each result becomes a `RecallEntry { id, content }`; the output
    echoes the query text back for the agent's context.
 
 Results come back sorted by similarity, most similar first.
@@ -114,10 +114,10 @@ Results come back sorted by similarity, most similar first.
 ## The harness and Ask mode
 
 - The harness registers one or more `RecallDb` entries (name, LanceDB URI,
-  table name, embedder config — local fastembed or a cloud provider) and
+  table name, embedder config - local fastembed or a cloud provider) and
   injects their names into the tool description via `rebuild_description`.
 - `recall_search` is read-only, so it is available in **Ask mode** as well
-  as Build/Yolo — searching stored knowledge is an inspection operation.
+  as Build/Yolo - searching stored knowledge is an inspection operation.
 - The embedding step requires one of the embedding features
   (`fastembed`/`cloud`) at build time; without them the harness returns a
   build-time hint error instead.

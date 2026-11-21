@@ -1,4 +1,4 @@
-# `TabSelectRenderable` — horizontal tab bar
+# `TabSelectRenderable` - horizontal tab bar
 
 A horizontal row of tabs with a selected tab, underline, scroll arrows, and
 a description line for the selected tab. Focusable. Use it for view
@@ -71,4 +71,4 @@ tabs.move_right();
 assert_eq!(tabs.selected_index(), 1);
 ```
 
-Next: [slider — range slider](slider.md).
+Next: [slider - range slider](slider.md).

@@ -1,4 +1,4 @@
-# `elements::catalogue` — component widgets and registry
+# `elements::catalogue` - component widgets and registry
 
 The catalogue holds the built-in Solid-style components and the global
 registry that resolves a tag name to a widget constructor. This is the
@@ -6,7 +6,7 @@ most-used part of `solid`.
 
 ## The widgets
 
-### `SpanRenderable` — styled text span
+### `SpanRenderable` - styled text span
 
 A single run of styled text with optional attributes (bold/italic/underline)
 and an optional link color.
@@ -30,7 +30,7 @@ pub type ItalicSpanRenderable = SpanRenderable;
 pub type UnderlineSpanRenderable = SpanRenderable;
 ```
 
-### `LineBreakRenderable` — line break
+### `LineBreakRenderable` - line break
 
 ```rust
 LineBreakRenderable::new() -> Self       // id "br-{n}"
@@ -38,7 +38,7 @@ LineBreakRenderable::new() -> Self       // id "br-{n}"
 
 Draws a `\n` at the area's top-left cell. A structural spacer component.
 
-### `LinkRenderable` — clickable-styled text
+### `LinkRenderable` - clickable-styled text
 
 Wraps a `SpanRenderable` with a URL already set (link blue).
 
@@ -81,4 +81,4 @@ register_component("status", Box::new(|| -> Box<dyn Renderable> {
 let node = create_component("status").expect("registered above");
 ```
 
-Next: [extras — DynamicRenderable](extras.md).
+Next: [extras - DynamicRenderable](extras.md).

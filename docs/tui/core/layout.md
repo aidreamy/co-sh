@@ -1,7 +1,7 @@
-# `layout` — automatic layout with `LayoutTree`
+# `layout` - automatic layout with `LayoutTree`
 
 `LayoutTree` is a thin wrapper around
-[`taffy`](https://docs.rs/taffy) — the flexbox/grid layout engine — that owns
+[`taffy`](https://docs.rs/taffy) - the flexbox/grid layout engine - that owns
 the tree's root node. It answers "where does each widget go and how big is
 it?" given a fixed viewport, so the renderer can position widgets without
 hand-placing every rectangle.
@@ -15,7 +15,7 @@ pub struct LayoutTree {
 }
 ```
 
-You usually don't construct or drive a `LayoutTree` yourself — the
+You usually don't construct or drive a `LayoutTree` yourself - the
 [`Renderer`](renderer.md) builds one per frame from the renderable tree. But
 the type is public, so you can also lay out a custom tree directly.
 
@@ -37,7 +37,7 @@ the type is public, so you can also lay out a custom tree directly.
 Every method **panics** if given a node that doesn't exist in the tree (or an
 invalid parent/child relationship), and `new_leaf`/`new_container`/`compute_layout`
 panic if taffy rejects the request. Node ids are opaque `taffy::NodeId`
-values — keep the ones `new_leaf`/`new_container` return.
+values - keep the ones `new_leaf`/`new_container` return.
 
 ## Computing and reading layout
 
@@ -61,7 +61,7 @@ pub const fn border_rect(
 ) -> Rect<LengthPercentage>
 ```
 
-Converts four per-side border flags into a taffy border rect — each active
+Converts four per-side border flags into a taffy border rect - each active
 side contributes **1.0 cell** of border width. Used by `BoxRenderable` so its
 border takes up layout space.
 
@@ -74,7 +74,7 @@ The default flex container style used by `BoxRenderable`: `display: flex`,
 
 ---
 
-## Example — laying out two stacked panels
+## Example - laying out two stacked panels
 
 ```rust,ignore
 use morpheus_tui::core::layout::LayoutTree;
@@ -99,7 +99,7 @@ let top_layout = tree.layout(top);      // read solved position/size
 println!("top at {:?} size {:?}", top_layout.location, top_layout.size);
 ```
 
-Next: [renderer — driving the frame loop](renderer.md).
+Next: [renderer - driving the frame loop](renderer.md).
 
 ---
 
@@ -110,4 +110,4 @@ Next: [renderer — driving the frame loop](renderer.md).
 - Computing and reading: `compute_layout(width, height)` solves the whole tree at a fixed size (viewport), `layout(node)` reads a node's solved position/size (taffy's `Layout` with location + size).
 - Style helpers: `border_rect` converts four border flags into taffy border rect (each active side contributes 1.0 cell), `default_box_style` is the default flex container style used by `BoxRenderable`.
 - Every method panics if given a non-existent node or invalid parent/child relationship; node ids are opaque `taffy::NodeId` values from `new_leaf`/`new_container`.
-- Usually not constructed directly — the `Renderer` builds one per frame from the renderable tree, but the type is public for custom tree layout.
+- Usually not constructed directly - the `Renderer` builds one per frame from the renderable tree, but the type is public for custom tree layout.

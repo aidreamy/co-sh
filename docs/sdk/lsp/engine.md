@@ -1,7 +1,7 @@
 # LSP Engine
 
 The `morpheus_sdk::lsp` module is a compact, tokio-native LSP client stack for
-driving language servers from an agent process — no editor UI involved.
+driving language servers from an agent process - no editor UI involved.
 
 ## Layering
 
@@ -14,7 +14,7 @@ Four layers, each testable in isolation:
 | Client | [`client`](#client) | Handshake, document sync, server→client dispatch |
 | Manager | [`manager`](#manager) | Discovery, lazy spawning, fan-out, lifecycle |
 
-A fifth concern — diagnostics aggregation — lives in
+A fifth concern - diagnostics aggregation - lives in
 [`diagnostics.rs`](diagnostics.md) and sits between the manager's event
 stream and the tools.
 
@@ -27,13 +27,13 @@ stream and the tools.
 2. **Disk is the source of truth.** No editor buffer: documents are opened
    from disk via `touch_file`, versions are internal counters, and stale
    content never reaches a server. The documents lock is held across the
-   wire notifications, serializing every toucher of one path — a `didChange`
+   wire notifications, serializing every toucher of one path - a `didChange`
    can never overtake the `didOpen` it depends on, and two concurrent first
    touches cannot both send `didOpen`. The LRU slot is claimed before any
    wire send so concurrent observers see the pending open; if the send fails
    (session dying) the slot is rolled back for a clean retry.
 3. **Every failure degrades cleanly.** Timeouts, stream death, protocol
-   violations and missing binaries all surface as typed errors — nothing
+   violations and missing binaries all surface as typed errors - nothing
    panics, nothing hangs. The transport re-checks the terminal exit watch
    while holding the pending map lock before issuing a request, so a request
    against a dead session fails fast with `NotRunning` instead of waiting
@@ -45,7 +45,7 @@ stream and the tools.
 5. **Canonical keys.** Project roots returned by the manager are
    canonicalized (with Windows verbatim-prefix stripping) so the same
    directory reached through a symlink or a non-canonical workspace root
-   produces one `ClientKey` — never two server processes for one project.
+   produces one `ClientKey` - never two server processes for one project.
 
 ## Key types
 
@@ -59,9 +59,9 @@ DiagnosticsEngine  Push+pull store with settle-wait and LLM formatting.
 ## Testing
 
 All layers are tested over in-memory duplex pipes using the fake server
-harness in `test_support.rs` — no real processes needed for CI.
+harness in `test_support.rs` - no real processes needed for CI.
 
 ## See also
 
-- [Diagnostics](diagnostics.md) — push/pull hybrid store
-- [Tools reference](../../tools/lsp/tools.md) — model-facing API
+- [Diagnostics](diagnostics.md) - push/pull hybrid store
+- [Tools reference](../../tools/lsp/tools.md) - model-facing API

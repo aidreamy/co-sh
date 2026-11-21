@@ -1,4 +1,4 @@
-# `syntax_style` — the style registry
+# `syntax_style` - the style registry
 
 `SyntaxStyle` is a registry of named styles used for syntax highlighting and
 token theming. You register styles under names like `"keyword"` or
@@ -87,8 +87,8 @@ mirrors how editor token scopes inherit from parent scopes.
 let merged: MergedStyle = styles.merge_styles(&["keyword", "keyword.control"]);
 ```
 
-`merge_styles` overlays the named styles in order — later names override
-earlier ones field-by-field — packs the resulting booleans into the
+`merge_styles` overlays the named styles in order - later names override
+earlier ones field-by-field - packs the resulting booleans into the
 `attributes` bitmask via [`create_text_attributes`](utils.md), and **caches**
 the result keyed by the joined name list (`"keyword:keyword.control"`), so
 repeated merges of the same set are cheap.
@@ -104,7 +104,7 @@ Calling any method after `destroy()` panics.
 
 ---
 
-## Example — themed tokens for a code widget
+## Example - themed tokens for a code widget
 
 ```rust,ignore
 use morpheus_tui::core::syntax_style::{SyntaxStyle, StyleDefinitionInput, ThemeTokenStyle, ThemeTokenStyleInner};
@@ -125,4 +125,4 @@ let merged = styles.merge_styles(&["keyword.control"]);  // inherits "keyword"
 // merged.fg == Some(rgba(1.0, 0.71, 0.39, 1.0)), merged.attributes == 0
 ```
 
-Next: [utils — text attribute helpers](utils.md).
+Next: [utils - text attribute helpers](utils.md).

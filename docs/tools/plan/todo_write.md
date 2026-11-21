@@ -1,7 +1,7 @@
-# `todo_write` — the full-state write
+# `todo_write` - the full-state write
 
 `todo_write` is the only operation: it replaces the entire TODO list with the
-submitted one. The submitted list IS the new state — to change any task's
+submitted one. The submitted list IS the new state - to change any task's
 status, rewrite the whole list with the updated status (the dominant trained
 pattern, e.g. Claude Code's `TodoWrite`).
 
@@ -11,7 +11,7 @@ pub fn todo_write(todos: &[TodoItemInput])
 ```
 
 An `Err` means the write was rejected and **nothing changed**. A success
-means the list was replaced — but read the `nags`, because some problems are
+means the list was replaced - but read the `nags`, because some problems are
 tolerated rather than rejected (see [nags are advice, errors are
 rejections](plan.md#1-nags-are-advice-errors-are-rejections)).
 
@@ -37,7 +37,7 @@ Each entry carries:
 |---|---|
 | `description` | Required, never empty. |
 | `status` | `pending` (default when omitted), `in_progress`, `completed`, or `cancelled`. |
-| `key` | Optional alias other tasks **in the same call** reference in `depends_on`; resolved to the assigned `task-N` id. Must not look like a task id (`task-<number>`) — that would shadow the ids assigned by the same call. |
+| `key` | Optional alias other tasks **in the same call** reference in `depends_on`; resolved to the assigned `task-N` id. Must not look like a task id (`task-<number>`) - that would shadow the ids assigned by the same call. |
 | `depends_on` | Optional list of sibling `key`s or existing `task-N` ids. |
 
 ## What the write does

@@ -1,4 +1,4 @@
-# `ast::ops` — compile, match, rewrite
+# `ast::ops` - compile, match, rewrite
 
 The workhorse module. Everything here is a plain function over
 [`SupportLang`](lang.md) and ast-grep's `Pattern` type.
@@ -33,7 +33,7 @@ pub fn supported_lang_list() -> String                                     // fo
 
 `resolve_language` prefers an explicit `lang` (trimmed; empty counts as
 absent) and falls back to extension inference. `is_supported_file` returns
-`true` whenever an explicit language is given — the caller is asserting the
+`true` whenever an explicit language is given - the caller is asserting the
 language, so any file is "supported".
 
 ## Pattern compilation
@@ -48,7 +48,7 @@ pub fn compile_pattern(
 ```
 
 - `selector: None` → compile the pattern as a standalone snippet.
-- `selector: Some(kind)` → `Pattern::contextual` — the pattern is matched
+- `selector: Some(kind)` → `Pattern::contextual` - the pattern is matched
   only in contexts of that node kind.
 - **Multi-node fragments auto-wrap.** A fragment like `"key": $V` (JSON)
   parses to multiple root nodes and would fail as `MultipleNode`; it is
@@ -67,7 +67,7 @@ Maps onto ast-grep's `MatchStrictness`; `resolve_strictness(None)` yields
 
 | Level | Behavior |
 |---|---|
-| `Cst` | Exact concrete syntax — even trivia must match |
+| `Cst` | Exact concrete syntax - even trivia must match |
 | `Smart` (default) | Ignores trivia differences; the standard "what you mean" mode |
 | `Ast` / `Relaxed` / `Signature` / `Template` | Progressively looser (ast-grep semantics) |
 
@@ -101,7 +101,7 @@ pub fn rewrite_source(source: &str, language: SupportLang, ops: &[CompiledRewrit
 
 `compile_rewrite_rules` compiles each `(pattern, replacement)` pair; the
 error carries the **index** of the rule that failed. `rewrite_source`
-applies every rule in order — each pattern's `replace_all` — re-parsing the
+applies every rule in order - each pattern's `replace_all` - re-parsing the
 source after each rule so later rules see the updated tree. Returns the
 final text and the total replacement count.
 
@@ -115,7 +115,7 @@ pub fn apply_edits(content: &str, edits: &[Edit<String>]) -> Result<String>
 ```
 
 The low-level applicator used by `rewrite_source`. Edits are sorted by
-position, **deduplicated** (byte-identical edits collapse — multiple
+position, **deduplicated** (byte-identical edits collapse - multiple
 patterns matching the same node are one deterministic edit), and checked for
 overlaps:
 
